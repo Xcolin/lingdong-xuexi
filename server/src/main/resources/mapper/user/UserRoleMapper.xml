@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.user.infrastructure.persistence.UserRoleMapper">
+    <select id="hasRoleCode" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM sys_user_role ur JOIN sys_role r ON r.id = ur.role_id
+        WHERE ur.user_id = #{userId} AND r.role_code = #{roleCode} AND r.status = 'ENABLED')
+    </select>
+    <select id="hasPermissionViaRole" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM sys_user_role ur JOIN sys_role r ON r.id=ur.role_id JOIN sys_role_permission rp ON rp.role_id=r.id WHERE ur.user_id=#{userId} AND rp.permission_id=#{permissionId} AND r.status='ENABLED')
+    </select>
+
+    <select id="exists" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM sys_user_role
+            WHERE user_id = #{userId}
+              AND role_id = #{roleId}
+              AND organization_scope_key = #{organizationScopeKey}
+        )
+    </select>
+
+    <insert id="insert">
+        INSERT INTO sys_user_role (user_id, role_id, organization_id, organization_scope_key)
+        VALUES (#{userId}, #{roleId}, #{organizationId, jdbcType=BIGINT}, #{organizationScopeKey})
+    </insert>
+</mapper>

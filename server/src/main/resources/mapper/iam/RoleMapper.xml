@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.iam.infrastructure.persistence.RoleMapper">
+
+    <resultMap id="RoleResultMap" type="com.lingdong.learning.iam.domain.Role">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="role_code" javaType="java.lang.String"/>
+            <arg column="role_name" javaType="java.lang.String"/>
+            <arg column="role_type" javaType="com.lingdong.learning.iam.domain.RoleType"/>
+            <arg column="data_scope" javaType="com.lingdong.learning.iam.domain.RoleDataScope"/>
+            <arg column="built_in" javaType="_boolean"/>
+            <arg column="status" javaType="com.lingdong.learning.iam.domain.RoleStatus"/>
+            <arg column="description" javaType="java.lang.String"/>
+            <arg column="created_at" javaType="java.time.LocalDateTime"/>
+            <arg column="updated_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <select id="existsByCode" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM sys_role
+            WHERE role_code = #{code}
+        )
+    </select>
+
+    <select id="findById" resultMap="RoleResultMap">
+        SELECT
+            id,
+            role_code,
+            role_name,
+            role_type,
+            data_scope,
+            built_in,
+            status,
+            description,
+            created_at,
+            updated_at
+        FROM sys_role
+        WHERE id = #{id}
+    </select>
+
+    <insert id="insert">
+        INSERT INTO sys_role (
+            role_code,
+            role_name,
+            role_type,
+            data_scope,
+            built_in,
+            status,
+            description
+        ) VALUES (
+            #{role.code},
+            #{role.name},
+            #{role.type},
+            #{role.dataScope},
+            #{role.builtIn},
+            #{role.status},
+            #{role.description}
+        )
+    </insert>
+
+    <select id="findByCode" resultMap="RoleResultMap">
+        SELECT
+            id,
+            role_code,
+            role_name,
+            role_type,
+            data_scope,
+            built_in,
+            status,
+            description,
+            created_at,
+            updated_at
+        FROM sys_role
+        WHERE role_code = #{code}
+    </select>
+</mapper>

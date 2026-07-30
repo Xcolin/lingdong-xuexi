@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.organization.infrastructure.persistence.OrganizationTypeMapper">
+
+    <resultMap id="OrganizationTypeResultMap" type="com.lingdong.learning.organization.domain.OrganizationType">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="type_code" javaType="java.lang.String"/>
+            <arg column="type_name" javaType="java.lang.String"/>
+            <arg column="built_in" javaType="_boolean"/>
+            <arg column="status" javaType="com.lingdong.learning.organization.domain.OrganizationStatus"/>
+            <arg column="sort_order" javaType="java.lang.Integer"/>
+            <arg column="created_at" javaType="java.time.LocalDateTime"/>
+            <arg column="updated_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findByCode" resultMap="OrganizationTypeResultMap">
+        SELECT id, type_code, type_name, built_in, status, sort_order, created_at, updated_at
+        FROM sys_organization_type
+        WHERE type_code = #{code}
+    </select>
+
+    <select id="existsByCode" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM sys_organization_type
+            WHERE type_code = #{code}
+        )
+    </select>
+
+    <select id="existsByName" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM sys_organization_type
+            WHERE type_name = #{name}
+        )
+    </select>
+
+    <insert id="insert">
+        INSERT INTO sys_organization_type (
+            type_code,
+            type_name,
+            built_in,
+            status,
+            sort_order
+        ) VALUES (
+            #{organizationType.code},
+            #{organizationType.name},
+            #{organizationType.builtIn},
+            #{organizationType.status},
+            #{organizationType.sortOrder}
+        )
+    </insert>
+</mapper>

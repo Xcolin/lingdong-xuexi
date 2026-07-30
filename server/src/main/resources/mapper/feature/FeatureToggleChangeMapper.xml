@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.feature.infrastructure.persistence.FeatureToggleChangeMapper">
+ <resultMap id="ChangeMap" type="com.lingdong.learning.feature.application.FeatureToggleChange"><constructor><idArg column="task_id" javaType="java.lang.Long"/><arg column="feature_code" javaType="java.lang.String"/><arg column="target_status" javaType="com.lingdong.learning.feature.domain.FeatureStatus"/></constructor></resultMap>
+ <insert id="insert">INSERT INTO sys_feature_toggle_change(task_id,feature_code,target_status) VALUES(#{change.taskId},#{change.featureCode},#{change.targetStatus})</insert>
+ <select id="findByTaskId" resultMap="ChangeMap">SELECT task_id,feature_code,target_status FROM sys_feature_toggle_change WHERE task_id=#{taskId}</select>
+</mapper>

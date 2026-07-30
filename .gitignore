@@ -1,0 +1,8 @@
+server/target/
+server/src/main/resources/application-local.yml
+web/node_modules/
+web/dist/
+miniapp/node_modules/
+miniapp/dist/
+.idea/
+*.iml

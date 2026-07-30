@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.feature.infrastructure.persistence.FeatureToggleMapper">
+ <resultMap id="ToggleMap" type="com.lingdong.learning.feature.domain.FeatureToggle"><constructor>
+  <idArg column="id" javaType="java.lang.Long"/><arg column="feature_code" javaType="java.lang.String"/><arg column="feature_name" javaType="java.lang.String"/><arg column="scope_type" javaType="com.lingdong.learning.feature.domain.FeatureScope"/><arg column="organization_id" javaType="java.lang.Long"/><arg column="scope_key" javaType="java.lang.String"/><arg column="status" javaType="com.lingdong.learning.feature.domain.FeatureStatus"/><arg column="built_in" javaType="_boolean"/><arg column="description" javaType="java.lang.String"/>
+ </constructor></resultMap>
+ <select id="findGlobal" resultMap="ToggleMap">SELECT id, feature_code, feature_name, scope_type, organization_id, scope_key, status, built_in, description FROM sys_feature_toggle WHERE feature_code=#{code} AND scope_key='GLOBAL'</select>
+ <select id="findOrganization" resultMap="ToggleMap">SELECT id, feature_code, feature_name, scope_type, organization_id, scope_key, status, built_in, description FROM sys_feature_toggle WHERE feature_code=#{code} AND scope_key=#{scopeKey}</select>
+ <insert id="insert">INSERT INTO sys_feature_toggle (feature_code,feature_name,scope_type,organization_id,scope_key,status,built_in,description) VALUES (#{toggle.code},#{toggle.name},#{toggle.scope},#{toggle.organizationId,jdbcType=BIGINT},#{toggle.scopeKey},#{toggle.status},#{toggle.builtIn},#{toggle.description,jdbcType=VARCHAR})</insert>
+ <update id="updateGlobalStatus">UPDATE sys_feature_toggle SET status=#{status}, updated_at=CURRENT_TIMESTAMP WHERE feature_code=#{code} AND scope_key='GLOBAL'</update>
+</mapper>

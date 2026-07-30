@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.organization.infrastructure.persistence.OrganizationMapper">
+
+    <resultMap id="OrganizationResultMap" type="com.lingdong.learning.organization.domain.Organization">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="parent_id" javaType="java.lang.Long"/>
+            <arg column="parent_scope_key" javaType="java.lang.String"/>
+            <arg column="organization_code" javaType="java.lang.String"/>
+            <arg column="organization_name" javaType="java.lang.String"/>
+            <arg column="organization_type" javaType="java.lang.String"/>
+            <arg column="organization_path" javaType="java.lang.String"/>
+            <arg column="sort_order" javaType="java.lang.Integer"/>
+            <arg column="status" javaType="com.lingdong.learning.organization.domain.OrganizationStatus"/>
+            <arg column="created_at" javaType="java.time.LocalDateTime"/>
+            <arg column="updated_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findById" resultMap="OrganizationResultMap">
+        SELECT
+            id,
+            parent_id,
+            parent_scope_key,
+            organization_code,
+            organization_name,
+            organization_type,
+            organization_path,
+            sort_order,
+            status,
+            created_at,
+            updated_at
+        FROM sys_organization
+        WHERE id = #{id}
+    </select>
+
+    <select id="findByCode" resultMap="OrganizationResultMap">
+        SELECT
+            id,
+            parent_id,
+            parent_scope_key,
+            organization_code,
+            organization_name,
+            organization_type,
+            organization_path,
+            sort_order,
+            status,
+            created_at,
+            updated_at
+        FROM sys_organization
+        WHERE organization_code = #{code}
+    </select>
+
+    <select id="existsByCode" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM sys_organization
+            WHERE organization_code = #{code}
+        )
+    </select>
+
+    <select id="existsByParentScopeAndName" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM sys_organization
+            WHERE parent_scope_key = #{parentScopeKey}
+              AND organization_name = #{name}
+        )
+    </select>
+
+    <insert id="insert">
+        INSERT INTO sys_organization (
+            parent_id,
+            parent_scope_key,
+            organization_code,
+            organization_name,
+            organization_type,
+            organization_path,
+            sort_order,
+            status
+        ) VALUES (
+            #{organization.parentId, jdbcType=BIGINT},
+            #{organization.parentScopeKey},
+            #{organization.code},
+            #{organization.name},
+            #{organization.typeCode},
+            #{organization.path},
+            #{organization.sortOrder},
+            #{organization.status}
+        )
+    </insert>
+</mapper>
