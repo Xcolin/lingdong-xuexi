@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.learningtask.infrastructure.persistence.TaskPauseMapper">
+    <resultMap id="TaskPauseMap" type="com.lingdong.learning.learningtask.domain.TaskPause">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="assignment_id" javaType="java.lang.Long"/>
+            <arg column="pause_type" javaType="com.lingdong.learning.learningtask.domain.TaskPauseType"/>
+            <arg column="started_by_user_id" javaType="java.lang.Long"/>
+            <arg column="started_at" javaType="java.time.LocalDateTime"/>
+            <arg column="expires_at" javaType="java.time.LocalDateTime"/>
+            <arg column="resumed_at" javaType="java.time.LocalDateTime"/>
+            <arg column="close_type" javaType="java.lang.String"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findActive" resultMap="TaskPauseMap">
+        SELECT id, assignment_id, pause_type, started_by_user_id, started_at,
+               expires_at, resumed_at, close_type
+        FROM learn_task_pause
+        WHERE assignment_id = #{assignmentId}
+          AND resumed_at IS NULL
+          AND expires_at &gt; #{now}
+        ORDER BY started_at DESC, id DESC
+        LIMIT 1
+    </select>
+
+    <update id="closeExpired">
+        UPDATE learn_task_pause
+        SET resumed_at = expires_at, close_type = 'EXPIRED', updated_at = #{now}
+        WHERE assignment_id = #{assignmentId}
+          AND resumed_at IS NULL
+          AND expires_at &lt;= #{now}
+    </update>
+
+    <insert id="insert">
+        INSERT INTO learn_task_pause (
+            id, assignment_id, pause_type, started_by_user_id, started_at, expires_at
+        ) VALUES (
+            #{pause.id}, #{pause.assignmentId}, #{pause.pauseType}, #{pause.startedByUserId},
+            #{pause.startedAt}, #{pause.expiresAt}
+        )
+    </insert>
+
+    <update id="resume">
+        UPDATE learn_task_pause
+        SET resumed_at = #{resumedAt}, close_type = 'MANUAL', updated_at = #{resumedAt}
+        WHERE id = #{id} AND resumed_at IS NULL AND expires_at &gt; #{resumedAt}
+    </update>
+
+    <update id="terminateActive">
+        UPDATE learn_task_pause
+        SET resumed_at = #{terminatedAt}, close_type = 'TERMINATED', updated_at = #{terminatedAt}
+        WHERE assignment_id = #{assignmentId} AND resumed_at IS NULL
+    </update>
+</mapper>

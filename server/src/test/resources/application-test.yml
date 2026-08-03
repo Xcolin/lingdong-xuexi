@@ -12,3 +12,10 @@ spring:
 
 mybatis:
   mapper-locations: classpath*:mapper/**/*.xml
+
+lingdong:
+  auth:
+    student-code:
+      active-key-version: v1
+      keys:
+        v1: c3R1ZGVudC1jb2RlLXRlc3Qta2V5LXdpdGgtMzItYnl0ZXMtbWluaW11bQ==

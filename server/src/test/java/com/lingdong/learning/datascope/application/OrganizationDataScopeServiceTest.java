@@ -17,6 +17,7 @@ import com.lingdong.learning.user.domain.UserType;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -30,6 +31,7 @@ class OrganizationDataScopeServiceTest {
     @Autowired private UserAccessApplicationService userAccessApplicationService;
     @Autowired private RoleMapper roleMapper;
     @Autowired private RoleApplicationService roleApplicationService;
+    @Autowired private JdbcTemplate jdbcTemplate;
 
     @Test
     void letsAllScopeSystemAdministratorAccessAnyOrganization() {
@@ -56,6 +58,10 @@ class OrganizationDataScopeServiceTest {
 
         userAccessApplicationService.associateWithOrganization(new AssociateUserWithOrganizationCommand(teacher.id(), otherTarget.id()));
         dataScopeAdministrationService.configureOrganizationAdministrator(administrator.id(), teacher.id(), otherTarget.id());
+        assertThat(Long.toString(jdbcTemplate.queryForObject(
+                "select id from sys_organization_admin where user_id = ? and organization_id = ?",
+                Long.class, teacher.id(), otherTarget.id()
+        ))).hasSize(19);
         assertThat(organizationDataScopeService.canAccess(teacher.id(), target.id())).isFalse();
     }
 
@@ -69,6 +75,10 @@ class OrganizationDataScopeServiceTest {
         userAccessApplicationService.associateWithOrganization(new AssociateUserWithOrganizationCommand(operator.id(), target.id()));
         userAccessApplicationService.assignRole(new AssignRoleToUserCommand(operator.id(), role.id(), target.id()));
         dataScopeAdministrationService.configureRoleCustomScope(administrator.id(), role.id(), target.id());
+        assertThat(Long.toString(jdbcTemplate.queryForObject(
+                "select id from sys_role_data_scope where role_id = ? and organization_id = ?",
+                Long.class, role.id(), target.id()
+        ))).hasSize(19);
 
         assertThat(organizationDataScopeService.canAccess(operator.id(), target.id())).isTrue();
     }

@@ -1,5 +1,6 @@
 package com.lingdong.learning.organization.application;
 
+import com.lingdong.learning.common.web.ResourceNotFoundException;
 import com.lingdong.learning.organization.domain.Organization;
 import com.lingdong.learning.organization.domain.OrganizationType;
 import com.lingdong.learning.organization.infrastructure.persistence.OrganizationMapper;
@@ -27,6 +28,7 @@ class OrganizationApplicationServiceTest {
         );
 
         assertThat(organizationType.code()).isEqualTo("COMMUNITY");
+        assertThat(Long.toString(organizationType.id())).hasSize(19);
         assertThat(organizationType.builtIn()).isFalse();
     }
 
@@ -42,6 +44,8 @@ class OrganizationApplicationServiceTest {
         Organization storedSchool = organizationMapper.findByCode("SCHOOL_NORTH_1");
 
         assertThat(storedSchool.parentId()).isEqualTo(region.id());
+        assertThat(Long.toString(region.id())).hasSize(19);
+        assertThat(Long.toString(storedSchool.id())).hasSize(19);
         assertThat(storedSchool.path()).isEqualTo("/REGION_NORTH/SCHOOL_NORTH_1/");
         assertThat(storedSchool.typeCode()).isEqualTo("SCHOOL");
     }
@@ -55,5 +59,21 @@ class OrganizationApplicationServiceTest {
         assertThatThrownBy(() -> organizationApplicationService.createOrganization(
                 new CreateOrganizationCommand("REGION_REPEAT_B", "重复区域", "REGION", null, 20)
         )).isInstanceOf(DuplicateOrganizationNameException.class);
+    }
+
+    @Test
+    void reportsMissingOrganizationTypeAsAResourceNotFoundError() {
+        assertThatThrownBy(() -> organizationApplicationService.createOrganization(
+                new CreateOrganizationCommand("REGION_UNKNOWN_TYPE", "未知类型区域", "UNKNOWN_TYPE", null, 10)
+        )).isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("组织类型不存在");
+    }
+
+    @Test
+    void reportsMissingParentOrganizationAsAResourceNotFoundError() {
+        assertThatThrownBy(() -> organizationApplicationService.createOrganization(
+                new CreateOrganizationCommand("SCHOOL_UNKNOWN_PARENT", "未知上级学校", "SCHOOL", 1_000_000_000_000_000_000L, 10)
+        )).isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("父级组织不存在");
     }
 }

@@ -73,6 +73,7 @@
 
     <insert id="insert">
         INSERT INTO sys_organization (
+            id,
             parent_id,
             parent_scope_key,
             organization_code,
@@ -82,6 +83,7 @@
             sort_order,
             status
         ) VALUES (
+            #{organization.id},
             #{organization.parentId, jdbcType=BIGINT},
             #{organization.parentScopeKey},
             #{organization.code},
@@ -92,4 +94,21 @@
             #{organization.status}
         )
     </insert>
+
+    <select id="findAll" resultMap="OrganizationResultMap">
+        SELECT
+            id,
+            parent_id,
+            parent_scope_key,
+            organization_code,
+            organization_name,
+            organization_type,
+            organization_path,
+            sort_order,
+            status,
+            created_at,
+            updated_at
+        FROM sys_organization
+        ORDER BY organization_path ASC, sort_order ASC, organization_code ASC
+    </select>
 </mapper>

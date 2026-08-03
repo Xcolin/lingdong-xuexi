@@ -14,8 +14,8 @@
     </select>
 
     <insert id="insert">
-        INSERT INTO sys_user_organization (user_id, organization_id)
-        VALUES (#{userId}, #{organizationId})
+        INSERT INTO sys_user_organization (id, user_id, organization_id)
+        VALUES (#{id}, #{userId}, #{organizationId})
     </insert>
     <select id="findOrganizationIds" resultType="long">
         SELECT organization_id FROM sys_user_organization WHERE user_id = #{userId}

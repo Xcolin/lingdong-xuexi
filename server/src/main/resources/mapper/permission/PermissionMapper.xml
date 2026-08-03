@@ -1,1 +1,46 @@
-<?xml version="1.0" encoding="UTF-8" ?><!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd"><mapper namespace="com.lingdong.learning.permission.infrastructure.persistence.PermissionMapper"><resultMap id="PermissionMap" type="com.lingdong.learning.permission.domain.Permission"><constructor><idArg column="id" javaType="java.lang.Long"/><arg column="permission_code" javaType="java.lang.String"/><arg column="permission_name" javaType="java.lang.String"/><arg column="resource_type" javaType="com.lingdong.learning.permission.domain.PermissionResourceType"/><arg column="client_type" javaType="com.lingdong.learning.permission.domain.PermissionClient"/><arg column="parent_id" javaType="java.lang.Long"/><arg column="status" javaType="com.lingdong.learning.permission.domain.PermissionStatus"/><arg column="description" javaType="java.lang.String"/></constructor></resultMap><sql id="columns">id,permission_code,permission_name,resource_type,client_type,parent_id,status,description</sql><select id="findById" resultMap="PermissionMap">SELECT <include refid="columns"/> FROM sys_permission WHERE id=#{id}</select><select id="findByCode" resultMap="PermissionMap">SELECT <include refid="columns"/> FROM sys_permission WHERE permission_code=#{code}</select><select id="existsByCode" resultType="boolean">SELECT EXISTS(SELECT 1 FROM sys_permission WHERE permission_code=#{code})</select><insert id="insert">INSERT INTO sys_permission(permission_code,permission_name,resource_type,client_type,parent_id,status) VALUES(#{permission.code},#{permission.name},#{permission.resourceType},#{permission.client},#{permission.parentId,jdbcType=BIGINT},#{permission.status})</insert></mapper>
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.permission.infrastructure.persistence.PermissionMapper">
+
+    <resultMap id="PermissionMap" type="com.lingdong.learning.permission.domain.Permission">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="permission_code" javaType="java.lang.String"/>
+            <arg column="permission_name" javaType="java.lang.String"/>
+            <arg column="resource_type" javaType="com.lingdong.learning.permission.domain.PermissionResourceType"/>
+            <arg column="client_type" javaType="com.lingdong.learning.permission.domain.PermissionClient"/>
+            <arg column="parent_id" javaType="java.lang.Long"/>
+            <arg column="status" javaType="com.lingdong.learning.permission.domain.PermissionStatus"/>
+            <arg column="description" javaType="java.lang.String"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="columns">id, permission_code, permission_name, resource_type, client_type, parent_id, status, description</sql>
+
+    <select id="findById" resultMap="PermissionMap">
+        SELECT <include refid="columns"/> FROM sys_permission WHERE id = #{id}
+    </select>
+
+    <select id="findByCode" resultMap="PermissionMap">
+        SELECT <include refid="columns"/> FROM sys_permission WHERE permission_code = #{code}
+    </select>
+
+    <select id="existsByCode" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM sys_permission WHERE permission_code = #{code})
+    </select>
+
+    <select id="findAll" resultMap="PermissionMap">
+        SELECT <include refid="columns"/> FROM sys_permission ORDER BY permission_code ASC
+    </select>
+
+    <insert id="insert">
+        INSERT INTO sys_permission (
+            id, permission_code, permission_name, resource_type, client_type, parent_id, status
+        ) VALUES (
+            #{permission.id}, #{permission.code}, #{permission.name}, #{permission.resourceType},
+            #{permission.client}, #{permission.parentId,jdbcType=BIGINT}, #{permission.status}
+        )
+    </insert>
+</mapper>

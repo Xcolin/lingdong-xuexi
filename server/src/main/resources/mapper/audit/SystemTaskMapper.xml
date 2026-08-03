@@ -11,7 +11,7 @@
         <arg column="created_at" javaType="java.time.LocalDateTime"/><arg column="updated_at" javaType="java.time.LocalDateTime"/>
     </constructor></resultMap>
     <sql id="columns">id, task_code, task_type, task_title, task_description, impact_scope, status, submitted_by, submitted_at, reviewed_by, reviewed_at, review_comment, created_at, updated_at</sql>
-    <insert id="insert">INSERT INTO sys_system_task (task_code, task_type, task_title, task_description, impact_scope, status, submitted_by) VALUES (#{task.code}, #{task.type}, #{task.title}, #{task.description}, #{task.impactScope}, #{task.status}, #{task.submittedBy})</insert>
+    <insert id="insert">INSERT INTO sys_system_task (id, task_code, task_type, task_title, task_description, impact_scope, status, submitted_by) VALUES (#{task.id}, #{task.code}, #{task.type}, #{task.title}, #{task.description}, #{task.impactScope}, #{task.status}, #{task.submittedBy})</insert>
     <select id="findById" resultMap="TaskMap">SELECT <include refid="columns"/> FROM sys_system_task WHERE id = #{id}</select>
     <select id="findByCode" resultMap="TaskMap">SELECT <include refid="columns"/> FROM sys_system_task WHERE task_code = #{code}</select>
     <update id="updateSubmission">UPDATE sys_system_task SET status = #{status}, submitted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = #{id} AND status = 'DRAFT'</update>

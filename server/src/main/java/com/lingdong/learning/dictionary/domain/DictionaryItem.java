@@ -15,6 +15,7 @@ public record DictionaryItem(
         LocalDateTime updatedAt
 ) {
     public static DictionaryItem enabled(
+            Long id,
             Long typeId,
             String code,
             String name,
@@ -22,7 +23,7 @@ public record DictionaryItem(
             boolean defaultItem
     ) {
         return new DictionaryItem(
-                null,
+                id,
                 typeId,
                 code,
                 name,

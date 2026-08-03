@@ -14,6 +14,7 @@ import com.lingdong.learning.user.domain.UserType;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -25,6 +26,7 @@ class PermissionDecisionServiceTest {
     @Autowired private PermissionDecisionService permissionDecisionService;
     @Autowired private UserAccessApplicationService userAccessApplicationService;
     @Autowired private RoleMapper roleMapper;
+    @Autowired private JdbcTemplate jdbcTemplate;
 
     @Test
     void letsRoleGrantThenLetsUserDenyOverrideIt() {
@@ -34,12 +36,21 @@ class PermissionDecisionServiceTest {
         Permission permission = permissionAdministrationService.createPermission(new CreatePermissionCommand(
                 administrator.id(), "TASK_CREATE", "创建任务", PermissionResourceType.OPERATION, PermissionClient.BOTH, null
         ));
+        assertThat(Long.toString(permission.id())).hasSize(19);
         permissionAdministrationService.grantRolePermission(new GrantRolePermissionCommand(administrator.id(), parentRole.id(), permission.id()));
+        assertThat(Long.toString(jdbcTemplate.queryForObject(
+                "select id from sys_role_permission where role_id = ? and permission_id = ?",
+                Long.class, parentRole.id(), permission.id()
+        ))).hasSize(19);
         assertThat(permissionDecisionService.isAllowed(parent.id(), "TASK_CREATE")).isTrue();
 
         permissionAdministrationService.configureUserPermission(new ConfigureUserPermissionCommand(
                 administrator.id(), parent.id(), permission.id(), PermissionEffect.DENY
         ));
+        assertThat(Long.toString(jdbcTemplate.queryForObject(
+                "select id from sys_user_permission where user_id = ? and permission_id = ?",
+                Long.class, parent.id(), permission.id()
+        ))).hasSize(19);
         assertThat(permissionDecisionService.isAllowed(parent.id(), "TASK_CREATE")).isFalse();
     }
 

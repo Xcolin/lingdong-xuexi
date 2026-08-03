@@ -19,6 +19,7 @@ public record Organization(
         LocalDateTime updatedAt
 ) {
     public static Organization create(
+            Long id,
             Long parentId,
             String parentScopeKey,
             String code,
@@ -28,7 +29,7 @@ public record Organization(
             Integer sortOrder
     ) {
         return new Organization(
-                null,
+                id,
                 parentId,
                 parentScopeKey,
                 code,

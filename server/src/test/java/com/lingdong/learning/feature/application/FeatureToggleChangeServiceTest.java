@@ -31,6 +31,7 @@ class FeatureToggleChangeServiceTest {
         FeatureToggleChange change = featureToggleChangeService.createDraft(new CreateGlobalFeatureToggleChangeCommand(
                 administrator.id(), "GEO_ATTENDANCE", FeatureStatus.ENABLED, "启用地理考勤", "完成合规审核后启用"
         ));
+        assertThat(Long.toString(change.id())).hasSize(19);
         featureToggleChangeService.submit(change.taskId(), administrator.id());
         assertThat(featureAccessService.isEnabled("GEO_ATTENDANCE", null)).isFalse();
 

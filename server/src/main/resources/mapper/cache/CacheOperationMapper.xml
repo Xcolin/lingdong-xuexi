@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.cache.infrastructure.persistence.CacheOperationMapper">
+
+    <resultMap id="CacheOperationResultMap" type="com.lingdong.learning.cache.domain.CacheOperation">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="operation_code" javaType="java.lang.String"/>
+            <arg column="task_id" javaType="java.lang.Long"/>
+            <arg column="cache_domain" javaType="com.lingdong.learning.cache.domain.CacheDomain"/>
+            <arg column="operation_type" javaType="com.lingdong.learning.cache.domain.CacheOperationType"/>
+            <arg column="status" javaType="com.lingdong.learning.cache.domain.CacheOperationStatus"/>
+            <arg column="impact_description" javaType="java.lang.String"/>
+            <arg column="requested_by" javaType="java.lang.Long"/>
+            <arg column="executed_by" javaType="java.lang.Long"/>
+            <arg column="failure_message" javaType="java.lang.String"/>
+            <arg column="executed_at" javaType="java.time.LocalDateTime"/>
+            <arg column="created_at" javaType="java.time.LocalDateTime"/>
+            <arg column="updated_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="CacheOperationColumns">
+        id, operation_code, task_id, cache_domain, operation_type, status, impact_description,
+        requested_by, executed_by, failure_message, executed_at, created_at, updated_at
+    </sql>
+
+    <select id="findById" resultMap="CacheOperationResultMap">
+        SELECT <include refid="CacheOperationColumns"/>
+        FROM sys_cache_operation_log
+        WHERE id = #{id}
+    </select>
+
+    <select id="findByCode" resultMap="CacheOperationResultMap">
+        SELECT <include refid="CacheOperationColumns"/>
+        FROM sys_cache_operation_log
+        WHERE operation_code = #{code}
+    </select>
+
+    <select id="findByTaskId" resultMap="CacheOperationResultMap">
+        SELECT <include refid="CacheOperationColumns"/>
+        FROM sys_cache_operation_log
+        WHERE task_id = #{taskId}
+    </select>
+
+    <insert id="insert">
+        INSERT INTO sys_cache_operation_log (
+            id,
+            operation_code,
+            task_id,
+            cache_domain,
+            operation_type,
+            status,
+            impact_description,
+            requested_by
+        ) VALUES (
+            #{operation.id},
+            #{operation.code},
+            #{operation.taskId},
+            #{operation.domain},
+            #{operation.operationType},
+            #{operation.status},
+            #{operation.impactDescription},
+            #{operation.requestedBy}
+        )
+    </insert>
+
+    <update id="markSucceeded">
+        UPDATE sys_cache_operation_log
+        SET status = 'SUCCEEDED',
+            executed_by = #{executedBy},
+            failure_message = NULL,
+            executed_at = CURRENT_TIMESTAMP,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+          AND status = 'PENDING'
+    </update>
+
+    <update id="markFailed">
+        UPDATE sys_cache_operation_log
+        SET status = 'FAILED',
+            executed_by = #{executedBy},
+            failure_message = #{failureMessage},
+            executed_at = CURRENT_TIMESTAMP,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+          AND status = 'PENDING'
+    </update>
+</mapper>

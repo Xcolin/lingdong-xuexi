@@ -17,9 +17,9 @@ public record Role(
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
-    public static Role custom(String code, String name, String description, RoleDataScope dataScope) {
+    public static Role custom(Long id, String code, String name, String description, RoleDataScope dataScope) {
         return new Role(
-                null,
+                id,
                 code,
                 name,
                 RoleType.CUSTOM,

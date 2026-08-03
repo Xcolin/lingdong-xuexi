@@ -45,6 +45,13 @@
         )
     </select>
 
+    <select id="findEnabledCodes" resultType="java.lang.String">
+        SELECT type_code
+        FROM sys_dictionary_type
+        WHERE status = 'ENABLED'
+        ORDER BY sort_order ASC, id ASC
+    </select>
+
     <update id="update">
         UPDATE sys_dictionary_type
         SET type_name = #{dictionaryType.name},
@@ -55,7 +62,7 @@
     </update>
 
     <insert id="insert">
-        INSERT INTO sys_dictionary_type (type_code, type_name, status, sort_order)
-        VALUES (#{dictionaryType.code}, #{dictionaryType.name}, #{dictionaryType.status}, #{dictionaryType.sortOrder})
+        INSERT INTO sys_dictionary_type (id, type_code, type_name, status, sort_order)
+        VALUES (#{dictionaryType.id}, #{dictionaryType.code}, #{dictionaryType.name}, #{dictionaryType.status}, #{dictionaryType.sortOrder})
     </insert>
 </mapper>

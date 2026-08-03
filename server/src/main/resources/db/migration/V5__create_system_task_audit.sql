@@ -1,5 +1,5 @@
 CREATE TABLE sys_system_task (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     task_code VARCHAR(36) NOT NULL,
     task_type VARCHAR(64) NOT NULL,
     task_title VARCHAR(100) NOT NULL,

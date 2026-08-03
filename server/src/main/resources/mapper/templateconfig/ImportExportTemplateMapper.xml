@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.templateconfig.infrastructure.persistence.ImportExportTemplateMapper">
+    <resultMap id="TemplateMap" type="com.lingdong.learning.templateconfig.domain.ImportExportTemplateRecord">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="template_name" javaType="java.lang.String"/>
+            <arg column="template_type" javaType="com.lingdong.learning.templateconfig.domain.TemplateType"/>
+            <arg column="module_code" javaType="java.lang.String"/>
+            <arg column="version" javaType="java.lang.String"/>
+            <arg column="file_id" javaType="java.lang.Long"/>
+            <arg column="is_default" javaType="java.lang.Boolean"/>
+            <arg column="default_scope_key" javaType="java.lang.String"/>
+            <arg column="status" javaType="com.lingdong.learning.templateconfig.domain.ImportExportTemplateStatus"/>
+            <arg column="created_at" javaType="java.time.LocalDateTime"/>
+            <arg column="updated_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <insert id="insert">
+        INSERT INTO sys_import_export_template
+        (id, template_name, template_type, module_code, version, file_id, is_default, default_scope_key, status)
+        VALUES
+        (#{template.id}, #{template.templateName}, #{template.templateType}, #{template.moduleCode}, #{template.version},
+         #{template.fileId}, #{template.defaultTemplate}, #{template.defaultScopeKey}, #{template.status})
+    </insert>
+
+    <select id="findById" resultMap="TemplateMap">
+        SELECT id, template_name, template_type, module_code, version, file_id, is_default, default_scope_key, status, created_at, updated_at
+        FROM sys_import_export_template
+        WHERE id = #{id}
+    </select>
+
+    <select id="findByModuleTypeAndVersion" resultMap="TemplateMap">
+        SELECT id, template_name, template_type, module_code, version, file_id, is_default, default_scope_key, status, created_at, updated_at
+        FROM sys_import_export_template
+        WHERE module_code = #{moduleCode}
+          AND template_type = #{templateType}
+          AND version = #{version}
+    </select>
+
+    <select id="findCurrentDefault" resultMap="TemplateMap">
+        SELECT id, template_name, template_type, module_code, version, file_id, is_default, default_scope_key, status, created_at, updated_at
+        FROM sys_import_export_template
+        WHERE module_code = #{moduleCode}
+          AND template_type = #{templateType}
+          AND is_default = 1
+          AND status = 'ENABLED'
+    </select>
+
+    <update id="clearCurrentDefault">
+        UPDATE sys_import_export_template
+        SET is_default = 0,
+            default_scope_key = CONCAT('ID:', id),
+            updated_at = CURRENT_TIMESTAMP
+        WHERE module_code = #{moduleCode}
+          AND template_type = #{templateType}
+          AND is_default = 1
+    </update>
+
+    <update id="markAsDefault">
+        UPDATE sys_import_export_template
+        SET is_default = 1,
+            default_scope_key = 'DEFAULT',
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+          AND status = 'ENABLED'
+    </update>
+
+    <update id="disable">
+        UPDATE sys_import_export_template
+        SET status = 'DISABLED',
+            is_default = 0,
+            default_scope_key = CONCAT('ID:', id),
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+          AND status = 'ENABLED'
+    </update>
+</mapper>

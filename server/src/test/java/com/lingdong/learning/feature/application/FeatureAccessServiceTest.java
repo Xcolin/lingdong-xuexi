@@ -1,5 +1,6 @@
 package com.lingdong.learning.feature.application;
 
+import com.lingdong.learning.common.id.IdGenerator;
 import com.lingdong.learning.organization.application.CreateOrganizationCommand;
 import com.lingdong.learning.organization.application.OrganizationApplicationService;
 import com.lingdong.learning.organization.domain.Organization;
@@ -26,6 +27,9 @@ class FeatureAccessServiceTest {
     @Autowired
     private FeatureToggleMapper featureToggleMapper;
 
+    @Autowired
+    private IdGenerator idGenerator;
+
     @Test
     void keepsGeographyAttendanceDisabledByDefault() {
         assertThat(featureAccessService.isEnabled("GEO_ATTENDANCE", null)).isFalse();
@@ -39,7 +43,7 @@ class FeatureAccessServiceTest {
                 new CreateOrganizationCommand("REGION_FEATURE", "功能区域", "REGION", null, 10)
         );
         featureToggleMapper.insert(FeatureToggle.organizationOverride(
-                "GEO_ATTENDANCE", "地理位置考勤", organization.id(), FeatureStatus.ENABLED
+                idGenerator.nextId(), "GEO_ATTENDANCE", "地理位置考勤", organization.id(), FeatureStatus.ENABLED
         ));
 
         assertThat(featureAccessService.isEnabled("GEO_ATTENDANCE", organization.id())).isFalse();

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.attachment.infrastructure.persistence.FileRelationMapper">
+ <resultMap id="RelationMap" type="com.lingdong.learning.attachment.domain.FileRelationRecord"><constructor><idArg column="id" javaType="java.lang.Long"/><arg column="file_id" javaType="java.lang.Long"/><arg column="module_code" javaType="java.lang.String"/><arg column="business_id" javaType="java.lang.Long"/><arg column="relation_type" javaType="java.lang.String"/><arg column="visible_scope" javaType="java.lang.String"/><arg column="status" javaType="com.lingdong.learning.attachment.domain.FileRelationStatus"/><arg column="created_at" javaType="java.time.LocalDateTime"/><arg column="released_at" javaType="java.time.LocalDateTime"/></constructor></resultMap>
+ <insert id="insert">INSERT INTO sys_file_relation(id,file_id,module_code,business_id,relation_type,visible_scope,status) VALUES(#{relation.id},#{relation.fileId},#{relation.moduleCode},#{relation.businessId},#{relation.relationType},#{relation.visibleScope},#{relation.status})</insert>
+ <select id="findById" resultMap="RelationMap">SELECT id,file_id,module_code,business_id,relation_type,visible_scope,status,created_at,released_at FROM sys_file_relation WHERE id=#{id}</select>
+ <update id="markReleased">UPDATE sys_file_relation SET status='RELEASED',released_at=CURRENT_TIMESTAMP WHERE id=#{id} AND status='ACTIVE'</update>
+</mapper>

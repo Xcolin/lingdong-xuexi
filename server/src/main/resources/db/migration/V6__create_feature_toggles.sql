@@ -1,5 +1,5 @@
 CREATE TABLE sys_feature_toggle (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     feature_code VARCHAR(64) NOT NULL,
     feature_name VARCHAR(100) NOT NULL,
     scope_type VARCHAR(16) NOT NULL,
@@ -14,6 +14,6 @@ CREATE TABLE sys_feature_toggle (
     CONSTRAINT fk_sys_feature_toggle_organization FOREIGN KEY (organization_id) REFERENCES sys_organization (id)
 );
 
-INSERT INTO sys_feature_toggle (feature_code, feature_name, scope_type, scope_key, status, built_in, description) VALUES
-    ('GEO_ATTENDANCE', '地理位置考勤', 'GLOBAL', 'GLOBAL', 'DISABLED', 1, '未成年人定位能力默认关闭。'),
-    ('STUDENT_LOCATION_TRACK', '学生轨迹记录', 'GLOBAL', 'GLOBAL', 'DISABLED', 1, '未成年人轨迹记录默认关闭。');
+INSERT INTO sys_feature_toggle (id, feature_code, feature_name, scope_type, scope_key, status, built_in, description) VALUES
+    (1874244142494646284, 'GEO_ATTENDANCE', '地理位置考勤', 'GLOBAL', 'GLOBAL', 'DISABLED', 1, '未成年人定位能力默认关闭。'),
+    (1874244142494646285, 'STUDENT_LOCATION_TRACK', '学生轨迹记录', 'GLOBAL', 'GLOBAL', 'DISABLED', 1, '未成年人轨迹记录默认关闭。');

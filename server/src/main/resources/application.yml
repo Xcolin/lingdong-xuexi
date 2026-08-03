@@ -23,6 +23,27 @@ spring:
 mybatis:
   mapper-locations: classpath*:mapper/**/*.xml
 
+lingdong:
+  id:
+    snowflake:
+      datacenter-id: ${SNOWFLAKE_DATACENTER_ID:0}
+      worker-id: ${SNOWFLAKE_WORKER_ID:0}
+  auth:
+    access-token-ttl: ${AUTH_ACCESS_TOKEN_TTL:PT30M}
+    refresh-token-ttl: ${AUTH_REFRESH_TOKEN_TTL:P7D}
+    student-code:
+      active-key-version: ${STUDENT_LOGIN_CODE_ACTIVE_KEY_VERSION:v1}
+      keys:
+        v1: ${STUDENT_LOGIN_CODE_SECRET_V1:}
+    student-protection:
+      captcha-ttl: ${STUDENT_CAPTCHA_TTL:PT2M}
+      captcha-requests-per-window: ${STUDENT_CAPTCHA_REQUESTS_PER_WINDOW:10}
+      captcha-rate-window: ${STUDENT_CAPTCHA_RATE_WINDOW:PT5M}
+      account-device-login-requests-per-window: ${STUDENT_LOGIN_ACCOUNT_DEVICE_LIMIT:10}
+      source-login-requests-per-window: ${STUDENT_LOGIN_SOURCE_LIMIT:60}
+      login-rate-window: ${STUDENT_LOGIN_RATE_WINDOW:PT1M}
+      account-lock-duration: ${STUDENT_ACCOUNT_LOCK_DURATION:PT15M}
+
 wx:
   app-id: ${WX_APP_ID:}
   app-secret: ${WX_APP_SECRET:}

@@ -1,0 +1,41 @@
+{
+	"pages": [
+		{
+			"path": "pages/index/index",
+			"style": {
+				"navigationBarTitleText": "灵动学习"
+			}
+		},
+		{
+			"path": "pages/student-login/student-login",
+			"style": {
+				"navigationBarTitleText": "学生登录"
+			}
+		},
+		{
+			"path": "pages/student-home/student-home",
+			"style": {
+				"navigationBarTitleText": "灵动学习"
+			}
+		},
+		{
+			"path": "pages/task-list/task-list",
+			"style": {
+				"navigationBarTitleText": "学习任务",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+			"path": "pages/task-detail/task-detail",
+			"style": {
+				"navigationBarTitleText": "任务详情"
+			}
+		}
+	],
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "灵动学习",
+		"navigationBarBackgroundColor": "#FFFFFF",
+		"backgroundColor": "#F4F7F5"
+	}
+}

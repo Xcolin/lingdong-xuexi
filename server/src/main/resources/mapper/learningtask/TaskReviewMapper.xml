@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.learningtask.infrastructure.persistence.TaskReviewMapper">
+    <resultMap id="TaskReviewRowMap"
+               type="com.lingdong.learning.learningtask.infrastructure.persistence.TaskReviewRow">
+        <constructor>
+            <idArg column="assignment_id" javaType="java.lang.Long"/>
+            <arg column="task_id" javaType="java.lang.Long"/>
+            <arg column="title" javaType="java.lang.String"/>
+            <arg column="student_id" javaType="java.lang.Long"/>
+            <arg column="student_name" javaType="java.lang.String"/>
+            <arg column="source_type" javaType="com.lingdong.learning.learningtask.domain.LearningTaskSourceType"/>
+            <arg column="source_organization_id" javaType="java.lang.Long"/>
+            <arg column="source_organization_name" javaType="java.lang.String"/>
+            <arg column="current_status" javaType="java.lang.String"/>
+            <arg column="current_reviewer_id" javaType="java.lang.Long"/>
+            <arg column="reviewer_display_name" javaType="java.lang.String"/>
+            <arg column="checkin_id" javaType="java.lang.Long"/>
+            <arg column="submission_no" javaType="java.lang.Integer"/>
+            <arg column="checkin_content" javaType="java.lang.String"/>
+            <arg column="checkin_status" javaType="java.lang.String"/>
+            <arg column="submitted_at" javaType="java.time.LocalDateTime"/>
+            <arg column="review_comment" javaType="java.lang.String"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="TaskReviewStateRowMap"
+               type="com.lingdong.learning.learningtask.infrastructure.persistence.TaskReviewStateRow">
+        <constructor>
+            <idArg column="assignment_id" javaType="java.lang.Long"/>
+            <arg column="student_id" javaType="java.lang.Long"/>
+            <arg column="current_status" javaType="com.lingdong.learning.learningtask.domain.TaskAssignmentStatus"/>
+            <arg column="current_reviewer_id" javaType="java.lang.Long"/>
+            <arg column="version_no" javaType="java.lang.Integer"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="reviewColumns">
+        assignment.id AS assignment_id,
+        task.id AS task_id,
+        task.title,
+        student.id AS student_id,
+        student.student_name,
+        assignment.source_type,
+        assignment.source_organization_id,
+        source_organization.organization_name AS source_organization_name,
+        assignment.current_status,
+        assignment.current_reviewer_id,
+        reviewer.display_name AS reviewer_display_name,
+        checkin.id AS checkin_id,
+        checkin.submission_no,
+        checkin.content AS checkin_content,
+        checkin.status AS checkin_status,
+        checkin.submitted_at,
+        checkin.review_comment
+    </sql>
+
+    <sql id="reviewJoins">
+        FROM learn_task_assignment assignment
+        JOIN learn_task task ON task.id = assignment.task_id
+        JOIN edu_student student ON student.id = assignment.student_id
+        JOIN sys_user reviewer ON reviewer.id = assignment.current_reviewer_id
+        LEFT JOIN sys_organization source_organization
+          ON source_organization.id = assignment.source_organization_id
+        JOIN learn_task_checkin checkin
+          ON checkin.assignment_id = assignment.id
+         AND checkin.submission_no = (
+             SELECT MAX(checkin_version.submission_no)
+             FROM learn_task_checkin checkin_version
+             WHERE checkin_version.assignment_id = assignment.id
+         )
+    </sql>
+
+    <select id="findPage" resultMap="TaskReviewRowMap">
+        SELECT <include refid="reviewColumns"/>
+        <include refid="reviewJoins"/>
+        WHERE assignment.current_reviewer_id = #{reviewerUserId}
+          AND assignment.current_status = 'PENDING_REVIEW'
+          AND checkin.status = 'SUBMITTED'
+        ORDER BY checkin.submitted_at ASC, assignment.id ASC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="count" resultType="long">
+        SELECT COUNT(1)
+        <include refid="reviewJoins"/>
+        WHERE assignment.current_reviewer_id = #{reviewerUserId}
+          AND assignment.current_status = 'PENDING_REVIEW'
+          AND checkin.status = 'SUBMITTED'
+    </select>
+
+    <select id="findByAssignmentIdAndReviewer" resultMap="TaskReviewRowMap">
+        SELECT <include refid="reviewColumns"/>
+        <include refid="reviewJoins"/>
+        WHERE assignment.id = #{assignmentId}
+          AND assignment.current_reviewer_id = #{reviewerUserId}
+          AND assignment.current_status = 'PENDING_REVIEW'
+          AND checkin.status = 'SUBMITTED'
+    </select>
+
+    <select id="findStateForUpdate" resultMap="TaskReviewStateRowMap">
+        SELECT id AS assignment_id, student_id, current_status, current_reviewer_id, version_no
+        FROM learn_task_assignment
+        WHERE id = #{assignmentId} AND current_reviewer_id = #{reviewerUserId}
+        FOR UPDATE
+    </select>
+</mapper>

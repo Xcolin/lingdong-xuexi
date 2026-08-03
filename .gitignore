@@ -4,5 +4,10 @@ web/node_modules/
 web/dist/
 miniapp/node_modules/
 miniapp/dist/
+.npm-cache/
+.corepack/
+web/npm-install.*.log
+web/web-dev.*.log
+miniapp/npm-install.*.log
 .idea/
 *.iml

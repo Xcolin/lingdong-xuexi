@@ -79,6 +79,7 @@
 
     <insert id="insert">
         INSERT INTO sys_dictionary_item (
+            id,
             type_id,
             item_code,
             item_name,
@@ -86,6 +87,7 @@
             is_default,
             status
         ) VALUES (
+            #{dictionaryItem.id},
             #{dictionaryItem.typeId},
             #{dictionaryItem.code},
             #{dictionaryItem.name},

@@ -1,5 +1,7 @@
 package com.lingdong.learning.organization.application;
 
+import com.lingdong.learning.common.id.IdGenerator;
+import com.lingdong.learning.common.web.ResourceNotFoundException;
 import com.lingdong.learning.organization.domain.Organization;
 import com.lingdong.learning.organization.domain.OrganizationStatus;
 import com.lingdong.learning.organization.domain.OrganizationType;
@@ -23,13 +25,16 @@ public class OrganizationApplicationService {
 
     private final OrganizationMapper organizationMapper;
     private final OrganizationTypeMapper organizationTypeMapper;
+    private final IdGenerator idGenerator;
 
     public OrganizationApplicationService(
             OrganizationMapper organizationMapper,
-            OrganizationTypeMapper organizationTypeMapper
+            OrganizationTypeMapper organizationTypeMapper,
+            IdGenerator idGenerator
     ) {
         this.organizationMapper = organizationMapper;
         this.organizationTypeMapper = organizationTypeMapper;
+        this.idGenerator = idGenerator;
     }
 
     /**
@@ -48,7 +53,7 @@ public class OrganizationApplicationService {
             throw new DuplicateOrganizationTypeException(code);
         }
 
-        OrganizationType organizationType = OrganizationType.custom(code, name, sortOrder);
+        OrganizationType organizationType = OrganizationType.custom(idGenerator.nextId(), code, name, sortOrder);
         try {
             organizationTypeMapper.insert(organizationType);
             return organizationTypeMapper.findByCode(code);
@@ -71,8 +76,11 @@ public class OrganizationApplicationService {
         validateTypeCode(typeCode);
 
         OrganizationType organizationType = organizationTypeMapper.findByCode(typeCode);
-        if (organizationType == null || organizationType.status() != OrganizationStatus.ENABLED) {
-            throw new IllegalStateException("组织类型不存在或已停用：" + typeCode);
+        if (organizationType == null) {
+            throw new ResourceNotFoundException("组织类型不存在：" + typeCode);
+        }
+        if (organizationType.status() != OrganizationStatus.ENABLED) {
+            throw new IllegalStateException("组织类型已停用：" + typeCode);
         }
 
         String name = requiredText(command.name(), "组织名称", maximumNameLength(typeCode));
@@ -92,6 +100,7 @@ public class OrganizationApplicationService {
         }
 
         Organization organization = Organization.create(
+                idGenerator.nextId(),
                 command.parentId(),
                 parentContext.scopeKey(),
                 code,
@@ -118,7 +127,7 @@ public class OrganizationApplicationService {
 
         Organization parent = organizationMapper.findById(parentId);
         if (parent == null) {
-            throw new IllegalArgumentException("父级组织不存在：" + parentId);
+            throw new ResourceNotFoundException("父级组织不存在：" + parentId);
         }
         if (parent.status() != OrganizationStatus.ENABLED) {
             throw new IllegalStateException("父级组织已停用，不能新增下级组织：" + parentId);

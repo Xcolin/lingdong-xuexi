@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.learningtask.infrastructure.persistence.LearningTaskMapper">
+    <resultMap id="LearningTaskMap" type="com.lingdong.learning.learningtask.domain.LearningTask">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="source_type" javaType="com.lingdong.learning.learningtask.domain.LearningTaskSourceType"/>
+            <arg column="source_organization_id" javaType="java.lang.Long"/>
+            <arg column="creator_user_id" javaType="java.lang.Long"/>
+            <arg column="title" javaType="java.lang.String"/>
+            <arg column="difficulty_level" javaType="java.lang.Integer"/>
+            <arg column="base_points" javaType="java.lang.Integer"/>
+            <arg column="duration_minutes" javaType="java.lang.Integer"/>
+            <arg column="scheduled_date" javaType="java.time.LocalDate"/>
+            <arg column="category_code" javaType="java.lang.String"/>
+            <arg column="remark" javaType="java.lang.String"/>
+            <arg column="reviewer_user_id" javaType="java.lang.Long"/>
+            <arg column="review_timeout_hours" javaType="java.lang.Integer"/>
+            <arg column="status" javaType="com.lingdong.learning.learningtask.domain.LearningTaskStatus"/>
+            <arg column="published_at" javaType="java.time.LocalDateTime"/>
+            <arg column="created_at" javaType="java.time.LocalDateTime"/>
+            <arg column="updated_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="columns">
+        id, source_type, source_organization_id, creator_user_id, title, difficulty_level,
+        base_points, duration_minutes, scheduled_date, category_code, remark, reviewer_user_id,
+        review_timeout_hours, status, published_at, created_at, updated_at
+    </sql>
+
+    <sql id="managedFilters">
+        <where>
+            AND (
+                1 = 0
+                <if test="query.parent">
+                    OR (source_type = 'FAMILY' AND creator_user_id = #{query.currentUserId})
+                </if>
+                <if test="query.teacher">
+                    OR (source_type = 'TEACHER' AND creator_user_id = #{query.currentUserId})
+                </if>
+                <if test="query.organizationAdministrator">
+                    OR (source_type = 'ORGANIZATION' AND EXISTS (
+                        SELECT 1
+                        FROM sys_organization task_source_organization
+                        JOIN sys_organization administrator_root
+                          ON task_source_organization.organization_path
+                             LIKE CONCAT(administrator_root.organization_path, '%')
+                        JOIN sys_organization_admin organization_admin
+                          ON organization_admin.organization_id = administrator_root.id
+                        WHERE task_source_organization.id = learn_task.source_organization_id
+                          AND organization_admin.user_id = #{query.currentUserId}
+                    ))
+                </if>
+            )
+            <if test="query.sourceType != null">
+                AND source_type = #{query.sourceType}
+            </if>
+            <if test="query.status != null">
+                AND status = #{query.status}
+            </if>
+            <if test="query.scheduledDate != null">
+                AND scheduled_date = #{query.scheduledDate}
+            </if>
+            <if test="query.keyword != null">
+                AND title LIKE CONCAT('%', #{query.keyword}, '%')
+            </if>
+        </where>
+    </sql>
+
+    <select id="findById" resultMap="LearningTaskMap">
+        SELECT <include refid="columns"/> FROM learn_task WHERE id = #{id}
+    </select>
+
+    <select id="findByIdForUpdate" resultMap="LearningTaskMap">
+        SELECT <include refid="columns"/> FROM learn_task WHERE id = #{id} FOR UPDATE
+    </select>
+
+    <select id="findPage" resultMap="LearningTaskMap">
+        SELECT <include refid="columns"/> FROM learn_task
+        <include refid="managedFilters"/>
+        ORDER BY scheduled_date DESC, created_at DESC, id DESC
+        LIMIT #{query.limit} OFFSET #{query.offset}
+    </select>
+
+    <select id="count" resultType="long">
+        SELECT COUNT(1) FROM learn_task <include refid="managedFilters"/>
+    </select>
+
+    <insert id="insert">
+        INSERT INTO learn_task (
+            id, source_type, source_organization_id, creator_user_id, title, difficulty_level,
+            base_points, duration_minutes, scheduled_date, category_code, remark, reviewer_user_id,
+            review_timeout_hours, status
+        ) VALUES (
+            #{task.id}, #{task.sourceType}, #{task.sourceOrganizationId, jdbcType=BIGINT},
+            #{task.creatorUserId}, #{task.title}, #{task.difficultyLevel}, #{task.basePoints},
+            #{task.durationMinutes}, #{task.scheduledDate}, #{task.categoryCode, jdbcType=VARCHAR},
+            #{task.remark, jdbcType=VARCHAR}, #{task.reviewerUserId}, #{task.reviewTimeoutHours},
+            #{task.status}
+        )
+    </insert>
+
+    <update id="updateDraft">
+        UPDATE learn_task
+        SET title = #{task.title}, difficulty_level = #{task.difficultyLevel},
+            base_points = #{task.basePoints}, duration_minutes = #{task.durationMinutes},
+            scheduled_date = #{task.scheduledDate}, category_code = #{task.categoryCode, jdbcType=VARCHAR},
+            remark = #{task.remark, jdbcType=VARCHAR}, reviewer_user_id = #{task.reviewerUserId},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{task.id} AND status = 'DRAFT'
+    </update>
+
+    <update id="markPublished">
+        UPDATE learn_task
+        SET status = 'PUBLISHED', published_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id} AND status = 'DRAFT'
+    </update>
+</mapper>

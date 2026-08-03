@@ -1,5 +1,6 @@
 package com.lingdong.learning.feature.application;
 
+import com.lingdong.learning.common.id.IdGenerator;
 import com.lingdong.learning.audit.application.CreateSystemTaskCommand;
 import com.lingdong.learning.audit.application.ImpactScope;
 import com.lingdong.learning.audit.application.SystemTask;
@@ -17,7 +18,8 @@ public class FeatureToggleChangeService {
     private final FeatureToggleMapper toggleMapper;
     private final FeatureToggleChangeMapper changeMapper;
     private final SystemTaskApplicationService taskService;
-    public FeatureToggleChangeService(FeatureToggleMapper toggleMapper, FeatureToggleChangeMapper changeMapper, SystemTaskApplicationService taskService) { this.toggleMapper=toggleMapper; this.changeMapper=changeMapper; this.taskService=taskService; }
+    private final IdGenerator idGenerator;
+    public FeatureToggleChangeService(FeatureToggleMapper toggleMapper, FeatureToggleChangeMapper changeMapper, SystemTaskApplicationService taskService, IdGenerator idGenerator) { this.toggleMapper=toggleMapper; this.changeMapper=changeMapper; this.taskService=taskService; this.idGenerator=idGenerator; }
 
     @Transactional
     public FeatureToggleChange createDraft(CreateGlobalFeatureToggleChangeCommand command) {
@@ -25,7 +27,7 @@ public class FeatureToggleChangeService {
         if(toggle==null) throw new IllegalArgumentException("未配置的全局功能："+command.featureCode());
         if(command.targetStatus()==null) throw new IllegalArgumentException("目标功能状态不能为空");
         SystemTask task=taskService.createDraft(new CreateSystemTaskCommand(command.submitterId(), SystemTaskType.GLOBAL_FEATURE_TOGGLE, command.title(), command.description(), ImpactScope.GLOBAL));
-        FeatureToggleChange change=new FeatureToggleChange(task.id(), command.featureCode(), command.targetStatus());
+        FeatureToggleChange change=new FeatureToggleChange(idGenerator.nextId(), task.id(), command.featureCode(), command.targetStatus());
         changeMapper.insert(change); return change;
     }
     @Transactional public void submit(Long taskId, Long submitterId) { taskService.submit(taskId, submitterId); }

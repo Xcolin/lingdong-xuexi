@@ -41,12 +41,14 @@
 
     <insert id="insert">
         INSERT INTO sys_organization_type (
+            id,
             type_code,
             type_name,
             built_in,
             status,
             sort_order
         ) VALUES (
+            #{organizationType.id},
             #{organizationType.code},
             #{organizationType.name},
             #{organizationType.builtIn},
@@ -54,4 +56,10 @@
             #{organizationType.sortOrder}
         )
     </insert>
+
+    <select id="findAll" resultMap="OrganizationTypeResultMap">
+        SELECT id, type_code, type_name, built_in, status, sort_order, created_at, updated_at
+        FROM sys_organization_type
+        ORDER BY sort_order ASC, type_code ASC
+    </select>
 </mapper>

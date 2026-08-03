@@ -1,6 +1,7 @@
 package com.lingdong.learning.audit.application;
 
 import com.lingdong.learning.audit.infrastructure.persistence.SystemTaskMapper;
+import com.lingdong.learning.common.id.IdGenerator;
 import com.lingdong.learning.user.infrastructure.persistence.UserRoleMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,7 +12,8 @@ import java.util.UUID;
 public class SystemTaskApplicationService {
     private final SystemTaskMapper taskMapper;
     private final UserRoleMapper userRoleMapper;
-    public SystemTaskApplicationService(SystemTaskMapper taskMapper, UserRoleMapper userRoleMapper) { this.taskMapper = taskMapper; this.userRoleMapper = userRoleMapper; }
+    private final IdGenerator idGenerator;
+    public SystemTaskApplicationService(SystemTaskMapper taskMapper, UserRoleMapper userRoleMapper, IdGenerator idGenerator) { this.taskMapper = taskMapper; this.userRoleMapper = userRoleMapper; this.idGenerator = idGenerator; }
 
     @Transactional
     public SystemTask createDraft(CreateSystemTaskCommand command) {
@@ -20,7 +22,7 @@ public class SystemTaskApplicationService {
         String description = required(command.description(), "任务说明", 1000);
         if (command.type() == null || command.impactScope() == null) throw new IllegalArgumentException("任务类型和影响范围不能为空");
         String code = UUID.randomUUID().toString();
-        taskMapper.insert(new SystemTask(null, code, command.type(), title, description, command.impactScope(), SystemTaskStatus.DRAFT, command.submitterId(), null, null, null, null, null, null));
+        taskMapper.insert(new SystemTask(idGenerator.nextId(), code, command.type(), title, description, command.impactScope(), SystemTaskStatus.DRAFT, command.submitterId(), null, null, null, null, null, null));
         return taskMapper.findByCode(code);
     }
     @Transactional

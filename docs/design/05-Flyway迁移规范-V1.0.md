@@ -12,6 +12,7 @@
 3. 已在任一共享环境执行的版本化脚本不可修改、重命名或删除；修复通过新的前向版本完成。
 4. `flyway_schema_history` 是环境数据库版本事实源。发布、验收和故障排查均以其中记录为准。
 5. 迁移脚本不得包含账号密码、微信密钥、对象存储密钥、真实个人信息或生产数据样本。
+6. 所有新表必须使用应用层雪花算法生成的 `id BIGINT NOT NULL PRIMARY KEY`；不得使用自增、联合主键或外键字段作为主键，关联业务键使用唯一约束保留。
 
 ## 2. 当前目录与命名
 
@@ -20,7 +21,7 @@
 
 | 项目 | 规定 |
 |---|---|
-| 下一版本 | 当前最高版本是 `V9`，下一个迁移从 `V10__...sql` 开始。 |
+| 当前最高版本 | 当前最高版本是 `V20`；后续迁移从 `V21__...sql` 开始。 |
 | 版本号 | 按单调递增整数分配；不得补写已低于共享环境版本的脚本。 |
 | 描述 | 使用英文小写与下划线，准确说明变更目的，例如 `V10__create_dictionary_tables.sql`。 |
 | 一个脚本的范围 | 一个可独立验证的业务数据变更单元；不把无关模块改动混在同一脚本。 |
@@ -41,12 +42,12 @@
 ## 4. 脚本结构要求
 
 ```sql
--- Purpose: create dictionary tables required by FSD-SYS-03.
--- Source: docs/design/04-数据库设计-V1.0.md.
--- Verification: dictionary type/item tables exist and constraints are valid.
+-- 用途：创建 FSD-SYS-03 所需的数据字典表。
+-- 来源：docs/design/04-数据库设计-V1.0.md。
+-- 验证：字典类型、字典项表及其约束存在且有效。
 
 CREATE TABLE sys_dictionary_type (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     type_code VARCHAR(64) NOT NULL,
     type_name VARCHAR(64) NOT NULL,
     status VARCHAR(16) NOT NULL DEFAULT 'ENABLED',
@@ -57,7 +58,7 @@ CREATE TABLE sys_dictionary_type (
 );
 ```
 
-示例仅说明结构和注释方式；实际脚本须以评审后的数据库设计、字段定义和目标数据库方言为准。对于非幂等 Flyway 版本脚本，不应通过 `IF NOT EXISTS` 掩盖版本漂移；应让迁移失败暴露环境不一致问题并按流程处理。
+示例仅说明结构和注释方式；`id` 由应用服务在写入前分配。实际脚本须以评审后的数据库设计、字段定义和目标数据库方言为准。对于非幂等 Flyway 版本脚本，不应通过 `IF NOT EXISTS` 掩盖版本漂移；应让迁移失败暴露环境不一致问题并按流程处理。
 
 ## 5. 编写与发布流程
 
@@ -106,7 +107,9 @@ flowchart LR
 
 Flyway 不提供业务意义上的自动回滚。设计时应优先使用向前兼容迁移：先加字段/表、部署兼容代码、完成回填、再在后续版本清理废弃结构。
 
-## 8. V1-V9 基线核对
+## 8. V1-V22 基线与当前迁移核对
+
+当前 V1-V11 在尚未执行到任何共享环境时已重建：18 张表均使用非 identity 的雪花 `BIGINT id` 主键，原联合主键和 `sys_feature_toggle_change.task_id` 主键均已改为保留业务语义的唯一约束。V12-V15 新增接口服务、附件、导入导出模板和设备会话表；V16-V18 仅写入预生成的 19 位权限与授权主键；V19 新增 3 张学生关系表；V20 新增 1 张家长绑定邀请表；V21 新增 2 张学生账号与凭证表、2 项权限、4 条角色授权和 1 个功能开关，全部不使用自增主键。访问/刷新凭证、邀请令牌和学生登录码均不以明文持久化。当前只在本地 H2 MySQL 兼容模式执行 V1-V21，尚未在共享测试、预生产或生产数据库执行；首次进入受控环境后，任何已执行版本均不得修改。
 
 | 版本 | 核对要点 |
 |---|---|
@@ -116,8 +119,26 @@ Flyway 不提供业务意义上的自动回滚。设计时应优先使用向前�
 | V6-V7 | 地理考勤、轨迹默认关闭；开关变更必须关联系统任务。 |
 | V8 | 用户权限显式允许/禁止可建立。 |
 | V9 | 角色自定义组织范围可建立。 |
+| V10 | 数据字典类型、字典项、唯一约束和按类型/状态/排序的查询索引可建立；不预置无业务依据的字典数据。 |
+| V11 | 缓存操作台账可关联高风险系统任务、请求人和执行人，并记录成功或失败结果；不保存 Redis 内容或会话数据。 |
+| V12 | 接口服务、变更提案与调用结果摘要可建立；变更任务唯一关联，调用日志不保存凭证、请求或响应报文。 |
+| V13 | 附件规则、格式白名单、文件元数据和业务关系可建立；对象键唯一，业务关系解除保留历史元数据。 |
+| V14 | 导入导出模板表可建立；模板附件关联已存在文件，模块/类型/版本唯一，范围键约束同模块同类型最多一个默认模板。 |
+| V15 | `auth_device_session` 可建立；`id` 为应用层雪花主键，访问/刷新令牌摘要分别唯一，存在用户与状态组合索引，且通过用户外键关联 `sys_user`。 |
+| V16 | 可在既有权限表中建立 12 个 `IAM_` Web 操作权限，并为内置 `SYS_ADMIN` 建立 12 条角色权限关联；权限和关联标识均为预生成的 19 位雪花常量。 |
+| V17 | 可在既有权限表中建立 4 个 `ORG_` Web 操作权限，并为内置 `SYS_ADMIN` 建立 4 条角色权限关联；权限和关联标识均为预生成的 19 位雪花常量。 |
+| V18 | 可在既有权限表中建立 `IAM_USER_LIST`、`IAM_USER_STATUS_CHANGE` 两个 Web 操作权限，并为内置 `SYS_ADMIN` 建立 2 条角色权限关联；权限和关联标识均为预生成的 19 位雪花常量。 |
+| V19 | 可建立 `edu_student`、`edu_parent_student`、`edu_student_organization`；三表 `id` 均为应用层雪花 `BIGINT` 主键。`STUDENT_CREATE` 授予家长、机构管理员，`STUDENT_READ` 另授予系统管理员；家长关系和学生机构关系均有活动查询索引与业务唯一约束。 |
+| V20 | 可建立 `edu_parent_binding_invitation`；其 `id` 为应用层雪花 `BIGINT` 主键，令牌摘要唯一，`(student_id, pending_scope_key)` 保证每名学生仅有一条待处理邀请。`STUDENT_PARENT_INVITE_CREATE` 授予 `ORG_ADMIN`，`STUDENT_PARENT_INVITE_RESPOND` 授予 `PARENT`。 |
+| V21 | 可建立 `auth_student_account_sequence`、`auth_student_credential`；两表 `id` 均为应用层雪花 `BIGINT` 主键。年份、学生用户唯一，失败次数和验证码标识具备检查约束；新增 `STUDENT_CREDENTIAL_INITIALIZE`、`STUDENT_LOGIN_CODE_RESET` 并授权家长与机构管理员，初始化 `STUDENT_CODE_LOGIN` 全局启用开关。迁移不批量生成历史学生账号或登录码。 |
 
-后续首次补齐字典、附件、模板、接口服务时，必须从 `V10` 顺序新增，不重写 V1-V9。
+### 8.3 V22 学习任务迁移
+
+`V22__create_learning_task_foundation.sql` 新增 `edu_teacher_class`、`learn_task`、`learn_task_target`、`learn_task_tag` 和 `learn_task_assignment`。五张表的 `id` 均为非 identity `BIGINT`，只允许应用层雪花算法写入；脚本不生成演示任务、班级关系或学生实例。
+
+V22 同时初始化 `TASK_CATEGORY`、`TASK_TAG` 字典及最小启用项，初始化 `LEARNING_TASK_MANAGEMENT` 全局开关，新增学生/教师班级配置、任务创建/管理查询/发布和学生本人任务查询共 6 项权限，并向 `ORG_ADMIN`、`PARENT`、`TEACHER`、`STUDENT` 内置角色写入对应授权。迁移测试已在本地 H2 MySQL 兼容模式从空库连续执行 V1 至 V22，并核对新表、非自增主键、约束、索引和基础授权。
+
+后续补齐任务认领、打卡、审核、积分、模板内容、导入导出任务、扫码/微信登录、消息投递及关系变更等能力时，必须从 `V23` 顺序新增，不重写 V1-V22。
 
 ## 9. 验收清单
 

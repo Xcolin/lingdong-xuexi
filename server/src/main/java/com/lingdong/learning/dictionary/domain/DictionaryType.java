@@ -12,7 +12,7 @@ public record DictionaryType(
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
-    public static DictionaryType enabled(String code, String name, int sortOrder) {
-        return new DictionaryType(null, code, name, DictionaryStatus.ENABLED, sortOrder, null, null);
+    public static DictionaryType enabled(Long id, String code, String name, int sortOrder) {
+        return new DictionaryType(id, code, name, DictionaryStatus.ENABLED, sortOrder, null, null);
     }
 }

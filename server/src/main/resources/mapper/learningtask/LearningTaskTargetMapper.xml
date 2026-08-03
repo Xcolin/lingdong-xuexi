@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.learningtask.infrastructure.persistence.LearningTaskTargetMapper">
+    <resultMap id="LearningTaskTargetMap" type="com.lingdong.learning.learningtask.domain.LearningTaskTarget">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="task_id" javaType="java.lang.Long"/>
+            <arg column="target_type" javaType="com.lingdong.learning.learningtask.domain.LearningTaskTargetType"/>
+            <arg column="target_id" javaType="java.lang.Long"/>
+            <arg column="created_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findByTaskId" resultMap="LearningTaskTargetMap">
+        SELECT id, task_id, target_type, target_id, created_at
+        FROM learn_task_target
+        WHERE task_id = #{taskId}
+        ORDER BY target_type, target_id
+    </select>
+
+    <insert id="insert">
+        INSERT INTO learn_task_target (id, task_id, target_type, target_id)
+        VALUES (#{target.id}, #{target.taskId}, #{target.targetType}, #{target.targetId})
+    </insert>
+
+    <delete id="deleteByTaskId">
+        DELETE FROM learn_task_target WHERE task_id = #{taskId}
+    </delete>
+</mapper>

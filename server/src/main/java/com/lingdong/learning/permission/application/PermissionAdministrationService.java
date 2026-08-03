@@ -1,5 +1,8 @@
 package com.lingdong.learning.permission.application;
 
+import com.lingdong.learning.common.id.IdGenerator;
+import com.lingdong.learning.common.security.SystemOperationAccessDeniedException;
+import com.lingdong.learning.common.web.ResourceNotFoundException;
 import com.lingdong.learning.iam.infrastructure.persistence.RoleMapper;
 import com.lingdong.learning.permission.domain.Permission;
 import com.lingdong.learning.permission.domain.PermissionStatus;
@@ -25,6 +28,7 @@ public class PermissionAdministrationService {
     private final UserRoleMapper userRoleMapper;
     private final RolePermissionMapper rolePermissionMapper;
     private final UserPermissionMapper userPermissionMapper;
+    private final IdGenerator idGenerator;
 
     public PermissionAdministrationService(
             PermissionMapper permissionMapper,
@@ -32,7 +36,8 @@ public class PermissionAdministrationService {
             UserMapper userMapper,
             UserRoleMapper userRoleMapper,
             RolePermissionMapper rolePermissionMapper,
-            UserPermissionMapper userPermissionMapper
+            UserPermissionMapper userPermissionMapper,
+            IdGenerator idGenerator
     ) {
         this.permissionMapper = permissionMapper;
         this.roleMapper = roleMapper;
@@ -40,6 +45,7 @@ public class PermissionAdministrationService {
         this.userRoleMapper = userRoleMapper;
         this.rolePermissionMapper = rolePermissionMapper;
         this.userPermissionMapper = userPermissionMapper;
+        this.idGenerator = idGenerator;
     }
 
     @Transactional
@@ -51,14 +57,14 @@ public class PermissionAdministrationService {
             throw new IllegalArgumentException("权限资源类型和客户端不能为空");
         }
         if (command.parentId() != null && permissionMapper.findById(command.parentId()) == null) {
-            throw new IllegalArgumentException("父级权限不存在");
+            throw new ResourceNotFoundException("父级权限不存在：" + command.parentId());
         }
         if (permissionMapper.existsByCode(code)) {
             throw new IllegalStateException("权限编码已存在：" + code);
         }
 
         Permission permission = new Permission(
-                null, code, name, command.resourceType(), command.client(), command.parentId(), PermissionStatus.ENABLED, null
+                idGenerator.nextId(), code, name, command.resourceType(), command.client(), command.parentId(), PermissionStatus.ENABLED, null
         );
         try {
             permissionMapper.insert(permission);
@@ -71,24 +77,32 @@ public class PermissionAdministrationService {
     @Transactional
     public void grantRolePermission(GrantRolePermissionCommand command) {
         requireSystemAdministrator(command.operatorId());
-        if (roleMapper.findById(command.roleId()) == null || permissionMapper.findById(command.permissionId()) == null) {
-            throw new IllegalArgumentException("角色或权限不存在");
+        if (roleMapper.findById(command.roleId()) == null) {
+            throw new ResourceNotFoundException("角色不存在：" + command.roleId());
+        }
+        if (permissionMapper.findById(command.permissionId()) == null) {
+            throw new ResourceNotFoundException("权限不存在：" + command.permissionId());
         }
         if (rolePermissionMapper.exists(command.roleId(), command.permissionId())) {
             throw new IllegalStateException("角色已拥有该权限");
         }
-        rolePermissionMapper.insert(command.roleId(), command.permissionId());
+        rolePermissionMapper.insert(idGenerator.nextId(), command.roleId(), command.permissionId());
     }
 
     @Transactional
     public void configureUserPermission(ConfigureUserPermissionCommand command) {
         requireSystemAdministrator(command.operatorId());
-        if (userMapper.findById(command.userId()) == null || permissionMapper.findById(command.permissionId()) == null
-                || command.effect() == null) {
-            throw new IllegalArgumentException("用户、权限或权限效果不存在");
+        if (userMapper.findById(command.userId()) == null) {
+            throw new ResourceNotFoundException("用户不存在：" + command.userId());
+        }
+        if (permissionMapper.findById(command.permissionId()) == null) {
+            throw new ResourceNotFoundException("权限不存在：" + command.permissionId());
+        }
+        if (command.effect() == null) {
+            throw new IllegalArgumentException("权限效果不能为空");
         }
         if (userPermissionMapper.findEffect(command.userId(), command.permissionId()) == null) {
-            userPermissionMapper.insert(command.userId(), command.permissionId(), command.effect());
+            userPermissionMapper.insert(idGenerator.nextId(), command.userId(), command.permissionId(), command.effect());
         } else {
             userPermissionMapper.update(command.userId(), command.permissionId(), command.effect());
         }
@@ -104,7 +118,7 @@ public class PermissionAdministrationService {
 
     private void requireSystemAdministrator(Long operatorId) {
         if (operatorId == null || !userRoleMapper.hasRoleCode(operatorId, "SYS_ADMIN")) {
-            throw new IllegalStateException("仅系统管理员可管理权限");
+            throw new SystemOperationAccessDeniedException("仅系统管理员可管理权限");
         }
     }
 

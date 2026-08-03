@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.learningtask.infrastructure.persistence.TaskCheckInMapper">
+    <resultMap id="TaskCheckInMap" type="com.lingdong.learning.learningtask.domain.TaskCheckIn">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="assignment_id" javaType="java.lang.Long"/>
+            <arg column="submission_no" javaType="java.lang.Integer"/>
+            <arg column="content" javaType="java.lang.String"/>
+            <arg column="status" javaType="java.lang.String"/>
+            <arg column="submitted_by_user_id" javaType="java.lang.Long"/>
+            <arg column="submitted_at" javaType="java.time.LocalDateTime"/>
+            <arg column="reviewed_by_user_id" javaType="java.lang.Long"/>
+            <arg column="reviewed_at" javaType="java.time.LocalDateTime"/>
+            <arg column="review_comment" javaType="java.lang.String"/>
+        </constructor>
+    </resultMap>
+    <select id="nextSubmissionNo" resultType="int">
+        SELECT COALESCE(MAX(submission_no), 0) + 1
+        FROM learn_task_checkin
+        WHERE assignment_id = #{assignmentId}
+    </select>
+
+    <insert id="insert">
+        INSERT INTO learn_task_checkin (
+            id, assignment_id, submission_no, content, status,
+            submitted_by_user_id, submitted_at
+        ) VALUES (
+            #{checkIn.id}, #{checkIn.assignmentId}, #{checkIn.submissionNo},
+            #{checkIn.content}, #{checkIn.status}, #{checkIn.submittedByUserId},
+            #{checkIn.submittedAt}
+        )
+    </insert>
+
+    <select id="findLatestSubmittedForUpdate" resultMap="TaskCheckInMap">
+        SELECT id, assignment_id, submission_no, content, status, submitted_by_user_id,
+               submitted_at, reviewed_by_user_id, reviewed_at, review_comment
+        FROM learn_task_checkin
+        WHERE assignment_id = #{assignmentId} AND status = 'SUBMITTED'
+        ORDER BY submission_no DESC
+        LIMIT 1
+        FOR UPDATE
+    </select>
+
+    <update id="reject">
+        UPDATE learn_task_checkin
+        SET status = 'REJECTED', reviewed_by_user_id = #{reviewerUserId},
+            reviewed_at = #{reviewedAt}, review_comment = #{reviewComment},
+            updated_at = #{reviewedAt}
+        WHERE id = #{id} AND status = 'SUBMITTED'
+    </update>
+</mapper>

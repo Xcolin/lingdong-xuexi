@@ -4,6 +4,8 @@ import com.lingdong.learning.dictionary.domain.DictionaryType;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.util.List;
+
 /** Persistence boundary for dictionary types. */
 @Mapper
 public interface DictionaryTypeMapper {
@@ -14,6 +16,8 @@ public interface DictionaryTypeMapper {
     DictionaryType findByCode(@Param("code") String code);
 
     boolean existsByCode(@Param("code") String code);
+
+    List<String> findEnabledCodes();
 
     int update(@Param("dictionaryType") DictionaryType dictionaryType);
 

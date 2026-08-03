@@ -15,9 +15,9 @@ public record OrganizationType(
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
-    public static OrganizationType custom(String code, String name, Integer sortOrder) {
+    public static OrganizationType custom(Long id, String code, String name, Integer sortOrder) {
         return new OrganizationType(
-                null,
+                id,
                 code,
                 name,
                 false,

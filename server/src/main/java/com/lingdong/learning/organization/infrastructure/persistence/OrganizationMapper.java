@@ -4,6 +4,8 @@ import com.lingdong.learning.organization.domain.Organization;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.util.List;
+
 /**
  * Persistence boundary for organization tree nodes.
  */
@@ -21,4 +23,6 @@ public interface OrganizationMapper {
     );
 
     int insert(@Param("organization") Organization organization);
+
+    List<Organization> findAll();
 }

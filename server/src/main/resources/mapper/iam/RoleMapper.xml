@@ -45,6 +45,7 @@
 
     <insert id="insert">
         INSERT INTO sys_role (
+            id,
             role_code,
             role_name,
             role_type,
@@ -53,6 +54,7 @@
             status,
             description
         ) VALUES (
+            #{role.id},
             #{role.code},
             #{role.name},
             #{role.type},
@@ -77,5 +79,21 @@
             updated_at
         FROM sys_role
         WHERE role_code = #{code}
+    </select>
+
+    <select id="findAll" resultMap="RoleResultMap">
+        SELECT
+            id,
+            role_code,
+            role_name,
+            role_type,
+            data_scope,
+            built_in,
+            status,
+            description,
+            created_at,
+            updated_at
+        FROM sys_role
+        ORDER BY role_code ASC
     </select>
 </mapper>

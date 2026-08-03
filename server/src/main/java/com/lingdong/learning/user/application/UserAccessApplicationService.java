@@ -1,5 +1,8 @@
 package com.lingdong.learning.user.application;
 
+import com.lingdong.learning.auth.application.AuthenticationApplicationService;
+import com.lingdong.learning.common.id.IdGenerator;
+import com.lingdong.learning.common.web.ResourceNotFoundException;
 import com.lingdong.learning.iam.domain.Role;
 import com.lingdong.learning.iam.domain.RoleStatus;
 import com.lingdong.learning.iam.infrastructure.persistence.RoleMapper;
@@ -7,6 +10,7 @@ import com.lingdong.learning.organization.domain.Organization;
 import com.lingdong.learning.organization.domain.OrganizationStatus;
 import com.lingdong.learning.organization.infrastructure.persistence.OrganizationMapper;
 import com.lingdong.learning.user.domain.User;
+import com.lingdong.learning.user.domain.UserStatus;
 import com.lingdong.learning.user.domain.UserType;
 import com.lingdong.learning.user.infrastructure.persistence.UserMapper;
 import com.lingdong.learning.user.infrastructure.persistence.UserOrganizationMapper;
@@ -29,19 +33,25 @@ public class UserAccessApplicationService {
     private final RoleMapper roleMapper;
     private final UserOrganizationMapper userOrganizationMapper;
     private final UserRoleMapper userRoleMapper;
+    private final IdGenerator idGenerator;
+    private final AuthenticationApplicationService authenticationApplicationService;
 
     public UserAccessApplicationService(
             UserMapper userMapper,
             OrganizationMapper organizationMapper,
             RoleMapper roleMapper,
             UserOrganizationMapper userOrganizationMapper,
-            UserRoleMapper userRoleMapper
+            UserRoleMapper userRoleMapper,
+            IdGenerator idGenerator,
+            AuthenticationApplicationService authenticationApplicationService
     ) {
         this.userMapper = userMapper;
         this.organizationMapper = organizationMapper;
         this.roleMapper = roleMapper;
         this.userOrganizationMapper = userOrganizationMapper;
         this.userRoleMapper = userRoleMapper;
+        this.idGenerator = idGenerator;
+        this.authenticationApplicationService = authenticationApplicationService;
     }
 
     /**
@@ -63,7 +73,7 @@ public class UserAccessApplicationService {
             throw new DuplicateUserAccountException(mobile);
         }
 
-        User user = User.create(username, displayName, mobile, type);
+        User user = User.create(idGenerator.nextId(), username, displayName, mobile, type);
         try {
             userMapper.insert(user);
             return userMapper.findByUsername(username);
@@ -87,7 +97,7 @@ public class UserAccessApplicationService {
             throw new IllegalStateException("用户已关联该组织");
         }
         try {
-            userOrganizationMapper.insert(command.userId(), command.organizationId());
+            userOrganizationMapper.insert(idGenerator.nextId(), command.userId(), command.organizationId());
         } catch (DuplicateKeyException exception) {
             throw new IllegalStateException("用户已关联该组织");
         }
@@ -111,10 +121,28 @@ public class UserAccessApplicationService {
         }
 
         try {
-            userRoleMapper.insert(command.userId(), command.roleId(), command.organizationId(), scopeKey);
+            userRoleMapper.insert(idGenerator.nextId(), command.userId(), command.roleId(), command.organizationId(), scopeKey);
         } catch (DuplicateKeyException exception) {
             throw new DuplicateUserRoleAssignmentException();
         }
+    }
+
+    /** 更新账号状态；停用或锁定后立即撤销该账号的活动设备会话。 */
+    @Transactional
+    public User updateStatus(UpdateUserStatusCommand command) {
+        Objects.requireNonNull(command, "用户状态变更请求不能为空");
+        User user = requireUser(command.userId());
+        UserStatus targetStatus = Objects.requireNonNull(command.status(), "用户状态不能为空");
+        if (user.status() == targetStatus) {
+            return user;
+        }
+        if (userMapper.updateStatus(user.id(), targetStatus) != 1) {
+            throw new IllegalStateException("用户状态更新失败");
+        }
+        if (targetStatus != UserStatus.ENABLED) {
+            authenticationApplicationService.revokeAllActiveSessionsForUser(user.id());
+        }
+        return requireUser(user.id());
     }
 
     private String resolveScopeKey(Long userId, Long organizationId) {
@@ -138,7 +166,7 @@ public class UserAccessApplicationService {
         }
         User user = userMapper.findById(userId);
         if (user == null) {
-            throw new IllegalArgumentException("用户不存在：" + userId);
+            throw new ResourceNotFoundException("用户不存在：" + userId);
         }
         return user;
     }
@@ -149,7 +177,7 @@ public class UserAccessApplicationService {
         }
         Organization organization = organizationMapper.findById(organizationId);
         if (organization == null) {
-            throw new IllegalArgumentException("组织不存在：" + organizationId);
+            throw new ResourceNotFoundException("组织不存在：" + organizationId);
         }
         return organization;
     }
@@ -160,7 +188,7 @@ public class UserAccessApplicationService {
         }
         Role role = roleMapper.findById(roleId);
         if (role == null) {
-            throw new IllegalArgumentException("角色不存在：" + roleId);
+            throw new ResourceNotFoundException("角色不存在：" + roleId);
         }
         return role;
     }

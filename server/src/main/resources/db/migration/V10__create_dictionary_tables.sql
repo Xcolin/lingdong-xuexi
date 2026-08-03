@@ -1,7 +1,7 @@
 -- Provides the shared dictionary source required by FSD-SYS-03.
 -- Initial dictionary contents remain configuration data and are not guessed in this migration.
 CREATE TABLE sys_dictionary_type (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     type_code VARCHAR(64) NOT NULL,
     type_name VARCHAR(50) NOT NULL,
     status VARCHAR(16) NOT NULL DEFAULT 'ENABLED',
@@ -12,7 +12,7 @@ CREATE TABLE sys_dictionary_type (
 );
 
 CREATE TABLE sys_dictionary_item (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     type_id BIGINT NOT NULL,
     item_code VARCHAR(64) NOT NULL,
     item_name VARCHAR(50) NOT NULL,

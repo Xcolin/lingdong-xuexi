@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.learningtask.infrastructure.persistence.TeacherClassMapper">
+    <resultMap id="TeacherClassRelationMap"
+               type="com.lingdong.learning.learningtask.domain.TeacherClassRelation">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="teacher_user_id" javaType="java.lang.Long"/>
+            <arg column="class_organization_id" javaType="java.lang.Long"/>
+            <arg column="status" javaType="com.lingdong.learning.learningtask.domain.TeacherClassStatus"/>
+            <arg column="effective_from" javaType="java.time.LocalDateTime"/>
+            <arg column="effective_to" javaType="java.time.LocalDateTime"/>
+            <arg column="created_at" javaType="java.time.LocalDateTime"/>
+            <arg column="updated_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="columns">
+        id, teacher_user_id, class_organization_id, status,
+        effective_from, effective_to, created_at, updated_at
+    </sql>
+
+    <select id="findByTeacherAndClass" resultMap="TeacherClassRelationMap">
+        SELECT <include refid="columns"/>
+        FROM edu_teacher_class
+        WHERE teacher_user_id = #{teacherUserId}
+          AND class_organization_id = #{classOrganizationId}
+    </select>
+
+    <select id="findActiveByTeacher" resultMap="TeacherClassRelationMap">
+        SELECT <include refid="columns"/>
+        FROM edu_teacher_class
+        WHERE teacher_user_id = #{teacherUserId}
+          AND status = 'ACTIVE'
+        ORDER BY class_organization_id
+    </select>
+
+    <select id="existsTeacherOrganizationInClassAncestors" resultType="boolean">
+        SELECT EXISTS(SELECT 1
+        FROM sys_user_organization user_organization
+        JOIN sys_organization teacher_organization
+          ON teacher_organization.id = user_organization.organization_id
+        JOIN sys_organization class_organization
+          ON class_organization.id = #{classOrganizationId}
+        WHERE user_organization.user_id = #{teacherUserId}
+          AND class_organization.organization_path LIKE CONCAT(teacher_organization.organization_path, '%'))
+    </select>
+
+    <insert id="insert">
+        INSERT INTO edu_teacher_class (
+            id, teacher_user_id, class_organization_id, status, effective_from
+        ) VALUES (
+            #{relation.id}, #{relation.teacherUserId}, #{relation.classOrganizationId},
+            #{relation.status}, CURRENT_TIMESTAMP
+        )
+    </insert>
+
+    <update id="activate">
+        UPDATE edu_teacher_class
+        SET status = 'ACTIVE', effective_from = CURRENT_TIMESTAMP, effective_to = NULL,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE teacher_user_id = #{teacherUserId}
+          AND class_organization_id = #{classOrganizationId}
+    </update>
+
+    <update id="deactivate">
+        UPDATE edu_teacher_class
+        SET status = 'INACTIVE', effective_to = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+        WHERE teacher_user_id = #{teacherUserId}
+          AND class_organization_id = #{classOrganizationId}
+          AND status = 'ACTIVE'
+    </update>
+</mapper>

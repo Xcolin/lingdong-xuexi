@@ -4,6 +4,8 @@ import com.lingdong.learning.iam.domain.Role;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.util.List;
+
 /**
  * Persistence boundary for the role aggregate. SQL stays in the XML mapper.
  */
@@ -16,4 +18,6 @@ public interface RoleMapper {
     int insert(@Param("role") Role role);
 
     Role findByCode(@Param("code") String code);
+
+    List<Role> findAll();
 }

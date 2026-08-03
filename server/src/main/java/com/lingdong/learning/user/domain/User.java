@@ -16,9 +16,9 @@ public record User(
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
-    public static User create(String username, String displayName, String mobile, UserType type) {
+    public static User create(Long id, String username, String displayName, String mobile, UserType type) {
         return new User(
-                null,
+                id,
                 username,
                 displayName,
                 mobile,

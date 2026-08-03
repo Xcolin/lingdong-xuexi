@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.student.infrastructure.persistence.ParentStudentMapper">
+    <select id="existsActiveByParentAndStudent" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM edu_parent_student
+        WHERE parent_user_id = #{parentUserId} AND student_id = #{studentId} AND status = 'ACTIVE')
+    </select>
+
+    <select id="existsActivePrimaryByParentAndStudent" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM edu_parent_student
+        WHERE parent_user_id = #{parentUserId}
+          AND student_id = #{studentId}
+          AND status = 'ACTIVE'
+          AND relation_role = 'PRIMARY_GUARDIAN'
+          AND primary_scope_key = 'PRIMARY')
+    </select>
+
+    <select id="existsActiveByStudentId" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM edu_parent_student
+        WHERE student_id = #{studentId} AND status = 'ACTIVE' AND primary_scope_key = 'PRIMARY')
+    </select>
+
+    <insert id="insertPrimary">
+        INSERT INTO edu_parent_student (id, parent_user_id, student_id, relation_role, status, primary_scope_key)
+        VALUES (#{id}, #{parentUserId}, #{studentId}, 'PRIMARY_GUARDIAN', 'ACTIVE', 'PRIMARY')
+    </insert>
+</mapper>

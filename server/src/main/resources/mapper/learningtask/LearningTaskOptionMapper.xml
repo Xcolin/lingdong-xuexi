@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.learningtask.infrastructure.persistence.LearningTaskOptionMapper">
+    <resultMap id="OrganizationOptionMap"
+               type="com.lingdong.learning.learningtask.application.OrganizationOption">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="organization_name" javaType="java.lang.String"/>
+            <arg column="organization_type" javaType="java.lang.String"/>
+            <arg column="parent_id" javaType="java.lang.Long"/>
+            <arg column="organization_path" javaType="java.lang.String"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="StudentOptionRowMap"
+               type="com.lingdong.learning.learningtask.infrastructure.persistence.StudentOptionRow">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="student_name" javaType="java.lang.String"/>
+            <arg column="student_account" javaType="java.lang.String"/>
+            <arg column="current_class_id" javaType="java.lang.Long"/>
+            <arg column="current_class_name" javaType="java.lang.String"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="TeacherOptionRowMap"
+               type="com.lingdong.learning.learningtask.infrastructure.persistence.TeacherOptionRow">
+        <constructor>
+            <idArg column="user_id" javaType="java.lang.Long"/>
+            <arg column="display_name" javaType="java.lang.String"/>
+            <arg column="class_organization_id" javaType="java.lang.Long"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="studentOptionColumns">
+        student.id,
+        student.student_name,
+        student_user.username AS student_account,
+        current_class.organization_id AS current_class_id,
+        current_class_organization.organization_name AS current_class_name
+    </sql>
+
+    <sql id="studentOptionCurrentClassJoins">
+        LEFT JOIN sys_user student_user ON student_user.id = student.student_user_id
+        LEFT JOIN edu_student_organization current_class
+          ON current_class.student_id = student.id
+         AND current_class.relation_type = 'CLASS'
+         AND current_class.status = 'ACTIVE'
+        LEFT JOIN sys_organization current_class_organization
+          ON current_class_organization.id = current_class.organization_id
+    </sql>
+
+    <select id="findOrganizationOptionsForAdministrator" resultMap="OrganizationOptionMap">
+        SELECT DISTINCT organization.id, organization.organization_name, organization.organization_type,
+               organization.parent_id, organization.organization_path
+        FROM sys_organization organization
+        WHERE organization.status = 'ENABLED'
+          AND EXISTS (
+              SELECT 1
+              FROM sys_organization_admin organization_admin
+              JOIN sys_organization administrator_root
+                ON administrator_root.id = organization_admin.organization_id
+              WHERE organization_admin.user_id = #{userId}
+                AND organization.organization_path LIKE CONCAT(administrator_root.organization_path, '%')
+          )
+        <if test="organizationType != null">
+          AND organization.organization_type = #{organizationType}
+        </if>
+        ORDER BY organization.organization_path, organization.id
+    </select>
+
+    <select id="findOrganizationOptionsForTeacher" resultMap="OrganizationOptionMap">
+        SELECT DISTINCT organization.id, organization.organization_name, organization.organization_type,
+               organization.parent_id, organization.organization_path
+        FROM edu_teacher_class teacher_class
+        JOIN sys_organization organization
+          ON organization.id = teacher_class.class_organization_id
+        WHERE teacher_class.teacher_user_id = #{userId}
+          AND teacher_class.status = 'ACTIVE'
+          AND organization.status = 'ENABLED'
+        <if test="organizationType != null">
+          AND organization.organization_type = #{organizationType}
+        </if>
+        ORDER BY organization.organization_path, organization.id
+    </select>
+
+    <select id="findFamilyStudentOptions" resultMap="StudentOptionRowMap">
+        SELECT <include refid="studentOptionColumns"/>
+        FROM edu_student student
+        JOIN edu_parent_student parent_student
+          ON parent_student.student_id = student.id
+         AND parent_student.parent_user_id = #{userId}
+         AND parent_student.status = 'ACTIVE'
+         AND parent_student.relation_role = 'PRIMARY_GUARDIAN'
+         AND parent_student.primary_scope_key = 'PRIMARY'
+        <include refid="studentOptionCurrentClassJoins"/>
+        WHERE student.status = 'ENABLED'
+        <if test="keyword != null">
+          AND student.student_name LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+        ORDER BY student.student_name, student.id
+    </select>
+
+    <select id="findOrganizationStudentOptions" resultMap="StudentOptionRowMap">
+        SELECT DISTINCT <include refid="studentOptionColumns"/>
+        FROM edu_student student
+        <include refid="studentOptionCurrentClassJoins"/>
+        WHERE student.status = 'ENABLED'
+          AND EXISTS (
+              SELECT 1
+              FROM edu_student_organization scoped_relation
+              JOIN sys_organization scoped_organization
+                ON scoped_organization.id = scoped_relation.organization_id
+              WHERE scoped_relation.student_id = student.id
+                AND scoped_relation.status = 'ACTIVE'
+                AND EXISTS (
+                    SELECT 1
+                    FROM sys_organization_admin organization_admin
+                    JOIN sys_organization administrator_root
+                      ON administrator_root.id = organization_admin.organization_id
+                    WHERE organization_admin.user_id = #{userId}
+                      AND scoped_organization.organization_path
+                          LIKE CONCAT(administrator_root.organization_path, '%')
+                )
+          )
+        <if test="organizationId != null">
+          AND EXISTS (
+              SELECT 1
+              FROM sys_organization filter_organization
+              WHERE filter_organization.id = #{organizationId}
+                AND (
+                    (filter_organization.organization_type = 'CLASS'
+                        AND EXISTS (
+                            SELECT 1
+                            FROM edu_student_organization class_relation
+                            WHERE class_relation.student_id = student.id
+                              AND class_relation.organization_id = filter_organization.id
+                              AND class_relation.relation_type = 'CLASS'
+                              AND class_relation.status = 'ACTIVE'
+                        ))
+                    OR
+                    (filter_organization.organization_type &lt;&gt; 'CLASS'
+                        AND EXISTS (
+                            SELECT 1
+                            FROM edu_student_organization filter_relation
+                            JOIN sys_organization relation_organization
+                              ON relation_organization.id = filter_relation.organization_id
+                            WHERE filter_relation.student_id = student.id
+                              AND filter_relation.status = 'ACTIVE'
+                              AND relation_organization.organization_path
+                                  LIKE CONCAT(filter_organization.organization_path, '%')
+                        ))
+                )
+          )
+        </if>
+        <if test="keyword != null">
+          AND student.student_name LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+        ORDER BY student.student_name, student.id
+    </select>
+
+    <select id="findTeacherStudentOptions" resultMap="StudentOptionRowMap">
+        SELECT DISTINCT <include refid="studentOptionColumns"/>
+        FROM edu_student student
+        <include refid="studentOptionCurrentClassJoins"/>
+        JOIN edu_teacher_class teacher_class
+          ON teacher_class.teacher_user_id = #{userId}
+         AND teacher_class.class_organization_id = current_class.organization_id
+         AND teacher_class.status = 'ACTIVE'
+        WHERE student.status = 'ENABLED'
+        <if test="organizationId != null">
+          AND current_class.organization_id = #{organizationId}
+        </if>
+        <if test="keyword != null">
+          AND student.student_name LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+        ORDER BY student.student_name, student.id
+    </select>
+
+    <select id="findTeacherOptionsForAdministrator" resultMap="TeacherOptionRowMap">
+        SELECT DISTINCT teacher.id AS user_id, teacher.display_name, teacher_class.class_organization_id
+        FROM sys_user teacher
+        LEFT JOIN edu_teacher_class teacher_class
+          ON teacher_class.teacher_user_id = teacher.id
+         AND teacher_class.status = 'ACTIVE'
+         AND EXISTS (
+             SELECT 1
+             FROM sys_organization teacher_class_organization
+             JOIN sys_organization administrator_root
+               ON teacher_class_organization.organization_path
+                  LIKE CONCAT(administrator_root.organization_path, '%')
+             JOIN sys_organization_admin organization_admin
+               ON organization_admin.organization_id = administrator_root.id
+             WHERE teacher_class_organization.id = teacher_class.class_organization_id
+               AND organization_admin.user_id = #{userId}
+         )
+        WHERE teacher.status = 'ENABLED'
+          AND EXISTS (
+              SELECT 1
+              FROM sys_user_role teacher_role_assignment
+              JOIN sys_role teacher_role ON teacher_role.id = teacher_role_assignment.role_id
+              WHERE teacher_role_assignment.user_id = teacher.id
+                AND teacher_role.role_code = 'TEACHER'
+                AND teacher_role.status = 'ENABLED'
+          )
+          AND EXISTS (
+              SELECT 1
+              FROM sys_user_organization teacher_membership
+              JOIN sys_organization teacher_organization
+                ON teacher_organization.id = teacher_membership.organization_id
+              JOIN sys_organization administrator_root
+                ON teacher_organization.organization_path
+                   LIKE CONCAT(administrator_root.organization_path, '%')
+              JOIN sys_organization_admin organization_admin
+                ON organization_admin.organization_id = administrator_root.id
+              WHERE teacher_membership.user_id = teacher.id
+                AND organization_admin.user_id = #{userId}
+          )
+        <if test="classId != null">
+          AND teacher_class.class_organization_id = #{classId}
+        </if>
+        <if test="keyword != null">
+          AND teacher.display_name LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+        ORDER BY teacher.display_name, teacher.id, teacher_class.class_organization_id
+    </select>
+</mapper>

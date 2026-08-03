@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.student.infrastructure.persistence.StudentAccountSequenceMapper">
+    <resultMap id="StudentAccountSequenceResultMap"
+               type="com.lingdong.learning.student.domain.StudentAccountSequence">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="sequence_year" javaType="int"/>
+            <arg column="current_value" javaType="int"/>
+            <arg column="created_at" javaType="java.time.LocalDateTime"/>
+            <arg column="updated_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findByYearForUpdate" resultMap="StudentAccountSequenceResultMap">
+        SELECT id, sequence_year, current_value, created_at, updated_at
+        FROM auth_student_account_sequence
+        WHERE sequence_year = #{sequenceYear}
+        FOR UPDATE
+    </select>
+
+    <insert id="insert">
+        INSERT INTO auth_student_account_sequence (id, sequence_year, current_value)
+        VALUES (#{sequence.id}, #{sequence.sequenceYear}, #{sequence.currentValue})
+    </insert>
+
+    <update id="updateCurrentValue">
+        UPDATE auth_student_account_sequence
+        SET current_value = #{nextValue}, updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id} AND current_value = #{expectedValue}
+    </update>
+</mapper>

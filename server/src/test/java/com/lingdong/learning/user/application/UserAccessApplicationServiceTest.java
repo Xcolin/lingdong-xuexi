@@ -11,6 +11,7 @@ import com.lingdong.learning.user.infrastructure.persistence.UserRoleMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,11 +32,15 @@ class UserAccessApplicationServiceTest {
     @Autowired
     private UserRoleMapper userRoleMapper;
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
     @Test
     void associatesUserBeforeGrantingOrganizationScopedRole() {
         User user = userAccessApplicationService.createUser(
                 new CreateUserCommand("teacher_zhang", "张老师", "13800000001", UserType.ORGANIZATION)
         );
+        assertThat(Long.toString(user.id())).hasSize(19);
         Organization organization = createSchool("REGION_USER_A", "SCHOOL_USER_A", "用户授权学校A");
         Role organizationAdmin = roleMapper.findByCode("ORG_ADMIN");
 
@@ -47,6 +52,14 @@ class UserAccessApplicationServiceTest {
         );
 
         assertThat(userRoleMapper.exists(user.id(), organizationAdmin.id(), "ORG:" + organization.id())).isTrue();
+        assertThat(Long.toString(jdbcTemplate.queryForObject(
+                "select id from sys_user_organization where user_id = ? and organization_id = ?",
+                Long.class, user.id(), organization.id()
+        ))).hasSize(19);
+        assertThat(Long.toString(jdbcTemplate.queryForObject(
+                "select id from sys_user_role where user_id = ? and role_id = ? and organization_scope_key = ?",
+                Long.class, user.id(), organizationAdmin.id(), "ORG:" + organization.id()
+        ))).hasSize(19);
     }
 
     @Test

@@ -4,6 +4,8 @@ import com.lingdong.learning.organization.domain.OrganizationType;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.util.List;
+
 /**
  * Persistence boundary for configurable organization classifications.
  */
@@ -16,4 +18,6 @@ public interface OrganizationTypeMapper {
     boolean existsByName(@Param("name") String name);
 
     int insert(@Param("organizationType") OrganizationType organizationType);
+
+    List<OrganizationType> findAll();
 }

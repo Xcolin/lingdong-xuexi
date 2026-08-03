@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.interfaceconfig.infrastructure.persistence.InterfaceServiceChangeMapper">
+
+    <resultMap id="InterfaceServiceChangeResultMap" type="com.lingdong.learning.interfaceconfig.domain.InterfaceServiceChange">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="task_id" javaType="java.lang.Long"/>
+            <arg column="service_id" javaType="java.lang.Long"/>
+            <arg column="change_type" javaType="com.lingdong.learning.interfaceconfig.domain.InterfaceServiceChangeType"/>
+            <arg column="service_name" javaType="java.lang.String"/>
+            <arg column="direction" javaType="com.lingdong.learning.interfaceconfig.domain.InterfaceDirection"/>
+            <arg column="purpose" javaType="com.lingdong.learning.interfaceconfig.domain.InterfacePurpose"/>
+            <arg column="caller_name" javaType="java.lang.String"/>
+            <arg column="authorization_scope" javaType="com.lingdong.learning.interfaceconfig.domain.InterfaceAuthorizationScope"/>
+            <arg column="authorization_scope_value" javaType="java.lang.String"/>
+            <arg column="owner_id" javaType="java.lang.Long"/>
+            <arg column="target_status" javaType="com.lingdong.learning.interfaceconfig.domain.InterfaceServiceStatus"/>
+            <arg column="created_at" javaType="java.time.LocalDateTime"/>
+            <arg column="updated_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <insert id="insert">
+        INSERT INTO sys_interface_service_change (
+            id, task_id, service_id, change_type, service_name, direction, purpose, caller_name,
+            authorization_scope, authorization_scope_value, owner_id, target_status
+        ) VALUES (
+            #{change.id}, #{change.taskId}, #{change.serviceId, jdbcType=BIGINT}, #{change.changeType},
+            #{change.serviceName, jdbcType=VARCHAR}, #{change.direction, jdbcType=VARCHAR},
+            #{change.purpose, jdbcType=VARCHAR}, #{change.callerName, jdbcType=VARCHAR},
+            #{change.authorizationScope, jdbcType=VARCHAR}, #{change.authorizationScopeValue, jdbcType=VARCHAR},
+            #{change.ownerId, jdbcType=BIGINT}, #{change.targetStatus, jdbcType=VARCHAR}
+        )
+    </insert>
+
+    <select id="findByTaskId" resultMap="InterfaceServiceChangeResultMap">
+        SELECT id, task_id, service_id, change_type, service_name, direction, purpose, caller_name,
+               authorization_scope, authorization_scope_value, owner_id, target_status, created_at, updated_at
+        FROM sys_interface_service_change
+        WHERE task_id = #{taskId}
+    </select>
+</mapper>

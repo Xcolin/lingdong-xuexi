@@ -1,5 +1,6 @@
 package com.lingdong.learning.iam.application;
 
+import com.lingdong.learning.common.id.IdGenerator;
 import com.lingdong.learning.iam.domain.Role;
 import com.lingdong.learning.iam.domain.RoleDataScope;
 import com.lingdong.learning.iam.infrastructure.persistence.RoleMapper;
@@ -18,9 +19,11 @@ public class RoleApplicationService {
     private static final Pattern ROLE_CODE_PATTERN = Pattern.compile("[A-Z][A-Z0-9_]{2,63}");
 
     private final RoleMapper roleMapper;
+    private final IdGenerator idGenerator;
 
-    public RoleApplicationService(RoleMapper roleMapper) {
+    public RoleApplicationService(RoleMapper roleMapper, IdGenerator idGenerator) {
         this.roleMapper = roleMapper;
+        this.idGenerator = idGenerator;
     }
 
     /**
@@ -43,7 +46,7 @@ public class RoleApplicationService {
             throw new DuplicateRoleCodeException(code);
         }
 
-        Role role = Role.custom(code, name, description, dataScope);
+        Role role = Role.custom(idGenerator.nextId(), code, name, description, dataScope);
         try {
             roleMapper.insert(role);
             return roleMapper.findByCode(code);

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.learningtask.infrastructure.persistence.LearningTaskTagMapper">
+    <select id="findCodesByTaskId" resultType="string">
+        SELECT tag_code
+        FROM learn_task_tag
+        WHERE task_id = #{taskId}
+        ORDER BY tag_code
+    </select>
+
+    <select id="findByTaskIds" resultType="com.lingdong.learning.learningtask.infrastructure.persistence.LearningTaskTagRow">
+        SELECT task_id, tag_code
+        FROM learn_task_tag
+        WHERE task_id IN
+        <foreach collection="taskIds" item="taskId" open="(" separator="," close=")">
+            #{taskId}
+        </foreach>
+        ORDER BY task_id, tag_code
+    </select>
+
+    <insert id="insert">
+        INSERT INTO learn_task_tag (id, task_id, tag_code)
+        VALUES (#{tag.id}, #{tag.taskId}, #{tag.tagCode})
+    </insert>
+
+    <delete id="deleteByTaskId">
+        DELETE FROM learn_task_tag WHERE task_id = #{taskId}
+    </delete>
+</mapper>

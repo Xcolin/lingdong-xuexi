@@ -39,6 +39,7 @@ class SystemTaskApplicationServiceTest {
                 "恢复指定功能的全局可用状态",
                 ImpactScope.GLOBAL
         ));
+        assertThat(Long.toString(draft.id())).hasSize(19);
         systemTaskApplicationService.submit(draft.id(), administrator.id());
         SystemTask approved = systemTaskApplicationService.approve(draft.id(), auditor.id(), "同意执行");
 

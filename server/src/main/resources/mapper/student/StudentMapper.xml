@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.student.infrastructure.persistence.StudentMapper">
+    <resultMap id="StudentResultMap" type="com.lingdong.learning.student.domain.Student">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="student_name" javaType="java.lang.String"/>
+            <arg column="grade_code" javaType="java.lang.String"/>
+            <arg column="student_user_id" javaType="java.lang.Long"/>
+            <arg column="status" javaType="com.lingdong.learning.student.domain.StudentStatus"/>
+            <arg column="created_at" javaType="java.time.LocalDateTime"/>
+            <arg column="updated_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="studentColumns">id, student_name, grade_code, student_user_id, status, created_at, updated_at</sql>
+
+    <sql id="directoryFilters">
+        <where>
+            <if test="query.keyword != null">
+                AND student_name LIKE CONCAT('%', #{query.keyword}, '%')
+            </if>
+            <if test="!query.systemAdministrator">
+                AND (
+                    <if test="query.parent">
+                        EXISTS (SELECT 1 FROM edu_parent_student parent_student
+                        WHERE parent_student.student_id = edu_student.id
+                          AND parent_student.parent_user_id = #{query.currentUserId}
+                          AND parent_student.status = 'ACTIVE')
+                    </if>
+                    <if test="query.parent and query.organizationAdministrator"> OR </if>
+                    <if test="query.organizationAdministrator">
+                        EXISTS (SELECT 1 FROM edu_student_organization student_organization
+                        JOIN sys_organization_admin organization_admin
+                          ON organization_admin.organization_id = student_organization.organization_id
+                        WHERE student_organization.student_id = edu_student.id
+                          AND student_organization.status = 'ACTIVE'
+                          AND organization_admin.user_id = #{query.currentUserId})
+                    </if>
+                )
+            </if>
+        </where>
+    </sql>
+
+    <select id="findById" resultMap="StudentResultMap">
+        SELECT <include refid="studentColumns"/> FROM edu_student WHERE id = #{id}
+    </select>
+
+    <select id="findByIdForUpdate" resultMap="StudentResultMap">
+        SELECT <include refid="studentColumns"/> FROM edu_student WHERE id = #{id} FOR UPDATE
+    </select>
+
+    <select id="findByStudentUserId" resultMap="StudentResultMap">
+        SELECT <include refid="studentColumns"/> FROM edu_student WHERE student_user_id = #{studentUserId}
+    </select>
+
+    <select id="findPage" resultMap="StudentResultMap">
+        SELECT <include refid="studentColumns"/> FROM edu_student
+        <include refid="directoryFilters"/>
+        ORDER BY created_at DESC, id DESC
+        LIMIT #{query.limit} OFFSET #{query.offset}
+    </select>
+
+    <select id="count" resultType="long">
+        SELECT COUNT(1) FROM edu_student <include refid="directoryFilters"/>
+    </select>
+
+    <insert id="insert">
+        INSERT INTO edu_student (id, student_name, grade_code, student_user_id, status)
+        VALUES (#{student.id}, #{student.studentName}, #{student.gradeCode, jdbcType=VARCHAR},
+                #{student.studentUserId, jdbcType=BIGINT}, #{student.status})
+    </insert>
+
+    <update id="bindStudentUserIfAbsent">
+        UPDATE edu_student
+        SET student_user_id = #{studentUserId}, updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{studentId} AND student_user_id IS NULL
+    </update>
+</mapper>

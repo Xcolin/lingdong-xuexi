@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.learningtask.infrastructure.persistence.LearningTaskAssignmentMapper">
+    <resultMap id="StudentTaskAssignmentRowMap"
+               type="com.lingdong.learning.learningtask.infrastructure.persistence.StudentTaskAssignmentRow">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="task_id" javaType="java.lang.Long"/>
+            <arg column="source_type" javaType="com.lingdong.learning.learningtask.domain.LearningTaskSourceType"/>
+            <arg column="source_organization_id" javaType="java.lang.Long"/>
+            <arg column="source_organization_name" javaType="java.lang.String"/>
+            <arg column="title" javaType="java.lang.String"/>
+            <arg column="difficulty_level" javaType="java.lang.Integer"/>
+            <arg column="base_points" javaType="java.lang.Integer"/>
+            <arg column="duration_minutes" javaType="java.lang.Integer"/>
+            <arg column="scheduled_date" javaType="java.time.LocalDate"/>
+            <arg column="due_at" javaType="java.time.LocalDateTime"/>
+            <arg column="category_code" javaType="java.lang.String"/>
+            <arg column="remark" javaType="java.lang.String"/>
+            <arg column="current_status" javaType="java.lang.String"/>
+            <arg column="current_reviewer_id" javaType="java.lang.Long"/>
+            <arg column="reviewer_display_name" javaType="java.lang.String"/>
+            <arg column="effective_status" javaType="java.lang.String"/>
+            <arg column="active_pause_id" javaType="java.lang.Long"/>
+            <arg column="active_pause_type" javaType="com.lingdong.learning.learningtask.domain.TaskPauseType"/>
+            <arg column="pause_started_at" javaType="java.time.LocalDateTime"/>
+            <arg column="pause_expires_at" javaType="java.time.LocalDateTime"/>
+            <arg column="latest_checkin_id" javaType="java.lang.Long"/>
+            <arg column="latest_submission_no" javaType="java.lang.Integer"/>
+            <arg column="latest_checkin_content" javaType="java.lang.String"/>
+            <arg column="latest_checkin_status" javaType="java.lang.String"/>
+            <arg column="latest_submitted_at" javaType="java.time.LocalDateTime"/>
+            <arg column="latest_review_comment" javaType="java.lang.String"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="TaskAssignmentStateRowMap"
+               type="com.lingdong.learning.learningtask.infrastructure.persistence.TaskAssignmentStateRow">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="student_id" javaType="java.lang.Long"/>
+            <arg column="current_status" javaType="com.lingdong.learning.learningtask.domain.TaskAssignmentStatus"/>
+            <arg column="current_reviewer_id" javaType="java.lang.Long"/>
+            <arg column="version_no" javaType="java.lang.Integer"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="assignmentColumns">
+        assignment.id,
+        assignment.task_id,
+        assignment.source_type,
+        assignment.source_organization_id,
+        source_organization.organization_name AS source_organization_name,
+        task.title,
+        task.difficulty_level,
+        task.base_points,
+        task.duration_minutes,
+        assignment.scheduled_date,
+        assignment.due_at,
+        task.category_code,
+        task.remark,
+        assignment.current_status,
+        assignment.current_reviewer_id,
+        reviewer.display_name AS reviewer_display_name,
+        CASE
+            WHEN assignment.current_status = 'IN_PROGRESS' AND active_pause.id IS NOT NULL THEN 'PAUSED'
+            ELSE assignment.current_status
+        END AS effective_status,
+        active_pause.id AS active_pause_id,
+        active_pause.pause_type AS active_pause_type,
+        active_pause.started_at AS pause_started_at,
+        active_pause.expires_at AS pause_expires_at,
+        latest_checkin.id AS latest_checkin_id,
+        latest_checkin.submission_no AS latest_submission_no,
+        latest_checkin.content AS latest_checkin_content,
+        latest_checkin.status AS latest_checkin_status,
+        latest_checkin.submitted_at AS latest_submitted_at,
+        latest_checkin.review_comment AS latest_review_comment
+    </sql>
+
+    <sql id="assignmentFromAndFilters">
+        FROM learn_task_assignment assignment
+        JOIN learn_task task ON task.id = assignment.task_id
+        LEFT JOIN sys_organization source_organization
+          ON source_organization.id = assignment.source_organization_id
+        JOIN sys_user reviewer ON reviewer.id = assignment.current_reviewer_id
+        LEFT JOIN learn_task_pause active_pause
+          ON active_pause.assignment_id = assignment.id
+         AND active_pause.resumed_at IS NULL
+         AND active_pause.expires_at &gt; CURRENT_TIMESTAMP
+        LEFT JOIN learn_task_checkin latest_checkin
+          ON latest_checkin.assignment_id = assignment.id
+         AND latest_checkin.submission_no = (
+             SELECT MAX(checkin_version.submission_no)
+             FROM learn_task_checkin checkin_version
+             WHERE checkin_version.assignment_id = assignment.id
+         )
+        WHERE assignment.student_id = #{query.studentId}
+        <if test="query.sourceType != null">
+            AND assignment.source_type = #{query.sourceType}
+        </if>
+        <if test="query.scheduledDate != null">
+            AND assignment.scheduled_date = #{query.scheduledDate}
+        </if>
+    </sql>
+
+    <insert id="insertBatch">
+        INSERT INTO learn_task_assignment (
+            id, task_id, student_id, source_type, source_organization_id,
+            current_status, current_reviewer_id, scheduled_date, due_at
+        ) VALUES
+        <foreach collection="assignments" item="assignment" separator=",">
+            (
+                #{assignment.id}, #{assignment.taskId}, #{assignment.studentId},
+                #{assignment.sourceType}, #{assignment.sourceOrganizationId, jdbcType=BIGINT},
+                #{assignment.currentStatus}, #{assignment.currentReviewerId},
+                #{assignment.scheduledDate}, #{assignment.dueAt}
+            )
+        </foreach>
+    </insert>
+
+    <select id="findPage" resultMap="StudentTaskAssignmentRowMap">
+        SELECT <include refid="assignmentColumns"/>
+        <include refid="assignmentFromAndFilters"/>
+        ORDER BY assignment.scheduled_date DESC, assignment.created_at DESC, assignment.id DESC
+        LIMIT #{query.limit} OFFSET #{query.offset}
+    </select>
+
+    <select id="count" resultType="long">
+        SELECT COUNT(1)
+        <include refid="assignmentFromAndFilters"/>
+    </select>
+
+    <select id="findByIdAndStudentId" resultMap="StudentTaskAssignmentRowMap">
+        SELECT <include refid="assignmentColumns"/>
+        FROM learn_task_assignment assignment
+        JOIN learn_task task ON task.id = assignment.task_id
+        LEFT JOIN sys_organization source_organization
+          ON source_organization.id = assignment.source_organization_id
+        JOIN sys_user reviewer ON reviewer.id = assignment.current_reviewer_id
+        LEFT JOIN learn_task_pause active_pause
+          ON active_pause.assignment_id = assignment.id
+         AND active_pause.resumed_at IS NULL
+         AND active_pause.expires_at &gt; CURRENT_TIMESTAMP
+        LEFT JOIN learn_task_checkin latest_checkin
+          ON latest_checkin.assignment_id = assignment.id
+         AND latest_checkin.submission_no = (
+             SELECT MAX(checkin_version.submission_no)
+             FROM learn_task_checkin checkin_version
+             WHERE checkin_version.assignment_id = assignment.id
+         )
+        WHERE assignment.id = #{id}
+          AND assignment.student_id = #{studentId}
+    </select>
+
+    <select id="findStateByIdAndStudentIdForUpdate" resultMap="TaskAssignmentStateRowMap">
+        SELECT id, student_id, current_status, current_reviewer_id, version_no
+        FROM learn_task_assignment
+        WHERE id = #{id} AND student_id = #{studentId}
+        FOR UPDATE
+    </select>
+
+    <update id="transitionStatus">
+        UPDATE learn_task_assignment
+        SET current_status = #{nextStatus},
+            claimed_at = COALESCE(#{claimedAt, jdbcType=TIMESTAMP}, claimed_at),
+            last_transition_at = #{transitionAt},
+            version_no = version_no + 1,
+            updated_at = #{transitionAt}
+        WHERE id = #{id}
+          AND current_status = #{expectedStatus}
+          AND version_no = #{expectedVersion}
+    </update>
+</mapper>

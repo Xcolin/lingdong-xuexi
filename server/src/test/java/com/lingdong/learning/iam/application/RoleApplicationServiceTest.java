@@ -32,6 +32,7 @@ class RoleApplicationServiceTest {
         Role role = roleMapper.findByCode("OPS_VIEWER");
 
         assertThat(role.code()).isEqualTo("OPS_VIEWER");
+        assertThat(Long.toString(role.id())).hasSize(19);
         assertThat(role.dataScope()).isEqualTo(RoleDataScope.CUSTOM);
         assertThat(role.builtIn()).isFalse();
     }

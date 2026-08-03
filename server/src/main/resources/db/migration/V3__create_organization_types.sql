@@ -1,5 +1,5 @@
 CREATE TABLE sys_organization_type (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     type_code VARCHAR(32) NOT NULL,
     type_name VARCHAR(32) NOT NULL,
     built_in TINYINT NOT NULL DEFAULT 0,
@@ -11,12 +11,12 @@ CREATE TABLE sys_organization_type (
     CONSTRAINT uk_sys_organization_type_name UNIQUE (type_name)
 );
 
-INSERT INTO sys_organization_type (type_code, type_name, built_in, status, sort_order) VALUES
-    ('REGION', '区域', 1, 'ENABLED', 10),
-    ('SCHOOL', '学校', 1, 'ENABLED', 20),
-    ('CAMPUS', '校区', 1, 'ENABLED', 30),
-    ('GRADE', '年级', 1, 'ENABLED', 40),
-    ('CLASS', '班级', 1, 'ENABLED', 50);
+INSERT INTO sys_organization_type (id, type_code, type_name, built_in, status, sort_order) VALUES
+    (1874244142494646279, 'REGION', '区域', 1, 'ENABLED', 10),
+    (1874244142494646280, 'SCHOOL', '学校', 1, 'ENABLED', 20),
+    (1874244142494646281, 'CAMPUS', '校区', 1, 'ENABLED', 30),
+    (1874244142494646282, 'GRADE', '年级', 1, 'ENABLED', 40),
+    (1874244142494646283, 'CLASS', '班级', 1, 'ENABLED', 50);
 
 ALTER TABLE sys_organization
     ADD COLUMN parent_scope_key VARCHAR(32) NOT NULL DEFAULT 'ROOT';

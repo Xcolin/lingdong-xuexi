@@ -1,5 +1,5 @@
 CREATE TABLE sys_organization (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     parent_id BIGINT,
     organization_code VARCHAR(64) NOT NULL,
     organization_name VARCHAR(128) NOT NULL,
@@ -16,7 +16,7 @@ CREATE TABLE sys_organization (
 CREATE INDEX idx_sys_organization_parent_id ON sys_organization (parent_id);
 
 CREATE TABLE sys_user (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     username VARCHAR(64) NOT NULL,
     display_name VARCHAR(64) NOT NULL,
     mobile VARCHAR(32),
@@ -31,7 +31,7 @@ CREATE TABLE sys_user (
 CREATE INDEX idx_sys_user_mobile ON sys_user (mobile);
 
 CREATE TABLE sys_role (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     role_code VARCHAR(64) NOT NULL,
     role_name VARCHAR(64) NOT NULL,
     role_type VARCHAR(16) NOT NULL,
@@ -45,7 +45,7 @@ CREATE TABLE sys_role (
 );
 
 CREATE TABLE sys_permission (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     permission_code VARCHAR(128) NOT NULL,
     permission_name VARCHAR(128) NOT NULL,
     resource_type VARCHAR(16) NOT NULL,
@@ -63,7 +63,7 @@ CREATE TABLE sys_permission (
 CREATE INDEX idx_sys_permission_parent_id ON sys_permission (parent_id);
 
 CREATE TABLE sys_user_role (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     user_id BIGINT NOT NULL,
     role_id BIGINT NOT NULL,
     organization_id BIGINT,
@@ -79,24 +79,27 @@ CREATE INDEX idx_sys_user_role_role_id ON sys_user_role (role_id);
 CREATE INDEX idx_sys_user_role_organization_id ON sys_user_role (organization_id);
 
 CREATE TABLE sys_role_permission (
+    id BIGINT NOT NULL PRIMARY KEY,
     role_id BIGINT NOT NULL,
     permission_id BIGINT NOT NULL,
     assigned_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (role_id, permission_id),
+    CONSTRAINT uk_sys_role_permission_assignment UNIQUE (role_id, permission_id),
     CONSTRAINT fk_sys_role_permission_role FOREIGN KEY (role_id) REFERENCES sys_role (id),
     CONSTRAINT fk_sys_role_permission_permission FOREIGN KEY (permission_id) REFERENCES sys_permission (id)
 );
 
 CREATE TABLE sys_organization_admin (
+    id BIGINT NOT NULL PRIMARY KEY,
     organization_id BIGINT NOT NULL,
     user_id BIGINT NOT NULL,
     assigned_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (organization_id, user_id),
+    CONSTRAINT uk_sys_organization_admin_assignment UNIQUE (organization_id, user_id),
     CONSTRAINT fk_sys_organization_admin_organization FOREIGN KEY (organization_id) REFERENCES sys_organization (id),
     CONSTRAINT fk_sys_organization_admin_user FOREIGN KEY (user_id) REFERENCES sys_user (id)
 );
 
 INSERT INTO sys_role (
+    id,
     role_code,
     role_name,
     role_type,
@@ -105,9 +108,9 @@ INSERT INTO sys_role (
     status,
     description
 ) VALUES
-    ('SYS_ADMIN', '系统管理员', 'BUILT_IN', 'ALL', 1, 'ENABLED', '负责系统配置、角色权限和高风险系统任务发起。'),
-    ('SYS_AUDITOR', '系统审核员', 'BUILT_IN', 'ALL', 1, 'ENABLED', '仅审核系统管理员提交的高风险系统任务。'),
-    ('ORG_ADMIN', '机构（学校）管理员', 'BUILT_IN', 'SCHOOL', 1, 'ENABLED', '管理授权学校及其下级组织事务。'),
-    ('TEACHER', '教师', 'BUILT_IN', 'CLASS', 1, 'ENABLED', '负责授权班级的学习任务与学情管理。'),
-    ('PARENT', '家长', 'BUILT_IN', 'SELF', 1, 'ENABLED', '管理关联学生的家庭学习事务。'),
-    ('STUDENT', '学生', 'BUILT_IN', 'SELF', 1, 'ENABLED', '执行学习任务并查看本人学习信息。');
+    (1874244142494646273, 'SYS_ADMIN', '系统管理员', 'BUILT_IN', 'ALL', 1, 'ENABLED', '负责系统配置、角色权限和高风险系统任务发起。'),
+    (1874244142494646274, 'SYS_AUDITOR', '系统审核员', 'BUILT_IN', 'ALL', 1, 'ENABLED', '仅审核系统管理员提交的高风险系统任务。'),
+    (1874244142494646275, 'ORG_ADMIN', '机构（学校）管理员', 'BUILT_IN', 'SCHOOL', 1, 'ENABLED', '管理授权学校及其下级组织事务。'),
+    (1874244142494646276, 'TEACHER', '教师', 'BUILT_IN', 'CLASS', 1, 'ENABLED', '负责授权班级的学习任务与学情管理。'),
+    (1874244142494646277, 'PARENT', '家长', 'BUILT_IN', 'SELF', 1, 'ENABLED', '管理关联学生的家庭学习事务。'),
+    (1874244142494646278, 'STUDENT', '学生', 'BUILT_IN', 'SELF', 1, 'ENABLED', '执行学习任务并查看本人学习信息。');

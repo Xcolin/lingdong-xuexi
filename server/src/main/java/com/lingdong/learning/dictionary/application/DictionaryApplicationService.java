@@ -1,5 +1,6 @@
 package com.lingdong.learning.dictionary.application;
 
+import com.lingdong.learning.common.id.IdGenerator;
 import com.lingdong.learning.dictionary.domain.DictionaryItem;
 import com.lingdong.learning.dictionary.domain.DictionaryStatus;
 import com.lingdong.learning.dictionary.domain.DictionaryType;
@@ -32,17 +33,20 @@ public class DictionaryApplicationService {
     private final DictionaryItemMapper dictionaryItemMapper;
     private final UserRoleMapper userRoleMapper;
     private final DictionaryItemCache dictionaryItemCache;
+    private final IdGenerator idGenerator;
 
     public DictionaryApplicationService(
             DictionaryTypeMapper dictionaryTypeMapper,
             DictionaryItemMapper dictionaryItemMapper,
             UserRoleMapper userRoleMapper,
-            DictionaryItemCache dictionaryItemCache
+            DictionaryItemCache dictionaryItemCache,
+            IdGenerator idGenerator
     ) {
         this.dictionaryTypeMapper = dictionaryTypeMapper;
         this.dictionaryItemMapper = dictionaryItemMapper;
         this.userRoleMapper = userRoleMapper;
         this.dictionaryItemCache = dictionaryItemCache;
+        this.idGenerator = idGenerator;
     }
 
     /** Creates an enabled dictionary type that may later be used by forms and list filters. */
@@ -60,7 +64,7 @@ public class DictionaryApplicationService {
         }
 
         try {
-            dictionaryTypeMapper.insert(DictionaryType.enabled(code, name, sortOrder));
+            dictionaryTypeMapper.insert(DictionaryType.enabled(idGenerator.nextId(), code, name, sortOrder));
             return dictionaryTypeMapper.findByCode(code);
         } catch (DuplicateKeyException exception) {
             throw new IllegalStateException("字典类型编码已存在：" + code);
@@ -126,7 +130,7 @@ public class DictionaryApplicationService {
             dictionaryItemMapper.clearDefaultByTypeId(type.id());
         }
         try {
-            dictionaryItemMapper.insert(DictionaryItem.enabled(type.id(), code, name, sortOrder, command.defaultItem()));
+            dictionaryItemMapper.insert(DictionaryItem.enabled(idGenerator.nextId(), type.id(), code, name, sortOrder, command.defaultItem()));
             DictionaryItem item = dictionaryItemMapper.findByTypeIdAndCode(type.id(), code);
             dictionaryItemCache.evict(type.code());
             return item;

@@ -1,6 +1,6 @@
 # 灵动学习数据字典核心实施计划
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** 建立由系统管理员维护的数据字典类型和字典项核心能力，支持排序、启停、默认项、关键字典拦截和 Redis 缓存失效。
 
@@ -16,7 +16,7 @@
 - Create: `server/src/test/java/com/lingdong/learning/dictionary/application/DictionaryApplicationServiceTest.java`
 - Modify: `server/src/test/java/com/lingdong/learning/FlywayMigrationTest.java`
 
-- [ ] **Step 1: 写入字典类型、默认项与系统管理员边界的失败测试**
+- [x] **Step 1: 写入字典类型、默认项与系统管理员边界的失败测试**
 
 ```java
 @Test
@@ -34,7 +34,7 @@ void letsSystemAdministratorCreateTypeAndKeepsOnlyLatestDefaultItem() {
 }
 ```
 
-- [ ] **Step 2: 增加 Flyway 表存在性断言**
+- [x] **Step 2: 增加 Flyway 表存在性断言**
 
 ```java
 @Test
@@ -46,7 +46,7 @@ void createsDictionaryTablesThroughFlyway() {
 }
 ```
 
-- [ ] **Step 3: 运行专测，确认因字典服务和迁移尚不存在而失败**
+- [x] **Step 3: 运行专测，确认因字典服务和迁移尚不存在而失败**
 
 Run:
 ```powershell
@@ -68,7 +68,7 @@ Expected: 编译失败并明确提示 `DictionaryApplicationService`、字典领
 - Create: `server/src/main/resources/mapper/dictionary/DictionaryTypeMapper.xml`
 - Create: `server/src/main/resources/mapper/dictionary/DictionaryItemMapper.xml`
 
-- [ ] **Step 1: 创建 V10 表结构**
+- [x] **Step 1: 创建 V10 表结构**
 
 ```sql
 CREATE TABLE sys_dictionary_type (
@@ -100,7 +100,7 @@ CREATE INDEX idx_sys_dictionary_item_type_status_sort
     ON sys_dictionary_item (type_id, status, sort_order);
 ```
 
-- [ ] **Step 2: 定义不可变领域对象与 Mapper 需要的读写方法**
+- [x] **Step 2: 定义不可变领域对象与 Mapper 需要的读写方法**
 
 ```java
 public record DictionaryItem(
@@ -114,7 +114,7 @@ List<DictionaryItem> findEnabledByTypeCode(@Param("typeCode") String typeCode);
 int clearDefaultByTypeId(@Param("typeId") Long typeId);
 ```
 
-- [ ] **Step 3: 运行迁移专测，确认 V10 表可以由 Flyway 创建**
+- [x] **Step 3: 运行迁移专测，确认 V10 表可以由 Flyway 创建**
 
 Run:
 ```powershell
@@ -132,7 +132,7 @@ Expected: PASS，Flyway 从空库迁移至 V10。
 - Create: `server/src/main/java/com/lingdong/learning/dictionary/application/DictionaryApplicationService.java`
 - Modify: `server/src/test/java/com/lingdong/learning/dictionary/application/DictionaryApplicationServiceTest.java`
 
-- [ ] **Step 1: 实现系统管理员校验、编码/名称/排序校验和创建用例**
+- [x] **Step 1: 实现系统管理员校验、编码/名称/排序校验和创建用例**
 
 ```java
 @Transactional
@@ -151,7 +151,7 @@ public DictionaryItem createItem(CreateDictionaryItemCommand command) {
 }
 ```
 
-- [ ] **Step 2: 运行字典专测，确认创建默认项测试通过**
+- [x] **Step 2: 运行字典专测，确认创建默认项测试通过**
 
 Run:
 ```powershell
@@ -167,13 +167,13 @@ Expected: PASS，第二个默认项成为唯一默认项。
 - Modify: `server/src/test/java/com/lingdong/learning/dictionary/application/DictionaryApplicationServiceTest.java`
 - Create: `server/src/main/java/com/lingdong/learning/dictionary/application/UpdateDictionaryItemCommand.java`
 - Create: `server/src/main/java/com/lingdong/learning/dictionary/application/DictionaryQueryService.java`
-- Create: `server/src/main/java/com/lingdong/learning/dictionary/application/DictionaryItemCache.java`
+- Create: `server/src/main/java/com/lingdong/learning/dictionary/infrastructure/cache/DictionaryItemCache.java`
 - Create: `server/src/main/java/com/lingdong/learning/common/config/CacheConfiguration.java`
 - Modify: `server/pom.xml`
 - Modify: `server/src/main/resources/application.yml`
 - Modify: `server/src/test/resources/application-test.yml`
 
-- [ ] **Step 1: 写入禁用后读缓存失效与关键字典被拦截的失败测试**
+- [x] **Step 1: 写入禁用后读缓存失效与关键字典被拦截的失败测试**
 
 ```java
 @Test
@@ -196,7 +196,7 @@ void rejectsDirectManagementOfKeyDictionaryTypes() {
 }
 ```
 
-- [ ] **Step 2: 运行专测，确认因更新/缓存/风险策略尚未实现而失败**
+- [x] **Step 2: 运行专测，确认因更新/缓存/风险策略尚未实现而失败**
 
 Run:
 ```powershell
@@ -206,7 +206,7 @@ mvn test "-Dtest=DictionaryApplicationServiceTest"
 
 Expected: FAIL，指出缺少 `updateItem`、查询服务或关键字典拦截。
 
-- [ ] **Step 3: 实现更新、Redis 缓存和风险策略**
+- [x] **Step 3: 实现更新、Redis 缓存和风险策略**
 
 ```java
 private static final Set<String> KEY_DICTIONARY_CODES = Set.of(
@@ -228,7 +228,7 @@ private void requireMutableType(DictionaryType type) {
 
 `DictionaryItemCache` 使用 `@Cacheable(cacheNames = "dictionary-items")` 缓存启用项；写服务在类型或项变更后按类型编码驱逐。生产配置使用 Redis，测试配置使用简单内存缓存，避免测试连接真实 Redis。
 
-- [ ] **Step 4: 运行字典专测，确认启停、缓存失效和关键字典拦截通过**
+- [x] **Step 4: 运行字典专测，确认启停、缓存失效和关键字典拦截通过**
 
 Run:
 ```powershell
@@ -244,7 +244,7 @@ Expected: PASS。
 - Modify: `docs/superpowers/plans/2026-07-30-lingdong-learning-dictionary-core.md`
 - Modify: `docs/design/12-当前实现一致性核对-V1.0.md`
 
-- [ ] **Step 1: 运行完整后端回归与格式检查**
+- [x] **Step 1: 运行完整后端回归与格式检查**
 
 Run:
 ```powershell
@@ -254,10 +254,10 @@ mvn test
 
 Expected: PASS，Flyway 验证至 V10，既有测试不回归。
 
-- [ ] **Step 2: 更新计划和一致性核对**
+- [x] **Step 2: 更新计划和一致性核对**
 
 将本计划全部勾选为完成；在一致性核对中将数据字典从“未实现”改为“已实现核心服务，HTTP API 依赖认证请求上下文后补齐”。
 
-- [ ] **Step 3: 不提交代码**
+- [x] **Step 3: 不提交代码**
 
 本次按用户当前协作方式保留工作区改动，不创建 Git 提交。

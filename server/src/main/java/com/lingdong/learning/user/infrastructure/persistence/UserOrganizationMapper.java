@@ -11,6 +11,6 @@ import java.util.List;
 public interface UserOrganizationMapper {
     boolean exists(@Param("userId") Long userId, @Param("organizationId") Long organizationId);
 
-    int insert(@Param("userId") Long userId, @Param("organizationId") Long organizationId);
+    int insert(@Param("id") Long id, @Param("userId") Long userId, @Param("organizationId") Long organizationId);
     List<Long> findOrganizationIds(@Param("userId") Long userId);
 }

@@ -1,0 +1,166 @@
+:root {
+  color: #1c2b28;
+  background: #f4f7f5;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* { box-sizing: border-box; }
+
+body { margin: 0; min-width: 320px; min-height: 100vh; }
+
+button, input, textarea { font: inherit; }
+
+.app-loading, .login-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+}
+
+.app-loading { background: #f4f7f5; }
+
+.route-loading { min-height: 240px; display: grid; place-items: center; }
+
+.login-page { padding: 24px; background: #e9f0ed; }
+
+.login-surface {
+  width: min(100%, 400px);
+  padding: 36px;
+  border: 1px solid #d5e0db;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 12px 30px rgba(29, 61, 51, 0.1);
+}
+
+.login-surface .ant-typography { display: block; margin-bottom: 4px; }
+
+.login-mark {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 18px;
+  color: #ffffff;
+  background: #167c5a;
+  border-radius: 6px;
+}
+
+.login-alert { margin: 20px 0 12px; }
+
+.app-shell { min-height: 100vh; }
+
+.app-shell > .ant-layout,
+.app-content,
+.page-stack,
+.content-panel { min-width: 0; }
+
+.app-sider { background: #1f4d40 !important; }
+
+.brand-lockup {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 22px;
+  color: #ffffff;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.app-sider .ant-menu { background: transparent; border-inline-end: 0; }
+
+.app-sider .ant-menu-item { margin-inline: 8px; width: calc(100% - 16px); border-radius: 5px; }
+
+.app-header {
+  height: 64px;
+  padding: 0 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  line-height: normal;
+  background: #ffffff;
+  border-bottom: 1px solid #dfe8e3;
+}
+
+.header-context { color: #62756e; font-size: 14px; }
+
+.user-menu { display: inline-flex; align-items: center; gap: 8px; color: #1c2b28; }
+
+.app-content { padding: 24px 28px 36px; background: #f4f7f5; }
+
+.page-stack { width: 100%; display: grid; gap: 16px; max-width: 1480px; margin: 0 auto; }
+
+.page-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 42px; }
+
+.page-heading h1 { margin: 0; font-size: 24px; line-height: 1.25; font-weight: 700; letter-spacing: 0; }
+
+.page-heading p { display: none; }
+
+.content-panel { border: 1px solid #dce6e0; box-shadow: none; }
+
+.content-panel .ant-pro-card-header { min-height: 50px; }
+
+.identity-grid { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px; align-items: start; }
+
+.identity-actions { display: flex; justify-content: flex-end; }
+
+.panel-footer { margin-top: 16px; display: flex; justify-content: flex-end; }
+
+.form-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 24px; }
+
+.directory-filters { margin-bottom: 20px; }
+
+.filter-select { width: 148px; }
+
+.full-width { width: 100%; }
+
+.organization-tree { min-height: 282px; padding: 8px 0; }
+
+.empty-state { min-height: 200px; display: grid; place-items: center; color: #788981; }
+
+.task-editor-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 16px;
+}
+
+.task-target-list { margin-bottom: 18px; }
+
+.task-target-heading {
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+}
+
+.task-target-row { width: 100%; }
+
+.task-target-type { width: 132px; }
+
+.task-target-value { width: min(390px, 42vw); }
+
+.batch-result-summary {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 16px;
+  color: #536760;
+}
+
+.batch-result-summary strong { color: #1c2b28; }
+
+@media (max-width: 768px) {
+  .app-content { padding: 18px 14px 28px; }
+  .app-header { padding: 0 16px; }
+  .page-heading { align-items: flex-start; flex-direction: column; }
+  .identity-grid { grid-template-columns: 1fr; }
+  .identity-actions { justify-content: flex-start; }
+  .directory-filters { display: grid; grid-template-columns: 1fr; }
+  .directory-filters .ant-form-item { margin-inline-end: 0; }
+  .directory-filters .ant-input, .directory-filters .filter-select { width: 100%; }
+  .login-surface { padding: 28px 22px; }
+  .task-editor-grid { grid-template-columns: 1fr; }
+  .task-target-row { display: grid; grid-template-columns: 1fr auto; }
+  .task-target-type, .task-target-value { width: 100%; }
+}

@@ -24,10 +24,46 @@
         WHERE id = #{id}
     </select>
 
+    <select id="findByIdForUpdate" resultMap="UserResultMap">
+        SELECT id, username, display_name, mobile, password_hash, user_type, status, created_at, updated_at
+        FROM sys_user
+        WHERE id = #{id}
+        FOR UPDATE
+    </select>
+
     <select id="findByUsername" resultMap="UserResultMap">
         SELECT id, username, display_name, mobile, password_hash, user_type, status, created_at, updated_at
         FROM sys_user
         WHERE username = #{username}
+    </select>
+
+    <sql id="directoryFilters">
+        <where>
+            <if test="query.keyword != null">
+                AND (username LIKE CONCAT('%', #{query.keyword}, '%')
+                OR display_name LIKE CONCAT('%', #{query.keyword}, '%'))
+            </if>
+            <if test="query.type != null">
+                AND user_type = #{query.type}
+            </if>
+            <if test="query.status != null">
+                AND status = #{query.status}
+            </if>
+        </where>
+    </sql>
+
+    <select id="findPage" resultMap="UserResultMap">
+        SELECT id, username, display_name, mobile, password_hash, user_type, status, created_at, updated_at
+        FROM sys_user
+        <include refid="directoryFilters"/>
+        ORDER BY created_at DESC, id DESC
+        LIMIT #{query.limit} OFFSET #{query.offset}
+    </select>
+
+    <select id="count" resultType="long">
+        SELECT COUNT(1)
+        FROM sys_user
+        <include refid="directoryFilters"/>
     </select>
 
     <select id="existsByUsername" resultType="boolean">
@@ -39,8 +75,22 @@
     </select>
 
     <insert id="insert">
-        INSERT INTO sys_user (username, display_name, mobile, password_hash, user_type, status)
-        VALUES (#{user.username}, #{user.displayName}, #{user.mobile, jdbcType=VARCHAR},
+        INSERT INTO sys_user (id, username, display_name, mobile, password_hash, user_type, status)
+        VALUES (#{user.id}, #{user.username}, #{user.displayName}, #{user.mobile, jdbcType=VARCHAR},
                 #{user.passwordHash, jdbcType=VARCHAR}, #{user.type}, #{user.status})
     </insert>
+
+    <update id="updatePasswordHash">
+        UPDATE sys_user
+        SET password_hash = #{passwordHash},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateStatus">
+        UPDATE sys_user
+        SET status = #{status},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+    </update>
 </mapper>

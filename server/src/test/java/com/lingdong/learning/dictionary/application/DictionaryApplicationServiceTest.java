@@ -1,10 +1,12 @@
 package com.lingdong.learning.dictionary.application;
 
+import com.lingdong.learning.common.id.IdGenerator;
 import com.lingdong.learning.dictionary.domain.DictionaryItem;
 import com.lingdong.learning.dictionary.domain.DictionaryStatus;
 import com.lingdong.learning.dictionary.domain.DictionaryType;
 import com.lingdong.learning.dictionary.infrastructure.cache.DictionaryItemCache;
 import com.lingdong.learning.dictionary.infrastructure.persistence.DictionaryItemMapper;
+import com.lingdong.learning.dictionary.infrastructure.persistence.DictionaryTypeMapper;
 import com.lingdong.learning.iam.domain.Role;
 import com.lingdong.learning.iam.infrastructure.persistence.RoleMapper;
 import com.lingdong.learning.user.application.AssignRoleToUserCommand;
@@ -32,6 +34,9 @@ class DictionaryApplicationServiceTest {
     private DictionaryItemMapper dictionaryItemMapper;
 
     @Autowired
+    private DictionaryTypeMapper dictionaryTypeMapper;
+
+    @Autowired
     private DictionaryQueryService dictionaryQueryService;
 
     @Autowired
@@ -43,12 +48,15 @@ class DictionaryApplicationServiceTest {
     @Autowired
     private RoleMapper roleMapper;
 
+    @Autowired
+    private IdGenerator idGenerator;
+
     @Test
     void letsSystemAdministratorCreateTypeAndKeepsOnlyLatestDefaultItem() {
         User administrator = createUserWithRole("dictionary_admin", "字典管理员", "SYS_ADMIN");
 
         DictionaryType type = dictionaryApplicationService.createType(
-                new CreateDictionaryTypeCommand(administrator.id(), "TASK_CATEGORY", "任务分类", 10)
+                new CreateDictionaryTypeCommand(administrator.id(), "LEARNING_CONTENT_TEST", "学习内容测试分类", 10)
         );
         DictionaryItem first = dictionaryApplicationService.createItem(
                 new CreateDictionaryItemCommand(administrator.id(), type.id(), "READING", "阅读", 10, true)
@@ -57,6 +65,9 @@ class DictionaryApplicationServiceTest {
                 new CreateDictionaryItemCommand(administrator.id(), type.id(), "MATH", "数学", 20, true)
         );
 
+        assertThat(Long.toString(type.id())).hasSize(19);
+        assertThat(Long.toString(first.id())).hasSize(19);
+        assertThat(Long.toString(second.id())).hasSize(19);
         assertThat(dictionaryItemMapper.findById(first.id()).defaultItem()).isFalse();
         assertThat(dictionaryItemMapper.findById(second.id()).defaultItem()).isTrue();
     }
@@ -123,6 +134,48 @@ class DictionaryApplicationServiceTest {
         ))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("已停用");
+    }
+
+    @Test
+    void rejectsDictionaryManagementByNonSystemAdministrator() {
+        User organizationAdministrator = createUserWithRole("dictionary_org_admin", "机构管理员", "ORG_ADMIN");
+
+        assertThatThrownBy(() -> dictionaryApplicationService.createType(
+                new CreateDictionaryTypeCommand(organizationAdministrator.id(), "CONTENT_SOURCE", "内容来源", 10)
+        ))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("仅系统管理员");
+    }
+
+    @Test
+    void rejectsDirectItemCreationForExistingKeyDictionaryType() {
+        User administrator = createUserWithRole("key_dictionary_item_admin", "关键字典项管理员", "SYS_ADMIN");
+        dictionaryTypeMapper.insert(DictionaryType.enabled(idGenerator.nextId(), "ROLE_TYPE", "角色类型", 10));
+        DictionaryType keyType = dictionaryTypeMapper.findByCode("ROLE_TYPE");
+
+        assertThatThrownBy(() -> dictionaryApplicationService.createItem(
+                new CreateDictionaryItemCommand(administrator.id(), keyType.id(), "CUSTOM", "自定义", 10, false)
+        ))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("系统任务审批");
+    }
+
+    @Test
+    void rejectsDisabledItemAsDefault() {
+        User administrator = createUserWithRole("disabled_default_admin", "停用默认项管理员", "SYS_ADMIN");
+        DictionaryType type = dictionaryApplicationService.createType(
+                new CreateDictionaryTypeCommand(administrator.id(), "EXAM_LEVEL", "考试等级", 10)
+        );
+        DictionaryItem item = dictionaryApplicationService.createItem(
+                new CreateDictionaryItemCommand(administrator.id(), type.id(), "LEVEL_ONE", "一级", 10, true)
+        );
+
+        assertThatThrownBy(() -> dictionaryApplicationService.updateItem(new UpdateDictionaryItemCommand(
+                administrator.id(), item.id(), "一级", 10, true, DictionaryStatus.DISABLED
+        )))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("不能设为默认项");
+        assertThat(dictionaryItemMapper.findById(item.id()).defaultItem()).isTrue();
     }
 
     private User createUserWithRole(String username, String displayName, String roleCode) {

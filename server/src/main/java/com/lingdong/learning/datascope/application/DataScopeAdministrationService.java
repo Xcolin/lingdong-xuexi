@@ -1,5 +1,8 @@
 package com.lingdong.learning.datascope.application;
 
+import com.lingdong.learning.common.id.IdGenerator;
+import com.lingdong.learning.common.security.SystemOperationAccessDeniedException;
+import com.lingdong.learning.common.web.ResourceNotFoundException;
 import com.lingdong.learning.iam.domain.RoleDataScope;
 import com.lingdong.learning.iam.infrastructure.persistence.RoleMapper;
 import com.lingdong.learning.datascope.infrastructure.persistence.OrganizationAdminMapper;
@@ -21,34 +24,50 @@ public class DataScopeAdministrationService {
     private final OrganizationAdminMapper organizationAdminMapper;
     private final RoleMapper roleMapper;
     private final RoleDataScopeMapper roleDataScopeMapper;
+    private final IdGenerator idGenerator;
 
     public DataScopeAdministrationService(UserRoleMapper userRoleMapper, UserMapper userMapper, OrganizationMapper organizationMapper,
                                           UserOrganizationMapper userOrganizationMapper, OrganizationAdminMapper organizationAdminMapper,
-                                          RoleMapper roleMapper, RoleDataScopeMapper roleDataScopeMapper) {
+                                          RoleMapper roleMapper, RoleDataScopeMapper roleDataScopeMapper, IdGenerator idGenerator) {
         this.userRoleMapper = userRoleMapper; this.userMapper = userMapper; this.organizationMapper = organizationMapper;
         this.userOrganizationMapper = userOrganizationMapper; this.organizationAdminMapper = organizationAdminMapper;
-        this.roleMapper = roleMapper; this.roleDataScopeMapper = roleDataScopeMapper;
+        this.roleMapper = roleMapper; this.roleDataScopeMapper = roleDataScopeMapper; this.idGenerator = idGenerator;
     }
 
     @Transactional
     public void configureOrganizationAdministrator(Long operatorId, Long userId, Long organizationId) {
         requireSystemAdministrator(operatorId);
-        if (userMapper.findById(userId) == null || organizationMapper.findById(organizationId) == null) throw new IllegalArgumentException("用户或组织不存在");
+        if (userMapper.findById(userId) == null) {
+            throw new ResourceNotFoundException("用户不存在：" + userId);
+        }
+        if (organizationMapper.findById(organizationId) == null) {
+            throw new ResourceNotFoundException("组织不存在：" + organizationId);
+        }
         if (!userOrganizationMapper.exists(userId, organizationId)) throw new IllegalStateException("组织管理员必须先关联对应组织");
         if (organizationAdminMapper.exists(userId, organizationId)) throw new IllegalStateException("用户已是该组织管理员");
-        organizationAdminMapper.insert(userId, organizationId);
+        organizationAdminMapper.insert(idGenerator.nextId(), userId, organizationId);
     }
 
     @Transactional
     public void configureRoleCustomScope(Long operatorId, Long roleId, Long organizationId) {
         requireSystemAdministrator(operatorId);
         var role = roleMapper.findById(roleId);
-        if (role == null || role.dataScope() != RoleDataScope.CUSTOM || organizationMapper.findById(organizationId) == null) throw new IllegalArgumentException("角色或组织范围不合法");
+        if (role == null) {
+            throw new ResourceNotFoundException("角色不存在：" + roleId);
+        }
+        if (organizationMapper.findById(organizationId) == null) {
+            throw new ResourceNotFoundException("组织不存在：" + organizationId);
+        }
+        if (role.dataScope() != RoleDataScope.CUSTOM) {
+            throw new IllegalArgumentException("角色不是自定义数据范围角色");
+        }
         if (roleDataScopeMapper.exists(roleId, organizationId)) throw new IllegalStateException("角色已拥有该自定义组织范围");
-        roleDataScopeMapper.insert(roleId, organizationId);
+        roleDataScopeMapper.insert(idGenerator.nextId(), roleId, organizationId);
     }
 
     private void requireSystemAdministrator(Long operatorId) {
-        if (operatorId == null || !userRoleMapper.hasRoleCode(operatorId, "SYS_ADMIN")) throw new IllegalStateException("仅系统管理员可配置数据范围");
+        if (operatorId == null || !userRoleMapper.hasRoleCode(operatorId, "SYS_ADMIN")) {
+            throw new SystemOperationAccessDeniedException("仅系统管理员可配置数据范围");
+        }
     }
 }
