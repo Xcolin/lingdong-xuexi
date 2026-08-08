@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthPointLifecycleMapper">
+    <resultMap id="DecayRuleMap"
+               type="com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthPointDecayRuleRow">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="start_streak_day" javaType="java.lang.Integer"/>
+            <arg column="decay_percent" javaType="java.lang.Integer"/>
+            <arg column="effective_from" javaType="java.time.LocalDateTime"/>
+            <arg column="effective_to" javaType="java.time.LocalDateTime"/>
+            <arg column="version_no" javaType="java.lang.Integer"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="DormancyStateMap"
+               type="com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthPointDormancyStateRow">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="student_id" javaType="java.lang.Long"/>
+            <arg column="last_activity_at" javaType="java.time.LocalDateTime"/>
+            <arg column="reminder_due_at" javaType="java.time.LocalDateTime"/>
+            <arg column="clear_due_at" javaType="java.time.LocalDateTime"/>
+            <arg column="last_reminder_created_at" javaType="java.time.LocalDateTime"/>
+            <arg column="last_cleared_at" javaType="java.time.LocalDateTime"/>
+            <arg column="version_no" javaType="java.lang.Integer"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findRecentEffectiveRewardDates" resultType="java.time.LocalDate">
+        SELECT DISTINCT assignment.scheduled_date
+        FROM growth_point_ledger reward
+        JOIN learn_task_assignment assignment ON assignment.id = reward.source_assignment_id
+        LEFT JOIN growth_point_ledger correction
+          ON correction.correction_of_id = reward.id
+         AND correction.change_type = 'CORRECTION'
+        WHERE reward.student_id = #{studentId}
+          AND reward.source_task_id = #{taskId}
+          AND reward.source_type = #{sourceType}
+          AND reward.change_type = 'TASK_REWARD'
+          AND assignment.scheduled_date &lt; #{beforeDate}
+          AND correction.id IS NULL
+        ORDER BY assignment.scheduled_date DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="findApplicableDecayRule" resultMap="DecayRuleMap">
+        SELECT id, start_streak_day, decay_percent, effective_from, effective_to, version_no
+        FROM growth_point_decay_rule
+        WHERE status = 'ENABLED'
+          AND start_streak_day &lt;= #{streakDays}
+          AND effective_from &lt;= #{awardedAt}
+          AND (effective_to IS NULL OR effective_to &gt; #{awardedAt})
+        ORDER BY start_streak_day DESC, version_no DESC, id DESC
+        LIMIT 1
+    </select>
+
+    <select id="findDormancyStateForUpdate" resultMap="DormancyStateMap">
+        SELECT id, student_id, last_activity_at, reminder_due_at, clear_due_at,
+               last_reminder_created_at, last_cleared_at, version_no
+        FROM growth_point_dormancy_state
+        WHERE student_id = #{studentId}
+        FOR UPDATE
+    </select>
+
+    <select id="findLatestEffectiveActivityAt" resultType="java.time.LocalDateTime">
+        SELECT MAX(activity.occurred_at)
+        FROM (
+            SELECT event.occurred_at
+            FROM learn_task_assignment_event event
+            JOIN learn_task_assignment assignment ON assignment.id = event.assignment_id
+            WHERE assignment.student_id = #{studentId}
+              AND event.event_type IN ('CLAIMED', 'PAUSED', 'RESUMED', 'ABANDONED',
+                  'CHECKED_IN', 'REVIEW_APPROVED', 'EXEMPTED')
+            UNION ALL
+            SELECT ledger.occurred_at
+            FROM growth_point_ledger ledger
+            WHERE ledger.student_id = #{studentId}
+              AND ledger.change_type &lt;&gt; 'DORMANCY_CLEAR'
+            UNION ALL
+            SELECT supplement.supplemented_at
+            FROM growth_review_supplement supplement
+            JOIN growth_review review ON review.id = supplement.review_id
+            WHERE review.student_id = #{studentId}
+        ) activity
+    </select>
+
+    <select id="findDormancyNoticeId" resultType="long">
+        SELECT id
+        FROM growth_point_dormancy_notice
+        WHERE student_id = #{studentId}
+          AND activity_baseline_at = #{activityBaselineAt}
+    </select>
+
+    <select id="findPrimaryParentUserId" resultType="long">
+        SELECT parent_user_id
+        FROM edu_parent_student
+        WHERE student_id = #{studentId}
+          AND status = 'ACTIVE'
+          AND relation_role = 'PRIMARY_GUARDIAN'
+          AND primary_scope_key = 'PRIMARY'
+        ORDER BY effective_from DESC, id DESC
+        LIMIT 1
+    </select>
+
+    <insert id="insertDormancyState">
+        INSERT INTO growth_point_dormancy_state (
+            id, student_id, last_activity_at, reminder_due_at, clear_due_at,
+            version_no, created_at, updated_at
+        )
+        SELECT #{studentId}, #{studentId}, CURRENT_TIMESTAMP,
+               TIMESTAMPADD(DAY, 27, CURRENT_TIMESTAMP),
+               TIMESTAMPADD(DAY, 30, CURRENT_TIMESTAMP),
+               0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+        WHERE NOT EXISTS (
+            SELECT 1 FROM growth_point_dormancy_state WHERE student_id = #{studentId}
+        )
+    </insert>
+
+    <insert id="insertDormancyNotice">
+        INSERT INTO growth_point_dormancy_notice (
+            id, student_id, primary_parent_user_id, activity_baseline_at,
+            clear_due_at, delivery_status, created_at, updated_at
+        ) VALUES (
+            #{id}, #{studentId}, #{primaryParentUserId, jdbcType=BIGINT}, #{activityBaselineAt},
+            #{clearDueAt}, #{deliveryStatus}, #{now}, #{now}
+        )
+    </insert>
+
+    <update id="markDormancyReminderCreated">
+        UPDATE growth_point_dormancy_state
+        SET last_reminder_created_at = #{now}, version_no = version_no + 1, updated_at = #{now}
+        WHERE student_id = #{studentId}
+          AND version_no = #{expectedVersion}
+          AND last_reminder_created_at IS NULL
+    </update>
+
+    <update id="markDormancyCleared">
+        UPDATE growth_point_dormancy_state
+        SET last_cleared_at = #{now}, version_no = version_no + 1, updated_at = #{now}
+        WHERE student_id = #{studentId}
+          AND version_no = #{expectedVersion}
+          AND last_cleared_at IS NULL
+    </update>
+
+    <update id="resetDormancyCycle">
+        UPDATE growth_point_dormancy_state
+        SET last_activity_at = #{lastActivityAt}, reminder_due_at = #{reminderDueAt},
+            clear_due_at = #{clearDueAt}, last_reminder_created_at = NULL,
+            last_cleared_at = NULL, version_no = version_no + 1, updated_at = #{now}
+        WHERE student_id = #{studentId}
+          AND version_no = #{expectedVersion}
+          AND last_activity_at &lt; #{lastActivityAt}
+    </update>
+
+    <select id="findDueDormancyStudentIdsAfter" resultType="long">
+        SELECT state.student_id
+        FROM growth_point_dormancy_state state
+        WHERE state.student_id &gt; #{afterId}
+          AND ((state.reminder_due_at &lt;= #{now} AND state.last_reminder_created_at IS NULL)
+            OR (state.clear_due_at &lt;= #{now} AND state.last_cleared_at IS NULL)
+            OR (state.last_cleared_at IS NOT NULL AND (
+                EXISTS (
+                    SELECT 1
+                    FROM learn_task_assignment_event event
+                    JOIN learn_task_assignment assignment ON assignment.id = event.assignment_id
+                    WHERE assignment.student_id = state.student_id
+                      AND event.occurred_at &gt; state.last_activity_at
+                      AND event.event_type IN ('CLAIMED', 'PAUSED', 'RESUMED', 'ABANDONED',
+                          'CHECKED_IN', 'REVIEW_APPROVED', 'EXEMPTED')
+                ) OR EXISTS (
+                    SELECT 1 FROM growth_point_ledger ledger
+                    WHERE ledger.student_id = state.student_id
+                      AND ledger.occurred_at &gt; state.last_activity_at
+                      AND ledger.change_type &lt;&gt; 'DORMANCY_CLEAR'
+                ) OR EXISTS (
+                    SELECT 1
+                    FROM growth_review_supplement supplement
+                    JOIN growth_review review ON review.id = supplement.review_id
+                    WHERE review.student_id = state.student_id
+                      AND supplement.supplemented_at &gt; state.last_activity_at
+                )
+            )))
+        ORDER BY state.student_id
+        LIMIT #{limit}
+    </select>
+</mapper>

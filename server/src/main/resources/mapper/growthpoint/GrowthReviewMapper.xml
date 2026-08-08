@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthReviewMapper">
+    <resultMap id="ReviewMap"
+               type="com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthReviewRow">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="current_snapshot_id" javaType="java.lang.Long"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="SnapshotMap"
+               type="com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthReviewSnapshotRow">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="content_version" javaType="java.lang.Integer"/>
+            <arg column="fact_fingerprint" javaType="java.lang.String"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="SummaryMap"
+               type="com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthReviewSummaryRow">
+        <constructor>
+            <idArg column="review_id" javaType="java.lang.Long"/>
+            <arg column="student_id" javaType="java.lang.Long"/>
+            <arg column="student_name" javaType="java.lang.String"/>
+            <arg column="period_type" javaType="com.lingdong.learning.growthpoint.domain.GrowthReviewPeriodType"/>
+            <arg column="period_start" javaType="java.time.LocalDate"/>
+            <arg column="period_end" javaType="java.time.LocalDate"/>
+            <arg column="snapshot_id" javaType="java.lang.Long"/>
+            <arg column="content_version" javaType="java.lang.Integer"/>
+            <arg column="task_total_count" javaType="java.lang.Integer"/>
+            <arg column="completed_count" javaType="java.lang.Integer"/>
+            <arg column="in_progress_count" javaType="java.lang.Integer"/>
+            <arg column="pending_optimization_count" javaType="java.lang.Integer"/>
+            <arg column="exempted_count" javaType="java.lang.Integer"/>
+            <arg column="completion_rate" javaType="java.math.BigDecimal"/>
+            <arg column="earned_points" javaType="java.lang.Long"/>
+            <arg column="pause_count" javaType="java.lang.Integer"/>
+            <arg column="generated_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="DetailMap"
+               type="com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthReviewDetailRow">
+        <constructor>
+            <idArg column="review_id" javaType="java.lang.Long"/>
+            <arg column="student_id" javaType="java.lang.Long"/>
+            <arg column="student_name" javaType="java.lang.String"/>
+            <arg column="period_type" javaType="com.lingdong.learning.growthpoint.domain.GrowthReviewPeriodType"/>
+            <arg column="period_start" javaType="java.time.LocalDate"/>
+            <arg column="period_end" javaType="java.time.LocalDate"/>
+            <arg column="snapshot_id" javaType="java.lang.Long"/>
+            <arg column="content_version" javaType="java.lang.Integer"/>
+            <arg column="task_total_count" javaType="java.lang.Integer"/>
+            <arg column="completed_count" javaType="java.lang.Integer"/>
+            <arg column="in_progress_count" javaType="java.lang.Integer"/>
+            <arg column="pending_optimization_count" javaType="java.lang.Integer"/>
+            <arg column="exempted_count" javaType="java.lang.Integer"/>
+            <arg column="completion_rate" javaType="java.math.BigDecimal"/>
+            <arg column="earned_points" javaType="java.lang.Long"/>
+            <arg column="pause_count" javaType="java.lang.Integer"/>
+            <arg column="data_cutoff_at" javaType="java.time.LocalDateTime"/>
+            <arg column="generated_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="CategoryMap"
+               type="com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthReviewCategoryRow">
+        <constructor>
+            <arg column="category_code" javaType="java.lang.String"/>
+            <arg column="task_count" javaType="java.lang.Integer"/>
+            <arg column="completed_count" javaType="java.lang.Integer"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="DailyTrendMap"
+               type="com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthReviewDailyTrendRow">
+        <constructor>
+            <arg column="trend_date" javaType="java.time.LocalDate"/>
+            <arg column="task_total_count" javaType="java.lang.Integer"/>
+            <arg column="completed_count" javaType="java.lang.Integer"/>
+            <arg column="in_progress_count" javaType="java.lang.Integer"/>
+            <arg column="pending_optimization_count" javaType="java.lang.Integer"/>
+            <arg column="completion_rate" javaType="java.math.BigDecimal"/>
+            <arg column="earned_points" javaType="java.lang.Long"/>
+            <arg column="pause_count" javaType="java.lang.Integer"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="SupplementMap"
+               type="com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthReviewSupplementRow">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="editor_user_id" javaType="java.lang.Long"/>
+            <arg column="editor_role" javaType="java.lang.String"/>
+            <arg column="supplement_type" javaType="com.lingdong.learning.growthpoint.domain.GrowthReviewSupplementType"/>
+            <arg column="content" javaType="java.lang.String"/>
+            <arg column="supplemented_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="CurrentSummaryColumns">
+        review_record.id AS review_id, review_record.student_id, student.student_name,
+        review_record.period_type, review_record.period_start, review_record.period_end,
+        snapshot.id AS snapshot_id, snapshot.content_version,
+        snapshot.task_total_count, snapshot.completed_count, snapshot.in_progress_count,
+        snapshot.pending_optimization_count, snapshot.exempted_count,
+        snapshot.completion_rate, snapshot.earned_points, snapshot.pause_count,
+        snapshot.generated_at
+    </sql>
+
+    <select id="findForUpdate" resultMap="ReviewMap">
+        SELECT id, current_snapshot_id
+        FROM growth_review
+        WHERE student_id = #{studentId}
+          AND period_type = #{periodType}
+          AND period_start = #{periodStart}
+          AND period_end = #{periodEnd}
+        FOR UPDATE
+    </select>
+
+    <insert id="insertReview">
+        INSERT INTO growth_review (
+            id, student_id, period_type, period_start, period_end,
+            current_snapshot_id, status, created_at, updated_at
+        ) VALUES (
+            #{id}, #{studentId}, #{periodType}, #{periodStart}, #{periodEnd},
+            NULL, 'FINAL', #{now}, #{now}
+        )
+    </insert>
+
+    <select id="findCurrentSnapshot" resultMap="SnapshotMap">
+        SELECT snapshot.id, snapshot.content_version, snapshot.fact_fingerprint
+        FROM growth_review review_record
+        INNER JOIN growth_review_snapshot snapshot
+            ON snapshot.id = review_record.current_snapshot_id
+        WHERE review_record.id = #{reviewId}
+    </select>
+
+    <select id="findMaxVersion" resultType="int">
+        SELECT COALESCE(MAX(content_version), 0)
+        FROM growth_review_snapshot
+        WHERE review_id = #{reviewId}
+    </select>
+
+    <insert id="insertSnapshot">
+        INSERT INTO growth_review_snapshot (
+            id, review_id, content_version, task_total_count, completed_count,
+            in_progress_count, pending_optimization_count, exempted_count,
+            completion_rate, earned_points, pause_count, generation_source,
+            fact_fingerprint, data_cutoff_at, generated_at
+        ) VALUES (
+            #{snapshot.id}, #{snapshot.reviewId}, #{snapshot.contentVersion},
+            #{snapshot.taskTotalCount}, #{snapshot.completedCount},
+            #{snapshot.inProgressCount}, #{snapshot.pendingOptimizationCount},
+            #{snapshot.exemptedCount}, #{snapshot.completionRate},
+            #{snapshot.earnedPoints}, #{snapshot.pauseCount},
+            #{snapshot.generationSource}, #{snapshot.factFingerprint},
+            #{snapshot.dataCutoffAt}, #{snapshot.generatedAt}
+        )
+    </insert>
+
+    <insert id="insertCategories">
+        INSERT INTO growth_review_category_stat (
+            id, snapshot_id, category_code, task_count, completed_count
+        ) VALUES
+        <foreach collection="rows" item="row" separator=",">
+            (#{row.id}, #{row.snapshotId}, #{row.categoryCode},
+             #{row.taskCount}, #{row.completedCount})
+        </foreach>
+    </insert>
+
+    <insert id="insertDailyTrends">
+        INSERT INTO growth_review_daily_trend (
+            id, snapshot_id, trend_date, task_total_count, completed_count,
+            in_progress_count, pending_optimization_count, completion_rate,
+            earned_points, pause_count
+        ) VALUES
+        <foreach collection="rows" item="row" separator=",">
+            (#{row.id}, #{row.snapshotId}, #{row.trendDate},
+             #{row.taskTotalCount}, #{row.completedCount}, #{row.inProgressCount},
+             #{row.pendingOptimizationCount}, #{row.completionRate},
+             #{row.earnedPoints}, #{row.pauseCount})
+        </foreach>
+    </insert>
+
+    <update id="updateCurrentSnapshot">
+        UPDATE growth_review
+        SET current_snapshot_id = #{snapshotId}, updated_at = #{now}
+        WHERE id = #{reviewId}
+    </update>
+
+    <select id="findCurrentByStudent" resultMap="SummaryMap">
+        SELECT <include refid="CurrentSummaryColumns"/>
+        FROM growth_review review_record
+        INNER JOIN edu_student student ON student.id = review_record.student_id
+        INNER JOIN growth_review_snapshot snapshot
+            ON snapshot.id = review_record.current_snapshot_id
+        WHERE review_record.student_id = #{studentId}
+          AND review_record.period_type = #{periodType}
+        ORDER BY review_record.period_start DESC, review_record.id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countCurrentByStudent" resultType="long">
+        SELECT COUNT(*)
+        FROM growth_review
+        WHERE student_id = #{studentId}
+          AND period_type = #{periodType}
+          AND current_snapshot_id IS NOT NULL
+    </select>
+
+    <select id="findCurrentDetail" resultMap="DetailMap">
+        SELECT <include refid="CurrentSummaryColumns"/>, snapshot.data_cutoff_at
+        FROM growth_review review_record
+        INNER JOIN edu_student student ON student.id = review_record.student_id
+        INNER JOIN growth_review_snapshot snapshot
+            ON snapshot.id = review_record.current_snapshot_id
+        WHERE review_record.student_id = #{studentId}
+          AND review_record.id = #{reviewId}
+    </select>
+
+    <select id="findCategories" resultMap="CategoryMap">
+        SELECT category_code, task_count, completed_count
+        FROM growth_review_category_stat
+        WHERE snapshot_id = #{snapshotId}
+        ORDER BY category_code
+    </select>
+
+    <select id="findDailyTrends" resultMap="DailyTrendMap">
+        SELECT trend_date, task_total_count, completed_count, in_progress_count,
+               pending_optimization_count, completion_rate, earned_points, pause_count
+        FROM growth_review_daily_trend
+        WHERE snapshot_id = #{snapshotId}
+        ORDER BY trend_date
+    </select>
+
+    <select id="findSupplements" resultMap="SupplementMap">
+        SELECT id, editor_user_id, editor_role, supplement_type, content, supplemented_at
+        FROM growth_review_supplement
+        WHERE review_id = #{reviewId}
+        ORDER BY supplemented_at, id
+    </select>
+
+    <insert id="insertSupplement">
+        INSERT INTO growth_review_supplement (
+            id, review_id, editor_user_id, editor_role,
+            supplement_type, content, supplemented_at
+        ) VALUES (
+            #{id}, #{reviewId}, #{editorUserId}, #{editorRole},
+            #{supplementType}, #{content}, #{supplementedAt}
+        )
+    </insert>
+
+    <select id="findEnabledStudentIdsAfter" resultType="long">
+        SELECT id
+        FROM edu_student
+        WHERE status = 'ENABLED'
+          AND id &gt; #{afterId}
+        ORDER BY id
+        LIMIT #{limit}
+    </select>
+</mapper>

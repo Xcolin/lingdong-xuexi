@@ -36,7 +36,10 @@
             <text class="source-label" :class="`source-${task.sourceType.toLowerCase()}`">
               {{ sourceLabel(task.sourceType) }}
             </text>
-            <text class="status-label">待认领</text>
+            <text class="status-label" :class="`status-${task.effectiveStatus.toLowerCase()}`">
+              {{ statusLabel(task.effectiveStatus) }}
+            </text>
+            <text v-if="task.overnightMigrated" class="migration-label">隔夜迁移</text>
           </view>
           <text class="task-title">{{ task.title }}</text>
           <view class="task-meta">
@@ -65,6 +68,7 @@ import { getMiniappCapabilities } from '@/api/capability';
 import {
   listStudentTaskAssignments,
   type LearningTaskSourceType,
+  type TaskAssignmentEffectiveStatus,
   type StudentTaskAssignment
 } from '@/api/learning-task';
 import { getStudentSession } from '@/session/student-session';
@@ -164,6 +168,19 @@ function sourceLabel(source: LearningTaskSourceType): string {
   return source === 'FAMILY' ? '家庭' : source === 'ORGANIZATION' ? '机构' : '教师';
 }
 
+function statusLabel(status: TaskAssignmentEffectiveStatus): string {
+  const labels: Record<TaskAssignmentEffectiveStatus, string> = {
+    PENDING_CLAIM: '待认领',
+    IN_PROGRESS: '进行中',
+    PAUSED: '已暂停',
+    PENDING_REVIEW: '待审核',
+    NEEDS_IMPROVEMENT: '待优化',
+    EXEMPT: '免执行',
+    COMPLETED: '已完成'
+  };
+  return labels[status];
+}
+
 function toMessage(error: unknown): string {
   return error instanceof Error ? error.message : '请求未能完成';
 }
@@ -214,19 +231,34 @@ function toMessage(error: unknown): string {
 }
 
 .task-row-hover { background: #f1f6f3; }
-.task-row-top { display: flex; align-items: center; justify-content: space-between; }
+.task-row-top {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
 
 .source-label,
-.status-label {
+.status-label,
+.migration-label {
   padding: 6rpx 12rpx;
   border-radius: 6rpx;
   font-size: 22rpx;
 }
 
+.migration-label { background: #eef1f2; color: #66716c; }
+
 .source-family { background: #fceff3; color: #9d3658; }
 .source-organization { background: #edf3ff; color: #315f9f; }
 .source-teacher { background: #e9f7f5; color: #147069; }
 .status-label { background: #fff5de; color: #8b6417; }
+.status-in_progress { background: #e8f6ef; color: #167c5a; }
+.status-paused { background: #eef1f5; color: #526170; }
+.status-pending_review { background: #edf3ff; color: #315f9f; }
+.status-needs_improvement { background: #fff0e8; color: #9a4b38; }
+.status-exempt { background: #f0f1f2; color: #606b66; }
+.status-completed { background: #e8f6ef; color: #167c5a; }
 
 .task-title {
   display: block;

@@ -6,6 +6,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
+import java.time.LocalDate;
 
 /** 学习任务定义持久化边界。 */
 @Mapper
@@ -23,4 +24,17 @@ public interface LearningTaskMapper {
     int updateDraft(@Param("task") LearningTask task);
 
     int markPublished(@Param("id") Long id);
+
+    int insertDeferredCopy(
+            @Param("targetTaskId") Long targetTaskId,
+            @Param("sourceTaskId") Long sourceTaskId,
+            @Param("targetDate") LocalDate targetDate
+    );
+
+    int insertPreviousDayCopy(
+            @Param("targetTaskId") Long targetTaskId,
+            @Param("sourceTaskId") Long sourceTaskId,
+            @Param("targetDate") LocalDate targetDate,
+            @Param("parentUserId") Long parentUserId
+    );
 }

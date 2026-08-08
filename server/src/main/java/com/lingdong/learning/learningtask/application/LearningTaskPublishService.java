@@ -6,10 +6,12 @@ import com.lingdong.learning.common.web.ResourceNotFoundException;
 import com.lingdong.learning.feature.application.FeatureAccessService;
 import com.lingdong.learning.learningtask.domain.LearningTask;
 import com.lingdong.learning.learningtask.domain.LearningTaskAssignment;
+import com.lingdong.learning.learningtask.domain.LearningTaskRecurrence;
 import com.lingdong.learning.learningtask.domain.LearningTaskStatus;
 import com.lingdong.learning.learningtask.domain.LearningTaskTarget;
 import com.lingdong.learning.learningtask.infrastructure.persistence.LearningTaskAssignmentMapper;
 import com.lingdong.learning.learningtask.infrastructure.persistence.LearningTaskMapper;
+import com.lingdong.learning.learningtask.infrastructure.persistence.LearningTaskRecurrenceMapper;
 import com.lingdong.learning.learningtask.infrastructure.persistence.LearningTaskTagMapper;
 import com.lingdong.learning.learningtask.infrastructure.persistence.LearningTaskTargetMapper;
 import org.springframework.stereotype.Service;
@@ -29,6 +31,7 @@ public class LearningTaskPublishService {
     private final LearningTaskTargetMapper targetMapper;
     private final LearningTaskTagMapper tagMapper;
     private final LearningTaskAssignmentMapper assignmentMapper;
+    private final LearningTaskRecurrenceMapper recurrenceMapper;
     private final LearningTaskValidator validator;
     private final LearningTaskScopeService scopeService;
     private final LearningTaskTargetExpansionService expansionService;
@@ -40,6 +43,7 @@ public class LearningTaskPublishService {
             LearningTaskTargetMapper targetMapper,
             LearningTaskTagMapper tagMapper,
             LearningTaskAssignmentMapper assignmentMapper,
+            LearningTaskRecurrenceMapper recurrenceMapper,
             LearningTaskValidator validator,
             LearningTaskScopeService scopeService,
             LearningTaskTargetExpansionService expansionService,
@@ -50,6 +54,7 @@ public class LearningTaskPublishService {
         this.targetMapper = targetMapper;
         this.tagMapper = tagMapper;
         this.assignmentMapper = assignmentMapper;
+        this.recurrenceMapper = recurrenceMapper;
         this.validator = validator;
         this.scopeService = scopeService;
         this.expansionService = expansionService;
@@ -75,7 +80,7 @@ public class LearningTaskPublishService {
                 task.title(), task.difficultyLevel(), task.durationMinutes(), task.scheduledDate(),
                 task.categoryCode(), tagCodes, task.remark(), targets.stream()
                 .map(target -> new LearningTaskTargetInput(target.targetType(), target.targetId()))
-                .toList()));
+                .toList(), Boolean.TRUE.equals(task.recurrenceEnabled()), task.recurrenceEndDate()));
         Long reviewerUserId = scopeService.validateAndResolveReviewer(
                 currentUser, task.sourceType(), task.sourceOrganizationId(),
                 task.reviewerUserId(), validatedDraft);
@@ -95,6 +100,10 @@ public class LearningTaskPublishService {
                     task.scheduledDate(), task.scheduledDate().atTime(LocalTime.of(23, 59, 59))));
         }
         assignmentMapper.insertBatch(assignments);
+        if (Boolean.TRUE.equals(task.recurrenceEnabled())) {
+            recurrenceMapper.insert(LearningTaskRecurrence.active(
+                    idGenerator.nextId(), task.id(), task.scheduledDate(), task.recurrenceEndDate()));
+        }
         if (taskMapper.markPublished(task.id()) != 1) {
             throw new IllegalStateException("任务状态已变化，发布失败");
         }

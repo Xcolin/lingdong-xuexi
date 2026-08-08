@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthRewardExchangeMapper">
+    <resultMap id="GrowthRewardExchangeMap"
+               type="com.lingdong.learning.growthpoint.domain.GrowthRewardExchange">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="reward_id" javaType="java.lang.Long"/>
+            <arg column="student_id" javaType="java.lang.Long"/>
+            <arg column="requester_user_id" javaType="java.lang.Long"/>
+            <arg column="reward_name_snapshot" javaType="java.lang.String"/>
+            <arg column="required_points_snapshot" javaType="java.lang.Long"/>
+            <arg column="description_snapshot" javaType="java.lang.String"/>
+            <arg column="requested_at" javaType="java.time.LocalDateTime"/>
+            <arg column="approval_deadline" javaType="java.time.LocalDateTime"/>
+            <arg column="status" javaType="com.lingdong.learning.growthpoint.domain.GrowthRewardExchangeStatus"/>
+            <arg column="reviewed_by" javaType="java.lang.Long"/>
+            <arg column="reviewed_at" javaType="java.time.LocalDateTime"/>
+            <arg column="reject_reason" javaType="java.lang.String"/>
+            <arg column="verified_by" javaType="java.lang.Long"/>
+            <arg column="verified_at" javaType="java.time.LocalDateTime"/>
+            <arg column="version_no" javaType="java.lang.Integer"/>
+            <arg column="created_at" javaType="java.time.LocalDateTime"/>
+            <arg column="updated_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="ExchangeColumns">
+        id, reward_id, student_id, requester_user_id, reward_name_snapshot,
+        required_points_snapshot, description_snapshot, requested_at,
+        approval_deadline, status, reviewed_by, reviewed_at, reject_reason,
+        verified_by, verified_at, version_no, created_at, updated_at
+    </sql>
+
+    <insert id="insert">
+        INSERT INTO growth_reward_exchange (
+            id, reward_id, student_id, requester_user_id, reward_name_snapshot,
+            required_points_snapshot, description_snapshot, requested_at,
+            approval_deadline, status, reviewed_by, reviewed_at, reject_reason,
+            verified_by, verified_at, version_no, created_at, updated_at
+        ) VALUES (
+            #{exchange.id}, #{exchange.rewardId}, #{exchange.studentId},
+            #{exchange.requesterUserId}, #{exchange.rewardNameSnapshot},
+            #{exchange.requiredPointsSnapshot}, #{exchange.descriptionSnapshot},
+            #{exchange.requestedAt}, #{exchange.approvalDeadline}, #{exchange.status},
+            #{exchange.reviewedBy}, #{exchange.reviewedAt}, #{exchange.rejectReason},
+            #{exchange.verifiedBy}, #{exchange.verifiedAt}, #{exchange.versionNo},
+            #{exchange.createdAt}, #{exchange.updatedAt}
+        )
+    </insert>
+
+    <select id="existsActive" resultType="boolean">
+        SELECT CASE WHEN COUNT(1) &gt; 0 THEN TRUE ELSE FALSE END
+        FROM growth_reward_exchange
+        WHERE student_id = #{studentId}
+          AND reward_id = #{rewardId}
+          AND status IN ('PENDING_APPROVAL', 'PENDING_VERIFICATION')
+    </select>
+
+    <select id="findByIdForUpdate" resultMap="GrowthRewardExchangeMap">
+        SELECT <include refid="ExchangeColumns"/>
+        FROM growth_reward_exchange
+        WHERE id = #{id}
+        FOR UPDATE
+    </select>
+
+    <select id="findByStudentId" resultMap="GrowthRewardExchangeMap">
+        SELECT <include refid="ExchangeColumns"/>
+        FROM growth_reward_exchange
+        WHERE student_id = #{studentId}
+        ORDER BY requested_at DESC, id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countByStudentId" resultType="long">
+        SELECT COUNT(*)
+        FROM growth_reward_exchange
+        WHERE student_id = #{studentId}
+    </select>
+
+    <update id="approve">
+        UPDATE growth_reward_exchange
+        SET status = 'PENDING_VERIFICATION',
+            reviewed_by = #{reviewedBy},
+            reviewed_at = #{reviewedAt},
+            version_no = version_no + 1,
+            updated_at = #{reviewedAt}
+        WHERE id = #{id}
+          AND status = 'PENDING_APPROVAL'
+          AND version_no = #{expectedVersion}
+    </update>
+
+    <update id="reject">
+        UPDATE growth_reward_exchange
+        SET status = 'REJECTED',
+            reviewed_by = #{reviewedBy},
+            reviewed_at = #{reviewedAt},
+            reject_reason = #{rejectReason},
+            version_no = version_no + 1,
+            updated_at = #{reviewedAt}
+        WHERE id = #{id}
+          AND status = 'PENDING_APPROVAL'
+          AND version_no = #{expectedVersion}
+    </update>
+
+    <update id="verify">
+        UPDATE growth_reward_exchange
+        SET status = 'VERIFIED',
+            verified_by = #{verifiedBy},
+            verified_at = #{verifiedAt},
+            version_no = version_no + 1,
+            updated_at = #{verifiedAt}
+        WHERE id = #{id}
+          AND status = 'PENDING_VERIFICATION'
+          AND version_no = #{expectedVersion}
+    </update>
+
+    <select id="findOverduePendingApprovalIds" resultType="long">
+        SELECT id
+        FROM growth_reward_exchange
+        WHERE status = 'PENDING_APPROVAL'
+          AND approval_deadline &lt;= #{now}
+        ORDER BY approval_deadline, id
+        LIMIT #{limit}
+    </select>
+
+    <update id="autoRejectOverdue">
+        UPDATE growth_reward_exchange
+        SET status = 'AUTO_REJECTED',
+            version_no = version_no + 1,
+            updated_at = #{updatedAt}
+        WHERE id = #{id}
+          AND status = 'PENDING_APPROVAL'
+          AND approval_deadline &lt;= #{updatedAt}
+    </update>
+
+    <update id="expirePendingByRewardId">
+        UPDATE growth_reward_exchange
+        SET status = 'EXPIRED',
+            version_no = version_no + 1,
+            updated_at = #{updatedAt}
+        WHERE reward_id = #{rewardId}
+          AND status = 'PENDING_APPROVAL'
+    </update>
+</mapper>

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.learningtask.infrastructure.persistence.ManagedTaskAssignmentMapper">
+    <resultMap id="ManagedTaskAssignmentStateRowMap"
+               type="com.lingdong.learning.learningtask.infrastructure.persistence.ManagedTaskAssignmentStateRow">
+        <constructor>
+            <idArg column="assignment_id" javaType="java.lang.Long"/>
+            <arg column="student_id" javaType="java.lang.Long"/>
+            <arg column="source_type" javaType="com.lingdong.learning.learningtask.domain.LearningTaskSourceType"/>
+            <arg column="source_organization_id" javaType="java.lang.Long"/>
+            <arg column="creator_user_id" javaType="java.lang.Long"/>
+            <arg column="current_status" javaType="com.lingdong.learning.learningtask.domain.TaskAssignmentStatus"/>
+            <arg column="version_no" javaType="java.lang.Integer"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findStateForUpdate" resultMap="ManagedTaskAssignmentStateRowMap">
+        SELECT assignment.id AS assignment_id, assignment.student_id,
+               assignment.source_type, assignment.source_organization_id,
+               task.creator_user_id, assignment.current_status, assignment.version_no
+        FROM learn_task_assignment assignment
+        JOIN learn_task task ON task.id = assignment.task_id
+        WHERE assignment.id = #{assignmentId}
+        FOR UPDATE
+    </select>
+</mapper>

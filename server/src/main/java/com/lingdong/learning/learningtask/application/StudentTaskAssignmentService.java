@@ -1,6 +1,7 @@
 package com.lingdong.learning.learningtask.application;
 
 import com.lingdong.learning.auth.application.AuthenticatedUser;
+import com.lingdong.learning.attachment.application.TaskAttachmentApplicationService;
 import com.lingdong.learning.common.web.ResourceNotFoundException;
 import com.lingdong.learning.feature.application.FeatureAccessService;
 import com.lingdong.learning.learningtask.domain.LearningTaskSourceType;
@@ -27,17 +28,20 @@ public class StudentTaskAssignmentService {
     private final LearningTaskTagMapper tagMapper;
     private final CurrentStudentAccessService currentStudentAccessService;
     private final FeatureAccessService featureAccessService;
+    private final TaskAttachmentApplicationService attachmentService;
 
     public StudentTaskAssignmentService(
             LearningTaskAssignmentMapper assignmentMapper,
             LearningTaskTagMapper tagMapper,
             CurrentStudentAccessService currentStudentAccessService,
-            FeatureAccessService featureAccessService
+            FeatureAccessService featureAccessService,
+            TaskAttachmentApplicationService attachmentService
     ) {
         this.assignmentMapper = assignmentMapper;
         this.tagMapper = tagMapper;
         this.currentStudentAccessService = currentStudentAccessService;
         this.featureAccessService = featureAccessService;
+        this.attachmentService = attachmentService;
     }
 
     @Transactional(readOnly = true)
@@ -59,7 +63,8 @@ public class StudentTaskAssignmentService {
         Map<Long, List<String>> tagsByTask = tagsByTaskIds(
                 rows.stream().map(StudentTaskAssignmentRow::taskId).distinct().toList());
         List<StudentTaskAssignmentView> items = rows.stream()
-                .map(row -> row.toView(tagsByTask.getOrDefault(row.taskId(), List.of())))
+                .map(row -> withCheckInAttachments(
+                        row.toView(tagsByTask.getOrDefault(row.taskId(), List.of()))))
                 .toList();
         return new StudentTaskAssignmentPage(
                 items, validatedPage, validatedPageSize, assignmentMapper.count(query));
@@ -76,7 +81,16 @@ public class StudentTaskAssignmentService {
         if (row == null) {
             throw new ResourceNotFoundException("学生任务不存在或不可访问");
         }
-        return row.toView(tagMapper.findCodesByTaskId(row.taskId()));
+        return withCheckInAttachments(row.toView(tagMapper.findCodesByTaskId(row.taskId())));
+    }
+
+    private StudentTaskAssignmentView withCheckInAttachments(StudentTaskAssignmentView view) {
+        TaskCheckInView checkIn = view.latestCheckIn();
+        if (checkIn == null) {
+            return view;
+        }
+        return view.withLatestCheckIn(
+                checkIn.withAttachments(attachmentService.findByCheckInId(checkIn.id())));
     }
 
     private Map<Long, List<String>> tagsByTaskIds(List<Long> taskIds) {

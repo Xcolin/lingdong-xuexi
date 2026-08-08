@@ -9,6 +9,7 @@ import type {
   OrganizationOption,
   PublishLearningTaskResult,
   StudentOption,
+  StopRecurringTaskResult,
   TeacherOption
 } from './types';
 
@@ -30,6 +31,9 @@ export const learningTaskApi = {
   },
   batchPublish(taskIds: string[]): Promise<BatchPublishResult> {
     return apiClient.post<BatchPublishResult>('/learning-tasks/batch-publish', { taskIds });
+  },
+  stopRecurrence(id: string): Promise<StopRecurringTaskResult> {
+    return apiClient.post<StopRecurringTaskResult>(`/learning-tasks/${id}/recurrence/stop`, {});
   },
   listOrganizations(
     sourceType: LearningTaskSourceType,

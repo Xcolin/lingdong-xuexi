@@ -13,10 +13,24 @@ public interface TaskCheckInMapper {
 
     TaskCheckIn findLatestSubmittedForUpdate(@Param("assignmentId") Long assignmentId);
 
+    TaskCheckIn findLatestApprovedForUpdate(@Param("assignmentId") Long assignmentId);
+
     int reject(
             @Param("id") Long id,
             @Param("reviewerUserId") Long reviewerUserId,
             @Param("reviewedAt") java.time.LocalDateTime reviewedAt,
             @Param("reviewComment") String reviewComment
+    );
+
+    int approve(
+            @Param("id") Long id,
+            @Param("reviewerUserId") Long reviewerUserId,
+            @Param("reviewedAt") java.time.LocalDateTime reviewedAt
+    );
+
+    int reopenApproved(
+            @Param("id") Long id,
+            @Param("reviewerUserId") Long reviewerUserId,
+            @Param("reopenedAt") java.time.LocalDateTime reopenedAt
     );
 }

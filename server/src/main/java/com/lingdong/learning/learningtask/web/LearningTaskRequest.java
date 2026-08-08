@@ -26,13 +26,16 @@ public record LearningTaskRequest(
         @Size(max = 20) List<@Size(max = 64) String> tagCodes,
         @Size(max = 200) String remark,
         Long reviewerUserId,
-        @NotEmpty List<@Valid LearningTaskTargetRequest> targets
+        @NotEmpty List<@Valid LearningTaskTargetRequest> targets,
+        Boolean recurrenceEnabled,
+        LocalDate recurrenceEndDate
 ) {
     CreateLearningTaskCommand toCommand() {
         return new CreateLearningTaskCommand(
                 sourceType, sourceOrganizationId, reviewerUserId,
                 new LearningTaskDraftInput(
                         title, difficultyLevel, durationMinutes, scheduledDate, categoryCode,
-                        tagCodes, remark, targets.stream().map(LearningTaskTargetRequest::toInput).toList()));
+                        tagCodes, remark, targets.stream().map(LearningTaskTargetRequest::toInput).toList(),
+                        Boolean.TRUE.equals(recurrenceEnabled), recurrenceEndDate));
     }
 }

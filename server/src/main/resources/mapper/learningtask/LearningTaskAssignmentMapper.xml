@@ -23,6 +23,8 @@
             <arg column="current_reviewer_id" javaType="java.lang.Long"/>
             <arg column="reviewer_display_name" javaType="java.lang.String"/>
             <arg column="effective_status" javaType="java.lang.String"/>
+            <arg column="last_defer_type" javaType="com.lingdong.learning.learningtask.domain.TaskDeferType"/>
+            <arg column="overnight_migrated" javaType="java.lang.Boolean"/>
             <arg column="active_pause_id" javaType="java.lang.Long"/>
             <arg column="active_pause_type" javaType="com.lingdong.learning.learningtask.domain.TaskPauseType"/>
             <arg column="pause_started_at" javaType="java.time.LocalDateTime"/>
@@ -68,6 +70,8 @@
             WHEN assignment.current_status = 'IN_PROGRESS' AND active_pause.id IS NOT NULL THEN 'PAUSED'
             ELSE assignment.current_status
         END AS effective_status,
+        assignment.last_defer_type,
+        assignment.overnight_migrated,
         active_pause.id AS active_pause_id,
         active_pause.pause_type AS active_pause_type,
         active_pause.started_at AS pause_started_at,
@@ -121,6 +125,14 @@
         </foreach>
     </insert>
 
+    <select id="findStudentIdsByTaskAndDate" resultType="long">
+        SELECT student_id
+        FROM learn_task_assignment
+        WHERE task_id = #{taskId}
+          AND scheduled_date = #{scheduledDate}
+        ORDER BY student_id
+    </select>
+
     <select id="findPage" resultMap="StudentTaskAssignmentRowMap">
         SELECT <include refid="assignmentColumns"/>
         <include refid="assignmentFromAndFilters"/>
@@ -162,13 +174,78 @@
         FOR UPDATE
     </select>
 
+    <select id="findOverdueIdsAfter" resultType="long">
+        SELECT assignment.id
+        FROM learn_task_assignment assignment
+        WHERE assignment.id &gt; #{afterId}
+          AND assignment.current_status = 'IN_PROGRESS'
+          AND assignment.due_at &lt;= #{cutoff}
+          AND NOT EXISTS (
+              SELECT 1
+              FROM learn_task_pause active_pause
+              WHERE active_pause.assignment_id = assignment.id
+                AND active_pause.resumed_at IS NULL
+                AND active_pause.expires_at &gt; #{cutoff}
+          )
+        ORDER BY assignment.id
+        LIMIT #{limit}
+    </select>
+
+    <select id="findOverdueStateForUpdate"
+            resultType="com.lingdong.learning.learningtask.infrastructure.persistence.TaskOverdueStateRow">
+        SELECT id, student_id, version_no
+        FROM learn_task_assignment
+        WHERE id = #{id}
+          AND current_status = 'IN_PROGRESS'
+          AND due_at &lt;= #{cutoff}
+        FOR UPDATE
+    </select>
+
     <update id="transitionStatus">
         UPDATE learn_task_assignment
         SET current_status = #{nextStatus},
             claimed_at = COALESCE(#{claimedAt, jdbcType=TIMESTAMP}, claimed_at),
+            completed_at = CASE
+                WHEN #{nextStatus} = 'COMPLETED' THEN #{transitionAt}
+                WHEN #{expectedStatus} = 'COMPLETED' AND #{nextStatus} &lt;&gt; 'COMPLETED' THEN NULL
+                ELSE completed_at
+            END,
             last_transition_at = #{transitionAt},
             version_no = version_no + 1,
             updated_at = #{transitionAt}
+        WHERE id = #{id}
+          AND current_status = #{expectedStatus}
+          AND version_no = #{expectedVersion}
+    </update>
+
+    <update id="transferReviewer">
+        UPDATE learn_task_assignment
+        SET current_reviewer_id = #{nextReviewerId},
+            last_transition_at = #{transitionAt},
+            version_no = version_no + 1,
+            updated_at = #{transitionAt}
+        WHERE id = #{id}
+          AND current_reviewer_id = #{expectedReviewerId}
+          AND version_no = #{expectedVersion}
+          AND current_status = 'PENDING_REVIEW'
+    </update>
+
+    <update id="deferAssignment">
+        UPDATE learn_task_assignment
+        SET task_id = #{targetTaskId},
+            current_status = #{nextStatus},
+            scheduled_date = #{targetDate},
+            due_at = #{dueAt},
+            claimed_at = NULL,
+            completed_at = NULL,
+            last_defer_type = #{deferType},
+            defer_count = defer_count + 1,
+            overnight_migrated = 1,
+            last_deferred_by_user_id = #{operatorUserId, jdbcType=BIGINT},
+            last_deferred_at = CURRENT_TIMESTAMP,
+            last_transition_at = CURRENT_TIMESTAMP,
+            version_no = version_no + 1,
+            updated_at = CURRENT_TIMESTAMP
         WHERE id = #{id}
           AND current_status = #{expectedStatus}
           AND version_no = #{expectedVersion}

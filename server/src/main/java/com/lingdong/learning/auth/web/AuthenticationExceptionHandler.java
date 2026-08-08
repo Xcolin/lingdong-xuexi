@@ -6,6 +6,7 @@ import com.lingdong.learning.auth.application.CaptchaRequiredException;
 import com.lingdong.learning.auth.application.RateLimitedException;
 import com.lingdong.learning.auth.application.StudentAccountLockedException;
 import com.lingdong.learning.auth.application.StudentAuthenticationFailedException;
+import com.lingdong.learning.auth.application.StudentQrTicketInvalidException;
 import com.lingdong.learning.common.security.SecurityErrorResponse;
 import com.lingdong.learning.common.security.SecurityErrorResponseFactory;
 import jakarta.servlet.http.HttpServletRequest;
@@ -73,6 +74,13 @@ public class AuthenticationExceptionHandler {
         return ResponseEntity.status(HttpStatus.LOCKED)
                 .header("X-Request-Id", error.traceId())
                 .body(body);
+    }
+
+    @ExceptionHandler(StudentQrTicketInvalidException.class)
+    public ResponseEntity<SecurityErrorResponse> handleStudentQrTicketInvalid(
+            StudentQrTicketInvalidException exception, HttpServletRequest request
+    ) {
+        return response(HttpStatus.GONE, "STUDENT_QR_TICKET_INVALID", "登录二维码无效，请重新扫码", request);
     }
 
     private ResponseEntity<SecurityErrorResponse> response(

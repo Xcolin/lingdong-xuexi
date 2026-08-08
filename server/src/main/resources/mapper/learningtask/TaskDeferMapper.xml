@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.learningtask.infrastructure.persistence.TaskDeferMapper">
+    <resultMap id="TaskDeferStateRowMap"
+               type="com.lingdong.learning.learningtask.infrastructure.persistence.TaskDeferStateRow">
+        <constructor>
+            <idArg column="assignment_id" javaType="java.lang.Long"/>
+            <arg column="task_id" javaType="java.lang.Long"/>
+            <arg column="student_id" javaType="java.lang.Long"/>
+            <arg column="source_type" javaType="com.lingdong.learning.learningtask.domain.LearningTaskSourceType"/>
+            <arg column="source_organization_id" javaType="java.lang.Long"/>
+            <arg column="creator_user_id" javaType="java.lang.Long"/>
+            <arg column="current_status" javaType="com.lingdong.learning.learningtask.domain.TaskAssignmentStatus"/>
+            <arg column="version_no" javaType="java.lang.Integer"/>
+            <arg column="scheduled_date" javaType="java.time.LocalDate"/>
+            <arg column="last_defer_type" javaType="com.lingdong.learning.learningtask.domain.TaskDeferType"/>
+            <arg column="defer_count" javaType="java.lang.Integer"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findStateForUpdate" resultMap="TaskDeferStateRowMap">
+        SELECT assignment.id AS assignment_id, assignment.task_id, assignment.student_id,
+               assignment.source_type, assignment.source_organization_id,
+               task.creator_user_id, assignment.current_status, assignment.version_no,
+               assignment.scheduled_date, assignment.last_defer_type, assignment.defer_count
+        FROM learn_task_assignment assignment
+        JOIN learn_task task ON task.id = assignment.task_id
+        WHERE assignment.id = #{assignmentId}
+        FOR UPDATE
+    </select>
+
+    <select id="findAutomaticCandidateIdsAfter" resultType="long">
+        SELECT id
+        FROM learn_task_assignment
+        WHERE id &gt; #{afterId}
+          AND scheduled_date = #{sourceDate}
+          AND current_status = 'NEEDS_IMPROVEMENT'
+          AND (last_defer_type IS NULL OR last_defer_type = 'AUTO')
+        ORDER BY id
+        LIMIT #{limit}
+    </select>
+
+    <sql id="managedCandidatesFromAndWhere">
+        FROM learn_task_assignment assignment
+        JOIN learn_task task ON task.id = assignment.task_id
+        JOIN edu_student student ON student.id = assignment.student_id
+        LEFT JOIN sys_organization source_organization
+          ON source_organization.id = assignment.source_organization_id
+        WHERE (assignment.current_status = 'NEEDS_IMPROVEMENT'
+            OR (assignment.current_status = 'PENDING_CLAIM'
+                AND assignment.last_defer_type = 'AUTO'))
+          AND (
+              1 = 0
+              <if test="query.parent">
+                  OR (assignment.source_type = 'FAMILY' AND EXISTS (
+                      SELECT 1 FROM edu_parent_student relation
+                      WHERE relation.parent_user_id = #{query.currentUserId}
+                        AND relation.student_id = assignment.student_id
+                        AND relation.status = 'ACTIVE'
+                        AND relation.relation_role = 'PRIMARY_GUARDIAN'
+                        AND relation.primary_scope_key = 'PRIMARY'
+                  ))
+              </if>
+              <if test="query.teacher">
+                  OR (assignment.source_type = 'TEACHER'
+                      AND task.creator_user_id = #{query.currentUserId})
+              </if>
+              <if test="query.organizationAdministrator">
+                  OR (assignment.source_type = 'ORGANIZATION' AND EXISTS (
+                      SELECT 1
+                      FROM sys_organization task_source_organization
+                      JOIN sys_organization administrator_root
+                        ON task_source_organization.organization_path
+                           LIKE CONCAT(administrator_root.organization_path, '%')
+                      JOIN sys_organization_admin organization_admin
+                        ON organization_admin.organization_id = administrator_root.id
+                      WHERE task_source_organization.id = assignment.source_organization_id
+                        AND organization_admin.user_id = #{query.currentUserId}
+                  ))
+              </if>
+          )
+    </sql>
+
+    <select id="findManagedPage"
+            resultType="com.lingdong.learning.learningtask.application.ManagedDeferCandidateView">
+        SELECT assignment.id AS assignment_id, task.title, student.id AS student_id,
+               student.student_name, assignment.source_type,
+               source_organization.organization_name AS source_organization_name,
+               assignment.scheduled_date, assignment.current_status,
+               assignment.last_defer_type, assignment.overnight_migrated
+        <include refid="managedCandidatesFromAndWhere"/>
+        ORDER BY assignment.scheduled_date, assignment.id
+        LIMIT #{query.limit} OFFSET #{query.offset}
+    </select>
+
+    <select id="countManaged" resultType="long">
+        SELECT COUNT(1)
+        <include refid="managedCandidatesFromAndWhere"/>
+    </select>
+</mapper>

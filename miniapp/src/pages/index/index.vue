@@ -31,7 +31,7 @@ onShow(async () => {
   loading.value = true;
   try {
     const capabilities = await getMiniappCapabilities();
-    studentLoginEnabled.value = capabilities.studentCodeLoginEnabled;
+    studentLoginEnabled.value = capabilities.studentCodeLoginEnabled || capabilities.studentQrLoginEnabled;
     if (studentLoginEnabled.value && getStudentSession()) {
       await uni.redirectTo({ url: '/pages/student-home/student-home' });
     }

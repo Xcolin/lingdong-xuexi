@@ -86,6 +86,19 @@ async function request<T>(
   return response.json() as Promise<T>;
 }
 
+async function requestBlob(path: string, retryAfterRefresh = true): Promise<Blob> {
+  const session = authSessionStore.get();
+  const headers = new Headers();
+  if (session) headers.set('Authorization', `Bearer ${session.accessToken}`);
+  const response = await fetch(`${API_PREFIX}${path}`, { headers });
+  if (response.status === 401 && retryAfterRefresh && session) {
+    await refreshSession();
+    return requestBlob(path, false);
+  }
+  if (!response.ok) throw await toApiRequestError(response);
+  return response.blob();
+}
+
 async function refreshSession(): Promise<AuthSession> {
   if (!refreshInFlight) {
     const currentSession = authSessionStore.get();
@@ -136,6 +149,9 @@ export const apiClient = {
   },
   delete(path: string): Promise<void> {
     return request<void>(path, { method: 'DELETE' });
+  },
+  getBlob(path: string): Promise<Blob> {
+    return requestBlob(path);
   },
   async loginByPassword(input: PasswordLoginInput): Promise<AuthSession> {
     const session = await request<AuthSession>('/auth/sessions/password', {

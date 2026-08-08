@@ -79,32 +79,68 @@ public class StudentCodeLoginApplicationService {
         Objects.requireNonNull(command, "学生登录请求不能为空");
         featureAccessService.requireEnabled(FEATURE_CODE, null);
         String account = normalize(command.studentAccount());
-        String deviceId = required(command.deviceId(), "设备标识", 128);
-        String deviceName = required(command.deviceName(), "设备名称", 100);
-        String sourceAddress = normalize(command.sourceAddress());
+        User user = account == null ? null : userMapper.findByUsername(account);
+        return authenticate(
+                user, account, command.loginCode(), command.deviceId(), command.deviceName(),
+                command.captchaChallengeId(), command.captchaAnswer(), command.sourceAddress());
+    }
+
+    /** 扫码票据已安全解析学生身份后，复用同一套登录码风控，不再次要求输入学生账号。 */
+    @Transactional(noRollbackFor = {
+            StudentAuthenticationFailedException.class,
+            CaptchaRequiredException.class,
+            StudentAccountLockedException.class
+    })
+    public AuthenticatedSession loginByStudentUserId(
+            Long studentUserId,
+            String loginCode,
+            String deviceId,
+            String deviceName,
+            String captchaChallengeId,
+            String captchaAnswer,
+            String sourceAddress
+    ) {
+        User user = studentUserId == null ? null : userMapper.findById(studentUserId);
+        String account = user == null ? null : normalize(user.username());
+        return authenticate(user, account, loginCode, deviceId, deviceName,
+                captchaChallengeId, captchaAnswer, sourceAddress);
+    }
+
+    private AuthenticatedSession authenticate(
+            User user,
+            String account,
+            String loginCode,
+            String requestedDeviceId,
+            String requestedDeviceName,
+            String captchaChallengeId,
+            String captchaAnswer,
+            String sourceAddressValue
+    ) {
+        String deviceId = required(requestedDeviceId, "设备标识", 128);
+        String deviceName = required(requestedDeviceName, "设备名称", 100);
+        String sourceAddress = normalize(sourceAddressValue);
         protectionStore.checkLoginRate(
                 tokenService.hash((account == null ? "invalid" : account) + ":" + deviceId),
                 tokenService.hash(sourceAddress == null ? "unknown" : sourceAddress)
         );
 
         if (account == null || !ACCOUNT_PATTERN.matcher(account).matches()
-                || command.loginCode() == null || !CODE_PATTERN.matcher(command.loginCode()).matches()) {
-            performDummyComparison(command.loginCode());
+                || loginCode == null || !CODE_PATTERN.matcher(loginCode).matches()) {
+            performDummyComparison(loginCode);
             throw new StudentAuthenticationFailedException();
         }
-        User user = userMapper.findByUsername(account);
         if (user == null || user.type() != UserType.STUDENT || user.status() != UserStatus.ENABLED) {
-            performDummyComparison(command.loginCode());
+            performDummyComparison(loginCode);
             throw new StudentAuthenticationFailedException();
         }
         Student student = studentMapper.findByStudentUserId(user.id());
         if (student == null || student.status() != StudentStatus.ENABLED) {
-            performDummyComparison(command.loginCode());
+            performDummyComparison(loginCode);
             throw new StudentAuthenticationFailedException();
         }
         StudentCredential credential = credentialMapper.findByStudentUserIdForUpdate(user.id());
         if (credential == null) {
-            performDummyComparison(command.loginCode());
+            performDummyComparison(loginCode);
             throw new StudentAuthenticationFailedException();
         }
 
@@ -121,11 +157,11 @@ public class StudentCodeLoginApplicationService {
         }
         if (captchaRequired) {
             captchaChallengeService.verify(
-                    command.captchaChallengeId(), command.captchaAnswer(), account, deviceId);
+                    captchaChallengeId, captchaAnswer, account, deviceId);
         }
 
         boolean matches = loginCodeHasher.matches(
-                command.loginCode(), credential.codeHash(), credential.codeSalt(), credential.keyVersion());
+                loginCode, credential.codeHash(), credential.codeSalt(), credential.keyVersion());
         if (!matches) {
             int nextFailureCount = failureCount + 1;
             if (nextFailureCount >= 10) {

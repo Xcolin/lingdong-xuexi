@@ -21,7 +21,7 @@
 
 | 项目 | 规定 |
 |---|---|
-| 当前最高版本 | 当前最高版本是 `V20`；后续迁移从 `V21__...sql` 开始。 |
+| 当前最高版本 | 当前最高版本是 `V34`；后续迁移从 `V35__...sql` 开始。 |
 | 版本号 | 按单调递增整数分配；不得补写已低于共享环境版本的脚本。 |
 | 描述 | 使用英文小写与下划线，准确说明变更目的，例如 `V10__create_dictionary_tables.sql`。 |
 | 一个脚本的范围 | 一个可独立验证的业务数据变更单元；不把无关模块改动混在同一脚本。 |
@@ -107,9 +107,9 @@ flowchart LR
 
 Flyway 不提供业务意义上的自动回滚。设计时应优先使用向前兼容迁移：先加字段/表、部署兼容代码、完成回填、再在后续版本清理废弃结构。
 
-## 8. V1-V22 基线与当前迁移核对
+## 8. V1-V28 基线与当前迁移核对
 
-当前 V1-V11 在尚未执行到任何共享环境时已重建：18 张表均使用非 identity 的雪花 `BIGINT id` 主键，原联合主键和 `sys_feature_toggle_change.task_id` 主键均已改为保留业务语义的唯一约束。V12-V15 新增接口服务、附件、导入导出模板和设备会话表；V16-V18 仅写入预生成的 19 位权限与授权主键；V19 新增 3 张学生关系表；V20 新增 1 张家长绑定邀请表；V21 新增 2 张学生账号与凭证表、2 项权限、4 条角色授权和 1 个功能开关，全部不使用自增主键。访问/刷新凭证、邀请令牌和学生登录码均不以明文持久化。当前只在本地 H2 MySQL 兼容模式执行 V1-V21，尚未在共享测试、预生产或生产数据库执行；首次进入受控环境后，任何已执行版本均不得修改。
+当前 V1-V25 基线保持既有表和基础数据历史；V26 调整积分纠错约束；V27 新增家庭奖励与兑换；V28 新增成长复盘逻辑记录、不可变快照、分类、趋势和补录，并写入两个开关、四项权限及最小角色授权。全部表仍使用应用层生成或一对一关系确定性复用的 19 位雪花 `BIGINT` 主键，不使用自增、identity、序列或触发器。当前只在本地 H2 MySQL 兼容模式执行 V1-V28，尚未在共享测试、预生产或生产数据库执行；首次进入受控环境后，任何已执行版本均不得修改。
 
 | 版本 | 核对要点 |
 |---|---|
@@ -138,7 +138,81 @@ Flyway 不提供业务意义上的自动回滚。设计时应优先使用向前�
 
 V22 同时初始化 `TASK_CATEGORY`、`TASK_TAG` 字典及最小启用项，初始化 `LEARNING_TASK_MANAGEMENT` 全局开关，新增学生/教师班级配置、任务创建/管理查询/发布和学生本人任务查询共 6 项权限，并向 `ORG_ADMIN`、`PARENT`、`TEACHER`、`STUDENT` 内置角色写入对应授权。迁移测试已在本地 H2 MySQL 兼容模式从空库连续执行 V1 至 V22，并核对新表、非自增主键、约束、索引和基础授权。
 
-后续补齐任务认领、打卡、审核、积分、模板内容、导入导出任务、扫码/微信登录、消息投递及关系变更等能力时，必须从 `V23` 顺序新增，不重写 V1-V22。
+### 8.4 V23 任务执行与审核基础迁移
+
+`V23__create_task_execution_foundation.sql` 扩展 `learn_task_assignment.current_status` 检查约束并新增 `last_transition_at`、`version_no`；新增 `learn_task_assignment_event`、`learn_task_pause`、`learn_task_checkin`、`learn_task_reviewer_transfer`。四张表主键均为非 identity `BIGINT`，暂停时间、打卡序号、事件类型、审核转交人与状态均有检查、唯一或外键约束。
+
+V23 新增 `TASK_ASSIGNMENT_EXECUTE_SELF`、`TASK_ASSIGNMENT_REVIEW`、`TASK_ASSIGNMENT_EXEMPT`，分别授权学生及家长、教师、机构管理员。迁移测试已从空库连续执行 V1 至 V23，并核对 4 张新表、任务实例扩展字段、3 项权限、7 条角色授权和非自增主键。
+
+### 8.5 V24 任务奖励积分迁移
+
+`V24__create_growth_point_account_and_ledger.sql` 新增 `growth_point_account` 和 `growth_point_ledger`，两张表主键均为非 identity `BIGINT`。积分账户与学生一对一并复用学生雪花标识，迁移为既有学生回填零余额账户；V24 初始唯一约束在 V26 前用于防止重复发奖，V26 改由任务状态版本和事务行锁控制审核幂等，以允许纠错后重新发奖。
+
+V24 同时扩展打卡状态为 `APPROVED`、任务事件类型为 `REVIEW_APPROVED`。迁移测试已从空库连续执行 V1 至 V24，核对 44 张表全部具有显式非自增 `BIGINT id` 主键，并验证历史学生账户回填、积分非负约束、任务奖励唯一约束和新增状态约束。
+
+### 8.6 V25 积分查询访问基线迁移
+
+`V25__seed_growth_point_query_access.sql` 初始化全局启用的 `GROWTH_POINT_QUERY` 功能开关；新增 `MINIAPP` 客户端 `GROWTH_POINT_READ_SELF` 和 `WEB` 客户端 `GROWTH_POINT_READ_CHILD`，分别授权内置 `STUDENT`、`PARENT` 角色。开关、权限和角色权限关联均使用预生成的 19 位雪花常量，不新增表、不回填业务数据。
+
+迁移测试已从空库连续执行 V1 至 V25，核对 V25 迁移历史、开关、两项权限及两条角色授权；44 张现有业务表仍全部具有显式非自增 `BIGINT id` 主键。
+
+### 8.7 V26 积分纠错基线迁移
+
+`V26__add_growth_point_correction.sql` 删除 `(source_assignment_id, change_type)` 旧唯一索引，新增 `correction_of_id` 唯一约束和 `CORRECTION` 完整性检查，扩展 `POINT_CORRECTED` 任务事件，并初始化 `GROWTH_POINT_CORRECTION`、`GROWTH_POINT_CORRECT_CHILD` 及主家长授权。三个新增基础数据标识均为 19 位雪花常量。
+
+迁移测试已从空库连续执行 V1 至 V26，核对 V26 迁移历史、旧索引移除、新唯一/检查约束、任务事件约束、纠错开关、权限及主家长授权；44 张现有业务表仍全部具有显式非自增 `BIGINT id` 主键。
+
+### 8.8 V27 家庭奖励与积分兑换迁移
+
+`V27__add_reward_exchange.sql` 新增 `growth_reward`、`growth_reward_exchange`，两表均使用应用层 19 位雪花 `BIGINT id`；兑换表保存名称、所需积分和说明快照，六种状态、驳回字段和审批截止时间具有检查约束。`growth_point_ledger` 新增可空 `source_exchange_id` 外键及唯一约束，每笔兑换最多对应一笔 `REDEMPTION` 台账。
+
+V27 调整台账金额约束，使兑换和未来休眠清零的累计积分变化为 0，同时要求兑换可用积分变化小于 0、来源为家庭且有审核人。脚本初始化 `REWARD_EXCHANGE`、`REWARD_MANAGE_CHILD`、`REWARD_EXCHANGE_REVIEW_CHILD`、`REWARD_EXCHANGE_SELF` 及主家长/学生最小授权，全部基础数据标识为预生成 19 位雪花常量。
+
+迁移测试已从空库连续执行 V1 至 V27，核对 46 张表均具有显式非自增 `BIGINT id` 主键，并验证新表、索引、外键、检查/唯一约束、开关、权限和角色授权。
+
+### 8.9 V28 成长复盘迁移
+
+`V28__add_growth_review.sql` 新增 `growth_review`、`growth_review_snapshot`、`growth_review_category_stat`、`growth_review_daily_trend`、`growth_review_supplement`。五张表均使用应用层 19 位雪花 `BIGINT id`；逻辑复盘按学生、周期类型和周期边界唯一，快照按复盘和内容版本唯一，分类和日趋势按快照维度唯一，补录保留编辑人、角色、类型和时间。
+
+V28 初始化 `DAILY_GROWTH_REVIEW`、`PERIODIC_GROWTH_REPORT` 两个全局开关，以及学生本人读取/补录、主家长孩子读取/补录四项最小权限。历史查询不受开关关闭影响，自动生成和新增补录受对应开关拦截。全部基础数据标识均为预生成的 19 位雪花常量。
+
+迁移测试已从空库连续执行 V1 至 V28，核对 51 张表均具有显式非自增 `BIGINT id` 主键，并验证复盘表、索引、外键、检查/唯一约束、开关、权限和角色授权。后续变更必须从 `V29` 顺序新增，不重写 V1-V28。
+
+### 8.10 V29 积分生命周期迁移
+
+`V29__add_point_lifecycle.sql` 新增 `growth_point_decay_rule`、`growth_point_dormancy_state`、`growth_point_dormancy_notice`，三张表均使用应用层 19 位雪花 `BIGINT id`。脚本为既有学生初始化沉睡周期状态，为历史任务奖励回填任务标识、基础积分、0% 衰减和连续 1 天快照，并初始化 `POINT_LIFECYCLE` 开关及第 8 天 20%、第 16 天 40% 两条生效规则。
+
+V29 扩展 `growth_point_ledger` 的衰减和沉睡审计字段，将任务实例唯一约束调整为 `(task_id, student_id, scheduled_date)`，使同一任务可跨自然日产生实例但同日仍保持唯一。迁移测试从空库连续执行 V1 至 V29，核对 54 张表均具有显式非自增 `BIGINT id` 主键，并验证历史回填、规则、开关、外键、索引和唯一约束。后续变更必须从 `V30` 顺序新增，不重写 V1-V29。
+
+### 8.11 V30 每日固定任务迁移
+
+`V30__add_recurring_task.sql` 为 `learn_task` 增加固定任务启用标识和可选结束日，新建 `learn_task_recurrence`。计划表主键由应用层雪花算法生成，任务外键唯一，状态、频率和结束日均有检查约束，并按状态、下一生成日和计划标识建立到期扫描索引。
+
+迁移测试从空库连续执行 V1 至 V30，核对 55 张表均具有显式非自增 `BIGINT id` 主键，并验证任务配置列、任务唯一计划、停止审计、版本字段和到期索引。后续变更必须从 `V31` 顺序新增，不重写 V1-V30。
+
+### 8.12 V31 图片打卡附件迁移
+
+`V31__add_task_checkin_attachment.sql` 为 `sys_file` 增加模块、文件分类和内容摘要字段，对历史数据安全回填后设置非空约束；同时将 `learn_task_checkin.content` 调整为可空，并初始化 `LEARNING_TASK_CHECKIN/IMAGE` 的 JPG/JPEG/PNG、10 MB、最多 9 张、允许预览规则及上传/读取权限。
+
+V31 不新建数据表，当前仍为 55 张显式非自增 `BIGINT id` 主键表。初始化数据标识均为 19 位数字，权限客户端使用受支持的 `WEB/MINIAPP/BOTH` 值。
+
+### 8.13 V32 待优化与顺延迁移
+
+`V32__add_task_overdue_defer.sql` 扩展任务定义和任务实例的来源、顺延类型、次数、隔夜标记、操作人与时间字段，新增 `learn_task_defer_history` 不可变历史表，并允许系统自动写入待优化事件时操作人为空。迁移初始化 Web 手动顺延权限及家长、教师、机构管理员最小授权。
+
+V32 迁移后共有 56 张显式非自增 `BIGINT id` 主键表；新增基础数据使用 4 个 19 位数字标识，不包含 `AUTO_INCREMENT`、`IDENTITY` 或 `SERIAL`。后续变更必须从 `V33` 顺序新增，不重写 V1-V32。
+
+### 8.14 V33 按学生复制昨日任务迁移
+
+`V33__add_previous_day_task_copy.sql` 将任务生成类型扩展为 `NORMAL/DEFERRED/COPIED`，新增复制批次表与复制条目表。批次按学生和目标日期唯一，条目按批次和源任务唯一；两表均使用应用层 19 位雪花 `BIGINT id`，不使用数据库自增。
+
+V33 初始化 `COPY_PREVIOUS_DAY_TASK` 功能开关、`LEARNING_TASK_COPY_PREVIOUS_DAY` 权限和家长角色授权。迁移后共有 58 张显式非自增 `BIGINT id` 主键表；后续变更必须从 `V34` 顺序新增，不重写 V1-V33。
+
+### 8.15 V34 任务模板迁移
+
+`V34__add_learning_task_template.sql` 新增 `learn_task_template` 和 `learn_task_template_tag`。系统模板拥有者为空，个人模板以 `owner_scope_key` 隔离；活动名称键与拥有者作用域联合唯一，逻辑删除时清空活动名称键，从而允许名称复用。编辑、删除和排序使用 `version_no` 乐观版本。
+
+V34 初始化 `LEARNING_TASK_TEMPLATE` 功能开关、读取与个人管理双权限、家长角色授权，以及“每日阅读30分钟”“口算练习”两条系统模板。新增 9 个基础标识均为 19 位数字；迁移后共有 60 张显式非自增 `BIGINT id` 主键表。后续变更必须从 `V35` 顺序新增，不重写 V1-V34。
 
 ## 9. 验收清单
 

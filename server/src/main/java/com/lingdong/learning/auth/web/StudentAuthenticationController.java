@@ -4,6 +4,8 @@ import com.lingdong.learning.auth.application.AuthenticatedSession;
 import com.lingdong.learning.auth.application.CaptchaChallengeService;
 import com.lingdong.learning.auth.application.StudentCodeLoginApplicationService;
 import com.lingdong.learning.auth.application.StudentCodeLoginCommand;
+import com.lingdong.learning.auth.application.StudentQrLoginApplicationService;
+import com.lingdong.learning.auth.application.StudentQrLoginCommand;
 import com.lingdong.learning.feature.application.FeatureAccessService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -23,15 +25,18 @@ public class StudentAuthenticationController {
     private final StudentCodeLoginApplicationService loginService;
     private final CaptchaChallengeService captchaChallengeService;
     private final FeatureAccessService featureAccessService;
+    private final StudentQrLoginApplicationService qrLoginService;
 
     public StudentAuthenticationController(
             StudentCodeLoginApplicationService loginService,
             CaptchaChallengeService captchaChallengeService,
-            FeatureAccessService featureAccessService
+            FeatureAccessService featureAccessService,
+            StudentQrLoginApplicationService qrLoginService
     ) {
         this.loginService = loginService;
         this.captchaChallengeService = captchaChallengeService;
         this.featureAccessService = featureAccessService;
+        this.qrLoginService = qrLoginService;
     }
 
     @PostMapping("/student-captchas")
@@ -53,5 +58,21 @@ public class StudentAuthenticationController {
         ));
         return new SessionResponse(session.sessionId(), session.accessToken(), session.refreshToken(),
                 session.accessExpiresAt(), session.refreshExpiresAt());
+    }
+
+    @PostMapping("/student-sessions/qr")
+    public StudentQrSessionResponse loginByQr(
+            @Valid @RequestBody StudentQrLoginRequest request,
+            HttpServletRequest servletRequest
+    ) {
+        return StudentQrSessionResponse.from(qrLoginService.login(new StudentQrLoginCommand(
+                request.qrContent(), request.loginCode(), request.deviceId(), request.deviceName(),
+                request.captchaChallengeId(), request.captchaAnswer(), servletRequest.getRemoteAddr())));
+    }
+
+    @PostMapping("/student-qr-captchas")
+    @ResponseStatus(HttpStatus.CREATED)
+    public StudentCaptchaResponse issueQrCaptcha(@Valid @RequestBody StudentQrCaptchaRequest request) {
+        return StudentCaptchaResponse.from(qrLoginService.issueCaptcha(request.qrContent(), request.deviceId()));
     }
 }

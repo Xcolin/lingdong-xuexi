@@ -6,7 +6,8 @@
             id, assignment_id, event_type, operator_user_id, from_status,
             to_status, reason, event_details, occurred_at
         ) VALUES (
-            #{event.id}, #{event.assignmentId}, #{event.eventType}, #{event.operatorUserId},
+            #{event.id}, #{event.assignmentId}, #{event.eventType},
+            #{event.operatorUserId, jdbcType=BIGINT},
             #{event.fromStatus}, #{event.toStatus}, #{event.reason, jdbcType=VARCHAR},
             #{event.eventDetails, jdbcType=VARCHAR}, #{event.occurredAt}
         )

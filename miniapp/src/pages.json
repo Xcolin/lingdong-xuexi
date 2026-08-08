@@ -30,6 +30,27 @@
 			"style": {
 				"navigationBarTitleText": "任务详情"
 			}
+		},
+		{
+			"path": "pages/growth-points/growth-points",
+			"style": {
+				"navigationBarTitleText": "我的积分",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+			"path": "pages/rewards/rewards",
+			"style": {
+				"navigationBarTitleText": "奖励兑换",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+			"path": "pages/growth-reviews/growth-reviews",
+			"style": {
+				"navigationBarTitleText": "成长复盘",
+				"enablePullDownRefresh": true
+			}
 		}
 	],
 	"globalStyle": {

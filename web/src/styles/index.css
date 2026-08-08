@@ -111,6 +111,18 @@ button, input, textarea { font: inherit; }
 
 .directory-filters { margin-bottom: 20px; }
 
+.review-drawer-content { display: grid; gap: 20px; }
+
+.review-section { display: grid; gap: 12px; padding-top: 18px; border-top: 1px solid #e3e9e6; }
+
+.review-section h2 { margin: 0; font-size: 15px; line-height: 1.4; font-weight: 650; letter-spacing: 0; }
+
+.review-content-text { min-height: 72px; padding: 12px; border: 1px solid #dce6e0; background: #f8faf9; color: #25342f; line-height: 1.7; white-space: pre-wrap; }
+
+.review-attachment-grid { display: grid; grid-template-columns: repeat(auto-fill, 120px); gap: 12px; margin-top: 12px; }
+
+.review-section .ant-select { width: 100%; }
+
 .filter-select { width: 148px; }
 
 .full-width { width: 100%; }
@@ -141,6 +153,15 @@ button, input, textarea { font: inherit; }
 
 .task-target-value { width: min(390px, 42vw); }
 
+.task-template-description { display: grid; gap: 3px; color: #687a73; }
+.task-template-description strong { color: #25342f; font-weight: 600; }
+.task-template-toolbar { display: flex; justify-content: flex-end; margin-bottom: 8px; }
+
+.student-login-toolbar { display: flex; justify-content: flex-end; width: 100%; margin-bottom: 18px; }
+.student-login-toolbar .ant-input-affix-wrapper { width: 240px; }
+.student-login-qr { min-height: 350px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
+.student-login-qr-status { min-height: 24px; color: #687a73; }
+
 .batch-result-summary {
   display: flex;
   gap: 24px;
@@ -149,6 +170,65 @@ button, input, textarea { font: inherit; }
 }
 
 .batch-result-summary strong { color: #1c2b28; }
+
+.growth-point-student-select { width: 180px; }
+
+.growth-point-summary {
+  min-height: 118px;
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) repeat(2, minmax(140px, 190px));
+  align-items: center;
+  gap: 24px;
+  padding: 20px 24px;
+  background: #ffffff;
+  border-block: 1px solid #dce6e0;
+}
+
+.growth-point-summary > div:first-child { display: grid; gap: 6px; }
+.growth-point-summary > div:first-child span { font-size: 18px; font-weight: 650; }
+.growth-point-summary > div:first-child small { color: #687a73; }
+.growth-point-event { display: grid; gap: 3px; }
+.growth-point-event strong { color: #1c2b28; font-weight: 600; }
+.growth-point-event span { color: #6a7b75; font-size: 12px; }
+.point-positive { color: #167c5a; font-weight: 650; }
+.point-negative { color: #c13f3f; font-weight: 650; }
+.growth-point-empty { min-height: 320px; display: grid; place-items: center; }
+.growth-point-correction-error { margin-block: 16px 0; }
+.growth-point-correction-error + .ant-form-item,
+.ant-modal-body > .ant-form > .ant-alert + .ant-form-item { margin-top: 18px; }
+
+.reward-student-select { width: 180px; }
+.reward-workspace .ant-pro-card-body { padding-top: 4px; }
+.reward-filters { display: flex; justify-content: flex-end; margin-bottom: 16px; }
+.reward-filters .ant-select { width: 180px; }
+.reward-points { color: #167c5a; font-weight: 650; }
+.reward-empty { min-height: 320px; display: grid; place-items: center; }
+
+.growth-review-student-select { width: 180px; }
+.growth-review-toolbar { display: flex; justify-content: flex-end; }
+.growth-review-workspace .ant-pro-card-body { padding: 0; }
+.growth-review-grid { display: grid; grid-template-columns: minmax(260px, 340px) minmax(0, 1fr); min-height: 620px; }
+.growth-review-list { border-right: 1px solid #dce6e0; }
+.growth-review-list .ant-table-row { cursor: pointer; }
+.growth-review-list .selected-row > td { background: #e9f4ef !important; }
+.growth-review-period { display: grid; gap: 3px; }
+.growth-review-period strong { color: #1c2b28; font-weight: 600; }
+.growth-review-period span { color: #6a7b75; font-size: 12px; }
+.growth-review-detail { min-width: 0; padding: 24px; }
+.growth-review-detail-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.growth-review-detail-heading > div { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.growth-review-detail-heading h2 { margin: 0; font-size: 18px; line-height: 1.4; letter-spacing: 0; }
+.growth-review-metrics { display: grid; grid-template-columns: repeat(4, minmax(110px, 1fr)); gap: 18px; margin: 24px 0 12px; }
+.growth-review-section { margin-top: 26px; padding-top: 20px; border-top: 1px solid #e2e9e5; }
+.growth-review-section h3 { margin: 0 0 12px; font-size: 15px; line-height: 1.4; letter-spacing: 0; }
+.growth-review-trends { display: grid; gap: 10px; }
+.growth-review-trend-row { display: grid; grid-template-columns: 46px minmax(90px, 1fr) 46px 68px; gap: 10px; align-items: center; font-size: 12px; color: #64756e; }
+.growth-review-trend-row > div { height: 8px; overflow: hidden; background: #e5ece8; border-radius: 4px; }
+.growth-review-trend-row i { height: 100%; display: block; background: #167c5a; border-radius: 4px; }
+.growth-review-trend-row strong { color: #263730; text-align: right; }
+.growth-review-trend-row small { text-align: right; }
+.growth-review-editor { color: #6a7b75; font-size: 12px; }
+.growth-review-empty { min-height: 320px; display: grid; place-items: center; }
 
 @media (max-width: 768px) {
   .app-content { padding: 18px 14px 28px; }
@@ -163,4 +243,19 @@ button, input, textarea { font: inherit; }
   .task-editor-grid { grid-template-columns: 1fr; }
   .task-target-row { display: grid; grid-template-columns: 1fr auto; }
   .task-target-type, .task-target-value { width: 100%; }
+  .student-login-toolbar { justify-content: stretch; }
+  .student-login-toolbar .ant-input-affix-wrapper { width: 100%; }
+  .growth-point-student-select { width: min(240px, calc(100vw - 100px)); }
+  .growth-point-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+  .growth-point-summary > div:first-child { grid-column: 1 / -1; }
+  .reward-student-select { width: min(240px, calc(100vw - 100px)); }
+  .reward-filters { justify-content: stretch; }
+  .reward-filters .ant-select { width: 100%; }
+  .growth-review-student-select { width: min(240px, calc(100vw - 100px)); }
+  .growth-review-toolbar { justify-content: flex-start; }
+  .growth-review-grid { grid-template-columns: 1fr; }
+  .growth-review-list { border-right: 0; border-bottom: 1px solid #dce6e0; }
+  .growth-review-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .growth-review-detail { padding: 18px 14px; }
+  .growth-review-detail-heading { align-items: stretch; flex-direction: column; }
 }

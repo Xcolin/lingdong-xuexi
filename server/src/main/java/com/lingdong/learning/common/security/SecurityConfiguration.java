@@ -32,6 +32,8 @@ public class SecurityConfiguration {
                                 "/api/v1/auth/sessions/refresh",
                                 "/api/v1/auth/student-captchas",
                                 "/api/v1/auth/student-sessions/code",
+                                "/api/v1/auth/student-sessions/qr",
+                                "/api/v1/auth/student-qr-captchas",
                                 "/api/v1/public/capabilities"
                         ).permitAll()
                         .requestMatchers("/api/v1/**").authenticated()

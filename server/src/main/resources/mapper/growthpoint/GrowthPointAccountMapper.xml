@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthPointAccountMapper">
+    <resultMap id="GrowthPointAccountMap"
+               type="com.lingdong.learning.growthpoint.domain.GrowthPointAccount">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="student_id" javaType="java.lang.Long"/>
+            <arg column="total_points" javaType="java.lang.Long"/>
+            <arg column="available_points" javaType="java.lang.Long"/>
+            <arg column="version_no" javaType="java.lang.Integer"/>
+        </constructor>
+    </resultMap>
+
+    <insert id="insertInitial">
+        INSERT INTO growth_point_account (
+            id, student_id, total_points, available_points, version_no
+        )
+        SELECT #{studentId}, #{studentId}, 0, 0, 0
+        WHERE NOT EXISTS (
+            SELECT 1 FROM growth_point_account WHERE student_id = #{studentId}
+        )
+    </insert>
+
+    <select id="findByStudentIdForUpdate" resultMap="GrowthPointAccountMap">
+        SELECT id, student_id, total_points, available_points, version_no
+        FROM growth_point_account
+        WHERE student_id = #{studentId}
+        FOR UPDATE
+    </select>
+
+    <update id="addTaskReward">
+        UPDATE growth_point_account
+        SET total_points = total_points + #{points},
+            available_points = available_points + #{points},
+            version_no = version_no + 1,
+            updated_at = #{updatedAt}
+        WHERE id = #{id} AND version_no = #{expectedVersion}
+    </update>
+
+    <update id="applyCorrection">
+        UPDATE growth_point_account
+        SET total_points = total_points - #{totalDeduction},
+            available_points = available_points - #{availableDeduction},
+            version_no = version_no + 1,
+            updated_at = #{updatedAt}
+        WHERE id = #{id}
+          AND version_no = #{expectedVersion}
+          AND total_points &gt;= #{totalDeduction}
+          AND available_points &gt;= #{availableDeduction}
+    </update>
+
+    <update id="redeem">
+        UPDATE growth_point_account
+        SET available_points = available_points - #{points},
+            version_no = version_no + 1,
+            updated_at = #{updatedAt}
+        WHERE id = #{id}
+          AND version_no = #{expectedVersion}
+          AND available_points &gt;= #{points}
+    </update>
+
+    <update id="clearAvailablePoints">
+        UPDATE growth_point_account
+        SET available_points = 0,
+            version_no = version_no + 1,
+            updated_at = #{updatedAt}
+        WHERE id = #{id}
+          AND version_no = #{expectedVersion}
+          AND available_points = #{points}
+          AND #{points} &gt; 0
+    </update>
+</mapper>

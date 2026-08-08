@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.learningtask.infrastructure.persistence.PreviousDayTaskCopyMapper">
+    <resultMap id="TaskCopyBatchRowMap"
+               type="com.lingdong.learning.learningtask.infrastructure.persistence.TaskCopyBatchRow">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="student_id" javaType="java.lang.Long"/>
+            <arg column="source_date" javaType="java.time.LocalDate"/>
+            <arg column="target_date" javaType="java.time.LocalDate"/>
+            <arg column="created_by_user_id" javaType="java.lang.Long"/>
+            <arg column="confirm_duplicate_titles" javaType="java.lang.Boolean"/>
+            <arg column="status" javaType="java.lang.String"/>
+            <arg column="total_count" javaType="java.lang.Integer"/>
+            <arg column="success_count" javaType="java.lang.Integer"/>
+            <arg column="failure_count" javaType="java.lang.Integer"/>
+            <arg column="created_at" javaType="java.time.LocalDateTime"/>
+            <arg column="completed_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="TaskCopyItemRowMap"
+               type="com.lingdong.learning.learningtask.infrastructure.persistence.TaskCopyItemRow">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="batch_id" javaType="java.lang.Long"/>
+            <arg column="source_task_id" javaType="java.lang.Long"/>
+            <arg column="target_task_id" javaType="java.lang.Long"/>
+            <arg column="task_title_snapshot" javaType="java.lang.String"/>
+            <arg column="status" javaType="java.lang.String"/>
+            <arg column="failure_code" javaType="java.lang.String"/>
+            <arg column="failure_message" javaType="java.lang.String"/>
+            <arg column="retry_count" javaType="java.lang.Integer"/>
+            <arg column="last_attempt_at" javaType="java.time.LocalDateTime"/>
+            <arg column="created_at" javaType="java.time.LocalDateTime"/>
+            <arg column="updated_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="batchColumns">
+        id, student_id, source_date, target_date, created_by_user_id,
+        confirm_duplicate_titles, status, total_count, success_count, failure_count,
+        created_at, completed_at
+    </sql>
+
+    <sql id="itemColumns">
+        id, batch_id, source_task_id, target_task_id, task_title_snapshot,
+        status, failure_code, failure_message, retry_count, last_attempt_at,
+        created_at, updated_at
+    </sql>
+
+    <select id="findSourceTasks"
+            resultType="com.lingdong.learning.learningtask.infrastructure.persistence.TaskCopySourceRow">
+        SELECT DISTINCT task.id AS task_id, task.title
+        FROM learn_task_assignment assignment
+        JOIN learn_task task ON task.id = assignment.task_id
+        WHERE assignment.student_id = #{studentId}
+          AND assignment.scheduled_date = #{sourceDate}
+          AND assignment.source_type = 'FAMILY'
+          AND task.source_type = 'FAMILY'
+          AND task.creator_user_id = #{parentUserId}
+          AND task.status = 'PUBLISHED'
+        ORDER BY task.id
+    </select>
+
+    <select id="findDuplicateTitles" resultType="string">
+        SELECT DISTINCT source_task.title
+        FROM learn_task_assignment source_assignment
+        JOIN learn_task source_task ON source_task.id = source_assignment.task_id
+        WHERE source_assignment.student_id = #{studentId}
+          AND source_assignment.scheduled_date = #{sourceDate}
+          AND source_assignment.source_type = 'FAMILY'
+          AND source_task.source_type = 'FAMILY'
+          AND source_task.creator_user_id = #{parentUserId}
+          AND source_task.status = 'PUBLISHED'
+          AND EXISTS (
+              SELECT 1
+              FROM learn_task_assignment target_assignment
+              JOIN learn_task target_task ON target_task.id = target_assignment.task_id
+              WHERE target_assignment.student_id = #{studentId}
+                AND target_assignment.scheduled_date = #{targetDate}
+                AND target_assignment.source_type = 'FAMILY'
+                AND target_task.title = source_task.title
+          )
+        ORDER BY source_task.title
+    </select>
+
+    <select id="findBatchByStudentAndTargetDate" resultMap="TaskCopyBatchRowMap">
+        SELECT <include refid="batchColumns"/>
+        FROM learn_task_copy_batch
+        WHERE student_id = #{studentId} AND target_date = #{targetDate}
+    </select>
+
+    <select id="findBatchById" resultMap="TaskCopyBatchRowMap">
+        SELECT <include refid="batchColumns"/> FROM learn_task_copy_batch WHERE id = #{id}
+    </select>
+
+    <select id="findBatchByIdForUpdate" resultMap="TaskCopyBatchRowMap">
+        SELECT <include refid="batchColumns"/> FROM learn_task_copy_batch WHERE id = #{id} FOR UPDATE
+    </select>
+
+    <select id="findItemsByBatchId" resultMap="TaskCopyItemRowMap">
+        SELECT <include refid="itemColumns"/>
+        FROM learn_task_copy_item WHERE batch_id = #{batchId} ORDER BY id
+    </select>
+
+    <select id="findItemByIdForUpdate" resultMap="TaskCopyItemRowMap">
+        SELECT <include refid="itemColumns"/> FROM learn_task_copy_item WHERE id = #{id} FOR UPDATE
+    </select>
+
+    <insert id="insertBatch">
+        INSERT INTO learn_task_copy_batch (
+            id, student_id, source_date, target_date, created_by_user_id,
+            confirm_duplicate_titles, status, total_count, success_count, failure_count
+        ) VALUES (
+            #{batch.id}, #{batch.studentId}, #{batch.sourceDate}, #{batch.targetDate},
+            #{batch.createdByUserId}, #{batch.confirmDuplicateTitles}, #{batch.status},
+            #{batch.totalCount}, #{batch.successCount}, #{batch.failureCount}
+        )
+    </insert>
+
+    <insert id="insertItem">
+        INSERT INTO learn_task_copy_item (
+            id, batch_id, source_task_id, target_task_id, task_title_snapshot,
+            status, failure_code, failure_message, retry_count, last_attempt_at
+        ) VALUES (
+            #{item.id}, #{item.batchId}, #{item.sourceTaskId},
+            #{item.targetTaskId, jdbcType=BIGINT}, #{item.taskTitleSnapshot}, #{item.status},
+            #{item.failureCode, jdbcType=VARCHAR}, #{item.failureMessage, jdbcType=VARCHAR},
+            #{item.retryCount}, #{item.lastAttemptAt, jdbcType=TIMESTAMP}
+        )
+    </insert>
+
+    <update id="markItemSuccess">
+        UPDATE learn_task_copy_item
+        SET target_task_id = #{targetTaskId}, status = 'SUCCESS',
+            failure_code = NULL, failure_message = NULL,
+            retry_count = retry_count + CASE WHEN #{incrementRetry} THEN 1 ELSE 0 END,
+            last_attempt_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id} AND status = #{expectedStatus}
+    </update>
+
+    <update id="markItemFailed">
+        UPDATE learn_task_copy_item
+        SET status = 'FAILED', failure_code = #{failureCode}, failure_message = #{failureMessage},
+            retry_count = retry_count + CASE WHEN #{incrementRetry} THEN 1 ELSE 0 END,
+            last_attempt_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id} AND status = #{expectedStatus}
+    </update>
+
+    <select id="countItems"
+            resultType="com.lingdong.learning.learningtask.infrastructure.persistence.TaskCopyCountRow">
+        SELECT COUNT(1) AS total_count,
+               SUM(CASE WHEN status = 'SUCCESS' THEN 1 ELSE 0 END) AS success_count,
+               SUM(CASE WHEN status = 'FAILED' THEN 1 ELSE 0 END) AS failure_count
+        FROM learn_task_copy_item WHERE batch_id = #{batchId}
+    </select>
+
+    <update id="updateBatchSummary">
+        UPDATE learn_task_copy_batch
+        SET status = #{status}, success_count = #{successCount}, failure_count = #{failureCount},
+            completed_at = CASE WHEN #{completed} THEN CURRENT_TIMESTAMP ELSE NULL END
+        WHERE id = #{id}
+    </update>
+</mapper>

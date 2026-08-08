@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.lingdong.learning.learningtask.application.StudentTaskAssignmentView;
 import com.lingdong.learning.learningtask.domain.LearningTaskSourceType;
+import com.lingdong.learning.learningtask.domain.TaskDeferType;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -28,6 +29,8 @@ public record StudentTaskAssignmentResponse(
         String effectiveStatus,
         @JsonSerialize(using = ToStringSerializer.class) Long currentReviewerId,
         String reviewerDisplayName,
+        TaskDeferType lastDeferType,
+        boolean overnightMigrated,
         ActiveTaskPauseResponse activePause,
         TaskCheckInResponse latestCheckIn,
         List<String> tagCodes
@@ -39,6 +42,7 @@ public record StudentTaskAssignmentResponse(
                 view.basePoints(), view.durationMinutes(), view.scheduledDate(), view.dueAt(),
                 view.categoryCode(), view.remark(), view.currentStatus(), view.effectiveStatus(),
                 view.currentReviewerId(), view.reviewerDisplayName(),
+                view.lastDeferType(), view.overnightMigrated(),
                 ActiveTaskPauseResponse.from(view.activePause()),
                 TaskCheckInResponse.from(view.latestCheckIn()), view.tagCodes());
     }

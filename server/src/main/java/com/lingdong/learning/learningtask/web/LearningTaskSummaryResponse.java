@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.lingdong.learning.learningtask.domain.LearningTask;
 import com.lingdong.learning.learningtask.domain.LearningTaskSourceType;
 import com.lingdong.learning.learningtask.domain.LearningTaskStatus;
+import com.lingdong.learning.learningtask.domain.LearningTaskRecurrenceStatus;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -19,6 +20,8 @@ public record LearningTaskSummaryResponse(
         Integer basePoints,
         Integer durationMinutes,
         LocalDate scheduledDate,
+        boolean recurrenceEnabled,
+        LearningTaskRecurrenceStatus recurrenceStatus,
         LearningTaskStatus status,
         LocalDateTime publishedAt,
         LocalDateTime createdAt
@@ -27,6 +30,7 @@ public record LearningTaskSummaryResponse(
         return new LearningTaskSummaryResponse(
                 task.id(), task.sourceType(), task.sourceOrganizationId(), task.title(),
                 task.difficultyLevel(), task.basePoints(), task.durationMinutes(),
-                task.scheduledDate(), task.status(), task.publishedAt(), task.createdAt());
+                task.scheduledDate(), Boolean.TRUE.equals(task.recurrenceEnabled()),
+                task.recurrenceStatus(), task.status(), task.publishedAt(), task.createdAt());
     }
 }

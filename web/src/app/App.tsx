@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { Avatar, Button, ConfigProvider, Dropdown, Layout, Menu, Spin } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
-import { AppWindow, Building2, ChevronDown, ClipboardList, KeyRound, LayoutDashboard, LogOut, ShieldCheck, UsersRound } from 'lucide-react';
+import { AppWindow, BookOpenCheck, Building2, ChevronDown, ClipboardList, Coins, Gift, KeyRound, LayoutDashboard, LogOut, QrCode, ShieldCheck, UsersRound } from 'lucide-react';
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { authApi, type CurrentUser } from '../api/auth';
 import { capabilityApi, type ClientCapabilities } from '../api/capability';
@@ -12,6 +12,10 @@ const IamManagementPage = lazy(async () => ({ default: (await import('../feature
 const OrganizationManagementPage = lazy(async () => ({ default: (await import('../features/organizations/OrganizationManagementPage')).OrganizationManagementPage }));
 const UserManagementPage = lazy(async () => ({ default: (await import('../features/users/UserManagementPage')).UserManagementPage }));
 const LearningTaskManagementPage = lazy(async () => ({ default: (await import('../features/learning-tasks/LearningTaskManagementPage')).LearningTaskManagementPage }));
+const GrowthPointPage = lazy(async () => ({ default: (await import('../features/growth-points/GrowthPointPage')).GrowthPointPage }));
+const RewardManagementPage = lazy(async () => ({ default: (await import('../features/rewards/RewardManagementPage')).RewardManagementPage }));
+const GrowthReviewPage = lazy(async () => ({ default: (await import('../features/growth-reviews/GrowthReviewPage')).GrowthReviewPage }));
+const StudentLoginManagementPage = lazy(async () => ({ default: (await import('../features/student-login/StudentLoginManagementPage')).StudentLoginManagementPage }));
 
 const { Header, Sider, Content } = Layout;
 
@@ -60,7 +64,15 @@ function ProtectedManagementApp() {
   }
 
   const learningTasksAvailable = canAccessLearningTasks(currentUser, capabilities);
-  const selectedKey = location.pathname.startsWith('/learning-tasks') ? 'learning-tasks'
+  const growthPointsAvailable = canAccessGrowthPoints(currentUser, capabilities);
+  const rewardsAvailable = canAccessRewards(currentUser, capabilities);
+  const growthReviewsAvailable = canAccessGrowthReviews(currentUser, capabilities);
+  const studentQrLoginAvailable = canAccessStudentQrLogin(currentUser, capabilities);
+  const selectedKey = location.pathname.startsWith('/student-login') ? 'student-login'
+    : location.pathname.startsWith('/growth-reviews') ? 'growth-reviews'
+    : location.pathname.startsWith('/rewards') ? 'rewards'
+    : location.pathname.startsWith('/growth-points') ? 'growth-points'
+    : location.pathname.startsWith('/learning-tasks') ? 'learning-tasks'
     : location.pathname.startsWith('/users') ? 'users'
     : location.pathname.startsWith('/organizations') ? 'organizations'
     : location.pathname.startsWith('/iam') ? 'iam' : 'dashboard';
@@ -78,6 +90,18 @@ function ProtectedManagementApp() {
             { key: 'dashboard', icon: <LayoutDashboard size={18} />, label: '工作台' },
             learningTasksAvailable
               ? { key: 'learning-tasks', icon: <ClipboardList size={18} />, label: '学习任务' }
+              : null,
+            growthPointsAvailable
+              ? { key: 'growth-points', icon: <Coins size={18} />, label: '积分台账' }
+              : null,
+            rewardsAvailable
+              ? { key: 'rewards', icon: <Gift size={18} />, label: '奖励管理' }
+              : null,
+            growthReviewsAvailable
+              ? { key: 'growth-reviews', icon: <BookOpenCheck size={18} />, label: '成长复盘' }
+              : null,
+            studentQrLoginAvailable
+              ? { key: 'student-login', icon: <QrCode size={18} />, label: '学生登录' }
               : null,
             { key: 'users', icon: <UsersRound size={18} />, label: '用户管理' },
             { key: 'iam', icon: <ShieldCheck size={18} />, label: '角色与权限' },
@@ -103,7 +127,35 @@ function ProtectedManagementApp() {
               <Route
                 path="/learning-tasks"
                 element={learningTasksAvailable
-                  ? <LearningTaskManagementPage currentUser={currentUser} />
+                  ? <LearningTaskManagementPage
+                      currentUser={currentUser}
+                      previousDayTaskCopyEnabled={capabilities.previousDayTaskCopyEnabled}
+                      learningTaskTemplateEnabled={capabilities.learningTaskTemplateEnabled}
+                    />
+                  : <Navigate to="/dashboard" replace />}
+              />
+              <Route
+                path="/growth-points"
+                element={growthPointsAvailable
+                  ? <GrowthPointPage correctionEnabled={capabilities.growthPointCorrectionEnabled} />
+                  : <Navigate to="/dashboard" replace />}
+              />
+              <Route
+                path="/rewards"
+                element={rewardsAvailable
+                  ? <RewardManagementPage />
+                  : <Navigate to="/dashboard" replace />}
+              />
+              <Route
+                path="/growth-reviews"
+                element={growthReviewsAvailable
+                  ? <GrowthReviewPage />
+                  : <Navigate to="/dashboard" replace />}
+              />
+              <Route
+                path="/student-login"
+                element={studentQrLoginAvailable
+                  ? <StudentLoginManagementPage />
                   : <Navigate to="/dashboard" replace />}
               />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
@@ -121,4 +173,34 @@ export function canAccessLearningTasks(
 ): boolean {
   return capabilities.learningTaskManagementEnabled
     && currentUser.roleCodes.some((role) => ['PARENT', 'ORG_ADMIN', 'TEACHER'].includes(role));
+}
+
+export function canAccessGrowthPoints(
+  currentUser: CurrentUser,
+  capabilities: ClientCapabilities
+): boolean {
+  return capabilities.growthPointQueryEnabled && currentUser.roleCodes.includes('PARENT');
+}
+
+export function canAccessRewards(
+  currentUser: CurrentUser,
+  capabilities: ClientCapabilities
+): boolean {
+  return capabilities.rewardExchangeEnabled && currentUser.roleCodes.includes('PARENT');
+}
+
+export function canAccessGrowthReviews(
+  currentUser: CurrentUser,
+  capabilities: ClientCapabilities
+): boolean {
+  return (capabilities.dailyGrowthReviewEnabled || capabilities.periodicGrowthReportEnabled)
+    && currentUser.roleCodes.includes('PARENT');
+}
+
+export function canAccessStudentQrLogin(
+  currentUser: CurrentUser,
+  capabilities: ClientCapabilities
+): boolean {
+  return capabilities.studentQrLoginEnabled
+    && currentUser.roleCodes.some((role) => ['PARENT', 'ORG_ADMIN'].includes(role));
 }

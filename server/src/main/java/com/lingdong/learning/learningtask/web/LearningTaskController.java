@@ -5,6 +5,7 @@ import com.lingdong.learning.common.security.RequirePermission;
 import com.lingdong.learning.learningtask.application.LearningTaskBatchPublishService;
 import com.lingdong.learning.learningtask.application.LearningTaskManagementService;
 import com.lingdong.learning.learningtask.application.LearningTaskPublishService;
+import com.lingdong.learning.learningtask.application.RecurringTaskManagementService;
 import com.lingdong.learning.learningtask.domain.LearningTaskSourceType;
 import com.lingdong.learning.learningtask.domain.LearningTaskStatus;
 import jakarta.validation.Valid;
@@ -29,15 +30,18 @@ public class LearningTaskController {
     private final LearningTaskManagementService managementService;
     private final LearningTaskPublishService publishService;
     private final LearningTaskBatchPublishService batchPublishService;
+    private final RecurringTaskManagementService recurringTaskManagementService;
 
     public LearningTaskController(
             LearningTaskManagementService managementService,
             LearningTaskPublishService publishService,
-            LearningTaskBatchPublishService batchPublishService
+            LearningTaskBatchPublishService batchPublishService,
+            RecurringTaskManagementService recurringTaskManagementService
     ) {
         this.managementService = managementService;
         this.publishService = publishService;
         this.batchPublishService = batchPublishService;
+        this.recurringTaskManagementService = recurringTaskManagementService;
     }
 
     @RequirePermission("LEARNING_TASK_CREATE")
@@ -99,5 +103,13 @@ public class LearningTaskController {
             @AuthenticationPrincipal AuthenticatedUser currentUser, @PathVariable Long id
     ) {
         return PublishLearningTaskResponse.from(publishService.publish(currentUser, id));
+    }
+
+    @RequirePermission("LEARNING_TASK_PUBLISH")
+    @PostMapping("/{id}/recurrence/stop")
+    public StopRecurringTaskResponse stopRecurrence(
+            @AuthenticationPrincipal AuthenticatedUser currentUser, @PathVariable Long id
+    ) {
+        return StopRecurringTaskResponse.from(recurringTaskManagementService.stop(currentUser, id));
     }
 }

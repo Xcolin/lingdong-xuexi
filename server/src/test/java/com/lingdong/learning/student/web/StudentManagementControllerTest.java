@@ -104,6 +104,14 @@ class StudentManagementControllerTest {
         Long organizationStudentId = organizationStudentResponse.path("id").asLong();
         assertThat(organizationStudentResponse.path("studentAccount").asText()).matches("\\d{8}");
         assertThat(organizationStudentResponse.path("initialLoginCode").asText()).matches("\\d{4}");
+        Integer initialPointAccountCount = jdbcTemplate.queryForObject("""
+                select count(*) from growth_point_account
+                where student_id in (?, ?)
+                  and id = student_id
+                  and total_points = 0
+                  and available_points = 0
+                """, Integer.class, familyStudentId, organizationStudentId);
+        assertThat(initialPointAccountCount).isEqualTo(2);
 
         mockMvc.perform(get("/api/v1/students")
                         .header("Authorization", "Bearer " + loginAccessToken("student_scope_parent")))

@@ -5,4 +5,29 @@
  <insert id="insert">INSERT INTO sys_file_relation(id,file_id,module_code,business_id,relation_type,visible_scope,status) VALUES(#{relation.id},#{relation.fileId},#{relation.moduleCode},#{relation.businessId},#{relation.relationType},#{relation.visibleScope},#{relation.status})</insert>
  <select id="findById" resultMap="RelationMap">SELECT id,file_id,module_code,business_id,relation_type,visible_scope,status,created_at,released_at FROM sys_file_relation WHERE id=#{id}</select>
  <update id="markReleased">UPDATE sys_file_relation SET status='RELEASED',released_at=CURRENT_TIMESTAMP WHERE id=#{id} AND status='ACTIVE'</update>
+ <select id="countActiveByFileId" resultType="int">SELECT COUNT(*) FROM sys_file_relation WHERE file_id=#{fileId} AND status='ACTIVE'</select>
+ <select id="countReadableByCurrentReviewer" resultType="int">
+  SELECT COUNT(*)
+  FROM sys_file_relation relation
+  JOIN learn_task_checkin checkin ON checkin.id=relation.business_id
+  JOIN learn_task_assignment assignment ON assignment.id=checkin.assignment_id
+  WHERE relation.file_id=#{fileId}
+    AND relation.module_code='LEARNING_TASK_CHECKIN'
+    AND relation.relation_type='IMAGE'
+    AND relation.status='ACTIVE'
+    AND assignment.current_reviewer_id=#{userId}
+ </select>
+ <select id="findActiveFilesByBusiness" resultMap="com.lingdong.learning.attachment.infrastructure.persistence.ManagedFileMapper.FileMap">
+  SELECT file.id,file.storage_key,file.original_name,file.extension,file.content_type,file.size_bytes,
+         file.uploader_id,file.module_code,file.file_category,file.content_sha256,file.status,
+         file.uploaded_at,file.created_at,file.updated_at
+  FROM sys_file_relation relation
+  JOIN sys_file file ON file.id=relation.file_id
+  WHERE relation.module_code=#{moduleCode}
+    AND relation.business_id=#{businessId}
+    AND relation.relation_type=#{relationType}
+    AND relation.status='ACTIVE'
+    AND file.status='AVAILABLE'
+  ORDER BY relation.created_at, relation.id
+ </select>
 </mapper>

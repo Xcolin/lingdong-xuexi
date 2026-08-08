@@ -36,6 +36,13 @@ public class LearningTaskValidator {
         if (scheduledDate.isBefore(LocalDate.now(clock.withZone(BUSINESS_ZONE)))) {
             throw new IllegalArgumentException("计划日期不能早于当天");
         }
+        LocalDate recurrenceEndDate = input.recurrenceEndDate();
+        if (!input.recurrenceEnabled() && recurrenceEndDate != null) {
+            throw new IllegalArgumentException("非固定任务不能设置结束日期");
+        }
+        if (recurrenceEndDate != null && recurrenceEndDate.isBefore(scheduledDate)) {
+            throw new IllegalArgumentException("固定任务结束日期不能早于计划日期");
+        }
 
         String categoryCode = optionalCode(input.categoryCode());
         if (categoryCode != null) {
@@ -49,7 +56,8 @@ public class LearningTaskValidator {
         List<LearningTaskTargetInput> targets = normalizeTargets(input.targets());
         return new ValidatedLearningTaskDraft(
                 title, difficulty, difficulty * 10, duration, scheduledDate, categoryCode,
-                tagCodes, optionalText(input.remark(), "任务备注", 200), targets);
+                tagCodes, optionalText(input.remark(), "任务备注", 200), targets,
+                input.recurrenceEnabled(), recurrenceEndDate);
     }
 
     private List<String> normalizeTags(List<String> values) {

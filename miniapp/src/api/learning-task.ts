@@ -1,7 +1,35 @@
 import { request } from './http';
 import { getStudentSession } from '@/session/student-session';
+import type { TaskAttachment } from './attachment';
 
 export type LearningTaskSourceType = 'FAMILY' | 'ORGANIZATION' | 'TEACHER';
+export type TaskAssignmentStatus =
+  | 'PENDING_CLAIM'
+  | 'IN_PROGRESS'
+  | 'PENDING_REVIEW'
+  | 'NEEDS_IMPROVEMENT'
+  | 'EXEMPT'
+  | 'COMPLETED';
+export type TaskAssignmentEffectiveStatus = TaskAssignmentStatus | 'PAUSED';
+export type TaskPauseType = 'EMOTION' | 'DIFFICULTY';
+export type TaskDeferType = 'AUTO' | 'MANUAL';
+
+export interface ActiveTaskPause {
+  id: string;
+  pauseType: TaskPauseType;
+  startedAt: string;
+  expiresAt: string;
+}
+
+export interface TaskCheckIn {
+  id: string;
+  submissionNo: number;
+  content: string | null;
+  status: 'SUBMITTED' | 'REJECTED';
+  submittedAt: string;
+  reviewComment: string | null;
+  attachments: TaskAttachment[];
+}
 
 export interface StudentTaskAssignment {
   id: string;
@@ -17,9 +45,14 @@ export interface StudentTaskAssignment {
   dueAt: string;
   categoryCode: string | null;
   remark: string | null;
-  currentStatus: 'PENDING_CLAIM';
+  currentStatus: TaskAssignmentStatus;
+  effectiveStatus: TaskAssignmentEffectiveStatus;
   currentReviewerId: string;
   reviewerDisplayName: string;
+  lastDeferType: TaskDeferType | null;
+  overnightMigrated: boolean;
+  activePause: ActiveTaskPause | null;
+  latestCheckIn: TaskCheckIn | null;
   tagCodes: string[];
 }
 
@@ -51,12 +84,59 @@ export function getStudentTaskAssignment(id: string): Promise<StudentTaskAssignm
   );
 }
 
-function authenticatedRequest<T>(path: string): Promise<T> {
+export function claimStudentTask(id: string): Promise<StudentTaskAssignment> {
+  return executeTaskAction(id, 'claim');
+}
+
+export function pauseStudentTask(
+  id: string,
+  pauseType: TaskPauseType,
+  durationMinutes: number
+): Promise<StudentTaskAssignment> {
+  return executeTaskAction(id, 'pause', { pauseType, durationMinutes });
+}
+
+export function resumeStudentTask(id: string): Promise<StudentTaskAssignment> {
+  return executeTaskAction(id, 'resume');
+}
+
+export function abandonStudentTask(id: string, reason?: string): Promise<StudentTaskAssignment> {
+  return executeTaskAction(id, 'abandon', { reason });
+}
+
+export function submitStudentTaskCheckIn(
+  id: string,
+  content: string,
+  fileIds: string[]
+): Promise<StudentTaskAssignment> {
+  return executeTaskAction(id, 'check-ins', {
+    content: content || null,
+    fileIds
+  });
+}
+
+function executeTaskAction(
+  id: string,
+  action: string,
+  data?: Record<string, unknown>
+): Promise<StudentTaskAssignment> {
+  return authenticatedRequest<StudentTaskAssignment>(
+    `/task-assignments/${encodeURIComponent(id)}/${action}`,
+    { method: 'POST', data }
+  );
+}
+
+function authenticatedRequest<T>(
+  path: string,
+  options: { method?: UniApp.RequestOptions['method']; data?: UniApp.RequestOptions['data'] } = {}
+): Promise<T> {
   const session = getStudentSession();
   if (!session) {
     return Promise.reject(new Error('学生登录状态已失效'));
   }
   return request<T>(path, {
+    method: options.method,
+    data: options.data,
     header: { Authorization: `Bearer ${session.accessToken}` }
   });
 }

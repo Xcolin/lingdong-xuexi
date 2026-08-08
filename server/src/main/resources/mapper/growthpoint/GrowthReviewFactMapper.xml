@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthReviewFactMapper">
+    <resultMap id="TaskFactMap"
+               type="com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthReviewTaskFactRow">
+        <constructor>
+            <arg column="task_total_count" javaType="java.lang.Integer"/>
+            <arg column="completed_count" javaType="java.lang.Integer"/>
+            <arg column="in_progress_count" javaType="java.lang.Integer"/>
+            <arg column="pending_optimization_count" javaType="java.lang.Integer"/>
+            <arg column="exempted_count" javaType="java.lang.Integer"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="CategoryFactMap"
+               type="com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthReviewCategoryFactRow">
+        <constructor>
+            <arg column="category_code" javaType="java.lang.String"/>
+            <arg column="task_count" javaType="java.lang.Integer"/>
+            <arg column="completed_count" javaType="java.lang.Integer"/>
+        </constructor>
+    </resultMap>
+
+    <select id="aggregateTasks" resultMap="TaskFactMap">
+        SELECT COUNT(*) AS task_total_count,
+               SUM(CASE WHEN current_status = 'COMPLETED' THEN 1 ELSE 0 END) AS completed_count,
+               SUM(CASE WHEN current_status = 'IN_PROGRESS' THEN 1 ELSE 0 END) AS in_progress_count,
+               SUM(CASE WHEN current_status = 'NEEDS_IMPROVEMENT' THEN 1 ELSE 0 END)
+                   AS pending_optimization_count,
+               SUM(CASE WHEN current_status = 'EXEMPT' THEN 1 ELSE 0 END) AS exempted_count
+        FROM learn_task_assignment
+        WHERE student_id = #{studentId}
+          AND scheduled_date BETWEEN #{startDate} AND #{endDate}
+    </select>
+
+    <select id="aggregateCategories" resultMap="CategoryFactMap">
+        SELECT COALESCE(task.category_code, 'GENERAL') AS category_code,
+               COUNT(*) AS task_count,
+               SUM(CASE WHEN assignment.current_status = 'COMPLETED' THEN 1 ELSE 0 END)
+                   AS completed_count
+        FROM learn_task_assignment assignment
+        INNER JOIN learn_task task ON task.id = assignment.task_id
+        WHERE assignment.student_id = #{studentId}
+          AND assignment.scheduled_date BETWEEN #{startDate} AND #{endDate}
+        GROUP BY COALESCE(task.category_code, 'GENERAL')
+        ORDER BY category_code
+    </select>
+
+    <select id="sumEarnedPoints" resultType="long">
+        SELECT COALESCE(SUM(amount), 0)
+        FROM growth_point_ledger
+        WHERE student_id = #{studentId}
+          AND change_type IN ('TASK_REWARD', 'CORRECTION')
+          AND occurred_at &gt;= #{startAt}
+          AND occurred_at &lt; #{endExclusive}
+    </select>
+
+    <select id="countPauses" resultType="int">
+        SELECT COUNT(*)
+        FROM learn_task_pause pause_record
+        INNER JOIN learn_task_assignment assignment
+            ON assignment.id = pause_record.assignment_id
+        WHERE assignment.student_id = #{studentId}
+          AND pause_record.started_at &gt;= #{startAt}
+          AND pause_record.started_at &lt; #{endExclusive}
+    </select>
+</mapper>

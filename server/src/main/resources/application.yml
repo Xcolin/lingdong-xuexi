@@ -2,9 +2,9 @@ spring:
   application:
     name: lingdong-learning
   datasource:
-    url: ${DB_URL:jdbc:mysql://127.0.0.1:3306/lingdong_learning?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai}
+    url: ${DB_URL:jdbc:mysql://8.156.80.3:3306/lingdong_learning?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai}
     username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:}
+    password: ${DB_PASSWORD:Colinzs@aly520}
     driver-class-name: com.mysql.cj.jdbc.Driver
   flyway:
     enabled: true
@@ -16,14 +16,38 @@ spring:
       time-to-live: ${DICTIONARY_CACHE_TTL:PT10M}
   data:
     redis:
-      host: ${REDIS_HOST:127.0.0.1}
+      host: ${REDIS_HOST:8.156.80.3}
       port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:}
+      password: ${REDIS_PASSWORD:Colinzs@alyredis520}
 
 mybatis:
   mapper-locations: classpath*:mapper/**/*.xml
 
 lingdong:
+  attachment:
+    local-root: ${ATTACHMENT_LOCAL_ROOT:${java.io.tmpdir}/lingdong-learning-attachments}
+  recurring-task:
+    scheduling-enabled: ${RECURRING_TASK_SCHEDULING_ENABLED:true}
+    batch-size: ${RECURRING_TASK_BATCH_SIZE:100}
+    cron: ${RECURRING_TASK_CRON:0 5 0 * * *}
+  task-overdue:
+    scheduling-enabled: ${TASK_OVERDUE_SCHEDULING_ENABLED:true}
+    batch-size: ${TASK_OVERDUE_BATCH_SIZE:100}
+    cron: ${TASK_OVERDUE_CRON:59 59 23 * * *}
+  task-defer:
+    scheduling-enabled: ${TASK_DEFER_SCHEDULING_ENABLED:true}
+    batch-size: ${TASK_DEFER_BATCH_SIZE:100}
+    cron: ${TASK_DEFER_CRON:0 0 0 * * *}
+  point-lifecycle:
+    scheduling-enabled: ${POINT_LIFECYCLE_SCHEDULING_ENABLED:true}
+    batch-size: ${POINT_LIFECYCLE_BATCH_SIZE:100}
+    cron: ${POINT_LIFECYCLE_CRON:0 10 * * * *}
+  reward-exchange:
+    cleanup:
+      scheduling-enabled: ${REWARD_EXCHANGE_CLEANUP_ENABLED:true}
+      batch-size: ${REWARD_EXCHANGE_CLEANUP_BATCH_SIZE:100}
+      initial-delay-ms: ${REWARD_EXCHANGE_CLEANUP_INITIAL_DELAY_MS:60000}
+      fixed-delay-ms: ${REWARD_EXCHANGE_CLEANUP_FIXED_DELAY_MS:60000}
   id:
     snowflake:
       datacenter-id: ${SNOWFLAKE_DATACENTER_ID:0}

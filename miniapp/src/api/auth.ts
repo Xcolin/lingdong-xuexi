@@ -23,6 +23,19 @@ export interface StudentCodeLoginPayload {
   captchaAnswer?: string;
 }
 
+export interface StudentQrLoginPayload {
+  qrContent: string;
+  loginCode: string;
+  deviceId: string;
+  deviceName: string;
+  captchaChallengeId?: string;
+  captchaAnswer?: string;
+}
+
+export interface StudentQrSession extends StudentSession {
+  studentAccount: string;
+}
+
 export function issueStudentCaptcha(studentAccount: string, deviceId: string): Promise<CaptchaChallenge> {
   return request<CaptchaChallenge>('/auth/student-captchas', {
     method: 'POST',
@@ -34,6 +47,20 @@ export function loginStudentByCode(payload: StudentCodeLoginPayload): Promise<St
   return request<StudentSession>('/auth/student-sessions/code', {
     method: 'POST',
     data: payload
+  });
+}
+
+export function loginStudentByQr(payload: StudentQrLoginPayload): Promise<StudentQrSession> {
+  return request<StudentQrSession>('/auth/student-sessions/qr', {
+    method: 'POST',
+    data: payload
+  });
+}
+
+export function issueStudentQrCaptcha(qrContent: string, deviceId: string): Promise<CaptchaChallenge> {
+  return request<CaptchaChallenge>('/auth/student-qr-captchas', {
+    method: 'POST',
+    data: { qrContent, deviceId }
   });
 }
 

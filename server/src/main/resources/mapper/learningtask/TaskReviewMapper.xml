@@ -7,6 +7,7 @@
             <idArg column="assignment_id" javaType="java.lang.Long"/>
             <arg column="task_id" javaType="java.lang.Long"/>
             <arg column="title" javaType="java.lang.String"/>
+            <arg column="base_points" javaType="java.lang.Integer"/>
             <arg column="student_id" javaType="java.lang.Long"/>
             <arg column="student_name" javaType="java.lang.String"/>
             <arg column="source_type" javaType="com.lingdong.learning.learningtask.domain.LearningTaskSourceType"/>
@@ -28,7 +29,12 @@
                type="com.lingdong.learning.learningtask.infrastructure.persistence.TaskReviewStateRow">
         <constructor>
             <idArg column="assignment_id" javaType="java.lang.Long"/>
+            <arg column="task_id" javaType="java.lang.Long"/>
             <arg column="student_id" javaType="java.lang.Long"/>
+            <arg column="base_points" javaType="java.lang.Integer"/>
+            <arg column="source_type" javaType="com.lingdong.learning.learningtask.domain.LearningTaskSourceType"/>
+            <arg column="source_organization_id" javaType="java.lang.Long"/>
+            <arg column="scheduled_date" javaType="java.time.LocalDate"/>
             <arg column="current_status" javaType="com.lingdong.learning.learningtask.domain.TaskAssignmentStatus"/>
             <arg column="current_reviewer_id" javaType="java.lang.Long"/>
             <arg column="version_no" javaType="java.lang.Integer"/>
@@ -39,6 +45,7 @@
         assignment.id AS assignment_id,
         task.id AS task_id,
         task.title,
+        task.base_points,
         student.id AS student_id,
         student.student_name,
         assignment.source_type,
@@ -99,9 +106,14 @@
     </select>
 
     <select id="findStateForUpdate" resultMap="TaskReviewStateRowMap">
-        SELECT id AS assignment_id, student_id, current_status, current_reviewer_id, version_no
-        FROM learn_task_assignment
-        WHERE id = #{assignmentId} AND current_reviewer_id = #{reviewerUserId}
+        SELECT assignment.id AS assignment_id, assignment.task_id, assignment.student_id,
+               task.base_points, assignment.source_type, assignment.source_organization_id,
+               assignment.scheduled_date, assignment.current_status,
+               assignment.current_reviewer_id, assignment.version_no
+        FROM learn_task_assignment assignment
+        JOIN learn_task task ON task.id = assignment.task_id
+        WHERE assignment.id = #{assignmentId}
+          AND assignment.current_reviewer_id = #{reviewerUserId}
         FOR UPDATE
     </select>
 </mapper>

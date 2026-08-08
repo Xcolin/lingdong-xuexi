@@ -77,7 +77,7 @@
 | `POST /api/v1/auth/sms-codes` | 发送家长验证码 | 频率限制与图形/风控校验。 | 未实现。 |
 | `POST /api/v1/auth/sessions/sms` | 验证码登录 | 验证码有效且未超限。 | 未实现。 |
 | `POST /api/v1/auth/sessions/wechat` | 微信登录/会话换取 | 小程序微信授权；绑定与回退规则由账号用例执行。 | 未实现。 |
-| `GET /api/v1/public/capabilities?client=WEB|MINIAPP` | 客户端启动前读取非敏感能力摘要 | 公开；只接受 `WEB` 或 `MINIAPP`。 | V22 已扩展，返回 `learningTaskManagementEnabled`；`MINIAPP` 另返回有效的 `studentCodeLoginEnabled`。 |
+| `GET /api/v1/public/capabilities?client=WEB|MINIAPP` | 客户端启动前读取非敏感能力摘要 | 公开；只接受 `WEB` 或 `MINIAPP`。 | V26 返回任务、积分查询和客户端纠错能力；`MINIAPP` 另返回有效的学生账号登录能力，纠错能力固定为否。 |
 | `POST /api/v1/auth/student-captchas` | 申请学生登录图形验证码 | 公开；`STUDENT_CODE_LOGIN` 启用，账号与设备标识非空。 | V21 已实现，返回挑战标识、Base64 图片和到期时间。 |
 | `POST /api/v1/auth/student-sessions/code` | 学生登录码登录 | 公开；功能启用，校验限流、锁定、按需图形验证码与登录码。 | V21 已实现，只创建 `MINIAPP` 会话。 |
 | `POST /api/v1/auth/student-sessions/scan` | 学生扫码登录 | 校验二维码有效期与绑定关系。 | 未实现。 |
@@ -182,22 +182,33 @@
 | `GET/POST /api/v1/learning-tasks` | V22 已实现；按授权范围查询或创建家庭、机构、教师任务草稿。 |
 | `GET/PATCH /api/v1/learning-tasks/{id}` | V22 已实现；查询可管理详情，或仅编辑 `DRAFT` 任务。 |
 | `POST /api/v1/learning-tasks/{id}/publish` | V22 已实现；单事务展开学生实例并将任务置为已发布。 |
+| `POST /api/v1/learning-tasks/{id}/recurrence/stop` | V30 已实现；停止当前用户可管理的活动每日固定计划。 |
 | `POST /api/v1/learning-tasks/batch-publish` | V22 已实现；最多 100 个不重复任务标识，逐项独立事务并返回部分失败明细。 |
 | `GET /api/v1/learning-task-options/organizations` | V22 已实现；按显式 `sourceType` 返回当前角色可选组织。 |
 | `GET /api/v1/learning-task-options/students` | V22 已实现；按显式 `sourceType` 和可选组织返回脱敏学生候选。 |
 | `GET /api/v1/learning-task-options/teachers` | V22 已实现；机构管理员按数据范围返回教师及其班级标识。 |
-| `POST /api/v1/learning-tasks/{id}/copy-previous-day` | 按学生复制昨日任务，服务端限制每日一次。 |
-| `GET /api/v1/task-assignments` | V22 已实现学生本人只读列表；支持来源、计划日期和分页。 |
-| `GET /api/v1/task-assignments/{id}` | V22 已实现学生本人只读详情；不返回原始目标或其他学生。 |
-| `POST /api/v1/task-assignments/{id}/claim` | 学生认领待认领任务。 |
-| `POST /api/v1/task-assignments/{id}/check-ins` | 学生提交打卡。 |
-| `POST /api/v1/task-assignments/{id}/reviews/approve` | 当前有效审核人通过打卡。 |
-| `POST /api/v1/task-assignments/{id}/reviews/reject` | 当前有效审核人驳回，意见必填。 |
-| `POST /api/v1/task-assignments/{id}/pauses` | 学生发起情绪暂停或难题搁置。 |
-| `POST /api/v1/task-assignments/{id}/resume` | 结束暂停并回到进行中。 |
-| `POST /api/v1/task-assignments/{id}/abandon` | 学生放弃，进入待优化。 |
-| `POST /api/v1/task-assignments/{id}/defer` | 按规则顺延。 |
-| `POST /api/v1/task-assignments/{id}/exempt` | 授权角色设置免执行。 |
+| `GET /api/v1/students/{studentId}/previous-day-task-copy/preview` | V33 已实现；主家长预览昨日候选、今日同名和既有批次。 |
+| `POST /api/v1/students/{studentId}/previous-day-task-copy` | V33 已实现；按学生创建或恢复当日唯一复制批次。 |
+| `POST /api/v1/task-copy-batches/{batchId}/items/{itemId}/retry` | V33 已实现；主家长显式重试本人批次中的失败条目。 |
+| `GET/POST /api/v1/task-templates` | V34 已实现；Web 家长查询系统加本人模板或新增本人个人模板。 |
+| `PATCH/DELETE /api/v1/task-templates/{templateId}` | V34 已实现；按版本编辑或逻辑删除本人个人模板。 |
+| `PUT /api/v1/task-templates/personal-order` | V34 已实现；提交本人全部活动个人模板及版本并原子排序。 |
+| `GET /api/v1/task-assignments` | V23 已实现学生本人列表；支持来源、计划日期和分页，返回基础状态与有效状态。 |
+| `GET /api/v1/task-assignments/{id}` | V23 已实现学生本人详情；返回活动暂停和最近打卡，不返回其他学生。 |
+| `POST /api/v1/task-assignments/{id}/claim` | V23 已实现；学生认领本人待认领任务。 |
+| `POST /api/v1/task-assignments/{id}/pause` | V23 已实现；暂停类型为 `EMOTION` 或 `DIFFICULTY`，时长 1 至 120 分钟。 |
+| `POST /api/v1/task-assignments/{id}/resume` | V23 已实现；结束本人有效暂停并继续任务。 |
+| `POST /api/v1/task-assignments/{id}/abandon` | V23 已实现；学生放弃后进入待优化，不扣分。 |
+| `POST /api/v1/task-assignments/{id}/check-ins` | V31 已扩展；学生提交最长 1000 字文字和/或最多 9 个已上传图片标识。 |
+| `GET /api/v1/task-reviews` | V23 已实现；当前审核人待审核分页。 |
+| `GET /api/v1/task-reviews/{id}` | V23 已实现；仅当前审核人读取待办详情。 |
+| `GET /api/v1/task-reviews/{id}/reviewer-options` | V23 已实现；返回服务端裁剪的审核候选人。 |
+| `POST /api/v1/task-reviews/{id}/reject` | V23 已实现；驳回意见必填且最长 500 字。 |
+| `POST /api/v1/task-reviews/{id}/transfer` | V23 已实现；转交原因必填，目标必须属于候选范围。 |
+| `POST /api/v1/managed-task-assignments/{id}/exempt` | V23 已实现；授权角色按家庭或组织范围设置免执行。 |
+| `POST /api/v1/task-reviews/{id}/approve` | V24 已实现；仅当前审核人可操作，请求体为空，按服务端基础积分完成任务并原子入账。 |
+| `GET /api/v1/managed-task-assignments` | V32 已实现；Web 管理角色分页查询授权范围内可顺延任务。 |
+| `POST /api/v1/managed-task-assignments/{id}/defer` | V32 已实现；按未来 1 至 7 天规则手动顺延。 |
 
 #### 2.5.1 V22 已实现学习任务契约
 
@@ -207,15 +218,69 @@
 
 任务不存在或不在当前家庭、组织或班级范围统一返回 `404 RESOURCE_NOT_FOUND`；角色/权限或客户端不符返回 `403 ACCESS_DENIED`；字段、字典、重复批量标识返回 `400 VALIDATION_ERROR`；重复发布、编辑已发布任务、零有效学生等返回 `409 STATE_CONFLICT`；功能关闭返回 `409 FEATURE_DISABLED`。批量发布失败项使用“任务不可发布，请检查状态或数据范围”中性原因，不暴露任务是否存在或归属他人。
 
+#### 2.5.2 V23-V24 已实现执行、审核与任务奖励积分契约
+
+学生执行接口必须使用 `MINIAPP` 会话和 `TASK_ASSIGNMENT_EXECUTE_SELF`，服务端只从会话反查学生档案。所有写操作先锁定本人任务实例；跨学生标识返回 `404`，重复点击或非法状态返回 `409`。响应沿用学生任务详情，并增加 `effectiveStatus`、可空 `activePause` 和可空 `latestCheckIn`，其中所有 19 位标识序列化为字符串。
+
+审核接口必须使用 `WEB` 会话和 `TASK_ASSIGNMENT_REVIEW`。待办与详情只查询 `current_reviewer_id` 等于当前用户且状态为待审核的数据。驳回在同一事务内把最近打卡标为 `REJECTED`、保存意见、将任务退回进行中并写事件；再次打卡生成递增提交序号，不覆盖历史。转交同时更新当前审核人、写入转交历史和审计事件。免执行需要 `TASK_ASSIGNMENT_EXEMPT`，并继续校验家庭主关系、创建教师或机构组织数据范围。
+
+V24 审核通过请求不接受积分、学生、来源或余额字段。服务端锁定当前审核人的任务实例、最新待审核打卡和学生积分账户，使用任务基础积分完成打卡与任务、增加累计及可用积分、写入唯一任务奖励台账和审核通过事件。成功响应包含 `assignmentId`、`currentStatus=COMPLETED`、`checkInId`、`checkInStatus=APPROVED`、`awardedPoints`、`totalPoints`、`availablePoints`、`ledgerId`；所有标识均为字符串。非当前审核人返回 404，重复或并发旧请求返回 409。
+
+#### 2.5.3 V30 每日固定任务契约
+
+创建和更新任务增加 `recurrenceEnabled` 与可空 `recurrenceEndDate`。未传启用标识按 `false`；关闭时不得携带结束日；启用时结束日不得早于 `scheduledDate`。详情和管理列表返回 `recurrenceEnabled`、可空 `recurrenceEndDate` 及可空 `recurrenceStatus=ACTIVE|COMPLETED|STOPPED`。
+
+发布固定任务时，首日学生实例和活动计划在同一事务创建，下一生成日为首日加一天。停止接口请求体为空，成功返回字符串 `taskId`、字符串 `recurrenceId`、`status=STOPPED`、字符串 `stoppedByUserId` 和 `stoppedAt`。越权任务返回 404；普通任务、重复停止、已完成计划和并发版本冲突返回 409；`LEARNING_TASK_MANAGEMENT` 关闭返回 `409 FEATURE_DISABLED`。
+
+#### 2.5.4 V31 图片打卡附件契约
+
+`POST /api/v1/attachments/uploads` 使用 `multipart/form-data`，字段为 `moduleCode=LEARNING_TASK_CHECKIN`、`fileCategory=IMAGE` 和 `file`。仅接受小程序学生上传的 JPG/JPEG/PNG，单文件不超过 10 MB；成功返回字符串文件标识、原始文件名、归一化内容类型、大小、模块和分类，不返回存储键或路径。
+
+`GET /api/v1/attachments/{id}` 返回安全元数据；`GET /api/v1/attachments/{id}/content` 返回认证后的图片字节；`DELETE /api/v1/attachments/{id}` 仅允许上传人删除尚未关联的临时文件，成功返回 204。上传学生本人及当前有效审核人可读取已关联图片，其他用户与不存在文件统一返回 404。
+
+任务详情和审核详情的 `latestCheckIn` 增加 `attachments`，每项包含字符串 `id`、`originalName`、`contentType` 和 `fileSizeBytes`。提交打卡时 `content` 可空，`fileIds` 可空或最多 9 项，但两者不能同时为空；文件必须由当前学生上传、属于指定模块和分类、未删除且未关联。服务端在打卡事务内完成关联。
+
+#### 2.5.5 V32 待优化与顺延契约
+
+`GET /api/v1/managed-task-assignments` 仅允许 Web 端具有 `TASK_ASSIGNMENT_DEFER` 权限的家长、教师或机构管理员调用，接收 `page`、`pageSize`，返回 `items`、`page`、`pageSize`、`total`。列表项包含字符串 `assignmentId`、任务标题、字符串 `studentId`、学生名称、来源类型、可空来源组织名称、计划日期、当前状态、可空最近顺延类型和隔夜迁移标记。
+
+`POST /api/v1/managed-task-assignments/{id}/defer` 请求体仅包含 `targetDate`。目标日期必须为上海时区当前日期之后 1 至 7 天；家庭任务限活动主家长，教师任务限创建教师，机构任务限授权组织范围。成功返回字符串 `assignmentId`、字符串 `targetTaskId`、`status=PENDING_CLAIM`、目标日期、`deferType=MANUAL` 和隔夜迁移标记。
+
+服务端每日 23:59 将到期且无活动暂停的 `IN_PROGRESS` 实例转为 `NEEDS_IMPROVEMENT`，每日 00:00 将昨日未手动处理的待优化实例自动顺延到当日。顺延复制任务定义与标签快照、关闭周期属性、迁移同一学生实例并写入不可变历史。手动顺延优先于自动顺延；自动顺延后仅在实例仍为待认领时允许再次手动改期。状态冲突或日期越界返回 409，越权对象统一返回 404，功能停用返回 `409 FEATURE_DISABLED`。
+
+#### 2.5.6 V33 按学生复制昨日任务契约
+
+预览与复制接口仅允许 `WEB` 会话、`PARENT` 角色、`LEARNING_TASK_COPY_PREVIOUS_DAY` 权限和活动主家长关系。服务端固定使用上海业务日计算昨日与今日；预览返回字符串学生标识、学生名称、源日期、目标日期、候选数量、同名标题、是否已复制及可空既有批次。
+
+复制请求体仅包含 `confirmDuplicateTitles`。存在今日同名标题且未确认时返回状态冲突；无候选时不创建批次。成功返回字符串批次标识、学生标识、日期、批次状态、总数、成功数、失败数和条目列表；条目标识、源任务和目标任务标识均为字符串。部分失败返回同一成功响应结构，由条目状态表达，不回滚已成功任务。
+
+每个学生目标日期唯一批次保证重复 POST 幂等。已有批次若仍含 `PENDING` 条目，重复请求只恢复这些条目；`SUCCESS` 与 `FAILED` 不自动重放。重试接口只接受 `FAILED` 条目，成功项、越权批次和失效主关系分别按状态冲突或不可访问资源处理。两个功能开关任一关闭时后端返回 `409 FEATURE_DISABLED`；公共能力仅对 Web 返回 `previousDayTaskCopyEnabled=true`，小程序固定为 false。
+
+#### 2.5.7 V34 任务模板契约
+
+模板接口只允许 `WEB` 会话和 `PARENT` 角色。读取同时要求 `LEARNING_TASK_TEMPLATE_READ`，新增、编辑、删除和排序要求 `LEARNING_TASK_TEMPLATE_MANAGE_PERSONAL`；`LEARNING_TASK_MANAGEMENT` 与 `LEARNING_TASK_TEMPLATE` 任一停用均返回 `409 FEATURE_DISABLED`。
+
+模板输入包含 `templateName`、`taskTitle`、`difficultyLevel`、`durationMinutes`、可空 `categoryCode`、`tagCodes` 和可空 `remark`，不接受来源、组织、学生、日期、审核人、积分、周期或任务状态。更新请求额外包含整数 `versionNo`；删除使用查询参数 `versionNo`；排序请求为当前家长全部活动个人模板组成的 `items[{templateId,versionNo}]`。
+
+响应中的 `id` 为字符串雪花标识，另含范围、可复用字段、排序、版本和审计时间。系统模板仅允许读取和选用；跨家长或系统模板管理统一返回不可访问资源。个人名称冲突、100 个上限、版本或排序集合变化返回 409。公共能力仅在 Web 双开关启用时返回 `learningTaskTemplateEnabled=true`，小程序固定为 false。
+
 ### 2.6 积分、奖励、复盘、机构和考勤
 
 | 方法与路径 | 用途 |
 |---|---|
-| `GET /api/v1/students/{id}/point-account` | 查询累计与可用积分。 |
-| `GET /api/v1/students/{id}/point-ledgers` | 查询积分台账。 |
-| `POST /api/v1/point-corrections` | 在规则时限内发起积分纠错。 |
-| `GET/POST /api/v1/rewards` | 查询/配置家庭奖励。 |
-| `POST /api/v1/reward-exchanges` | 学生提交兑换申请。 |
+| `GET /api/v1/growth-points/me/account` | V25 已实现；学生 `MINIAPP` 会话查询本人累计与可用积分。 |
+| `GET /api/v1/growth-points/me/ledgers` | V25 已实现；学生查询本人不可变台账，支持 `page`、`pageSize`。 |
+| `GET /api/v1/growth-points/students` | V25 已实现；家长 `WEB` 会话查询活动主关系学生选项。 |
+| `GET /api/v1/growth-points/students/{studentId}/account` | V25 已实现；主家长查询活动主关系孩子账户。 |
+| `GET /api/v1/growth-points/students/{studentId}/ledgers` | V25 已实现；主家长查询活动主关系孩子台账分页。 |
+| `POST /api/v1/growth-points/students/{studentId}/corrections` | V26 已实现；主家长在 72 小时内整笔纠正本人误审的家庭任务奖励。 |
+| `GET/POST /api/v1/rewards/students/{studentId}` | V27 已实现；主家长分页查询/新增孩子的家庭奖励。 |
+| `PATCH/DELETE /api/v1/rewards/{rewardId}` | V27 已实现；主家长编辑、上下架或逻辑删除孩子奖励。 |
+| `GET /api/v1/rewards/me` | V27 已实现；学生分页查询本人在线且未到期奖励。 |
+| `GET /api/v1/rewards/me/summary` | V27 已实现；学生查询奖励兑换能力内的本人可用积分摘要。 |
+| `POST /api/v1/reward-exchanges` | V27 已实现；学生提交本人奖励兑换申请。 |
+| `GET /api/v1/reward-exchanges/me` | V27 已实现；学生分页查询本人兑换历史。 |
+| `GET /api/v1/reward-exchanges/students/{studentId}` | V27 已实现；主家长分页查询孩子兑换记录。 |
 | `POST /api/v1/reward-exchanges/{id}/approve` | 主家长同意兑换。 |
 | `POST /api/v1/reward-exchanges/{id}/reject` | 主家长驳回兑换。 |
 | `POST /api/v1/reward-exchanges/{id}/verify` | 主家长核销。 |
@@ -227,6 +292,51 @@
 | `GET /api/v1/attendance-records` | 查询本人或授权范围内考勤结果。 |
 | `GET /api/v1/location-tracks` | 仅在开关、授权、角色、组织范围均满足时查询。 |
 
+#### 2.6.1 V25 积分查询契约
+
+账户响应包含 `studentId`、`studentName`、`totalPoints`、`availablePoints`、`updatedAt`，不返回账户主键和内部版本号。台账响应包含 `id`、`changeType`、`amount`、`availableDelta`、可空来源任务/兑换/类型/组织、任务标题、审核人、`occurredAt` 和可空备注；19 位标识均为字符串。分页范围为页码 1 至 1000000、每页 1 至 100，固定按 `occurredAt DESC, id DESC` 排序。
+
+学生本人端点不接收学生标识；家长端点只接受活动主关系学生。跨关系学生返回 `404 RESOURCE_NOT_FOUND`，无 RBAC 权限返回 `403 ACCESS_DENIED`，`GROWTH_POINT_QUERY` 停用返回 `409 FEATURE_DISABLED`。教师和机构管理员后续只能使用按来源及组织过滤的统计接口，不得复用统一账户端点。
+
+#### 2.6.2 V26 积分纠错契约
+
+纠错请求只包含字符串形式的 `originalLedgerId` 和 1 至 500 字的 `reason`，不接收积分数量、账户余额、任务状态或审核人。成功响应包含学生、任务实例、原台账、纠错台账标识，整笔纠错积分、最新累计/可用积分、`PENDING_REVIEW` 和发生时间；全部 19 位标识以字符串输出。
+
+家长台账响应增加 `correctionOfId`、`correctionLedgerId`、`correctionDeadline` 和 `correctable`。`GROWTH_POINT_CORRECTION` 停用返回 `409 FEATURE_DISABLED`；超时、重复、非本人审核、非家庭奖励或状态已变化返回 `409 STATE_CONFLICT`；跨关系学生和不属于该学生的原台账返回 404。
+
+#### 2.6.3 V27 家庭奖励与兑换契约
+
+奖励新增请求包含 `rewardName`、`requiredPoints`、可空 `description`、可空 `validUntil` 和 `online`；更新沿用同一组业务字段。奖励与兑换查询统一接收 `page`、`pageSize`，页码范围为 1 至 1000000、每页 1 至 100，响应固定为 `items`、`page`、`pageSize`、`total`。家长兑换查询可选 `status`，学生奖励与兑换查询不接受学生标识。
+
+学生申请请求只包含字符串形式的 `rewardId`。服务端从 `MINIAPP` 会话反查学生，保存奖励名称、所需积分和描述快照；主家长同意、驳回和核销分别使用 `/approve`、`/reject`、`/verify`，驳回请求只包含 1 至 500 字原因。奖励、兑换、学生、家长、审核人和台账等 19 位标识全部按 JSON 字符串收发。
+
+奖励兑换能力的账户摘要由 `REWARD_EXCHANGE` 独立控制，不依赖 `GROWTH_POINT_QUERY`。申请时不扣分；同意时只减少可用积分并返回最新兑换状态，累计积分不变。兑换台账返回 `sourceExchangeId`，`amount=0`、`availableDelta=-requiredPointsSnapshot`，备注保留奖励名称用于两端追溯。
+
+功能停用返回 `409 FEATURE_DISABLED`；角色、权限或客户端类型不符返回 `403 ACCESS_DENIED`；跨家庭、跨学生或非当前主家长对象统一返回 `404 RESOURCE_NOT_FOUND`；重复活动申请、积分不足、过期、并发旧请求和非法状态转换返回 `409 STATE_CONFLICT`。
+
+#### 2.6.4 V28 成长复盘契约
+
+| 方法与路径 | 客户端与权限 | 用途 |
+|---|---|---|
+| `GET /api/v1/growth-reviews/me` | 小程序；`GROWTH_REVIEW_READ_SELF` | 学生查询本人复盘列表，支持 `periodType`、`page`、`pageSize`。 |
+| `GET /api/v1/growth-reviews/me/{reviewId}` | 小程序；`GROWTH_REVIEW_READ_SELF` | 查询本人复盘当前快照、分类、趋势和补录。 |
+| `POST /api/v1/growth-reviews/me/{reviewId}/supplements` | 小程序；`GROWTH_REVIEW_SUPPLEMENT_SELF` | 学生在日复盘允许时间内追加补录。 |
+| `GET /api/v1/growth-reviews/students/{studentId}` | Web；`GROWTH_REVIEW_READ_CHILD` | 活动主家长查询指定孩子复盘列表。 |
+| `GET /api/v1/growth-reviews/students/{studentId}/{reviewId}` | Web；`GROWTH_REVIEW_READ_CHILD` | 活动主家长查询指定孩子复盘详情。 |
+| `POST /api/v1/growth-reviews/students/{studentId}/{reviewId}/supplements` | Web；`GROWTH_REVIEW_SUPPLEMENT_CHILD` | 活动主家长在日复盘允许时间内追加补录。 |
+
+列表固定按周期开始日和复盘标识倒序分页。详情返回当前快照版本、数据截止时间、任务总数/各状态数量、完成率、累计获取积分、暂停次数、分类统计、每日趋势和追加补录；`reviewId`、`snapshotId`、补录标识、学生标识和编辑人标识均以 JSON 字符串输出。补录请求只接受 `supplementType=INSIGHT|STRENGTH_WEAKNESS|NEXT_PLAN` 和去空白后 1 至 1000 字正文，不接受学生、编辑人、快照版本或时间字段。
+
+每日开关关闭后不生成日复盘且不允许新增日复盘补录；周期开关关闭后不生成周/月复盘。两个开关关闭均不删除历史，已授权用户仍可读取历史记录。跨学生、无活动主关系或复盘不属于目标学生统一返回 `404 RESOURCE_NOT_FOUND`；客户端或角色错误返回 `403 ACCESS_DENIED`；超出日复盘当日和次日窗口、非日复盘补录或功能停用返回 `409` 业务错误。
+
+#### 2.6.5 V29 积分生命周期查询契约
+
+V29 不新增客户端写接口。任务审核通过仍使用既有审核端点，服务端响应中的 `awardedPoints` 改为衰减后的实际发放值；客户端不得提交连续天数、衰减比例、规则标识或实发积分。
+
+学生本人和主家长的既有积分台账响应增加可空字段 `sourceTaskId`、`basePointsSnapshot`、`decayPercent`、`streakDays`、`decayRuleId`。任务奖励记录返回本次审核固化的基础积分、衰减比例和连续天数；历史非任务记录与无法回填的规则标识返回空值。所有 19 位标识继续按 JSON 字符串输出。
+
+`POINT_LIFECYCLE` 停用时，审核仍按任务基础积分全额发放，但不应用衰减规则；沉睡扫描不创建提醒、不清零。沉睡提醒和清零由后台任务执行，没有面向学生或家长的手工触发接口。提醒记录状态只表达 `PENDING` 或 `NO_RECIPIENT`，在实际消息适配完成前不得对外宣称已发送。
+
 ### 2.7 文件、消息、导入导出、报表与反馈
 
 | 方法与路径 | 用途 |
@@ -235,6 +345,10 @@
 | `POST /api/v1/files/{id}/complete` | 确认上传完成并做服务端元数据校验。 |
 | `GET /api/v1/files/{id}/preview` | 按权限生成预览结果。 |
 | `GET /api/v1/files/{id}/download` | 按权限生成短时下载结果。 |
+| `POST /api/v1/attachments/uploads` | V31 已实现；小程序学生上传 JPG/PNG 任务打卡图片。 |
+| `GET /api/v1/attachments/{id}` | V31 已实现；上传学生或当前审核人读取安全元数据。 |
+| `GET /api/v1/attachments/{id}/content` | V31 已实现；认证读取图片内容，不返回永久直链。 |
+| `DELETE /api/v1/attachments/{id}` | V31 已实现；上传人删除尚未关联的临时文件。 |
 | `GET /api/v1/messages` | 当前用户消息列表。 |
 | `POST /api/v1/messages/{id}/read` | 标记已读。 |
 | `POST /api/v1/import-jobs` | 创建导入任务，关联受控模板。 |
@@ -293,11 +407,11 @@
 ```json
 {
   "content": "完成情况说明",
-  "fileIds": ["50001"]
+  "fileIds": ["9000000000000000001"]
 }
 ```
 
-打卡接口只接受当前学生的进行中任务；附件在提交前已经完成统一文件服务的归属和权限校验。审核驳回请求必须额外包含非空 `comment`。
+打卡接口只接受当前学生的进行中任务；`content` 去除首尾空格后最长 1000 字，`fileIds` 最多 9 个且不得重复，二者至少提供一项。附件在同一事务内完成统一文件服务的归属、状态、模块、分类和未关联校验。审核驳回请求必须额外包含非空 `comment`。
 
 ## 4. 对外接口约束
 

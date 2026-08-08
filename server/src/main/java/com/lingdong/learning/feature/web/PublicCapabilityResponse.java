@@ -4,6 +4,14 @@ package com.lingdong.learning.feature.web;
 public record PublicCapabilityResponse(
         String client,
         boolean studentCodeLoginEnabled,
-        boolean learningTaskManagementEnabled
+        boolean studentQrLoginEnabled,
+        boolean learningTaskManagementEnabled,
+        boolean previousDayTaskCopyEnabled,
+        boolean learningTaskTemplateEnabled,
+        boolean growthPointQueryEnabled,
+        boolean growthPointCorrectionEnabled,
+        boolean rewardExchangeEnabled,
+        boolean dailyGrowthReviewEnabled,
+        boolean periodicGrowthReportEnabled
 ) {
 }

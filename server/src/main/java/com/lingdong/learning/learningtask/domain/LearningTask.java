@@ -20,10 +20,13 @@ public record LearningTask(
         String remark,
         Long reviewerUserId,
         Integer reviewTimeoutHours,
+        Boolean recurrenceEnabled,
+        LocalDate recurrenceEndDate,
         LearningTaskStatus status,
         LocalDateTime publishedAt,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        LearningTaskRecurrenceStatus recurrenceStatus
 ) {
     public static LearningTask draft(
             Long id,
@@ -36,15 +39,17 @@ public record LearningTask(
         return new LearningTask(
                 id, sourceType, sourceOrganizationId, creatorUserId, draft.title(),
                 draft.difficultyLevel(), draft.basePoints(), draft.durationMinutes(), draft.scheduledDate(),
-                draft.categoryCode(), draft.remark(), reviewerUserId, 72, LearningTaskStatus.DRAFT,
-                null, null, null);
+                draft.categoryCode(), draft.remark(), reviewerUserId, 72,
+                draft.recurrenceEnabled(), draft.recurrenceEndDate(), LearningTaskStatus.DRAFT,
+                null, null, null, null);
     }
 
     public LearningTask withDraft(ValidatedLearningTaskDraft draft, Long reviewerUserId) {
         return new LearningTask(
                 id, sourceType, sourceOrganizationId, creatorUserId, draft.title(),
                 draft.difficultyLevel(), draft.basePoints(), draft.durationMinutes(), draft.scheduledDate(),
-                draft.categoryCode(), draft.remark(), reviewerUserId, reviewTimeoutHours, status,
-                publishedAt, createdAt, updatedAt);
+                draft.categoryCode(), draft.remark(), reviewerUserId, reviewTimeoutHours,
+                draft.recurrenceEnabled(), draft.recurrenceEndDate(), status,
+                publishedAt, createdAt, updatedAt, recurrenceStatus);
     }
 }

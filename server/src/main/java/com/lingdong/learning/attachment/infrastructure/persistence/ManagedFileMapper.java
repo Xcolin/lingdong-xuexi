@@ -8,5 +8,6 @@ import org.apache.ibatis.annotations.Param;
 public interface ManagedFileMapper {
     int insert(@Param("file") ManagedFileRecord file);
     ManagedFileRecord findById(@Param("id") Long id);
-    int markAvailable(@Param("id") Long id);
+    int markAvailable(@Param("id") Long id, @Param("contentSha256") String contentSha256);
+    int markRetired(@Param("id") Long id);
 }

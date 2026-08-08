@@ -5,6 +5,7 @@ import com.lingdong.learning.learningtask.application.ActiveTaskPauseView;
 import com.lingdong.learning.learningtask.application.TaskCheckInView;
 import com.lingdong.learning.learningtask.domain.LearningTaskSourceType;
 import com.lingdong.learning.learningtask.domain.TaskPauseType;
+import com.lingdong.learning.learningtask.domain.TaskDeferType;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -29,6 +30,8 @@ public record StudentTaskAssignmentRow(
         Long currentReviewerId,
         String reviewerDisplayName,
         String effectiveStatus,
+        TaskDeferType lastDeferType,
+        Boolean overnightMigrated,
         Long activePauseId,
         TaskPauseType activePauseType,
         LocalDateTime pauseStartedAt,
@@ -50,6 +53,7 @@ public record StudentTaskAssignmentRow(
                 id, taskId, sourceType, sourceOrganizationId, sourceOrganizationName, title,
                 difficultyLevel, basePoints, durationMinutes, scheduledDate, dueAt, categoryCode, remark,
                 currentStatus, effectiveStatus, currentReviewerId, reviewerDisplayName,
+                lastDeferType, Boolean.TRUE.equals(overnightMigrated),
                 activePause, latestCheckIn, tagCodes);
     }
 }

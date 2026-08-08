@@ -5,6 +5,9 @@ import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.lingdong.learning.learningtask.application.TaskCheckInView;
 
 import java.time.LocalDateTime;
+import java.util.List;
+
+import com.lingdong.learning.attachment.web.TaskAttachmentResponse;
 
 /** 最近一次任务打卡响应。 */
 public record TaskCheckInResponse(
@@ -13,11 +16,13 @@ public record TaskCheckInResponse(
         String content,
         String status,
         LocalDateTime submittedAt,
-        String reviewComment
+        String reviewComment,
+        List<TaskAttachmentResponse> attachments
 ) {
     static TaskCheckInResponse from(TaskCheckInView view) {
         return view == null ? null : new TaskCheckInResponse(
                 view.id(), view.submissionNo(), view.content(), view.status(),
-                view.submittedAt(), view.reviewComment());
+                view.submittedAt(), view.reviewComment(), view.attachments().stream()
+                        .map(TaskAttachmentResponse::from).toList());
     }
 }

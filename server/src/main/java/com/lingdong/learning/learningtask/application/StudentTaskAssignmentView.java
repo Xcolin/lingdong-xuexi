@@ -1,6 +1,7 @@
 package com.lingdong.learning.learningtask.application;
 
 import com.lingdong.learning.learningtask.domain.LearningTaskSourceType;
+import com.lingdong.learning.learningtask.domain.TaskDeferType;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -25,6 +26,8 @@ public record StudentTaskAssignmentView(
         String effectiveStatus,
         Long currentReviewerId,
         String reviewerDisplayName,
+        TaskDeferType lastDeferType,
+        boolean overnightMigrated,
         ActiveTaskPauseView activePause,
         TaskCheckInView latestCheckIn,
         List<String> tagCodes
@@ -38,6 +41,14 @@ public record StudentTaskAssignmentView(
                 id, taskId, sourceType, sourceOrganizationId, sourceOrganizationName, title,
                 difficultyLevel, basePoints, durationMinutes, scheduledDate, dueAt, categoryCode, remark,
                 currentStatus, effectiveStatus, currentReviewerId, reviewerDisplayName,
-                activePause, latestCheckIn, codes);
+                lastDeferType, overnightMigrated, activePause, latestCheckIn, codes);
+    }
+
+    public StudentTaskAssignmentView withLatestCheckIn(TaskCheckInView checkIn) {
+        return new StudentTaskAssignmentView(
+                id, taskId, sourceType, sourceOrganizationId, sourceOrganizationName, title,
+                difficultyLevel, basePoints, durationMinutes, scheduledDate, dueAt, categoryCode, remark,
+                currentStatus, effectiveStatus, currentReviewerId, reviewerDisplayName,
+                lastDeferType, overnightMigrated, activePause, checkIn, tagCodes);
     }
 }

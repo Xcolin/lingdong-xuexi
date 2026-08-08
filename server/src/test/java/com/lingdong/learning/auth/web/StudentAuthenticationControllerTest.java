@@ -53,11 +53,25 @@ class StudentAuthenticationControllerTest {
         mockMvc.perform(get("/api/v1/public/capabilities").param("client", "MINIAPP"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.studentCodeLoginEnabled").value(true))
-                .andExpect(jsonPath("$.learningTaskManagementEnabled").value(true));
+                .andExpect(jsonPath("$.learningTaskManagementEnabled").value(true))
+                .andExpect(jsonPath("$.previousDayTaskCopyEnabled").value(false))
+                .andExpect(jsonPath("$.learningTaskTemplateEnabled").value(false))
+                .andExpect(jsonPath("$.growthPointQueryEnabled").value(true))
+                .andExpect(jsonPath("$.growthPointCorrectionEnabled").value(false))
+                .andExpect(jsonPath("$.rewardExchangeEnabled").value(true))
+                .andExpect(jsonPath("$.dailyGrowthReviewEnabled").value(true))
+                .andExpect(jsonPath("$.periodicGrowthReportEnabled").value(true));
 
         mockMvc.perform(get("/api/v1/public/capabilities").param("client", "WEB"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.learningTaskManagementEnabled").value(true));
+                .andExpect(jsonPath("$.learningTaskManagementEnabled").value(true))
+                .andExpect(jsonPath("$.previousDayTaskCopyEnabled").value(true))
+                .andExpect(jsonPath("$.learningTaskTemplateEnabled").value(true))
+                .andExpect(jsonPath("$.growthPointQueryEnabled").value(true))
+                .andExpect(jsonPath("$.growthPointCorrectionEnabled").value(true))
+                .andExpect(jsonPath("$.rewardExchangeEnabled").value(true))
+                .andExpect(jsonPath("$.dailyGrowthReviewEnabled").value(true))
+                .andExpect(jsonPath("$.periodicGrowthReportEnabled").value(true));
 
         mockMvc.perform(post("/api/v1/auth/student-captchas")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -100,7 +114,14 @@ class StudentAuthenticationControllerTest {
         mockMvc.perform(get("/api/v1/public/capabilities").param("client", "MINIAPP"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.studentCodeLoginEnabled").value(false))
-                .andExpect(jsonPath("$.learningTaskManagementEnabled").value(true));
+                .andExpect(jsonPath("$.learningTaskManagementEnabled").value(true))
+                .andExpect(jsonPath("$.previousDayTaskCopyEnabled").value(false))
+                .andExpect(jsonPath("$.learningTaskTemplateEnabled").value(false))
+                .andExpect(jsonPath("$.growthPointQueryEnabled").value(true))
+                .andExpect(jsonPath("$.growthPointCorrectionEnabled").value(false))
+                .andExpect(jsonPath("$.rewardExchangeEnabled").value(true))
+                .andExpect(jsonPath("$.dailyGrowthReviewEnabled").value(true))
+                .andExpect(jsonPath("$.periodicGrowthReportEnabled").value(true));
         mockMvc.perform(post("/api/v1/auth/student-sessions/code")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(loginBody(issued.plainLoginCode(), null, null)))

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.learningtask.infrastructure.persistence.TaskReviewerMapper">
+    <resultMap id="ReviewerOptionRowMap"
+               type="com.lingdong.learning.learningtask.infrastructure.persistence.ReviewerOptionRow">
+        <constructor>
+            <idArg column="user_id" javaType="java.lang.Long"/>
+            <arg column="display_name" javaType="java.lang.String"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findOptions" resultMap="ReviewerOptionRowMap">
+        SELECT DISTINCT candidate.id AS user_id, candidate.display_name
+        FROM sys_user candidate
+        WHERE candidate.status = 'ENABLED'
+          AND candidate.id &lt;&gt; #{currentReviewerId}
+          AND (
+              (
+                  #{sourceType} = 'FAMILY'
+                  AND EXISTS (
+                      SELECT 1 FROM edu_parent_student parent_student
+                      WHERE parent_student.parent_user_id = candidate.id
+                        AND parent_student.student_id = #{studentId}
+                        AND parent_student.status = 'ACTIVE'
+                        AND parent_student.relation_role = 'PRIMARY_GUARDIAN'
+                        AND parent_student.primary_scope_key = 'PRIMARY'
+                  )
+              )
+              OR (
+                  #{sourceType} = 'TEACHER'
+                  AND EXISTS (
+                      SELECT 1 FROM edu_teacher_class teacher_class
+                      WHERE teacher_class.teacher_user_id = candidate.id
+                        AND teacher_class.class_organization_id = #{sourceOrganizationId}
+                        AND teacher_class.status = 'ACTIVE'
+                  )
+              )
+              OR (
+                  #{sourceType} = 'ORGANIZATION'
+                  AND (
+                      EXISTS (
+                          SELECT 1
+                          FROM sys_organization_admin organization_admin
+                          JOIN sys_organization admin_root
+                            ON admin_root.id = organization_admin.organization_id
+                          JOIN sys_organization source_organization
+                            ON source_organization.id = #{sourceOrganizationId}
+                          WHERE organization_admin.user_id = candidate.id
+                            AND source_organization.organization_path
+                                LIKE CONCAT(admin_root.organization_path, '%')
+                      )
+                      OR EXISTS (
+                          SELECT 1
+                          FROM edu_student_organization student_organization
+                          JOIN sys_organization student_scope
+                            ON student_scope.id = student_organization.organization_id
+                          JOIN sys_organization source_organization
+                            ON source_organization.id = #{sourceOrganizationId}
+                          JOIN edu_teacher_class teacher_class
+                            ON teacher_class.class_organization_id = student_organization.organization_id
+                          WHERE student_organization.student_id = #{studentId}
+                            AND student_organization.status = 'ACTIVE'
+                            AND teacher_class.teacher_user_id = candidate.id
+                            AND teacher_class.status = 'ACTIVE'
+                            AND student_scope.organization_path
+                                LIKE CONCAT(source_organization.organization_path, '%')
+                      )
+                  )
+              )
+          )
+        ORDER BY candidate.display_name, candidate.id
+    </select>
+</mapper>

@@ -5,6 +5,7 @@ import {
   Form,
   Input,
   Modal,
+  Segmented,
   Select,
   Space,
   Table,
@@ -13,11 +14,15 @@ import {
   message
 } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
-import { Edit3, Plus, Rocket, Search } from 'lucide-react';
+import { BookOpen, CircleStop, CopyPlus, Edit3, Plus, Rocket, Search } from 'lucide-react';
 import type { CurrentUser } from '../../api/auth';
 import { learningTaskApi } from './api';
 import { BatchPublishResultModal } from './BatchPublishResultModal';
 import { LearningTaskEditorDrawer } from './LearningTaskEditorDrawer';
+import { TaskReviewQueue } from './TaskReviewQueue';
+import { TaskDeferQueue } from './TaskDeferQueue';
+import { PreviousDayTaskCopyModal } from './PreviousDayTaskCopyModal';
+import { TaskTemplateLibraryModal } from './TaskTemplateLibraryModal';
 import type {
   BatchPublishResult,
   LearningTaskDetails,
@@ -25,7 +30,8 @@ import type {
   LearningTaskPage,
   LearningTaskSourceType,
   LearningTaskStatus,
-  LearningTaskSummary
+  LearningTaskSummary,
+  LearningTaskTemplate
 } from './types';
 
 const PAGE_SIZE = 20;
@@ -37,6 +43,8 @@ const sourceLabels: Record<LearningTaskSourceType, string> = {
 
 interface LearningTaskManagementPageProps {
   currentUser: CurrentUser;
+  previousDayTaskCopyEnabled?: boolean;
+  learningTaskTemplateEnabled?: boolean;
 }
 
 interface FilterValues {
@@ -46,7 +54,11 @@ interface FilterValues {
   keyword?: string;
 }
 
-export function LearningTaskManagementPage({ currentUser }: LearningTaskManagementPageProps) {
+export function LearningTaskManagementPage({
+  currentUser,
+  previousDayTaskCopyEnabled = false,
+  learningTaskTemplateEnabled = false
+}: LearningTaskManagementPageProps) {
   const [directory, setDirectory] = useState<LearningTaskPage>({
     items: [], page: 1, pageSize: PAGE_SIZE, total: 0
   });
@@ -58,8 +70,19 @@ export function LearningTaskManagementPage({ currentUser }: LearningTaskManageme
   const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
   const [batchPublishing, setBatchPublishing] = useState(false);
   const [batchResult, setBatchResult] = useState<BatchPublishResult | null>(null);
+  const [copyModalOpen, setCopyModalOpen] = useState(false);
+  const [templateLibraryOpen, setTemplateLibraryOpen] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<LearningTaskTemplate | null>(null);
+  const [viewMode, setViewMode] = useState<'TASKS' | 'REVIEWS' | 'DEFER'>('TASKS');
   const [filterForm] = Form.useForm<FilterValues>();
   const sourceOptions = useMemo(() => availableSources(currentUser), [currentUser]);
+  const canDefer = currentUser.roleCodes.some((role) =>
+    ['PARENT', 'TEACHER', 'ORG_ADMIN'].includes(role)
+  );
+  const canCopyPreviousDay = previousDayTaskCopyEnabled
+    && currentUser.roleCodes.includes('PARENT');
+  const canUseTaskTemplates = learningTaskTemplateEnabled
+    && currentUser.roleCodes.includes('PARENT');
 
   useEffect(() => {
     void loadTasks({}, 1);
@@ -146,28 +169,76 @@ export function LearningTaskManagementPage({ currentUser }: LearningTaskManageme
     });
   }
 
+  function confirmStopRecurrence(task: LearningTaskSummary): void {
+    Modal.confirm({
+      title: '确认停止每日固定任务',
+      content: `${task.title}停止后不再生成后续日期任务，已经生成的学生任务不会删除。`,
+      okText: '确认停止',
+      okButtonProps: { danger: true },
+      cancelText: '取消',
+      onOk: async () => {
+        try {
+          await learningTaskApi.stopRecurrence(task.id);
+          message.success('每日固定任务已停止');
+          await loadTasks(filters, directory.page);
+        } catch (error) {
+          message.error(toMessage(error));
+          throw error;
+        }
+      }
+    });
+  }
+
   return (
     <div className="page-stack">
       <div className="page-heading">
         <h1>学习任务</h1>
         <Space wrap>
-          <Button
-            icon={<Rocket size={16} />}
-            disabled={selectedTaskIds.length === 0}
-            loading={batchPublishing}
-            onClick={confirmBatchPublish}
-          >批量发布</Button>
-          <Button
-            type="primary"
-            icon={<Plus size={16} />}
-            onClick={() => {
-              setEditingTask(null);
-              setEditorOpen(true);
-            }}
-          >新建任务</Button>
+          <Segmented
+            value={viewMode}
+            options={[
+              { value: 'TASKS', label: '任务管理' },
+              { value: 'REVIEWS', label: '审核待办' },
+              ...(canDefer ? [{ value: 'DEFER', label: '待优化任务' }] : [])
+            ]}
+            onChange={(value) => setViewMode(value as 'TASKS' | 'REVIEWS' | 'DEFER')}
+          />
+          {viewMode === 'TASKS' && (
+            <>
+              {canCopyPreviousDay && (
+                <Button
+                  icon={<CopyPlus size={16} />}
+                  onClick={() => setCopyModalOpen(true)}
+                >复制昨日任务</Button>
+              )}
+              {canUseTaskTemplates && (
+                <Button
+                  icon={<BookOpen size={16} />}
+                  onClick={() => setTemplateLibraryOpen(true)}
+                >任务模板</Button>
+              )}
+              <Button
+                icon={<Rocket size={16} />}
+                disabled={selectedTaskIds.length === 0}
+                loading={batchPublishing}
+                onClick={confirmBatchPublish}
+              >批量发布</Button>
+              <Button
+                type="primary"
+                icon={<Plus size={16} />}
+                onClick={() => {
+                  setEditingTask(null);
+                  setSelectedTemplate(null);
+                  setEditorOpen(true);
+                }}
+              >新建任务</Button>
+            </>
+          )}
         </Space>
       </div>
 
+      {viewMode === 'REVIEWS' ? <TaskReviewQueue /> : viewMode === 'DEFER' ? <TaskDeferQueue /> : (
+        <>
       {errorMessage && (
         <Alert
           type="error"
@@ -198,7 +269,7 @@ export function LearningTaskManagementPage({ currentUser }: LearningTaskManageme
           loading={loading}
           dataSource={directory.items}
           locale={{ emptyText: '暂无学习任务' }}
-          scroll={{ x: 1050 }}
+          scroll={{ x: 1160 }}
           rowSelection={{
             selectedRowKeys: selectedTaskIds,
             onChange: (keys) => setSelectedTaskIds(keys.map(String)),
@@ -224,6 +295,10 @@ export function LearningTaskManagementPage({ currentUser }: LearningTaskManageme
               )
             },
             { title: '计划日期', dataIndex: 'scheduledDate', key: 'scheduledDate', width: 120 },
+            {
+              title: '固定任务', key: 'recurrence', width: 100,
+              render: (_, task) => recurrenceLabel(task)
+            },
             { title: '难度', dataIndex: 'difficultyLevel', key: 'difficultyLevel', width: 80, render: (value: number) => `${value} 级` },
             { title: '积分', dataIndex: 'basePoints', key: 'basePoints', width: 80, render: (value: number) => `${value} 分` },
             { title: '时长', dataIndex: 'durationMinutes', key: 'durationMinutes', width: 90, render: (value: number) => `${value} 分钟` },
@@ -245,6 +320,13 @@ export function LearningTaskManagementPage({ currentUser }: LearningTaskManageme
                     onClick={() => confirmPublish(task)}
                   />
                 </Space>
+              ) : task.recurrenceStatus === 'ACTIVE' ? (
+                <ActionButton
+                  label={`停止 ${task.title}`}
+                  title="停止每日固定任务"
+                  icon={<CircleStop size={16} />}
+                  onClick={() => confirmStopRecurrence(task)}
+                />
               ) : '-'
             }
           ]}
@@ -255,10 +337,32 @@ export function LearningTaskManagementPage({ currentUser }: LearningTaskManageme
         open={editorOpen}
         currentUser={currentUser}
         initialTask={editingTask}
-        onClose={() => setEditorOpen(false)}
+        initialTemplate={selectedTemplate}
+        taskTemplateEnabled={canUseTaskTemplates}
+        onClose={() => {
+          setEditorOpen(false);
+          setSelectedTemplate(null);
+        }}
         onSaved={() => loadTasks(filters, directory.page)}
       />
       <BatchPublishResultModal result={batchResult} onClose={() => setBatchResult(null)} />
+      <PreviousDayTaskCopyModal
+        open={copyModalOpen}
+        onClose={() => setCopyModalOpen(false)}
+        onCompleted={() => void loadTasks(filters, directory.page)}
+      />
+      <TaskTemplateLibraryModal
+        open={templateLibraryOpen}
+        onClose={() => setTemplateLibraryOpen(false)}
+        onSelect={(template) => {
+          setSelectedTemplate(template);
+          setEditingTask(null);
+          setTemplateLibraryOpen(false);
+          setEditorOpen(true);
+        }}
+      />
+        </>
+      )}
     </div>
   );
 }
@@ -287,6 +391,17 @@ function availableSources(currentUser: CurrentUser) {
 
 function sourceColor(source: LearningTaskSourceType): string {
   return source === 'FAMILY' ? 'magenta' : source === 'ORGANIZATION' ? 'blue' : 'cyan';
+}
+
+function recurrenceLabel(task: LearningTaskSummary) {
+  if (!task.recurrenceEnabled) {
+    return '-';
+  }
+  const labels = { ACTIVE: '运行中', COMPLETED: '已完成', STOPPED: '已停止' } as const;
+  const colors = { ACTIVE: 'processing', COMPLETED: 'success', STOPPED: 'default' } as const;
+  return task.recurrenceStatus
+    ? <Tag color={colors[task.recurrenceStatus]}>{labels[task.recurrenceStatus]}</Tag>
+    : <Tag>待发布</Tag>;
 }
 
 function formatTime(value: string): string {

@@ -9,6 +9,7 @@ public record TaskReviewRow(
         Long assignmentId,
         Long taskId,
         String title,
+        Integer basePoints,
         Long studentId,
         String studentName,
         LearningTaskSourceType sourceType,

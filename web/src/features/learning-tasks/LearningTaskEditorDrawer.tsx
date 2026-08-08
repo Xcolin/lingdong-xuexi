@@ -9,15 +9,19 @@ import {
   Select,
   Space,
   Spin,
+  Switch,
   message
 } from 'antd';
 import { Plus, Trash2 } from 'lucide-react';
 import type { CurrentUser } from '../../api/auth';
 import { learningTaskApi } from './api';
+import { TaskTemplateEditorModal } from './TaskTemplateEditorModal';
 import type {
   LearningTaskDetails,
   LearningTaskInput,
   LearningTaskSourceType,
+  LearningTaskTemplate,
+  LearningTaskTemplateInput,
   LearningTaskTargetInput,
   LearningTaskTargetType,
   OrganizationOption,
@@ -29,6 +33,8 @@ interface LearningTaskEditorDrawerProps {
   open: boolean;
   currentUser: CurrentUser;
   initialTask: LearningTaskDetails | null;
+  initialTemplate?: LearningTaskTemplate | null;
+  taskTemplateEnabled?: boolean;
   onClose: () => void;
   onSaved: () => void | Promise<void>;
 }
@@ -47,6 +53,8 @@ export function LearningTaskEditorDrawer({
   open,
   currentUser,
   initialTask,
+  initialTemplate = null,
+  taskTemplateEnabled = false,
   onClose,
   onSaved
 }: LearningTaskEditorDrawerProps) {
@@ -56,8 +64,11 @@ export function LearningTaskEditorDrawer({
   const [teachers, setTeachers] = useState<TeacherOption[]>([]);
   const [optionsLoading, setOptionsLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [templateEditorOpen, setTemplateEditorOpen] = useState(false);
+  const [templateInitialValues, setTemplateInitialValues] = useState<Partial<LearningTaskTemplateInput>>();
   const allowedSources = useMemo(() => sourceOptions(currentUser), [currentUser]);
   const sourceType = Form.useWatch('sourceType', form);
+  const recurrenceEnabled = Form.useWatch('recurrenceEnabled', form);
 
   useEffect(() => {
     if (!open) {
@@ -66,19 +77,21 @@ export function LearningTaskEditorDrawer({
     const defaultSource = initialTask?.sourceType ?? allowedSources[0]?.value;
     form.setFieldsValue(initialTask ? toEditorValues(initialTask) : {
       sourceType: defaultSource,
-      title: '',
-      difficultyLevel: 1,
-      durationMinutes: 30,
+      title: initialTemplate?.taskTitle ?? '',
+      difficultyLevel: initialTemplate?.difficultyLevel ?? 1,
+      durationMinutes: initialTemplate?.durationMinutes ?? 30,
       scheduledDate: '',
-      categoryCode: 'GENERAL',
-      tagCodes: ['DAILY'],
-      remark: '',
+      categoryCode: initialTemplate?.categoryCode ?? 'GENERAL',
+      tagCodes: initialTemplate?.tagCodes ?? ['DAILY'],
+      remark: initialTemplate?.remark ?? '',
+      recurrenceEnabled: false,
+      recurrenceEndDate: undefined,
       targets: [{ targetType: defaultTargetType(defaultSource), targetId: '' }]
     });
     if (defaultSource) {
       void loadOptions(defaultSource, initialTask?.sourceOrganizationId ?? undefined);
     }
-  }, [allowedSources, form, initialTask, open]);
+  }, [allowedSources, form, initialTask, initialTemplate, open]);
 
   async function loadOptions(
     nextSource: LearningTaskSourceType,
@@ -126,6 +139,10 @@ export function LearningTaskEditorDrawer({
         targets: [{ targetType: defaultTargetType(values.sourceType), targetId: '' }]
       });
       void loadOptions(values.sourceType, changed.sourceOrganizationId);
+      return;
+    }
+    if (changed.recurrenceEnabled === false) {
+      form.setFieldValue('recurrenceEndDate', undefined);
     }
   }
 
@@ -138,6 +155,10 @@ export function LearningTaskEditorDrawer({
       tagCodes: values.tagCodes ?? [],
       remark: values.remark?.trim() || undefined,
       reviewerUserId: values.reviewerUserId || undefined,
+      recurrenceEnabled: Boolean(values.recurrenceEnabled),
+      recurrenceEndDate: values.recurrenceEnabled
+        ? values.recurrenceEndDate || undefined
+        : undefined,
       targets: values.targets.map((target) => ({
         targetType: target.targetType,
         targetId: target.targetId
@@ -160,14 +181,41 @@ export function LearningTaskEditorDrawer({
     }
   }
 
+  async function openTemplateEditor(): Promise<void> {
+    try {
+      await form.validateFields(['title', 'difficultyLevel', 'durationMinutes']);
+      const values = form.getFieldsValue();
+      setTemplateInitialValues({
+        templateName: values.title,
+        taskTitle: values.title,
+        difficultyLevel: values.difficultyLevel,
+        durationMinutes: values.durationMinutes,
+        categoryCode: values.categoryCode?.trim() || undefined,
+        tagCodes: values.tagCodes ?? [],
+        remark: values.remark?.trim() || undefined
+      });
+      setTemplateEditorOpen(true);
+    } catch {
+      // 表单已在对应字段展示校验提示。
+    }
+  }
+
   return (
+    <>
     <Drawer
       title={initialTask ? '编辑学习任务' : '新建学习任务'}
       open={open}
       onClose={onClose}
       width={720}
       destroyOnClose
-      extra={<Button type="primary" loading={submitting} onClick={() => form.submit()}>保存草稿</Button>}
+      extra={
+        <Space>
+          {taskTemplateEnabled && currentUser.roleCodes.includes('PARENT') && (
+            <Button onClick={() => void openTemplateEditor()}>保存为个人模板</Button>
+          )}
+          <Button type="primary" loading={submitting} onClick={() => form.submit()}>保存草稿</Button>
+        </Space>
+      }
     >
       <Spin spinning={optionsLoading}>
         <Form<EditorValues>
@@ -231,6 +279,29 @@ export function LearningTaskEditorDrawer({
           <Form.Item label="任务标签" name="tagCodes">
             <Select mode="tags" maxCount={20} tokenSeparators={[',']} />
           </Form.Item>
+
+          <div className="task-editor-grid">
+            <Form.Item label="每日固定任务" name="recurrenceEnabled" valuePropName="checked">
+              <Switch aria-label="每日固定任务" />
+            </Form.Item>
+            {recurrenceEnabled && (
+              <Form.Item
+                label="固定任务结束日"
+                name="recurrenceEndDate"
+                dependencies={['scheduledDate']}
+                rules={[({ getFieldValue }) => ({
+                  validator(_, value?: string) {
+                    const scheduledDate = getFieldValue('scheduledDate') as string | undefined;
+                    return !value || !scheduledDate || value >= scheduledDate
+                      ? Promise.resolve()
+                      : Promise.reject(new Error('结束日不能早于计划日期'));
+                  }
+                })]}
+              >
+                <Input type="date" />
+              </Form.Item>
+            )}
+          </div>
 
           {sourceType === 'ORGANIZATION' && (
             <Form.Item label="审核教师" name="reviewerUserId">
@@ -302,6 +373,14 @@ export function LearningTaskEditorDrawer({
         </Form>
       </Spin>
     </Drawer>
+    <TaskTemplateEditorModal
+      open={templateEditorOpen}
+      template={null}
+      initialValues={templateInitialValues}
+      onClose={() => setTemplateEditorOpen(false)}
+      onSaved={() => undefined}
+    />
+    </>
   );
 }
 
@@ -355,6 +434,8 @@ function toEditorValues(task: LearningTaskDetails): EditorValues {
     tagCodes: task.tagCodes,
     remark: task.remark ?? undefined,
     reviewerUserId: task.reviewerUserId,
+    recurrenceEnabled: task.recurrenceEnabled,
+    recurrenceEndDate: task.recurrenceEndDate ?? undefined,
     targets: task.targets.map((target) => ({
       targetType: target.targetType,
       targetId: target.targetId

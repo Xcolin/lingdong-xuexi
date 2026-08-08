@@ -1,6 +1,8 @@
 package com.lingdong.learning.student.web;
 
 import com.lingdong.learning.auth.application.AuthenticatedUser;
+import com.lingdong.learning.auth.application.StudentQrTicketApplicationService;
+import com.lingdong.learning.auth.web.StudentQrTicketResponse;
 import com.lingdong.learning.common.security.RequirePermission;
 import com.lingdong.learning.student.application.CreateStudentCommand;
 import com.lingdong.learning.student.application.CreateParentBindingInvitationCommand;
@@ -30,17 +32,20 @@ public class StudentManagementController {
     private final StudentCredentialManagementService studentCredentialManagementService;
     private final ParentBindingInvitationApplicationService parentBindingInvitationApplicationService;
     private final StudentClassAssignmentService studentClassAssignmentService;
+    private final StudentQrTicketApplicationService studentQrTicketApplicationService;
 
     public StudentManagementController(
             StudentApplicationService studentApplicationService,
             StudentCredentialManagementService studentCredentialManagementService,
             ParentBindingInvitationApplicationService parentBindingInvitationApplicationService,
-            StudentClassAssignmentService studentClassAssignmentService
+            StudentClassAssignmentService studentClassAssignmentService,
+            StudentQrTicketApplicationService studentQrTicketApplicationService
     ) {
         this.studentApplicationService = studentApplicationService;
         this.studentCredentialManagementService = studentCredentialManagementService;
         this.parentBindingInvitationApplicationService = parentBindingInvitationApplicationService;
         this.studentClassAssignmentService = studentClassAssignmentService;
+        this.studentQrTicketApplicationService = studentQrTicketApplicationService;
     }
 
     @RequirePermission("STUDENT_READ")
@@ -104,6 +109,16 @@ public class StudentManagementController {
     ) {
         return StudentCredentialIssueResponse.from(
                 studentCredentialManagementService.resetLoginCode(currentUser, studentId));
+    }
+
+    @RequirePermission("STUDENT_LOGIN_QR_CREATE")
+    @PostMapping("/{studentId}/login-qr-tickets")
+    @ResponseStatus(HttpStatus.CREATED)
+    public StudentQrTicketResponse issueLoginQrTicket(
+            @AuthenticationPrincipal AuthenticatedUser currentUser,
+            @PathVariable Long studentId
+    ) {
+        return StudentQrTicketResponse.from(studentQrTicketApplicationService.issue(currentUser, studentId));
     }
 
     @RequirePermission("STUDENT_PARENT_INVITE_CREATE")

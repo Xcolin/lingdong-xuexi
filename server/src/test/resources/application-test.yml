@@ -14,6 +14,19 @@ mybatis:
   mapper-locations: classpath*:mapper/**/*.xml
 
 lingdong:
+  task-overdue:
+    scheduling-enabled: false
+  task-defer:
+    scheduling-enabled: false
+  attachment:
+    local-root: ${java.io.tmpdir}/lingdong-learning-test-attachments
+  recurring-task:
+    scheduling-enabled: false
+  point-lifecycle:
+    scheduling-enabled: false
+  reward-exchange:
+    cleanup:
+      scheduling-enabled: false
   auth:
     student-code:
       active-key-version: v1

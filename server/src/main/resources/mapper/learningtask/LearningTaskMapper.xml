@@ -18,21 +18,28 @@
             <arg column="remark" javaType="java.lang.String"/>
             <arg column="reviewer_user_id" javaType="java.lang.Long"/>
             <arg column="review_timeout_hours" javaType="java.lang.Integer"/>
+            <arg column="recurrence_enabled" javaType="boolean"/>
+            <arg column="recurrence_end_date" javaType="java.time.LocalDate"/>
             <arg column="status" javaType="com.lingdong.learning.learningtask.domain.LearningTaskStatus"/>
             <arg column="published_at" javaType="java.time.LocalDateTime"/>
             <arg column="created_at" javaType="java.time.LocalDateTime"/>
             <arg column="updated_at" javaType="java.time.LocalDateTime"/>
+            <arg column="recurrence_status" javaType="com.lingdong.learning.learningtask.domain.LearningTaskRecurrenceStatus"/>
         </constructor>
     </resultMap>
 
     <sql id="columns">
         id, source_type, source_organization_id, creator_user_id, title, difficulty_level,
         base_points, duration_minutes, scheduled_date, category_code, remark, reviewer_user_id,
-        review_timeout_hours, status, published_at, created_at, updated_at
+        review_timeout_hours, recurrence_enabled, recurrence_end_date,
+        status, published_at, created_at, updated_at,
+        (SELECT recurrence.status FROM learn_task_recurrence recurrence
+         WHERE recurrence.task_id = learn_task.id) AS recurrence_status
     </sql>
 
     <sql id="managedFilters">
         <where>
+            AND generation_type = 'NORMAL'
             AND (
                 1 = 0
                 <if test="query.parent">
@@ -93,13 +100,13 @@
         INSERT INTO learn_task (
             id, source_type, source_organization_id, creator_user_id, title, difficulty_level,
             base_points, duration_minutes, scheduled_date, category_code, remark, reviewer_user_id,
-            review_timeout_hours, status
+            review_timeout_hours, recurrence_enabled, recurrence_end_date, status
         ) VALUES (
             #{task.id}, #{task.sourceType}, #{task.sourceOrganizationId, jdbcType=BIGINT},
             #{task.creatorUserId}, #{task.title}, #{task.difficultyLevel}, #{task.basePoints},
             #{task.durationMinutes}, #{task.scheduledDate}, #{task.categoryCode, jdbcType=VARCHAR},
             #{task.remark, jdbcType=VARCHAR}, #{task.reviewerUserId}, #{task.reviewTimeoutHours},
-            #{task.status}
+            #{task.recurrenceEnabled}, #{task.recurrenceEndDate, jdbcType=DATE}, #{task.status}
         )
     </insert>
 
@@ -109,6 +116,8 @@
             base_points = #{task.basePoints}, duration_minutes = #{task.durationMinutes},
             scheduled_date = #{task.scheduledDate}, category_code = #{task.categoryCode, jdbcType=VARCHAR},
             remark = #{task.remark, jdbcType=VARCHAR}, reviewer_user_id = #{task.reviewerUserId},
+            recurrence_enabled = #{task.recurrenceEnabled},
+            recurrence_end_date = #{task.recurrenceEndDate, jdbcType=DATE},
             updated_at = CURRENT_TIMESTAMP
         WHERE id = #{task.id} AND status = 'DRAFT'
     </update>
@@ -118,4 +127,38 @@
         SET status = 'PUBLISHED', published_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
         WHERE id = #{id} AND status = 'DRAFT'
     </update>
+
+    <insert id="insertDeferredCopy">
+        INSERT INTO learn_task (
+            id, source_type, source_organization_id, creator_user_id, title, difficulty_level,
+            base_points, duration_minutes, scheduled_date, category_code, remark, reviewer_user_id,
+            review_timeout_hours, recurrence_enabled, recurrence_end_date, status, published_at,
+            generation_type, origin_task_id
+        )
+        SELECT #{targetTaskId}, source_type, source_organization_id, creator_user_id,
+               title, difficulty_level, base_points, duration_minutes, #{targetDate},
+               category_code, remark, reviewer_user_id, review_timeout_hours,
+               0, NULL, 'PUBLISHED', CURRENT_TIMESTAMP, 'DEFERRED', COALESCE(origin_task_id, id)
+        FROM learn_task
+        WHERE id = #{sourceTaskId}
+          AND status = 'PUBLISHED'
+    </insert>
+
+    <insert id="insertPreviousDayCopy">
+        INSERT INTO learn_task (
+            id, source_type, source_organization_id, creator_user_id, title, difficulty_level,
+            base_points, duration_minutes, scheduled_date, category_code, remark, reviewer_user_id,
+            review_timeout_hours, recurrence_enabled, recurrence_end_date, status, published_at,
+            generation_type, origin_task_id
+        )
+        SELECT #{targetTaskId}, 'FAMILY', NULL, #{parentUserId}, title, difficulty_level,
+               base_points, duration_minutes, #{targetDate}, category_code, remark, #{parentUserId},
+               review_timeout_hours, 0, NULL, 'PUBLISHED', CURRENT_TIMESTAMP,
+               'COPIED', COALESCE(origin_task_id, id)
+        FROM learn_task
+        WHERE id = #{sourceTaskId}
+          AND source_type = 'FAMILY'
+          AND creator_user_id = #{parentUserId}
+          AND status = 'PUBLISHED'
+    </insert>
 </mapper>

@@ -5,15 +5,19 @@
 ## 工程结构
 
 - `server/`：Spring Boot 3 模块化单体后端。
-- `web/`：后续创建的 Ant Design Pro React 独立 Web 应用。
-- `miniapp/`：后续创建的 uni-app 独立小程序应用。
+- `web/`：Ant Design Pro React 独立 Web 应用。
+- `miniapp/`：uni-app 独立小程序应用。
 - `docs/`：业务需求、设计和实施计划。
 
 ## 设计基线
 
 正式设计文档从 [docs/design/00-设计文档体系与需求追溯-V1.0.md](docs/design/00-设计文档体系与需求追溯-V1.0.md) 开始阅读。该目录包含 FSD、交互说明、HLD、数据库、Flyway、API、权限安全、第三方、统计、测试、部署和当前实现一致性核对。
 
+全项目开发范围、依赖顺序、功能点状态和统一进度口径见 [灵动学习完整开发实施计划](docs/superpowers/plans/2026-08-08-lingdong-learning-master-development.md)。专项计划只负责对应功能的施工步骤，不替代总计划。
+
 Web 与小程序共享后端 OpenAPI 契约，不共享页面代码或私密配置。
+
+当前本地代码与构建基线为 Flyway V1-V34，已完成每日固定任务、成长复盘、积分生命周期、JPG/PNG 图片打卡、任务待优化与顺延、Web 主家长按学生复制昨日任务，以及系统预置/家长个人任务模板；完整项目进度按总计划计为 650/1000（65.0%）。下一迁移从 V35 开始，下一施工项为认证、账号生命周期与家校关系。
 
 ## 本地后端运行
 

@@ -42,11 +42,38 @@
         FOR UPDATE
     </select>
 
+    <select id="findLatestApprovedForUpdate" resultMap="TaskCheckInMap">
+        SELECT id, assignment_id, submission_no, content, status, submitted_by_user_id,
+               submitted_at, reviewed_by_user_id, reviewed_at, review_comment
+        FROM learn_task_checkin
+        WHERE assignment_id = #{assignmentId} AND status = 'APPROVED'
+        ORDER BY submission_no DESC
+        LIMIT 1
+        FOR UPDATE
+    </select>
+
     <update id="reject">
         UPDATE learn_task_checkin
         SET status = 'REJECTED', reviewed_by_user_id = #{reviewerUserId},
             reviewed_at = #{reviewedAt}, review_comment = #{reviewComment},
             updated_at = #{reviewedAt}
         WHERE id = #{id} AND status = 'SUBMITTED'
+    </update>
+
+    <update id="approve">
+        UPDATE learn_task_checkin
+        SET status = 'APPROVED', reviewed_by_user_id = #{reviewerUserId},
+            reviewed_at = #{reviewedAt}, review_comment = NULL,
+            updated_at = #{reviewedAt}
+        WHERE id = #{id} AND status = 'SUBMITTED'
+    </update>
+
+    <update id="reopenApproved">
+        UPDATE learn_task_checkin
+        SET status = 'SUBMITTED', reviewed_by_user_id = NULL,
+            reviewed_at = NULL, review_comment = NULL, updated_at = #{reopenedAt}
+        WHERE id = #{id}
+          AND status = 'APPROVED'
+          AND reviewed_by_user_id = #{reviewerUserId}
     </update>
 </mapper>

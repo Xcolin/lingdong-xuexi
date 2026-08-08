@@ -6,6 +6,7 @@ import com.lingdong.learning.learningtask.application.LearningTaskDetails;
 import com.lingdong.learning.learningtask.domain.LearningTask;
 import com.lingdong.learning.learningtask.domain.LearningTaskSourceType;
 import com.lingdong.learning.learningtask.domain.LearningTaskStatus;
+import com.lingdong.learning.learningtask.domain.LearningTaskRecurrenceStatus;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -27,6 +28,9 @@ public record LearningTaskResponse(
         String remark,
         @JsonSerialize(using = ToStringSerializer.class) Long reviewerUserId,
         Integer reviewTimeoutHours,
+        boolean recurrenceEnabled,
+        LocalDate recurrenceEndDate,
+        LearningTaskRecurrenceStatus recurrenceStatus,
         LearningTaskStatus status,
         LocalDateTime publishedAt,
         LocalDateTime createdAt,
@@ -39,7 +43,8 @@ public record LearningTaskResponse(
                 task.id(), task.sourceType(), task.sourceOrganizationId(), task.creatorUserId(),
                 task.title(), task.difficultyLevel(), task.basePoints(), task.durationMinutes(),
                 task.scheduledDate(), task.categoryCode(), details.tagCodes(), task.remark(),
-                task.reviewerUserId(), task.reviewTimeoutHours(), task.status(), task.publishedAt(),
+                task.reviewerUserId(), task.reviewTimeoutHours(), Boolean.TRUE.equals(task.recurrenceEnabled()),
+                task.recurrenceEndDate(), task.recurrenceStatus(), task.status(), task.publishedAt(),
                 task.createdAt(), task.updatedAt(), details.targets().stream()
                 .map(LearningTaskTargetResponse::from).toList());
     }

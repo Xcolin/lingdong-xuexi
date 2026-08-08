@@ -1,6 +1,7 @@
 package com.lingdong.learning.learningtask.application;
 
 import com.lingdong.learning.auth.application.AuthenticatedUser;
+import com.lingdong.learning.attachment.application.TaskAttachmentApplicationService;
 import com.lingdong.learning.common.id.IdGenerator;
 import com.lingdong.learning.common.web.ResourceNotFoundException;
 import com.lingdong.learning.feature.application.FeatureAccessService;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /** 在任务实例行锁内完成学生执行状态、明细和审计事件的一致性写入。 */
 @Service
@@ -36,6 +38,7 @@ public class StudentTaskExecutionService {
     private final CurrentStudentAccessService currentStudentAccessService;
     private final StudentTaskAssignmentService assignmentQueryService;
     private final FeatureAccessService featureAccessService;
+    private final TaskAttachmentApplicationService attachmentService;
     private final IdGenerator idGenerator;
     private final Clock clock;
 
@@ -47,6 +50,7 @@ public class StudentTaskExecutionService {
             CurrentStudentAccessService currentStudentAccessService,
             StudentTaskAssignmentService assignmentQueryService,
             FeatureAccessService featureAccessService,
+            TaskAttachmentApplicationService attachmentService,
             IdGenerator idGenerator,
             Clock clock
     ) {
@@ -57,6 +61,7 @@ public class StudentTaskExecutionService {
         this.currentStudentAccessService = currentStudentAccessService;
         this.assignmentQueryService = assignmentQueryService;
         this.featureAccessService = featureAccessService;
+        this.attachmentService = attachmentService;
         this.idGenerator = idGenerator;
         this.clock = clock;
     }
@@ -126,8 +131,13 @@ public class StudentTaskExecutionService {
     public StudentTaskAssignmentView submitCheckIn(
             AuthenticatedUser currentUser, Long assignmentId, SubmitTaskCheckInCommand command
     ) {
-        String content = normalizeRequired(command == null ? null : command.content(),
-                MAX_CHECKIN_CONTENT_LENGTH, "打卡内容");
+        String content = normalizeOptional(
+                command == null ? null : command.content(), MAX_CHECKIN_CONTENT_LENGTH);
+        List<Long> fileIds = command == null || command.fileIds() == null
+                ? List.of() : List.copyOf(command.fileIds());
+        if (content == null && fileIds.isEmpty()) {
+            throw new IllegalArgumentException("打卡文字和图片至少提交一项");
+        }
         ExecutionContext context = lockOwnedAssignment(currentUser, assignmentId);
         requireStatus(context.state(), TaskAssignmentStatus.IN_PROGRESS);
         closeExpiredPause(context.state().id(), context.now());
@@ -142,6 +152,7 @@ public class StudentTaskExecutionService {
                 checkInMapper.nextSubmissionNo(context.state().id()), content, "SUBMITTED",
                 currentUser.userId(), context.now(), null, null, null);
         requireSingleWrite(checkInMapper.insert(checkIn));
+        attachmentService.attachToCheckIn(currentUser.userId(), fileIds, checkIn.id());
         transition(context, TaskAssignmentStatus.PENDING_REVIEW,
                 TaskAssignmentEventType.CHECKED_IN, null, null);
         return assignmentQueryService.findById(currentUser, assignmentId);

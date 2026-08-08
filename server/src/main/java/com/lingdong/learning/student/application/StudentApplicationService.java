@@ -5,6 +5,8 @@ import com.lingdong.learning.common.id.IdGenerator;
 import com.lingdong.learning.common.security.SystemOperationAccessDeniedException;
 import com.lingdong.learning.common.web.ResourceNotFoundException;
 import com.lingdong.learning.datascope.infrastructure.persistence.OrganizationAdminMapper;
+import com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthPointAccountMapper;
+import com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthPointLifecycleMapper;
 import com.lingdong.learning.organization.domain.Organization;
 import com.lingdong.learning.organization.domain.OrganizationStatus;
 import com.lingdong.learning.organization.infrastructure.persistence.OrganizationMapper;
@@ -33,6 +35,8 @@ public class StudentApplicationService {
     private final OrganizationMapper organizationMapper;
     private final OrganizationAdminMapper organizationAdminMapper;
     private final StudentIdentityProvisioningService identityProvisioningService;
+    private final GrowthPointAccountMapper pointAccountMapper;
+    private final GrowthPointLifecycleMapper pointLifecycleMapper;
     private final IdGenerator idGenerator;
 
     public StudentApplicationService(
@@ -42,6 +46,8 @@ public class StudentApplicationService {
             OrganizationMapper organizationMapper,
             OrganizationAdminMapper organizationAdminMapper,
             StudentIdentityProvisioningService identityProvisioningService,
+            GrowthPointAccountMapper pointAccountMapper,
+            GrowthPointLifecycleMapper pointLifecycleMapper,
             IdGenerator idGenerator
     ) {
         this.studentMapper = studentMapper;
@@ -50,6 +56,8 @@ public class StudentApplicationService {
         this.organizationMapper = organizationMapper;
         this.organizationAdminMapper = organizationAdminMapper;
         this.identityProvisioningService = identityProvisioningService;
+        this.pointAccountMapper = pointAccountMapper;
+        this.pointLifecycleMapper = pointLifecycleMapper;
         this.idGenerator = idGenerator;
     }
 
@@ -66,6 +74,7 @@ public class StudentApplicationService {
             IssuedStudentCredential issued = identityProvisioningService.issue(studentName);
             Student student = Student.create(idGenerator.nextId(), studentName, gradeCode, issued.studentUserId());
             studentMapper.insert(student);
+            createPointAccount(student.id());
             parentStudentMapper.insertPrimary(idGenerator.nextId(), currentUser.userId(), student.id());
             return createdStudent(student.id(), issued);
         }
@@ -84,6 +93,7 @@ public class StudentApplicationService {
         IssuedStudentCredential issued = identityProvisioningService.issue(studentName);
         Student student = Student.create(idGenerator.nextId(), studentName, gradeCode, issued.studentUserId());
         studentMapper.insert(student);
+        createPointAccount(student.id());
         studentOrganizationMapper.insertEnrollment(idGenerator.nextId(), student.id(), organization.id());
         return createdStudent(student.id(), issued);
     }
@@ -147,6 +157,16 @@ public class StudentApplicationService {
     private CreatedStudent createdStudent(Long studentId, IssuedStudentCredential issued) {
         return new CreatedStudent(loadPersistedStudent(studentId), issued.studentAccount(), issued.plainLoginCode());
     }
+
+    private void createPointAccount(Long studentId) {
+        if (pointAccountMapper.insertInitial(studentId) != 1) {
+            throw new IllegalStateException("学生积分账户创建失败");
+        }
+        if (pointLifecycleMapper.insertDormancyState(studentId) != 1) {
+            throw new IllegalStateException("学生积分生命周期状态创建失败");
+        }
+    }
+
 
     private void validatePage(int page, int pageSize) {
         if (page < 1 || page > 1_000_000) {

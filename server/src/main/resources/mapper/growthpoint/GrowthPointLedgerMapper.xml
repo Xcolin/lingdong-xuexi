@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthPointLedgerMapper">
+    <resultMap id="GrowthPointLedgerMap"
+               type="com.lingdong.learning.growthpoint.domain.GrowthPointLedger">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="account_id" javaType="java.lang.Long"/>
+            <arg column="student_id" javaType="java.lang.Long"/>
+            <arg column="source_assignment_id" javaType="java.lang.Long"/>
+            <arg column="source_exchange_id" javaType="java.lang.Long"/>
+            <arg column="source_type" javaType="com.lingdong.learning.learningtask.domain.LearningTaskSourceType"/>
+            <arg column="source_organization_id" javaType="java.lang.Long"/>
+            <arg column="change_type" javaType="com.lingdong.learning.growthpoint.domain.GrowthPointChangeType"/>
+            <arg column="amount" javaType="java.lang.Long"/>
+            <arg column="available_delta" javaType="java.lang.Long"/>
+            <arg column="reviewer_user_id" javaType="java.lang.Long"/>
+            <arg column="occurred_at" javaType="java.time.LocalDateTime"/>
+            <arg column="correction_of_id" javaType="java.lang.Long"/>
+            <arg column="remark" javaType="java.lang.String"/>
+            <arg column="source_task_id" javaType="java.lang.Long"/>
+            <arg column="source_dormancy_notice_id" javaType="java.lang.Long"/>
+            <arg column="base_points_snapshot" javaType="java.lang.Integer"/>
+            <arg column="decay_percent" javaType="java.lang.Integer"/>
+            <arg column="streak_days" javaType="java.lang.Integer"/>
+            <arg column="decay_rule_id" javaType="java.lang.Long"/>
+        </constructor>
+    </resultMap>
+
+    <insert id="insert">
+        INSERT INTO growth_point_ledger (
+            id, account_id, student_id, source_assignment_id, source_exchange_id, source_type,
+            source_organization_id, change_type, amount, available_delta,
+            reviewer_user_id, occurred_at, correction_of_id, remark,
+            source_task_id, source_dormancy_notice_id, base_points_snapshot,
+            decay_percent, streak_days, decay_rule_id
+        ) VALUES (
+            #{ledger.id}, #{ledger.accountId}, #{ledger.studentId},
+            #{ledger.sourceAssignmentId}, #{ledger.sourceExchangeId}, #{ledger.sourceType},
+            #{ledger.sourceOrganizationId, jdbcType=BIGINT}, #{ledger.changeType},
+            #{ledger.amount}, #{ledger.availableDelta}, #{ledger.reviewerUserId},
+            #{ledger.occurredAt}, #{ledger.correctionOfId, jdbcType=BIGINT}, #{ledger.remark},
+            #{ledger.sourceTaskId, jdbcType=BIGINT}, #{ledger.sourceDormancyNoticeId, jdbcType=BIGINT},
+            #{ledger.basePointsSnapshot, jdbcType=INTEGER}, #{ledger.decayPercent, jdbcType=INTEGER},
+            #{ledger.streakDays, jdbcType=INTEGER}, #{ledger.decayRuleId, jdbcType=BIGINT}
+        )
+    </insert>
+
+    <select id="findByIdForUpdate" resultMap="GrowthPointLedgerMap">
+        SELECT id, account_id, student_id, source_assignment_id, source_exchange_id, source_type,
+               source_organization_id, change_type, amount, available_delta,
+               reviewer_user_id, occurred_at, correction_of_id, remark,
+               source_task_id, source_dormancy_notice_id, base_points_snapshot,
+               decay_percent, streak_days, decay_rule_id
+        FROM growth_point_ledger
+        WHERE id = #{id}
+        FOR UPDATE
+    </select>
+
+    <select id="findCorrectionIdByOriginalId" resultType="long">
+        SELECT id
+        FROM growth_point_ledger
+        WHERE correction_of_id = #{originalLedgerId}
+          AND change_type = 'CORRECTION'
+    </select>
+</mapper>

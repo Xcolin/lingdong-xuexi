@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.learningtask.infrastructure.persistence.LearningTaskRecurrenceMapper">
+    <resultMap id="RecurrenceMap" type="com.lingdong.learning.learningtask.domain.LearningTaskRecurrence">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="task_id" javaType="java.lang.Long"/>
+            <arg column="frequency_type" javaType="java.lang.String"/>
+            <arg column="start_date" javaType="java.time.LocalDate"/>
+            <arg column="end_date" javaType="java.time.LocalDate"/>
+            <arg column="next_generation_date" javaType="java.time.LocalDate"/>
+            <arg column="status" javaType="com.lingdong.learning.learningtask.domain.LearningTaskRecurrenceStatus"/>
+            <arg column="stopped_by_user_id" javaType="java.lang.Long"/>
+            <arg column="stopped_at" javaType="java.time.LocalDateTime"/>
+            <arg column="version_no" javaType="java.lang.Integer"/>
+            <arg column="created_at" javaType="java.time.LocalDateTime"/>
+            <arg column="updated_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="columns">
+        id, task_id, frequency_type, start_date, end_date, next_generation_date,
+        status, stopped_by_user_id, stopped_at, version_no, created_at, updated_at
+    </sql>
+
+    <insert id="insert">
+        INSERT INTO learn_task_recurrence (
+            id, task_id, frequency_type, start_date, end_date, next_generation_date,
+            status, stopped_by_user_id, stopped_at, version_no
+        ) VALUES (
+            #{recurrence.id}, #{recurrence.taskId}, #{recurrence.frequencyType},
+            #{recurrence.startDate}, #{recurrence.endDate, jdbcType=DATE},
+            #{recurrence.nextGenerationDate}, #{recurrence.status},
+            #{recurrence.stoppedByUserId, jdbcType=BIGINT},
+            #{recurrence.stoppedAt, jdbcType=TIMESTAMP}, #{recurrence.versionNo}
+        )
+    </insert>
+
+    <select id="findByTaskId" resultMap="RecurrenceMap">
+        SELECT <include refid="columns"/>
+        FROM learn_task_recurrence
+        WHERE task_id = #{taskId}
+    </select>
+
+    <select id="findByTaskIdForUpdate" resultMap="RecurrenceMap">
+        SELECT <include refid="columns"/>
+        FROM learn_task_recurrence
+        WHERE task_id = #{taskId}
+        FOR UPDATE
+    </select>
+
+    <select id="findByIdForUpdate" resultMap="RecurrenceMap">
+        SELECT <include refid="columns"/>
+        FROM learn_task_recurrence
+        WHERE id = #{id}
+        FOR UPDATE
+    </select>
+
+    <select id="findDueIdsAfter" resultType="long">
+        SELECT id
+        FROM learn_task_recurrence
+        WHERE status = 'ACTIVE'
+          AND next_generation_date &lt;= #{businessDate}
+          AND id &gt; #{afterId}
+        ORDER BY id
+        LIMIT #{limit}
+    </select>
+
+    <update id="advanceGeneration">
+        UPDATE learn_task_recurrence
+        SET next_generation_date = #{nextGenerationDate},
+            status = #{status},
+            version_no = version_no + 1,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+          AND status = 'ACTIVE'
+          AND version_no = #{expectedVersion}
+    </update>
+
+    <update id="stop">
+        UPDATE learn_task_recurrence
+        SET status = 'STOPPED',
+            stopped_by_user_id = #{stoppedByUserId},
+            stopped_at = #{stoppedAt},
+            version_no = version_no + 1,
+            updated_at = #{stoppedAt}
+        WHERE id = #{id}
+          AND status = 'ACTIVE'
+          AND version_no = #{expectedVersion}
+    </update>
+</mapper>

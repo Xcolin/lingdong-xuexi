@@ -40,7 +40,9 @@ public class AttachmentFileApplicationService {
         ));
         String name = required(command.originalName(), "文件名称", 255);
         ManagedFileRecord record = new ManagedFileRecord(idGenerator.nextId(), newStorageKey(), name, extensionOf(name),
-                required(command.contentType(), "内容类型", 100), command.sizeBytes(), command.uploaderId(), FileStatus.UPLOADING, null, null, null);
+                required(command.contentType(), "内容类型", 100), command.sizeBytes(), command.uploaderId(),
+                code(command.moduleCode(), "模块编码"), code(command.fileCategory(), "文件分类"), null,
+                FileStatus.UPLOADING, null, null, null);
         if (fileMapper.insert(record) != 1) throw new IllegalStateException("附件元数据保存失败");
         return toFile(record);
     }
@@ -53,7 +55,8 @@ public class AttachmentFileApplicationService {
         if (record.sizeBytes() != command.sizeBytes() || !record.contentType().equals(required(command.contentType(), "内容类型", 100))) {
             throw new IllegalArgumentException("上传完成元数据与登记信息不一致");
         }
-        if (fileMapper.markAvailable(record.id()) != 1) throw new IllegalStateException("附件完成确认失败");
+        String contentSha256 = optionalSha256(command.contentSha256());
+        if (fileMapper.markAvailable(record.id(), contentSha256) != 1) throw new IllegalStateException("附件完成确认失败");
         return toFile(requireFile(record.id()));
     }
 
@@ -90,11 +93,12 @@ public class AttachmentFileApplicationService {
         return relation;
     }
     private void requireUser(Long id) { if (id == null || userMapper.findById(id) == null) throw new IllegalArgumentException("上传人不存在：" + id); }
-    private ManagedFile toFile(ManagedFileRecord f) { return new ManagedFile(f.id(), f.storageKey(), f.originalName(), f.extension(), f.contentType(), f.sizeBytes(), f.uploaderId(), f.status()); }
+    private ManagedFile toFile(ManagedFileRecord f) { return new ManagedFile(f.id(), f.storageKey(), f.originalName(), f.extension(), f.contentType(), f.sizeBytes(), f.uploaderId(), f.moduleCode(), f.fileCategory(), f.contentSha256(), f.status()); }
     private FileRelation toRelation(FileRelationRecord r) { return new FileRelation(r.id(), r.fileId(), r.moduleCode(), r.businessId(), r.relationType(), r.visibleScope(), r.status()); }
     private String newStorageKey() { return "attachment/" + System.currentTimeMillis() + "/" + UUID.randomUUID(); }
     private String extensionOf(String name) { int index=name.lastIndexOf('.'); if(index<=0 || index==name.length()-1) throw new IllegalArgumentException("文件名称缺少扩展名"); return name.substring(index+1).toLowerCase(Locale.ROOT); }
     private String required(String value,String field,int max) { if(value==null || value.trim().isEmpty()) throw new IllegalArgumentException(field+"不能为空"); String text=value.trim(); if(text.length()>max) throw new IllegalArgumentException(field+"长度不能超过"+max+"个字符"); return text; }
     private String code(String value,String field) { return required(value,field,64).toUpperCase(Locale.ROOT); }
     private Long requiredId(Long value,String field) { if(value==null) throw new IllegalArgumentException(field+"不能为空"); return value; }
+    private String optionalSha256(String value) { if(value==null || value.isBlank()) return null; String normalized=value.trim().toLowerCase(Locale.ROOT); if(!normalized.matches("[0-9a-f]{64}")) throw new IllegalArgumentException("内容摘要不合法"); return normalized; }
 }

@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthPointQueryMapper">
+    <resultMap id="AccountViewMap"
+               type="com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthPointAccountViewRow">
+        <constructor>
+            <idArg column="student_id" javaType="java.lang.Long"/>
+            <arg column="student_name" javaType="java.lang.String"/>
+            <arg column="total_points" javaType="java.lang.Long"/>
+            <arg column="available_points" javaType="java.lang.Long"/>
+            <arg column="updated_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="LedgerViewMap"
+               type="com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthPointLedgerViewRow">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="change_type" javaType="com.lingdong.learning.growthpoint.domain.GrowthPointChangeType"/>
+            <arg column="amount" javaType="java.lang.Long"/>
+            <arg column="available_delta" javaType="java.lang.Long"/>
+            <arg column="source_assignment_id" javaType="java.lang.Long"/>
+            <arg column="source_exchange_id" javaType="java.lang.Long"/>
+            <arg column="source_task_id" javaType="java.lang.Long"/>
+            <arg column="base_points_snapshot" javaType="java.lang.Integer"/>
+            <arg column="decay_percent" javaType="java.lang.Integer"/>
+            <arg column="streak_days" javaType="java.lang.Integer"/>
+            <arg column="decay_rule_id" javaType="java.lang.Long"/>
+            <arg column="source_type" javaType="com.lingdong.learning.learningtask.domain.LearningTaskSourceType"/>
+            <arg column="source_organization_id" javaType="java.lang.Long"/>
+            <arg column="source_organization_name" javaType="java.lang.String"/>
+            <arg column="task_title" javaType="java.lang.String"/>
+            <arg column="reviewer_user_id" javaType="java.lang.Long"/>
+            <arg column="reviewer_display_name" javaType="java.lang.String"/>
+            <arg column="occurred_at" javaType="java.time.LocalDateTime"/>
+            <arg column="remark" javaType="java.lang.String"/>
+            <arg column="correction_of_id" javaType="java.lang.Long"/>
+            <arg column="correction_ledger_id" javaType="java.lang.Long"/>
+            <arg column="assignment_status" javaType="com.lingdong.learning.learningtask.domain.TaskAssignmentStatus"/>
+            <arg column="assignment_reviewer_user_id" javaType="java.lang.Long"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="StudentOptionMap"
+               type="com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthPointStudentOptionRow">
+        <constructor>
+            <idArg column="student_id" javaType="java.lang.Long"/>
+            <arg column="student_name" javaType="java.lang.String"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findAccountByStudentId" resultMap="AccountViewMap">
+        SELECT student.id AS student_id,
+               student.student_name,
+               account.total_points,
+               account.available_points,
+               account.updated_at
+        FROM growth_point_account account
+        JOIN edu_student student ON student.id = account.student_id
+        WHERE student.id = #{studentId}
+          AND student.status = 'ENABLED'
+    </select>
+
+    <sql id="ledgerSelect">
+        SELECT ledger.id,
+               ledger.change_type,
+               ledger.amount,
+               ledger.available_delta,
+               ledger.source_assignment_id,
+               ledger.source_exchange_id,
+               ledger.source_task_id,
+               ledger.base_points_snapshot,
+               ledger.decay_percent,
+               ledger.streak_days,
+               ledger.decay_rule_id,
+               ledger.source_type,
+               ledger.source_organization_id,
+               organization.organization_name AS source_organization_name,
+               task.title AS task_title,
+               ledger.reviewer_user_id,
+               reviewer.display_name AS reviewer_display_name,
+               ledger.occurred_at,
+               ledger.remark,
+               ledger.correction_of_id,
+               correction.id AS correction_ledger_id,
+               assignment.current_status AS assignment_status,
+               assignment.current_reviewer_id AS assignment_reviewer_user_id
+        FROM growth_point_ledger ledger
+        LEFT JOIN learn_task_assignment assignment ON assignment.id = ledger.source_assignment_id
+        LEFT JOIN learn_task task ON task.id = assignment.task_id
+        LEFT JOIN sys_organization organization ON organization.id = ledger.source_organization_id
+        LEFT JOIN sys_user reviewer ON reviewer.id = ledger.reviewer_user_id
+        LEFT JOIN growth_point_ledger correction
+          ON correction.correction_of_id = ledger.id
+         AND correction.change_type = 'CORRECTION'
+    </sql>
+
+    <select id="findLedgersByStudentId" resultMap="LedgerViewMap">
+        <include refid="ledgerSelect"/>
+        WHERE ledger.student_id = #{studentId}
+        ORDER BY ledger.occurred_at DESC, ledger.id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countLedgersByStudentId" resultType="long">
+        SELECT COUNT(1) FROM growth_point_ledger WHERE student_id = #{studentId}
+    </select>
+
+    <select id="findPrimaryStudentsByParentUserId" resultMap="StudentOptionMap">
+        SELECT student.id AS student_id, student.student_name
+        FROM edu_parent_student parent_student
+        JOIN edu_student student ON student.id = parent_student.student_id
+        WHERE parent_student.parent_user_id = #{parentUserId}
+          AND parent_student.status = 'ACTIVE'
+          AND parent_student.relation_role = 'PRIMARY_GUARDIAN'
+          AND parent_student.primary_scope_key = 'PRIMARY'
+          AND student.status = 'ENABLED'
+        ORDER BY student.created_at, student.id
+    </select>
+</mapper>

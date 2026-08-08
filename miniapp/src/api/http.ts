@@ -1,6 +1,13 @@
 const API_PREFIX = '/api/v1';
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? '';
 
+/** 同时支持业务相对路径和服务端返回的完整 API 路径。 */
+export function apiUrl(path: string): string {
+  return path.startsWith(API_PREFIX)
+    ? `${apiBaseUrl}${path}`
+    : `${apiBaseUrl}${API_PREFIX}${path}`;
+}
+
 export interface MiniappRequestOptions {
   method?: UniApp.RequestOptions['method'];
   data?: UniApp.RequestOptions['data'];
@@ -38,7 +45,7 @@ export class ApiError extends Error {
 export function request<T>(path: string, options: MiniappRequestOptions = {}): Promise<T> {
   return new Promise((resolve, reject) => {
     uni.request({
-      url: `${apiBaseUrl}${API_PREFIX}${path}`,
+      url: apiUrl(path),
       method: options.method ?? 'GET',
       data: options.data,
       header: options.header,
