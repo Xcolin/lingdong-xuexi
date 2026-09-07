@@ -2,6 +2,7 @@ package com.lingdong.learning.common.security;
 
 import com.lingdong.learning.auth.application.AuthenticatedUser;
 import com.lingdong.learning.permission.application.PermissionDecisionService;
+import com.lingdong.learning.permission.domain.PermissionClient;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.core.Authentication;
@@ -42,7 +43,17 @@ public class PermissionAuthorizationInterceptor implements HandlerInterceptor {
                     "AUTH_REQUIRED", "需要有效登录会话");
             return false;
         }
-        if (!permissionDecisionService.isAllowed(currentUser.userId(), requiredPermission.value())) {
+        PermissionClient requestClient = PermissionClient.valueOf(currentUser.clientType().name());
+        boolean allowed = !requiredPermission.value().isBlank()
+                && permissionDecisionService.isAllowed(
+                currentUser.userId(), requestClient, requiredPermission.value());
+        for (String permissionCode : requiredPermission.anyOf()) {
+            if (!allowed && !permissionCode.isBlank()) {
+                allowed = permissionDecisionService.isAllowed(
+                        currentUser.userId(), requestClient, permissionCode);
+            }
+        }
+        if (!allowed) {
             errorResponseWriter.write(request, response, HttpServletResponse.SC_FORBIDDEN,
                     "ACCESS_DENIED", "无权执行此操作");
             return false;

@@ -54,6 +54,19 @@ class StudentCodeLoginApplicationServiceTest {
     }
 
     @Test
+    void verifiesStudentCodeForBindingWithoutCreatingSession() {
+        VerifiedStudentIdentity verified = loginService.verifyForBinding(
+                command(issued.plainLoginCode(), null, null));
+
+        assertThat(verified.studentId()).isEqualTo(1_874_244_142_494_646_520L);
+        assertThat(verified.studentUserId()).isEqualTo(issued.studentUserId());
+        assertThat(verified.studentAccount()).isEqualTo(issued.studentAccount());
+        assertThat(sessionMapper.existsByUserClientAndDevice(
+                issued.studentUserId(), AuthClientType.MINIAPP, deviceId)).isFalse();
+        assertThat(credentialMapper.findByStudentUserId(issued.studentUserId()).lastSuccessAt()).isNotNull();
+    }
+
+    @Test
     void requiresCaptchaFromFifthFailureAndLocksOnTenthCodeFailure() {
         for (int attempt = 1; attempt <= 4; attempt++) {
             assertThatThrownBy(() -> loginService.login(command("9999", null, null)))

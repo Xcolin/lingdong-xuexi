@@ -11,6 +11,9 @@ import com.lingdong.learning.cache.domain.CacheOperation;
 import com.lingdong.learning.cache.domain.CacheOperationStatus;
 import com.lingdong.learning.cache.domain.CacheOperationType;
 import com.lingdong.learning.cache.infrastructure.persistence.CacheOperationMapper;
+import com.lingdong.learning.common.security.SystemOperationAccessDeniedException;
+import com.lingdong.learning.permission.application.PermissionDecisionService;
+import com.lingdong.learning.permission.domain.PermissionClient;
 import com.lingdong.learning.user.infrastructure.persistence.UserRoleMapper;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
@@ -24,11 +27,14 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-/** Coordinates cache actions, high-risk task approval, and the immutable operation audit trail. */
+/** 协调缓存操作、高风险任务审批和不可变操作台账。 */
 @Service
 public class CacheOperationApplicationService {
+    private static final int MAX_HISTORY_SIZE = 200;
+
     private final CacheOperationMapper cacheOperationMapper;
     private final SystemTaskApplicationService systemTaskApplicationService;
+    private final PermissionDecisionService permissionDecisionService;
     private final UserRoleMapper userRoleMapper;
     private final CacheManager cacheManager;
     private final Map<CacheDomain, ManagedCacheHandler> handlers;
@@ -37,6 +43,7 @@ public class CacheOperationApplicationService {
     public CacheOperationApplicationService(
             CacheOperationMapper cacheOperationMapper,
             SystemTaskApplicationService systemTaskApplicationService,
+            PermissionDecisionService permissionDecisionService,
             UserRoleMapper userRoleMapper,
             CacheManager cacheManager,
             List<ManagedCacheHandler> handlers,
@@ -44,6 +51,7 @@ public class CacheOperationApplicationService {
     ) {
         this.cacheOperationMapper = cacheOperationMapper;
         this.systemTaskApplicationService = systemTaskApplicationService;
+        this.permissionDecisionService = permissionDecisionService;
         this.userRoleMapper = userRoleMapper;
         this.cacheManager = cacheManager;
         this.handlers = Map.copyOf(handlers.stream().collect(Collectors.toMap(
@@ -53,11 +61,11 @@ public class CacheOperationApplicationService {
         this.idGenerator = idGenerator;
     }
 
-    /** Executes a non-global, non-session cache action and always records its outcome. */
+    /** 执行非全量、非会话缓存操作，并始终记录执行结果。 */
     @Transactional
     public CacheOperation execute(ExecuteCacheOperationCommand command) {
         Objects.requireNonNull(command, "缓存操作请求不能为空");
-        requireSystemAdministrator(command.operatorId());
+        requirePermission(command.operatorId(), "CACHE_MANAGE");
         CacheDomain domain = requireDomain(command.cacheDomain());
         CacheOperationType operationType = requireOperationType(command.operationType());
         requireDirectOperationAllowed(domain);
@@ -70,10 +78,11 @@ public class CacheOperationApplicationService {
         );
     }
 
-    /** Creates a pending audit record linked to a high-risk cache-clear system task. */
+    /** 创建关联高风险缓存清除系统任务的待执行记录。 */
     @Transactional
     public CacheOperation createHighRiskDraft(CreateHighRiskCacheOperationCommand command) {
         Objects.requireNonNull(command, "高风险缓存操作请求不能为空");
+        requirePermission(command.submitterId(), "CACHE_MANAGE");
         requireSystemAdministrator(command.submitterId());
         CacheDomain domain = requireDomain(command.cacheDomain());
         CacheOperationType operationType = requireOperationType(command.operationType());
@@ -91,16 +100,25 @@ public class CacheOperationApplicationService {
         return createPending(task.id(), domain, operationType, description, command.submitterId());
     }
 
-    /** Submits only the system task that belongs to the requested cache operation. */
+    /** 在一个事务中创建并提交高风险缓存任务。 */
+    @Transactional
+    public CacheOperation createAndSubmitHighRisk(CreateHighRiskCacheOperationCommand command) {
+        CacheOperation operation = createHighRiskDraft(command);
+        submit(operation.taskId(), command.submitterId());
+        return cacheOperationMapper.findById(operation.id());
+    }
+
+    /** 提交与指定缓存操作绑定的系统任务。 */
     @Transactional
     public void submit(Long taskId, Long submitterId) {
         requirePendingOperation(taskId);
         systemTaskApplicationService.submit(taskId, submitterId);
     }
 
-    /** Approves, executes, and marks the task effective only when the cache action succeeds. */
+    /** 审批并执行缓存操作，只有执行成功才将系统任务标记为已生效。 */
     @Transactional
     public CacheOperation approveAndExecute(Long taskId, Long auditorId, String comment) {
+        requirePermission(auditorId, "CACHE_REVIEW");
         CacheOperation operation = requirePendingOperation(taskId);
         systemTaskApplicationService.approve(taskId, auditorId, comment);
         CacheOperation result = executeAndRecord(operation, auditorId);
@@ -108,6 +126,30 @@ public class CacheOperationApplicationService {
             systemTaskApplicationService.markEffective(taskId);
         }
         return result;
+    }
+
+    /** 驳回高风险缓存任务，缓存操作保持未执行。 */
+    @Transactional
+    public CacheOperation reject(Long taskId, Long auditorId, String comment) {
+        requirePermission(auditorId, "CACHE_REVIEW");
+        CacheOperation operation = requirePendingOperation(taskId);
+        systemTaskApplicationService.reject(taskId, auditorId, comment);
+        if (cacheOperationMapper.markRejected(operation.id()) != 1) {
+            throw new IllegalStateException("缓存操作驳回状态更新失败");
+        }
+        return cacheOperationMapper.findById(operation.id());
+    }
+
+    /** 查询最近的缓存操作记录，包含待审核和失败记录。 */
+    public List<CacheOperation> listRecent(Long operatorId) {
+        requirePermission(operatorId, "CACHE_READ");
+        return cacheOperationMapper.findRecent(MAX_HISTORY_SIZE);
+    }
+
+    /** 查询等待当前审核角色处理的高风险缓存任务。 */
+    public List<CacheReviewQueueItem> listPendingReviews(Long auditorId) {
+        requirePermission(auditorId, "CACHE_REVIEW");
+        return cacheOperationMapper.findPendingReviews();
     }
 
     private CacheOperation createAndExecute(
@@ -224,7 +266,13 @@ public class CacheOperationApplicationService {
 
     private void requireSystemAdministrator(Long operatorId) {
         if (operatorId == null || !userRoleMapper.hasRoleCode(operatorId, "SYS_ADMIN")) {
-            throw new IllegalStateException("仅系统管理员可管理缓存");
+            throw new SystemOperationAccessDeniedException("仅系统管理员可提交高风险缓存任务");
+        }
+    }
+
+    private void requirePermission(Long operatorId, String permissionCode) {
+        if (!permissionDecisionService.isAllowed(operatorId, PermissionClient.WEB, permissionCode)) {
+            throw new SystemOperationAccessDeniedException("当前账号无权执行该缓存管理操作");
         }
     }
 

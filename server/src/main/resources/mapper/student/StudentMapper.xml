@@ -78,4 +78,13 @@
         SET student_user_id = #{studentUserId}, updated_at = CURRENT_TIMESTAMP
         WHERE id = #{studentId} AND student_user_id IS NULL
     </update>
+
+    <update id="anonymizeCancelledStudent">
+        UPDATE edu_student
+        SET student_name = '已注销学生',
+            status = 'CANCELLED',
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{studentId}
+          AND status = 'ENABLED'
+    </update>
 </mapper>

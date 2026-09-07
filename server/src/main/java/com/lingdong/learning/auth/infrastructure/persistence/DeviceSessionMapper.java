@@ -2,6 +2,7 @@ package com.lingdong.learning.auth.infrastructure.persistence;
 
 import com.lingdong.learning.auth.domain.DeviceSessionRecord;
 import com.lingdong.learning.auth.domain.DeviceSessionStatus;
+import com.lingdong.learning.auth.domain.AuthClientType;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -15,7 +16,15 @@ public interface DeviceSessionMapper {
     DeviceSessionRecord findById(@Param("id") Long id);
     DeviceSessionRecord findActiveByAccessTokenHash(@Param("accessTokenHash") String accessTokenHash);
     DeviceSessionRecord findActiveByRefreshTokenHash(@Param("refreshTokenHash") String refreshTokenHash);
-    List<DeviceSessionRecord> findActiveByUserId(@Param("userId") Long userId);
+    boolean existsByUserClientAndDevice(
+            @Param("userId") Long userId,
+            @Param("clientType") AuthClientType clientType,
+            @Param("deviceId") String deviceId
+    );
+    List<DeviceSessionRecord> findActiveByUserId(
+            @Param("userId") Long userId,
+            @Param("now") LocalDateTime now
+    );
     int rotateTokens(
             @Param("id") Long id,
             @Param("expectedRefreshTokenHash") String expectedRefreshTokenHash,
@@ -31,4 +40,6 @@ public interface DeviceSessionMapper {
             @Param("occurredAt") LocalDateTime occurredAt
     );
     int revokeAllActiveByUserId(@Param("userId") Long userId, @Param("occurredAt") LocalDateTime occurredAt);
+    int revokeAllActiveSessions(@Param("occurredAt") LocalDateTime occurredAt);
+    int revokeAllActiveOrganizationMiniappSessions(@Param("occurredAt") LocalDateTime occurredAt);
 }

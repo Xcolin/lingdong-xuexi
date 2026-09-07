@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Alert, App as AntdApp, Button, Empty, Form, Input, Modal, Select, Space, Statistic, Table, Tag, Tooltip } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
-import { RefreshCw, RotateCcw } from 'lucide-react';
+import { Download, RefreshCw, RotateCcw } from 'lucide-react';
+import { CreateExportJobModal } from '../export-jobs/CreateExportJobModal';
 import { growthPointApi } from './api';
 import type {
   GrowthPointAccount,
@@ -16,6 +17,8 @@ const PAGE_SIZE = 20;
 
 interface GrowthPointPageProps {
   correctionEnabled?: boolean;
+  dataExportEnabled?: boolean;
+  canCreateExport?: boolean;
 }
 
 interface CorrectionFormValues {
@@ -33,7 +36,11 @@ const changeLabels: Record<GrowthPointChangeType, string> = {
   CORRECTION: '台账更正'
 };
 
-export function GrowthPointPage({ correctionEnabled = false }: GrowthPointPageProps) {
+export function GrowthPointPage({
+  correctionEnabled = false,
+  dataExportEnabled = false,
+  canCreateExport = false
+}: GrowthPointPageProps) {
   const { message: messageApi } = AntdApp.useApp();
   const [students, setStudents] = useState<GrowthPointStudentOption[]>([]);
   const [selectedStudentId, setSelectedStudentId] = useState<string>();
@@ -46,6 +53,7 @@ export function GrowthPointPage({ correctionEnabled = false }: GrowthPointPagePr
   const [correctingLedger, setCorrectingLedger] = useState<GrowthPointLedger | null>(null);
   const [correctionSubmitting, setCorrectionSubmitting] = useState(false);
   const [correctionError, setCorrectionError] = useState<string | null>(null);
+  const [exportOpen, setExportOpen] = useState(false);
 
   useEffect(() => {
     void loadInitial();
@@ -148,6 +156,14 @@ export function GrowthPointPage({ correctionEnabled = false }: GrowthPointPagePr
             }))}
             onChange={changeStudent}
           />
+          {dataExportEnabled && canCreateExport ? <Tooltip title="导出当前孩子的积分台账">
+            <Button
+              aria-label="导出积分台账"
+              icon={<Download size={16} />}
+              disabled={!selectedStudentId}
+              onClick={() => setExportOpen(true)}
+            >导出</Button>
+          </Tooltip> : null}
           <Tooltip title="刷新积分">
             <Button
               aria-label="刷新积分"
@@ -290,6 +306,15 @@ export function GrowthPointPage({ correctionEnabled = false }: GrowthPointPagePr
           </Form>
         )}
       </Modal>
+      <CreateExportJobModal
+        open={exportOpen}
+        canCreateOrdinary
+        canSubmitSensitive={false}
+        defaultExportType="GROWTH_POINT_LEDGER"
+        defaultStudentId={selectedStudentId}
+        onCancel={() => setExportOpen(false)}
+        onCreated={() => setExportOpen(false)}
+      />
     </div>
   );
 }

@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.auth.infrastructure.persistence.ParentAccountLifecycleMapper">
+
+    <resultMap id="CancellationResultMap"
+               type="com.lingdong.learning.auth.application.ParentAccountCancellationRecord">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="user_id" javaType="java.lang.Long"/>
+            <arg column="status"
+                 javaType="com.lingdong.learning.auth.application.ParentAccountCancellationStatus"/>
+            <arg column="active_scope_key" javaType="java.lang.String"/>
+            <arg column="requested_at" javaType="java.time.LocalDateTime"/>
+            <arg column="cooling_ends_at" javaType="java.time.LocalDateTime"/>
+            <arg column="revoked_at" javaType="java.time.LocalDateTime"/>
+            <arg column="finalized_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="FinalizationCandidateResultMap"
+               type="com.lingdong.learning.auth.application.ParentAccountFinalizationCandidate">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="user_id" javaType="java.lang.Long"/>
+            <arg column="status"
+                 javaType="com.lingdong.learning.auth.application.ParentAccountCancellationStatus"/>
+            <arg column="active_scope_key" javaType="java.lang.String"/>
+            <arg column="requested_at" javaType="java.time.LocalDateTime"/>
+            <arg column="cooling_ends_at" javaType="java.time.LocalDateTime"/>
+            <arg column="next_finalize_at" javaType="java.time.LocalDateTime"/>
+            <arg column="finalization_attempts" javaType="java.lang.Integer"/>
+        </constructor>
+    </resultMap>
+
+    <insert id="insertMobileChange">
+        INSERT INTO auth_parent_mobile_change (
+            id, user_id, old_mobile_digest, new_mobile_digest, client_type, changed_at
+        ) VALUES (
+            #{record.id}, #{record.userId}, #{record.oldMobileDigest}, #{record.newMobileDigest},
+            #{record.clientType}, #{record.changedAt}
+        )
+    </insert>
+
+    <select id="findActiveCancellation" resultMap="CancellationResultMap">
+        SELECT id, user_id, status, active_scope_key, requested_at, cooling_ends_at, revoked_at, finalized_at
+        FROM auth_parent_account_cancellation
+        WHERE user_id = #{userId}
+          AND active_scope_key = 'ACTIVE'
+    </select>
+
+    <select id="findActiveCancellationForUpdate" resultMap="CancellationResultMap">
+        SELECT id, user_id, status, active_scope_key, requested_at, cooling_ends_at, revoked_at, finalized_at
+        FROM auth_parent_account_cancellation
+        WHERE user_id = #{userId}
+          AND active_scope_key = 'ACTIVE'
+        FOR UPDATE
+    </select>
+
+    <insert id="insertCancellation">
+        INSERT INTO auth_parent_account_cancellation (
+            id, user_id, status, active_scope_key, requested_at, cooling_ends_at,
+            revoked_at, finalized_at, next_finalize_at
+        ) VALUES (
+            #{record.id}, #{record.userId}, #{record.status}, #{record.activeScopeKey},
+            #{record.requestedAt}, #{record.coolingEndsAt},
+            #{record.revokedAt, jdbcType=TIMESTAMP}, #{record.finalizedAt, jdbcType=TIMESTAMP},
+            #{record.coolingEndsAt}
+        )
+    </insert>
+
+    <update id="revokeCancellation">
+        UPDATE auth_parent_account_cancellation
+        SET status = 'REVOKED',
+            active_scope_key = #{closedScopeKey},
+            revoked_at = #{revokedAt},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+          AND status = 'COOLING_OFF'
+          AND active_scope_key = 'ACTIVE'
+    </update>
+
+    <select id="findFinalizationCandidateForUpdate" resultMap="FinalizationCandidateResultMap">
+        SELECT id, user_id, status, active_scope_key, requested_at, cooling_ends_at,
+               next_finalize_at, finalization_attempts
+        FROM auth_parent_account_cancellation
+        WHERE id = #{cancellationId}
+          AND status = 'COOLING_OFF'
+          AND active_scope_key = 'ACTIVE'
+        FOR UPDATE
+    </select>
+
+    <update id="deferFinalization">
+        UPDATE auth_parent_account_cancellation
+        SET finalization_attempts = finalization_attempts + 1,
+            next_finalize_at = #{nextFinalizeAt},
+            last_finalize_error_code = #{errorCode},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{cancellationId}
+          AND status = 'COOLING_OFF'
+          AND active_scope_key = 'ACTIVE'
+    </update>
+
+    <update id="finalizeCancellation">
+        UPDATE auth_parent_account_cancellation
+        SET status = 'FINALIZED',
+            active_scope_key = #{closedScopeKey},
+            finalized_at = #{finalizedAt},
+            finalization_attempts = finalization_attempts + 1,
+            next_finalize_at = NULL,
+            last_finalize_error_code = NULL,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{cancellationId}
+          AND status = 'COOLING_OFF'
+          AND active_scope_key = 'ACTIVE'
+    </update>
+
+    <select id="findDueFinalizationIds" resultType="long">
+        SELECT id
+        FROM auth_parent_account_cancellation
+        WHERE status = 'COOLING_OFF'
+          AND active_scope_key = 'ACTIVE'
+          AND cooling_ends_at &lt;= #{now}
+          AND (next_finalize_at IS NULL OR next_finalize_at &lt;= #{now})
+        ORDER BY next_finalize_at, id
+        LIMIT #{limit}
+    </select>
+</mapper>

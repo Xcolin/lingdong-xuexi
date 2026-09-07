@@ -14,7 +14,8 @@ const learningTaskApi = vi.hoisted(() => ({
   batchPublish: vi.fn(),
   listOrganizations: vi.fn(),
   listStudents: vi.fn(),
-  listTeachers: vi.fn()
+  listTeachers: vi.fn(),
+  progress: vi.fn()
 }));
 const taskReviewApi = vi.hoisted(() => ({
   list: vi.fn(),
@@ -54,7 +55,8 @@ const parent: CurrentUser = {
   username: 'parent',
   displayName: '测试家长',
   clientType: 'WEB',
-  roleCodes: ['PARENT']
+  roleCodes: ['PARENT'],
+  permissionCodes: []
 };
 
 describe('学习任务管理页面', () => {
@@ -86,6 +88,7 @@ describe('学习任务管理页面', () => {
     learningTaskApi.publish.mockResolvedValue({
       taskId: '1874244142494647001', assignmentCount: 1, status: 'PUBLISHED'
     });
+    learningTaskApi.progress.mockResolvedValue({ items: [], page: 1, pageSize: 20, total: 0 });
     learningTaskApi.stopRecurrence.mockResolvedValue({
       taskId: '1874244142494647001',
       recurrenceId: '1874244142494647009',
@@ -472,5 +475,46 @@ describe('学习任务管理页面', () => {
     expect(screen.getByLabelText('模板名称')).toHaveValue('每日英语朗读');
     expect(screen.getByLabelText('任务标题', { selector: '#personalTaskTemplate_taskTitle' })).toHaveValue('每日英语朗读');
     expect(screen.getByLabelText('执行时长（分钟）', { selector: '#personalTaskTemplate_durationMinutes' })).toHaveValue('30');
+  });
+
+  it('有进度权限的教师查看已发布任务学生明细', async () => {
+    const teacher: CurrentUser = {
+      ...parent,
+      userId: '1874244142494647701',
+      username: 'teacher',
+      displayName: '张老师',
+      roleCodes: ['TEACHER'],
+      permissionCodes: ['LEARNING_TASK_PROGRESS_READ']
+    };
+    learningTaskApi.list.mockResolvedValueOnce({
+      items: [{
+        id: '1874244142494647702', sourceType: 'TEACHER',
+        sourceOrganizationId: '1874244142494647703', title: '班级阅读',
+        difficultyLevel: 2, basePoints: 20, durationMinutes: 30,
+        scheduledDate: '2026-09-06', recurrenceEnabled: false,
+        recurrenceStatus: null, status: 'PUBLISHED',
+        publishedAt: '2026-09-06T08:00:00', createdAt: '2026-09-06T07:00:00'
+      }],
+      page: 1, pageSize: 20, total: 1
+    });
+    learningTaskApi.progress.mockResolvedValueOnce({
+      items: [{
+        assignmentId: '1874244142494647704', studentId: '1874244142494647705',
+        studentName: '李同学', studentAccountMasked: '12****78',
+        classOrganizationId: '1874244142494647703', className: '一年级一班',
+        currentStatus: 'IN_PROGRESS', scheduledDate: '2026-09-06',
+        claimedAt: '2026-09-06T08:30:00', completedAt: null,
+        lastTransitionAt: '2026-09-06T08:30:00'
+      }],
+      page: 1, pageSize: 20, total: 1
+    });
+    const user = userEvent.setup();
+
+    render(<LearningTaskManagementPage currentUser={teacher} />);
+
+    await user.click(await screen.findByRole('button', { name: '查看进度 班级阅读' }));
+    expect(await screen.findByText('李同学')).toBeInTheDocument();
+    expect(screen.getByText('12****78')).toBeInTheDocument();
+    expect(learningTaskApi.progress).toHaveBeenCalledWith('1874244142494647702', 1, 20);
   });
 });

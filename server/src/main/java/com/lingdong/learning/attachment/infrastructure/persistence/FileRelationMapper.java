@@ -1,5 +1,6 @@
 package com.lingdong.learning.attachment.infrastructure.persistence;
 
+import com.lingdong.learning.attachment.application.AttachmentRelationLedgerView;
 import com.lingdong.learning.attachment.domain.FileRelationRecord;
 import com.lingdong.learning.attachment.domain.ManagedFileRecord;
 import org.apache.ibatis.annotations.Mapper;
@@ -11,6 +12,7 @@ import java.util.List;
 public interface FileRelationMapper {
     int insert(@Param("relation") FileRelationRecord relation);
     FileRelationRecord findById(@Param("id") Long id);
+    List<AttachmentRelationLedgerView> findLedgerByFileId(@Param("fileId") Long fileId);
     int markReleased(@Param("id") Long id);
     int countActiveByFileId(@Param("fileId") Long fileId);
     int countReadableByCurrentReviewer(@Param("fileId") Long fileId, @Param("userId") Long userId);

@@ -8,7 +8,7 @@ import com.lingdong.learning.datascope.infrastructure.persistence.OrganizationAd
 import com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthPointAccountMapper;
 import com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthPointLifecycleMapper;
 import com.lingdong.learning.organization.domain.Organization;
-import com.lingdong.learning.organization.domain.OrganizationStatus;
+import com.lingdong.learning.organization.application.OrganizationOperationalStatusService;
 import com.lingdong.learning.organization.infrastructure.persistence.OrganizationMapper;
 import com.lingdong.learning.student.domain.Student;
 import com.lingdong.learning.student.infrastructure.persistence.ParentStudentMapper;
@@ -84,7 +84,7 @@ public class StudentApplicationService {
         if (organization == null) {
             throw new ResourceNotFoundException("机构不存在：" + command.organizationId());
         }
-        if (organization.status() != OrganizationStatus.ENABLED) {
+        if (!OrganizationOperationalStatusService.isOperational(organization)) {
             throw new IllegalStateException("机构已停用，不能创建学生档案");
         }
         if (!organizationAdminMapper.exists(currentUser.userId(), organization.id())) {

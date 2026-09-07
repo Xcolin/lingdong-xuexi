@@ -1,1 +1,56 @@
-<?xml version="1.0" encoding="UTF-8" ?><!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd"><mapper namespace="com.lingdong.learning.permission.infrastructure.persistence.RolePermissionMapper"><select id="exists" resultType="boolean">SELECT EXISTS(SELECT 1 FROM sys_role_permission WHERE role_id=#{roleId} AND permission_id=#{permissionId})</select><insert id="insert">INSERT INTO sys_role_permission(id,role_id,permission_id) VALUES(#{id},#{roleId},#{permissionId})</insert></mapper>
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.permission.infrastructure.persistence.RolePermissionMapper">
+    <select id="findEffect" resultType="com.lingdong.learning.permission.domain.PermissionEffect">
+        SELECT effect FROM sys_role_permission WHERE role_id = #{roleId} AND permission_id = #{permissionId}
+    </select>
+    <resultMap id="PermissionAssignmentMap" type="com.lingdong.learning.permission.application.PermissionAssignment">
+        <constructor>
+            <idArg column="permission_id" javaType="java.lang.Long"/>
+            <arg column="effect" javaType="com.lingdong.learning.permission.domain.PermissionEffect"/>
+        </constructor>
+    </resultMap>
+
+    <select id="exists" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1 FROM sys_role_permission
+            WHERE role_id = #{roleId} AND permission_id = #{permissionId}
+        )
+    </select>
+
+    <select id="findByRoleId" resultMap="PermissionAssignmentMap">
+        SELECT permission_id, effect
+        FROM sys_role_permission
+        WHERE role_id = #{roleId}
+        ORDER BY permission_id
+    </select>
+
+    <select id="hasEffectForUser" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM sys_user_role user_role
+            JOIN sys_role role ON role.id = user_role.role_id
+            JOIN sys_role_permission role_permission ON role_permission.role_id = role.id
+            WHERE user_role.user_id = #{userId}
+              AND role.status = 'ENABLED'
+              AND role_permission.permission_id = #{permissionId}
+              AND role_permission.effect = #{effect}
+        )
+    </select>
+
+    <insert id="insert">
+        INSERT INTO sys_role_permission (id, role_id, permission_id, effect)
+        VALUES (#{id}, #{roleId}, #{permissionId}, #{effect})
+    </insert>
+
+    <update id="updateEffect">
+        UPDATE sys_role_permission
+        SET effect = #{effect}, assigned_at = CURRENT_TIMESTAMP
+        WHERE role_id = #{roleId} AND permission_id = #{permissionId}
+    </update>
+
+    <delete id="delete">
+        DELETE FROM sys_role_permission
+        WHERE role_id = #{roleId} AND permission_id = #{permissionId}
+    </delete>
+</mapper>

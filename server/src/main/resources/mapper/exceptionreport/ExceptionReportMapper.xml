@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.exceptionreport.infrastructure.persistence.ExceptionReportMapper">
+    <resultMap id="ReportMap" type="com.lingdong.learning.exceptionreport.domain.ExceptionReport">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/><arg column="student_id" javaType="java.lang.Long"/>
+            <arg column="class_organization_id" javaType="java.lang.Long"/><arg column="reporter_user_id" javaType="java.lang.Long"/>
+            <arg column="exception_type" javaType="com.lingdong.learning.exceptionreport.domain.ExceptionReportType"/>
+            <arg column="content" javaType="java.lang.String"/>
+            <arg column="status" javaType="com.lingdong.learning.exceptionreport.domain.ExceptionReportStatus"/>
+            <arg column="idempotency_key" javaType="java.lang.String"/><arg column="handled_by" javaType="java.lang.Long"/>
+            <arg column="handled_at" javaType="java.time.LocalDateTime"/><arg column="version_no" javaType="_long"/>
+            <arg column="reported_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+    <resultMap id="ReportRowMap" type="com.lingdong.learning.exceptionreport.infrastructure.persistence.ExceptionReportRow">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/><arg column="student_id" javaType="java.lang.Long"/>
+            <arg column="student_name" javaType="java.lang.String"/><arg column="student_account" javaType="java.lang.String"/>
+            <arg column="class_organization_id" javaType="java.lang.Long"/><arg column="class_name" javaType="java.lang.String"/>
+            <arg column="reporter_user_id" javaType="java.lang.Long"/><arg column="reporter_name" javaType="java.lang.String"/>
+            <arg column="exception_type" javaType="com.lingdong.learning.exceptionreport.domain.ExceptionReportType"/>
+            <arg column="content" javaType="java.lang.String"/>
+            <arg column="status" javaType="com.lingdong.learning.exceptionreport.domain.ExceptionReportStatus"/>
+            <arg column="handled_by" javaType="java.lang.Long"/><arg column="handler_name" javaType="java.lang.String"/>
+            <arg column="reported_at" javaType="java.time.LocalDateTime"/><arg column="handled_at" javaType="java.time.LocalDateTime"/>
+            <arg column="version_no" javaType="_long"/>
+        </constructor>
+    </resultMap>
+    <resultMap id="ActionRowMap" type="com.lingdong.learning.exceptionreport.infrastructure.persistence.ExceptionReportActionRow">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/><arg column="action_type" javaType="java.lang.String"/>
+            <arg column="operator_user_id" javaType="java.lang.Long"/><arg column="operator_name" javaType="java.lang.String"/>
+            <arg column="before_status" javaType="com.lingdong.learning.exceptionreport.domain.ExceptionReportStatus"/>
+            <arg column="after_status" javaType="com.lingdong.learning.exceptionreport.domain.ExceptionReportStatus"/>
+            <arg column="action_note" javaType="java.lang.String"/><arg column="created_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="reportColumns">
+        report.id, report.student_id, student.student_name,
+        student_user.username AS student_account,
+        report.class_organization_id, class_organization.organization_name AS class_name,
+        report.reporter_user_id, reporter.display_name AS reporter_name,
+        report.exception_type, report.content, report.status, report.handled_by,
+        handler.display_name AS handler_name, report.reported_at, report.handled_at, report.version_no
+    </sql>
+    <sql id="reportJoins">
+        FROM edu_exception_report report
+        JOIN edu_student student ON student.id = report.student_id
+        LEFT JOIN sys_user student_user ON student_user.id = student.student_user_id
+        JOIN sys_organization class_organization ON class_organization.id = report.class_organization_id
+        JOIN sys_user reporter ON reporter.id = report.reporter_user_id
+        LEFT JOIN sys_user handler ON handler.id = report.handled_by
+    </sql>
+    <sql id="scopePredicate">
+        <choose>
+            <when test="query.teacher">
+                (report.reporter_user_id = #{query.userId}
+                 AND EXISTS (SELECT 1 FROM edu_teacher_class teacher_class
+                     WHERE teacher_class.teacher_user_id = #{query.userId}
+                       AND teacher_class.class_organization_id = report.class_organization_id
+                       AND teacher_class.status = 'ACTIVE'))
+            </when>
+            <when test="query.allOrganizations">1 = 1</when>
+            <otherwise>
+                (<foreach collection="query.rootPaths" item="rootPath" separator=" OR ">
+                    class_organization.organization_path LIKE CONCAT(#{rootPath}, '%')
+                </foreach>)
+            </otherwise>
+        </choose>
+    </sql>
+
+    <select id="findTeacherClassOptions"
+            resultType="com.lingdong.learning.exceptionreport.application.ExceptionReportClassOption">
+        SELECT class_organization.id AS classOrganizationId,
+               class_organization.organization_name AS className
+        FROM edu_teacher_class teacher_class
+        JOIN sys_organization class_organization ON class_organization.id = teacher_class.class_organization_id
+        WHERE teacher_class.teacher_user_id = #{teacherUserId}
+          AND teacher_class.status = 'ACTIVE'
+          AND class_organization.status = 'ENABLED' AND class_organization.effective_status = 'ENABLED'
+        ORDER BY class_organization.organization_path, class_organization.sort_order, class_organization.id
+    </select>
+
+    <select id="findById" resultMap="ReportMap">
+        SELECT id, student_id, class_organization_id, reporter_user_id, exception_type,
+               content, status, idempotency_key, handled_by, handled_at, version_no, reported_at
+        FROM edu_exception_report WHERE id = #{id}
+    </select>
+    <select id="findByReporterAndIdempotencyKey" resultMap="ReportMap">
+        SELECT id, student_id, class_organization_id, reporter_user_id, exception_type,
+               content, status, idempotency_key, handled_by, handled_at, version_no, reported_at
+        FROM edu_exception_report
+        WHERE reporter_user_id = #{reporterUserId} AND idempotency_key = #{idempotencyKey}
+    </select>
+    <select id="existsActiveTeacherStudent" resultType="boolean">
+        SELECT EXISTS(SELECT 1
+        FROM edu_teacher_class teacher_class
+        JOIN sys_organization class_organization ON class_organization.id = teacher_class.class_organization_id
+        JOIN edu_student_organization student_class
+          ON student_class.organization_id = teacher_class.class_organization_id
+         AND student_class.relation_type = 'CLASS' AND student_class.status = 'ACTIVE'
+        JOIN edu_student student ON student.id = student_class.student_id
+        WHERE teacher_class.teacher_user_id = #{teacherUserId}
+          AND teacher_class.class_organization_id = #{classOrganizationId}
+          AND teacher_class.status = 'ACTIVE'
+          AND class_organization.status = 'ENABLED' AND class_organization.effective_status = 'ENABLED'
+          AND student.id = #{studentId} AND student.status = 'ENABLED')
+    </select>
+    <select id="findTeacherStudentOptions"
+            resultType="com.lingdong.learning.exceptionreport.infrastructure.persistence.ExceptionReportStudentOptionRow">
+        SELECT student.id AS studentId, student.student_name AS studentName,
+               student_user.username AS studentAccount
+        FROM edu_teacher_class teacher_class
+        JOIN sys_organization class_organization ON class_organization.id = teacher_class.class_organization_id
+        JOIN edu_student_organization student_class
+          ON student_class.organization_id = teacher_class.class_organization_id
+         AND student_class.relation_type = 'CLASS' AND student_class.status = 'ACTIVE'
+        JOIN edu_student student ON student.id = student_class.student_id AND student.status = 'ENABLED'
+        LEFT JOIN sys_user student_user ON student_user.id = student.student_user_id
+        WHERE teacher_class.teacher_user_id = #{teacherUserId}
+          AND teacher_class.class_organization_id = #{classOrganizationId}
+          AND teacher_class.status = 'ACTIVE'
+          AND class_organization.status = 'ENABLED' AND class_organization.effective_status = 'ENABLED'
+        ORDER BY student.student_name, student.id
+    </select>
+    <insert id="insert">
+        INSERT INTO edu_exception_report (id, student_id, class_organization_id, reporter_user_id,
+            exception_type, content, status, idempotency_key, version_no, reported_at)
+        VALUES (#{report.id}, #{report.studentId}, #{report.classOrganizationId}, #{report.reporterUserId},
+            #{report.exceptionType}, #{report.content}, #{report.status}, #{report.idempotencyKey},
+            #{report.versionNo}, #{report.reportedAt})
+    </insert>
+    <update id="handle">
+        UPDATE edu_exception_report SET status = 'HANDLED', handled_by = #{handledBy},
+            handled_at = #{handledAt}, version_no = version_no + 1, updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id} AND status = 'SUBMITTED' AND version_no = #{versionNo}
+    </update>
+    <select id="findVisibleById" resultMap="ReportRowMap">
+        SELECT <include refid="reportColumns"/> <include refid="reportJoins"/>
+        WHERE report.id = #{id} AND <include refid="scopePredicate"/>
+    </select>
+    <select id="findPage" resultMap="ReportRowMap">
+        SELECT <include refid="reportColumns"/> <include refid="reportJoins"/>
+        WHERE <include refid="scopePredicate"/>
+        <if test="query.classOrganizationId != null">AND report.class_organization_id = #{query.classOrganizationId}</if>
+        <if test="query.studentId != null">AND report.student_id = #{query.studentId}</if>
+        <if test="query.exceptionType != null">AND report.exception_type = #{query.exceptionType}</if>
+        <if test="query.status != null">AND report.status = #{query.status}</if>
+        ORDER BY report.reported_at DESC, report.id DESC LIMIT #{query.limit} OFFSET #{query.offset}
+    </select>
+    <select id="count" resultType="long">
+        SELECT COUNT(*) <include refid="reportJoins"/> WHERE <include refid="scopePredicate"/>
+        <if test="query.classOrganizationId != null">AND report.class_organization_id = #{query.classOrganizationId}</if>
+        <if test="query.studentId != null">AND report.student_id = #{query.studentId}</if>
+        <if test="query.exceptionType != null">AND report.exception_type = #{query.exceptionType}</if>
+        <if test="query.status != null">AND report.status = #{query.status}</if>
+    </select>
+    <select id="findActions" resultMap="ActionRowMap">
+        SELECT action.id, action.action_type, action.operator_user_id,
+               operator.display_name AS operator_name, action.before_status, action.after_status,
+               action.action_note, action.created_at
+        FROM edu_exception_report_action action
+        JOIN sys_user operator ON operator.id = action.operator_user_id
+        WHERE action.report_id = #{reportId} ORDER BY action.created_at, action.id
+    </select>
+    <insert id="insertAction">
+        INSERT INTO edu_exception_report_action (id, report_id, action_type, operator_user_id,
+            before_status, after_status, action_note, created_at)
+        VALUES (#{id}, #{reportId}, #{actionType}, #{operatorUserId},
+            #{beforeStatus}, #{afterStatus}, #{actionNote}, #{createdAt})
+    </insert>
+    <insert id="insertLocalEvent">
+        INSERT INTO msg_local_event (id, event_type, business_type, business_id, recipient_type,
+            recipient_id, content_summary, status, occurred_at)
+        VALUES (#{id}, #{eventType}, 'EXCEPTION_REPORT', #{businessId}, #{recipientType},
+            #{recipientId}, #{contentSummary}, 'PENDING', #{occurredAt})
+    </insert>
+</mapper>

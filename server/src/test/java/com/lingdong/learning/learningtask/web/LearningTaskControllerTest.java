@@ -20,6 +20,7 @@ import com.lingdong.learning.learningtask.application.TaskOverdueService;
 import com.lingdong.learning.organization.application.CreateOrganizationCommand;
 import com.lingdong.learning.organization.application.OrganizationApplicationService;
 import com.lingdong.learning.organization.domain.Organization;
+import com.lingdong.learning.student.infrastructure.persistence.ParentStudentMapper;
 import com.lingdong.learning.user.application.AssignRoleToUserCommand;
 import com.lingdong.learning.user.application.AssociateUserWithOrganizationCommand;
 import com.lingdong.learning.user.application.CreateUserCommand;
@@ -71,6 +72,7 @@ class LearningTaskControllerTest {
     @Autowired private ManagedFileMapper managedFileMapper;
     @Autowired private TaskOverdueService taskOverdueService;
     @Autowired private TaskDeferService taskDeferService;
+    @Autowired private ParentStudentMapper parentStudentMapper;
 
     @Test
     void createsEditsPublishesAndReadsFamilyOrganizationAndTeacherTasks() throws Exception {
@@ -138,6 +140,22 @@ class LearningTaskControllerTest {
         publish(fixture.administratorToken(), organizationTaskId, 1);
         publish(fixture.teacherToken(), teacherTaskId, 1);
 
+        mockMvc.perform(get("/api/v1/learning-tasks/{id}/progress", organizationTaskId)
+                        .header("Authorization", "Bearer " + fixture.administratorToken()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(1))
+                .andExpect(jsonPath("$.items[0].studentId")
+                        .value(fixture.organizationStudent().id().toString()))
+                .andExpect(jsonPath("$.items[0].studentName").value("任务机构学生"))
+                .andExpect(jsonPath("$.items[0].studentAccountMasked").isNotEmpty())
+                .andExpect(jsonPath("$.items[0].classOrganizationId")
+                        .value(fixture.classOrganization().id().toString()))
+                .andExpect(jsonPath("$.items[0].currentStatus").value("PENDING_CLAIM"));
+        mockMvc.perform(get("/api/v1/learning-tasks/{id}/progress", organizationTaskId)
+                        .header("Authorization", "Bearer " + fixture.teacherToken()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(1));
+
         mockMvc.perform(post("/api/v1/learning-tasks/{id}/publish", familyTaskId)
                         .header("Authorization", "Bearer " + fixture.parentToken()))
                 .andExpect(status().isConflict())
@@ -180,6 +198,47 @@ class LearningTaskControllerTest {
         assertThat(teacherTaskId.toString()).hasSize(19);
         assertThat(jdbcTemplate.queryForObject(
                 "select count(*) from learn_task_recurrence", Integer.class)).isZero();
+    }
+
+    @Test
+    void secondaryParentReadsPublishedTaskButCannotReadDraftOrEdit() throws Exception {
+        Fixture fixture = createFixture();
+        User secondaryParent = createUserWithRole(
+                "task_flow_secondary_parent", "任务闭环副家长", "PARENT", null);
+        setPassword(fixture.systemAdministrator(), secondaryParent);
+        String secondaryParentToken = platformLoginToken("task_flow_secondary_parent");
+        parentStudentMapper.insertSecondary(
+                8_910_000_000_000_000_851L, secondaryParent.id(), fixture.familyStudent().id(),
+                LocalDateTime.now());
+        LocalDate scheduledDate = LocalDate.now(ZoneId.of("Asia/Shanghai")).plusDays(1);
+
+        MvcResult createResult = mockMvc.perform(post("/api/v1/learning-tasks")
+                        .header("Authorization", "Bearer " + fixture.parentToken())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(taskBody("FAMILY", null, "副家长只读任务", 1, scheduledDate,
+                                null, target("STUDENT", fixture.familyStudent().id()))))
+                .andExpect(status().isCreated())
+                .andReturn();
+        Long taskId = responseId(createResult, "id");
+
+        mockMvc.perform(get("/api/v1/learning-tasks/{id}", taskId)
+                        .header("Authorization", "Bearer " + secondaryParentToken))
+                .andExpect(status().isNotFound());
+
+        publish(fixture.parentToken(), taskId, 1);
+
+        mockMvc.perform(get("/api/v1/learning-tasks/{id}", taskId)
+                        .header("Authorization", "Bearer " + secondaryParentToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(taskId.toString()))
+                .andExpect(jsonPath("$.title").value("副家长只读任务"));
+        mockMvc.perform(patch("/api/v1/learning-tasks/{id}", taskId)
+                        .header("Authorization", "Bearer " + secondaryParentToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(taskBody("FAMILY", null, "副家长不可修改", 1, scheduledDate,
+                                null, target("STUDENT", fixture.familyStudent().id()))))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("RESOURCE_NOT_FOUND"));
     }
 
     @Test
@@ -343,6 +402,41 @@ class LearningTaskControllerTest {
                 String.class, recurrenceId)).isEqualTo("COMPLETED");
         assertThat(recurringTaskGenerationService.generate(recurrenceId, recurrenceEndDate)
                 .generatedAssignmentCount()).isZero();
+    }
+
+    @Test
+    void attachmentFeatureDisabledStillAllowsTextOnlyCheckIn() throws Exception {
+        Fixture fixture = createFixture();
+        LocalDate scheduledDate = LocalDate.now(ZoneId.of("Asia/Shanghai")).plusDays(1);
+        MvcResult createResult = mockMvc.perform(post("/api/v1/learning-tasks")
+                        .header("Authorization", "Bearer " + fixture.parentToken())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(taskBody("FAMILY", null, "附件停用文字打卡", 1, scheduledDate,
+                                null, target("STUDENT", fixture.familyStudent().id()))))
+                .andExpect(status().isCreated())
+                .andReturn();
+        Long taskId = responseId(createResult, "id");
+        publish(fixture.parentToken(), taskId, 1);
+
+        String studentToken = studentLoginToken(fixture.familyStudent());
+        MvcResult assignments = mockMvc.perform(get("/api/v1/task-assignments")
+                        .header("Authorization", "Bearer " + studentToken))
+                .andExpect(status().isOk())
+                .andReturn();
+        Long assignmentId = responseId(assignments, "items.0.id");
+        mockMvc.perform(post("/api/v1/task-assignments/{id}/claim", assignmentId)
+                        .header("Authorization", "Bearer " + studentToken))
+                .andExpect(status().isOk());
+
+        featureToggleMapper.updateGlobalStatus("ATTACHMENT_SERVICE", FeatureStatus.DISABLED);
+        mockMvc.perform(post("/api/v1/task-assignments/{id}/check-ins", assignmentId)
+                        .header("Authorization", "Bearer " + studentToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"content\":\"仅提交文字打卡\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.currentStatus").value("PENDING_REVIEW"))
+                .andExpect(jsonPath("$.latestCheckIn.content").value("仅提交文字打卡"))
+                .andExpect(jsonPath("$.latestCheckIn.attachments").isEmpty());
     }
 
     @Test
@@ -1045,7 +1139,7 @@ class LearningTaskControllerTest {
                         backupTeacher.id(), classOrganization.id())
                         .header("Authorization", "Bearer " + administratorToken))
                 .andExpect(status().isOk());
-        return new Fixture(parent, organizationAdministrator, teacher, backupTeacher,
+        return new Fixture(systemAdministrator, parent, organizationAdministrator, teacher, backupTeacher,
                 school, classOrganization, familyStudent, organizationStudent,
                 parentToken, administratorToken, teacherToken, backupTeacherToken);
     }
@@ -1173,6 +1267,7 @@ class LearningTaskControllerTest {
     }
 
     private record Fixture(
+            User systemAdministrator,
             User parent,
             User organizationAdministrator,
             User teacher,

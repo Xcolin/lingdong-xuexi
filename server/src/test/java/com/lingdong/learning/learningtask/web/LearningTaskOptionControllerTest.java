@@ -10,6 +10,7 @@ import com.lingdong.learning.iam.infrastructure.persistence.RoleMapper;
 import com.lingdong.learning.organization.application.CreateOrganizationCommand;
 import com.lingdong.learning.organization.application.OrganizationApplicationService;
 import com.lingdong.learning.organization.domain.Organization;
+import com.lingdong.learning.student.infrastructure.persistence.ParentStudentMapper;
 import com.lingdong.learning.user.application.AssignRoleToUserCommand;
 import com.lingdong.learning.user.application.AssociateUserWithOrganizationCommand;
 import com.lingdong.learning.user.application.CreateUserCommand;
@@ -21,10 +22,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+
+import java.time.LocalDateTime;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -44,12 +48,16 @@ class LearningTaskOptionControllerTest {
     @Autowired private RoleMapper roleMapper;
     @Autowired private OrganizationApplicationService organizationApplicationService;
     @Autowired private OrganizationAdminMapper organizationAdminMapper;
+    @Autowired private ParentStudentMapper parentStudentMapper;
+    @Autowired private JdbcTemplate jdbcTemplate;
 
     @Test
     void returnsOnlyRoleScopedAndMaskedTaskOptions() throws Exception {
         User systemAdministrator = createUserWithRole(
                 "task_option_sys_admin", "任务候选系统管理员", "SYS_ADMIN", null);
         User parent = createUserWithRole("task_option_parent", "任务候选家长", "PARENT", null);
+        User secondaryParent = createUserWithRole(
+                "task_option_secondary_parent", "任务候选副家长", "PARENT", null);
         User organizationAdministrator = createUser("task_option_org_admin", "任务候选机构管理员");
         User teacher = createUser("task_option_teacher", "任务候选教师");
         Organization school = organizationApplicationService.createOrganization(
@@ -71,13 +79,18 @@ class LearningTaskOptionControllerTest {
                 1_874_244_142_494_646_403L, organizationAdministrator.id(), school.id());
         setPassword(systemAdministrator, systemAdministrator);
         setPassword(systemAdministrator, parent);
+        setPassword(systemAdministrator, secondaryParent);
         setPassword(systemAdministrator, organizationAdministrator);
         setPassword(systemAdministrator, teacher);
 
         String parentToken = loginAccessToken("task_option_parent");
+        String secondaryParentToken = loginAccessToken("task_option_secondary_parent");
         String administratorToken = loginAccessToken("task_option_org_admin");
         String teacherToken = loginAccessToken("task_option_teacher");
         Long familyStudentId = createStudent(parentToken, "家庭候选学生", null);
+        parentStudentMapper.insertSecondary(
+                8_910_000_000_000_000_821L, secondaryParent.id(), familyStudentId,
+                LocalDateTime.now());
         Long organizationStudentId = createStudent(administratorToken, "机构候选学生", school.id());
 
         mockMvc.perform(put("/api/v1/students/{studentId}/class", organizationStudentId)
@@ -96,10 +109,19 @@ class LearningTaskOptionControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].id").value(familyStudentId.toString()))
+                .andExpect(jsonPath("$[0].relationshipRole").value("PRIMARY_GUARDIAN"))
                 .andExpect(jsonPath("$[0].studentAccountMasked").value("26****01"))
                 .andExpect(jsonPath("$[0].studentAccount").doesNotExist())
                 .andExpect(jsonPath("$[0].mobile").doesNotExist())
                 .andExpect(jsonPath("$[0].passwordHash").doesNotExist());
+
+        mockMvc.perform(get("/api/v1/learning-task-options/students")
+                        .param("sourceType", "FAMILY")
+                        .header("Authorization", "Bearer " + secondaryParentToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].id").value(familyStudentId.toString()))
+                .andExpect(jsonPath("$[0].relationshipRole").value("SECONDARY_GUARDIAN"));
 
         mockMvc.perform(get("/api/v1/learning-task-options/organizations")
                         .param("sourceType", "ORGANIZATION")
@@ -142,6 +164,30 @@ class LearningTaskOptionControllerTest {
                         .header("Authorization", "Bearer " + parentToken))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
+
+        jdbcTemplate.update(
+                "update sys_organization set effective_status = 'DISABLED' where id in (?, ?)",
+                school.id(), classOrganization.id());
+
+        mockMvc.perform(get("/api/v1/learning-task-options/organizations")
+                        .param("sourceType", "ORGANIZATION")
+                        .header("Authorization", "Bearer " + administratorToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+        mockMvc.perform(get("/api/v1/learning-task-options/students")
+                        .param("sourceType", "ORGANIZATION")
+                        .header("Authorization", "Bearer " + administratorToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+        mockMvc.perform(get("/api/v1/learning-task-options/students")
+                        .param("sourceType", "TEACHER")
+                        .header("Authorization", "Bearer " + teacherToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+        mockMvc.perform(get("/api/v1/learning-task-options/teachers")
+                        .header("Authorization", "Bearer " + administratorToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
     }
 
     private Long createStudent(String accessToken, String name, Long organizationId) throws Exception {

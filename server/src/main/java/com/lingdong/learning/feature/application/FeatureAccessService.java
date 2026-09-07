@@ -3,7 +3,7 @@ import com.lingdong.learning.feature.domain.FeatureStatus;
 import com.lingdong.learning.feature.domain.FeatureToggle;
 import com.lingdong.learning.feature.infrastructure.persistence.FeatureToggleMapper;
 import org.springframework.stereotype.Service;
-/** Applies the feature-toggle precedence before role or data authorization. */
+/** 在角色和数据权限判断前应用功能开关优先级。 */
 @Service public class FeatureAccessService {
  private final FeatureToggleMapper mapper;
  public FeatureAccessService(FeatureToggleMapper mapper) { this.mapper=mapper; }

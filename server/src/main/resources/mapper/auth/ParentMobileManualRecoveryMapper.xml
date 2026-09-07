@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.auth.infrastructure.persistence.ParentMobileManualRecoveryMapper">
+
+    <resultMap id="CandidateResultMap"
+               type="com.lingdong.learning.auth.infrastructure.persistence.ParentMobileManualRecoveryCandidateRow">
+        <constructor>
+            <idArg column="student_id" javaType="java.lang.Long"/>
+            <arg column="student_name" javaType="java.lang.String"/>
+            <arg column="organization_id" javaType="java.lang.Long"/>
+            <arg column="organization_name" javaType="java.lang.String"/>
+            <arg column="parent_user_id" javaType="java.lang.Long"/>
+            <arg column="parent_display_name" javaType="java.lang.String"/>
+            <arg column="mobile" javaType="java.lang.String"/>
+            <arg column="relationship_role"
+                 javaType="com.lingdong.learning.student.domain.ParentRelationshipRole"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="candidateColumns">
+        student.id AS student_id,
+        student.student_name,
+        enrollment_organization.id AS organization_id,
+        enrollment_organization.organization_name,
+        parent_user.id AS parent_user_id,
+        parent_user.display_name AS parent_display_name,
+        parent_user.mobile,
+        parent_student.relation_role AS relationship_role
+    </sql>
+
+    <sql id="candidateJoins">
+        FROM edu_student student
+        JOIN edu_student_organization enrollment
+          ON enrollment.student_id = student.id
+         AND enrollment.relation_type = 'ENROLLMENT'
+         AND enrollment.status = 'ACTIVE'
+        JOIN sys_organization enrollment_organization
+         ON enrollment_organization.id = enrollment.organization_id
+         AND enrollment_organization.status = 'ENABLED'
+         AND enrollment_organization.effective_status = 'ENABLED'
+        JOIN sys_organization_admin organization_admin
+          ON organization_admin.user_id = #{operatorUserId}
+        JOIN sys_organization managed_organization
+         ON managed_organization.id = organization_admin.organization_id
+         AND managed_organization.status = 'ENABLED'
+         AND managed_organization.effective_status = 'ENABLED'
+        JOIN edu_parent_student parent_student
+          ON parent_student.student_id = student.id
+         AND parent_student.status = 'ACTIVE'
+        JOIN sys_user parent_user
+          ON parent_user.id = parent_student.parent_user_id
+         AND parent_user.user_type = 'FAMILY'
+         AND parent_user.status = 'ENABLED'
+         AND parent_user.mobile IS NOT NULL
+        JOIN sys_user_role parent_user_role
+          ON parent_user_role.user_id = parent_user.id
+        JOIN sys_role parent_role
+          ON parent_role.id = parent_user_role.role_id
+         AND parent_role.role_code = 'PARENT'
+         AND parent_role.status = 'ENABLED'
+        WHERE student.status = 'ENABLED'
+          AND enrollment_organization.organization_path
+              LIKE CONCAT(managed_organization.organization_path, '%')
+    </sql>
+
+    <select id="findCandidatesByOrganizationAdministrator" resultMap="CandidateResultMap">
+        SELECT DISTINCT <include refid="candidateColumns"/>
+        <include refid="candidateJoins"/>
+        ORDER BY student.student_name, student.id, parent_student.relation_role, parent_user.id
+    </select>
+
+    <select id="findAccessibleCandidate" resultMap="CandidateResultMap">
+        SELECT DISTINCT <include refid="candidateColumns"/>
+        <include refid="candidateJoins"/>
+          AND student.id = #{studentId}
+          AND parent_user.id = #{parentUserId}
+        ORDER BY enrollment_organization.id
+        LIMIT 1
+    </select>
+
+    <select id="findAccessibleOrganizationId" resultType="long">
+        SELECT DISTINCT enrollment_organization.id
+        FROM edu_student student
+        JOIN edu_student_organization enrollment
+          ON enrollment.student_id = student.id
+         AND enrollment.relation_type = 'ENROLLMENT'
+         AND enrollment.status = 'ACTIVE'
+        JOIN sys_organization enrollment_organization
+         ON enrollment_organization.id = enrollment.organization_id
+         AND enrollment_organization.status = 'ENABLED'
+         AND enrollment_organization.effective_status = 'ENABLED'
+        JOIN sys_organization_admin organization_admin
+          ON organization_admin.user_id = #{operatorUserId}
+        JOIN sys_organization managed_organization
+         ON managed_organization.id = organization_admin.organization_id
+         AND managed_organization.status = 'ENABLED'
+         AND managed_organization.effective_status = 'ENABLED'
+        WHERE student.id = #{studentId}
+          AND student.status = 'ENABLED'
+          AND enrollment_organization.organization_path
+              LIKE CONCAT(managed_organization.organization_path, '%')
+        ORDER BY enrollment_organization.id
+        LIMIT 1
+    </select>
+
+    <insert id="insert">
+        INSERT INTO auth_parent_mobile_manual_recovery (
+            id, parent_user_id, student_id, organization_id, operator_user_id,
+            old_mobile_digest, new_mobile_digest, reason, client_type, recovered_at
+        ) VALUES (
+            #{record.id}, #{record.parentUserId}, #{record.studentId},
+            #{record.organizationId}, #{record.operatorUserId},
+            #{record.oldMobileDigest}, #{record.newMobileDigest}, #{record.reason},
+            #{record.clientType}, #{record.recoveredAt}
+        )
+    </insert>
+</mapper>

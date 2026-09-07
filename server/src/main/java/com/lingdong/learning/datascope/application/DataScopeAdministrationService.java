@@ -4,6 +4,9 @@ import com.lingdong.learning.common.id.IdGenerator;
 import com.lingdong.learning.common.security.SystemOperationAccessDeniedException;
 import com.lingdong.learning.common.web.ResourceNotFoundException;
 import com.lingdong.learning.iam.domain.RoleDataScope;
+import com.lingdong.learning.iam.audit.application.IamChangeAuditEventType;
+import com.lingdong.learning.iam.audit.application.IamChangeAuditService;
+import com.lingdong.learning.iam.audit.application.IamChangeTargetType;
 import com.lingdong.learning.iam.infrastructure.persistence.RoleMapper;
 import com.lingdong.learning.datascope.infrastructure.persistence.OrganizationAdminMapper;
 import com.lingdong.learning.datascope.infrastructure.persistence.RoleDataScopeMapper;
@@ -25,13 +28,16 @@ public class DataScopeAdministrationService {
     private final RoleMapper roleMapper;
     private final RoleDataScopeMapper roleDataScopeMapper;
     private final IdGenerator idGenerator;
+    private final IamChangeAuditService auditService;
 
     public DataScopeAdministrationService(UserRoleMapper userRoleMapper, UserMapper userMapper, OrganizationMapper organizationMapper,
                                           UserOrganizationMapper userOrganizationMapper, OrganizationAdminMapper organizationAdminMapper,
-                                          RoleMapper roleMapper, RoleDataScopeMapper roleDataScopeMapper, IdGenerator idGenerator) {
+                                          RoleMapper roleMapper, RoleDataScopeMapper roleDataScopeMapper, IdGenerator idGenerator,
+                                          IamChangeAuditService auditService) {
         this.userRoleMapper = userRoleMapper; this.userMapper = userMapper; this.organizationMapper = organizationMapper;
         this.userOrganizationMapper = userOrganizationMapper; this.organizationAdminMapper = organizationAdminMapper;
         this.roleMapper = roleMapper; this.roleDataScopeMapper = roleDataScopeMapper; this.idGenerator = idGenerator;
+        this.auditService = auditService;
     }
 
     @Transactional
@@ -45,7 +51,11 @@ public class DataScopeAdministrationService {
         }
         if (!userOrganizationMapper.exists(userId, organizationId)) throw new IllegalStateException("组织管理员必须先关联对应组织");
         if (organizationAdminMapper.exists(userId, organizationId)) throw new IllegalStateException("用户已是该组织管理员");
-        organizationAdminMapper.insert(idGenerator.nextId(), userId, organizationId);
+        Long relationId = idGenerator.nextId();
+        organizationAdminMapper.insert(relationId, userId, organizationId);
+        auditService.record(IamChangeAuditEventType.ORGANIZATION_ADMIN_ASSIGN, operatorId,
+                IamChangeTargetType.ORGANIZATION_ADMIN, userId, organizationId, organizationId,
+                null, "ASSIGNED");
     }
 
     @Transactional
@@ -62,7 +72,11 @@ public class DataScopeAdministrationService {
             throw new IllegalArgumentException("角色不是自定义数据范围角色");
         }
         if (roleDataScopeMapper.exists(roleId, organizationId)) throw new IllegalStateException("角色已拥有该自定义组织范围");
-        roleDataScopeMapper.insert(idGenerator.nextId(), roleId, organizationId);
+        Long scopeId = idGenerator.nextId();
+        roleDataScopeMapper.insert(scopeId, roleId, organizationId);
+        auditService.record(IamChangeAuditEventType.ROLE_DATA_SCOPE_ADD, operatorId,
+                IamChangeTargetType.ROLE_DATA_SCOPE, roleId, organizationId, organizationId,
+                null, "ADDED");
     }
 
     private void requireSystemAdministrator(Long operatorId) {

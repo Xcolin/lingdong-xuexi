@@ -46,9 +46,41 @@ public interface StudentOrganizationMapper {
 
     List<Long> findEnabledStudentIdsByOrganizationTarget(@Param("organizationId") Long organizationId);
 
+    List<StudentOrganizationSummaryRow> findActiveSummariesByOrganizationAdministrator(
+            @Param("userId") Long userId
+    );
+
+    List<StudentOrganizationClassOptionRow> findEnabledClassOptionsByOrganizationAdministrator(
+            @Param("userId") Long userId
+    );
+
     List<Long> findActiveClassOrganizationIds(@Param("studentId") Long studentId);
 
+    List<Long> findActiveEnrollmentOrganizationIds(@Param("studentId") Long studentId);
+
+    List<Long> findActiveOrganizationIdsForUpdate(@Param("studentId") Long studentId);
+
+    List<Long> findActiveEnrollmentOrganizationIdsForClass(
+            @Param("studentId") Long studentId,
+            @Param("classOrganizationId") Long classOrganizationId
+    );
+
+    List<Long> findActiveClassOrganizationIdsInEnrollment(
+            @Param("studentId") Long studentId,
+            @Param("enrollmentOrganizationId") Long enrollmentOrganizationId
+    );
+
     int deactivateActiveClasses(@Param("studentId") Long studentId);
+
+    int deactivateActiveClassesInEnrollment(
+            @Param("studentId") Long studentId,
+            @Param("enrollmentOrganizationId") Long enrollmentOrganizationId
+    );
+
+    int deactivateActiveEnrollment(
+            @Param("studentId") Long studentId,
+            @Param("enrollmentOrganizationId") Long enrollmentOrganizationId
+    );
 
     int activateExistingClass(
             @Param("studentId") Long studentId,

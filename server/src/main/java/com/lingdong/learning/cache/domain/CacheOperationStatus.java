@@ -1,8 +1,9 @@
 package com.lingdong.learning.cache.domain;
 
-/** Persisted outcome of a cache-management request. */
+/** 缓存管理请求的持久化执行状态。 */
 public enum CacheOperationStatus {
     PENDING,
     SUCCEEDED,
-    FAILED
+    FAILED,
+    REJECTED
 }

@@ -14,12 +14,13 @@ import {
   message
 } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
-import { BookOpen, CircleStop, CopyPlus, Edit3, Plus, Rocket, Search } from 'lucide-react';
+import { BarChart3, BookOpen, CircleStop, CopyPlus, Edit3, Plus, Rocket, Search } from 'lucide-react';
 import type { CurrentUser } from '../../api/auth';
 import { learningTaskApi } from './api';
 import { BatchPublishResultModal } from './BatchPublishResultModal';
 import { LearningTaskEditorDrawer } from './LearningTaskEditorDrawer';
 import { TaskReviewQueue } from './TaskReviewQueue';
+import { TaskProgressModal } from './TaskProgressModal';
 import { TaskDeferQueue } from './TaskDeferQueue';
 import { PreviousDayTaskCopyModal } from './PreviousDayTaskCopyModal';
 import { TaskTemplateLibraryModal } from './TaskTemplateLibraryModal';
@@ -74,6 +75,7 @@ export function LearningTaskManagementPage({
   const [templateLibraryOpen, setTemplateLibraryOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<LearningTaskTemplate | null>(null);
   const [viewMode, setViewMode] = useState<'TASKS' | 'REVIEWS' | 'DEFER'>('TASKS');
+  const [progressTask, setProgressTask] = useState<LearningTaskSummary | null>(null);
   const [filterForm] = Form.useForm<FilterValues>();
   const sourceOptions = useMemo(() => availableSources(currentUser), [currentUser]);
   const canDefer = currentUser.roleCodes.some((role) =>
@@ -320,14 +322,26 @@ export function LearningTaskManagementPage({
                     onClick={() => confirmPublish(task)}
                   />
                 </Space>
-              ) : task.recurrenceStatus === 'ACTIVE' ? (
-                <ActionButton
-                  label={`停止 ${task.title}`}
-                  title="停止每日固定任务"
-                  icon={<CircleStop size={16} />}
-                  onClick={() => confirmStopRecurrence(task)}
-                />
-              ) : '-'
+              ) : (
+                <Space size={2}>
+                  {currentUser.permissionCodes.includes('LEARNING_TASK_PROGRESS_READ') && (
+                    <ActionButton
+                      label={`查看进度 ${task.title}`}
+                      title="学生进度"
+                      icon={<BarChart3 size={16} />}
+                      onClick={() => setProgressTask(task)}
+                    />
+                  )}
+                  {task.recurrenceStatus === 'ACTIVE' && (
+                    <ActionButton
+                      label={`停止 ${task.title}`}
+                      title="停止每日固定任务"
+                      icon={<CircleStop size={16} />}
+                      onClick={() => confirmStopRecurrence(task)}
+                    />
+                  )}
+                </Space>
+              )
             }
           ]}
         />
@@ -346,6 +360,11 @@ export function LearningTaskManagementPage({
         onSaved={() => loadTasks(filters, directory.page)}
       />
       <BatchPublishResultModal result={batchResult} onClose={() => setBatchResult(null)} />
+      <TaskProgressModal
+        taskId={progressTask?.id || null}
+        taskTitle={progressTask?.title || null}
+        onClose={() => setProgressTask(null)}
+      />
       <PreviousDayTaskCopyModal
         open={copyModalOpen}
         onClose={() => setCopyModalOpen(false)}

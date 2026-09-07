@@ -107,7 +107,7 @@ public class LearningTaskManagementService {
         if (task == null) {
             throw notFound();
         }
-        scopeService.requireManageable(currentUser, task);
+        scopeService.requireReadable(currentUser, task);
         return details(task);
     }
 

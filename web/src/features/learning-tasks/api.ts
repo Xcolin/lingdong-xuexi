@@ -6,6 +6,7 @@ import type {
   LearningTaskInput,
   LearningTaskPage,
   LearningTaskSourceType,
+  ManagedTaskProgressPage,
   OrganizationOption,
   PublishLearningTaskResult,
   StudentOption,
@@ -34,6 +35,11 @@ export const learningTaskApi = {
   },
   stopRecurrence(id: string): Promise<StopRecurringTaskResult> {
     return apiClient.post<StopRecurringTaskResult>(`/learning-tasks/${id}/recurrence/stop`, {});
+  },
+  progress(id: string, page = 1, pageSize = 20): Promise<ManagedTaskProgressPage> {
+    return apiClient.get<ManagedTaskProgressPage>(
+      `/learning-tasks/${id}/progress?page=${page}&pageSize=${pageSize}`
+    );
   },
   listOrganizations(
     sourceType: LearningTaskSourceType,

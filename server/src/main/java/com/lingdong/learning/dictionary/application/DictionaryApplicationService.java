@@ -1,27 +1,30 @@
 package com.lingdong.learning.dictionary.application;
 
 import com.lingdong.learning.common.id.IdGenerator;
+import com.lingdong.learning.common.security.SystemOperationAccessDeniedException;
 import com.lingdong.learning.dictionary.domain.DictionaryItem;
 import com.lingdong.learning.dictionary.domain.DictionaryStatus;
 import com.lingdong.learning.dictionary.domain.DictionaryType;
 import com.lingdong.learning.dictionary.infrastructure.cache.DictionaryItemCache;
 import com.lingdong.learning.dictionary.infrastructure.persistence.DictionaryItemMapper;
 import com.lingdong.learning.dictionary.infrastructure.persistence.DictionaryTypeMapper;
-import com.lingdong.learning.user.infrastructure.persistence.UserRoleMapper;
+import com.lingdong.learning.permission.application.PermissionDecisionService;
+import com.lingdong.learning.permission.domain.PermissionClient;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Locale;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-/** Manages ordinary dictionary configuration while preserving the one-default-item invariant. */
+/** 管理普通数据字典，并保持同一类型最多一个默认项。 */
 @Service
 public class DictionaryApplicationService {
     private static final Pattern CODE_PATTERN = Pattern.compile("[A-Z][A-Z0-9_]{2,63}");
-    /** Critical platform dictionaries must be changed through the audited system-task path. */
+    /** 关键平台字典必须通过可审计的系统任务审批路径变更。 */
     private static final Set<String> KEY_DICTIONARY_TYPE_CODES = Set.of(
             "TASK_STATUS",
             "ROLE_TYPE",
@@ -31,25 +34,25 @@ public class DictionaryApplicationService {
 
     private final DictionaryTypeMapper dictionaryTypeMapper;
     private final DictionaryItemMapper dictionaryItemMapper;
-    private final UserRoleMapper userRoleMapper;
+    private final PermissionDecisionService permissionDecisionService;
     private final DictionaryItemCache dictionaryItemCache;
     private final IdGenerator idGenerator;
 
     public DictionaryApplicationService(
             DictionaryTypeMapper dictionaryTypeMapper,
             DictionaryItemMapper dictionaryItemMapper,
-            UserRoleMapper userRoleMapper,
+            PermissionDecisionService permissionDecisionService,
             DictionaryItemCache dictionaryItemCache,
             IdGenerator idGenerator
     ) {
         this.dictionaryTypeMapper = dictionaryTypeMapper;
         this.dictionaryItemMapper = dictionaryItemMapper;
-        this.userRoleMapper = userRoleMapper;
+        this.permissionDecisionService = permissionDecisionService;
         this.dictionaryItemCache = dictionaryItemCache;
         this.idGenerator = idGenerator;
     }
 
-    /** Creates an enabled dictionary type that may later be used by forms and list filters. */
+    /** 创建可供表单和筛选条件使用的启用字典类型。 */
     @Transactional
     public DictionaryType createType(CreateDictionaryTypeCommand command) {
         Objects.requireNonNull(command, "创建字典类型请求不能为空");
@@ -71,7 +74,7 @@ public class DictionaryApplicationService {
         }
     }
 
-    /** Updates an existing type without changing its stable code. */
+    /** 更新既有类型，但不改变稳定编码。 */
     @Transactional
     public DictionaryType updateType(UpdateDictionaryTypeCommand command) {
         Objects.requireNonNull(command, "更新字典类型请求不能为空");
@@ -102,7 +105,7 @@ public class DictionaryApplicationService {
         return dictionaryTypeMapper.findById(type.id());
     }
 
-    /** Adds an enabled item and atomically replaces the old default when requested. */
+    /** 新增启用字典项，并在设为默认时原子替换原默认项。 */
     @Transactional
     public DictionaryItem createItem(CreateDictionaryItemCommand command) {
         Objects.requireNonNull(command, "创建字典项请求不能为空");
@@ -139,7 +142,7 @@ public class DictionaryApplicationService {
         }
     }
 
-    /** Updates mutable item properties and removes the type's selectable-item cache after success. */
+    /** 更新字典项可变属性，并在成功后清除该类型的可选项缓存。 */
     @Transactional
     public DictionaryItem updateItem(UpdateDictionaryItemCommand command) {
         Objects.requireNonNull(command, "更新字典项请求不能为空");
@@ -193,9 +196,28 @@ public class DictionaryApplicationService {
         return dictionaryItemMapper.findById(item.id());
     }
 
+    /** 查询后台管理所需的全部类型，包含停用记录。 */
+    public List<DictionaryType> listTypes(Long operatorId) {
+        requirePermission(operatorId, "DICTIONARY_READ");
+        return dictionaryTypeMapper.findAll();
+    }
+
+    /** 查询指定类型的全部字典项，包含停用历史项。 */
+    public List<DictionaryItem> listItems(Long operatorId, Long typeId) {
+        requirePermission(operatorId, "DICTIONARY_READ");
+        if (typeId == null || dictionaryTypeMapper.findById(typeId) == null) {
+            throw new IllegalArgumentException("字典类型不存在：" + typeId);
+        }
+        return dictionaryItemMapper.findAllByTypeId(typeId);
+    }
+
     private void requireSystemAdministrator(Long operatorId) {
-        if (operatorId == null || !userRoleMapper.hasRoleCode(operatorId, "SYS_ADMIN")) {
-            throw new IllegalStateException("仅系统管理员可管理数据字典");
+        requirePermission(operatorId, "DICTIONARY_MANAGE");
+    }
+
+    private void requirePermission(Long operatorId, String permissionCode) {
+        if (!permissionDecisionService.isAllowed(operatorId, PermissionClient.WEB, permissionCode)) {
+            throw new SystemOperationAccessDeniedException("仅系统管理员或已授权角色可管理数据字典");
         }
     }
 

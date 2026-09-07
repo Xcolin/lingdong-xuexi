@@ -1,10 +1,10 @@
 # 灵动学习缓存管理实施计划
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
+> **执行说明：** 建议使用 `superpowers:subagent-driven-development` 或 `superpowers:executing-plans` 逐项实施，并用复选框（`- [x]`）记录状态。
 
 **Goal:** 建立系统管理员可按缓存类型刷新或清除、可追溯记录结果，并对全量清除和用户会话清除执行系统审核的缓存管理核心能力。
 
-**Architecture:** 新增独立 `cache` 模块，使用 `CacheDomain`、`CacheOperationType`、`CacheOperationStatus` 描述固定的业务缓存范围和操作结果，并以 `ManagedCacheHandler` 隔离各缓存域的实际实现。普通模块操作同步执行并写入台账；全量清除和用户会话清除先创建 `CACHE_CLEAR` 系统任务，审核通过后才执行，失败时保留失败台账且不把任务标记为已生效。当前仅字典缓存已真实接入 Redis，未接入的权限、组织、功能开关、会话和统计缓存会明确记录为失败，不能伪造成功。
+**Architecture:** 新增独立 `cache` 模块，使用 `CacheDomain`、`CacheOperationType`、`CacheOperationStatus` 描述固定的业务缓存范围和操作结果，并以 `ManagedCacheHandler` 隔离各缓存域的实际实现。普通模块操作同步执行并写入台账；全量清除和用户会话清除先创建 `CACHE_CLEAR` 系统任务，审核通过后才执行，失败时保留失败台账且不把任务标记为已生效。字典缓存已真实接入 Spring 缓存，用户会话清除已接入活动设备会话批量撤销；未接入的权限、组织、功能开关和统计缓存会明确记录为失败，不能伪造成功。
 
 **Tech Stack:** Spring Boot 3、JDK 17、Spring Cache/Redis、MyBatis XML、MySQL 8+、Flyway、JUnit 5/H2。
 
@@ -131,7 +131,7 @@ CREATE INDEX idx_sys_cache_operation_created_at ON sys_cache_operation_log (crea
 CREATE INDEX idx_sys_cache_operation_domain_status ON sys_cache_operation_log (cache_domain, status);
 ```
 
-`CacheDomain` 固定为 `PERMISSION`、`DICTIONARY`、`ORGANIZATION`、`FEATURE_TOGGLE`、`USER_SESSION`、`BUSINESS_STATISTICS`、`ALL`；`CacheOperationType` 固定为 `CLEAR`、`REFRESH`；状态固定为 `PENDING`、`SUCCEEDED`、`FAILED`。
+`CacheDomain` 固定为 `PERMISSION`、`DICTIONARY`、`ORGANIZATION`、`FEATURE_TOGGLE`、`USER_SESSION`、`BUSINESS_STATISTICS`、`ALL`；`CacheOperationType` 固定为 `CLEAR`、`REFRESH`；状态固定为 `PENDING`、`SUCCEEDED`、`FAILED`、`REJECTED`。
 `CacheOperation` 同时保存 `operationCode`，应用服务用 UUID 生成该值、插入后通过 `findByCode` 回读，避免依赖数据库私有的主键回填语法。
 
 - [x] **Step 2: 为 V11 添加 Flyway 表存在性断言并运行迁移专测**
@@ -251,7 +251,7 @@ public CacheOperation approveAndExecute(Long taskId, Long auditorId, String comm
 }
 ```
 
-`ALL + CLEAR` 通过 Spring `CacheManager.getCacheNames()` 清理全部已注册缓存；`USER_SESSION` 在会话缓存尚未实现时返回失败记录，不标记任务已生效。执行失败不能抛出导致审批和失败台账一起回滚。
+`ALL + CLEAR` 通过 Spring `CacheManager.getCacheNames()` 清理全部已注册缓存；`USER_SESSION + CLEAR` 批量撤销全部活动设备会话，旧会话随后不能继续访问。执行失败不能抛出导致审批和失败台账一起回滚。
 
 - [x] **Step 3: 运行全量清除审批专测**
 
@@ -282,11 +282,11 @@ mvn test "-Dtest=CacheOperationApplicationServiceTest,FlywayMigrationTest"
 mvn test
 ```
 
-Expected: PASS，Flyway 至 V11，缓存管理用例和既有模块均无回归。
+Expected: PASS，Flyway 至 V52，缓存管理用例和既有模块均无回归。
 
 - [x] **Step 2: 回写实现状态**
 
-将本计划所有步骤标为完成；在一致性核对中记录：字典缓存可刷新/清除、全量清除走审批、未实现缓存域会留下失败台账；认证与会话缓存仍未实现，不能把 `USER_SESSION` 写为可成功执行。
+将本计划所有步骤标为完成；在一致性核对中记录：字典缓存可刷新/清除、全量清除和用户会话清除走审批、用户会话清除会撤销全部活动设备会话，未实现缓存域会留下失败台账且不会在 Web 伪造可用入口。
 
 - [x] **Step 3: 不提交代码**
 

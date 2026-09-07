@@ -1,0 +1,239 @@
+package com.lingdong.learning.exportjob.application;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.lingdong.learning.attachment.application.AttachmentContentView;
+import com.lingdong.learning.attachment.application.AttachmentFileApplicationService;
+import com.lingdong.learning.attachment.application.FileRelation;
+import com.lingdong.learning.attachment.application.ManagedAttachmentContentService;
+import com.lingdong.learning.attachment.application.ManagedFile;
+import com.lingdong.learning.attachment.domain.FileRelationStatus;
+import com.lingdong.learning.attachment.domain.FileStatus;
+import com.lingdong.learning.attachment.infrastructure.persistence.ManagedFileMapper;
+import com.lingdong.learning.audit.application.SystemTaskApplicationService;
+import com.lingdong.learning.exportjob.application.adapter.ExportAdapterRegistry;
+import com.lingdong.learning.exportjob.application.adapter.ExportDataPage;
+import com.lingdong.learning.exportjob.application.adapter.ExportDatasetAdapter;
+import com.lingdong.learning.exportjob.application.template.ExportColumnDefinition;
+import com.lingdong.learning.exportjob.application.template.ExportTemplateDefinition;
+import com.lingdong.learning.exportjob.application.template.ExportTemplateParser;
+import com.lingdong.learning.exportjob.application.template.ExportWorkbookWriter;
+import com.lingdong.learning.exportjob.domain.ExportJobEventType;
+import com.lingdong.learning.exportjob.domain.ExportJobRecord;
+import com.lingdong.learning.exportjob.domain.ExportJobStatus;
+import com.lingdong.learning.exportjob.domain.ExportJobType;
+import com.lingdong.learning.exportjob.infrastructure.config.ExportJobProperties;
+import com.lingdong.learning.exportjob.infrastructure.persistence.ExportJobMapper;
+import com.lingdong.learning.templateconfig.domain.ImportExportTemplateRecord;
+import com.lingdong.learning.templateconfig.domain.ImportExportTemplateStatus;
+import com.lingdong.learning.templateconfig.domain.TemplateType;
+import com.lingdong.learning.templateconfig.infrastructure.persistence.ImportExportTemplateMapper;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+class ExportJobExecutionServiceTest {
+    private static final long JOB_ID = 1874244142494646980L;
+    private static final long REQUESTER_ID = 1874244142494646981L;
+    private static final long STUDENT_ID = 1874244142494646982L;
+    private static final long TEMPLATE_ID = 1874244142494646983L;
+    private static final long TEMPLATE_FILE_ID = 1874244142494646984L;
+    private static final long RESULT_FILE_ID = 1874244142494646985L;
+
+    @TempDir Path tempDirectory;
+    private ExportJobAccessService accessService;
+    private ExportAdapterRegistry registry;
+    private ExportDatasetAdapter adapter;
+    private ImportExportTemplateMapper templateMapper;
+    private ManagedAttachmentContentService contentService;
+    private ExportTemplateParser parser;
+    private ExportWorkbookWriter writer;
+    private AttachmentFileApplicationService fileService;
+    private ManagedFileMapper managedFileMapper;
+    private ExportJobMapper jobMapper;
+    private ExportJobCompletionService completionService;
+    private ExportJobFailureService failureService;
+    private ObjectMapper objectMapper;
+    private ExportJobExecutionService service;
+
+    @BeforeEach
+    void setUp() throws Exception {
+        accessService = mock(ExportJobAccessService.class);
+        registry = mock(ExportAdapterRegistry.class);
+        adapter = mock(ExportDatasetAdapter.class);
+        templateMapper = mock(ImportExportTemplateMapper.class);
+        contentService = mock(ManagedAttachmentContentService.class);
+        parser = mock(ExportTemplateParser.class);
+        writer = mock(ExportWorkbookWriter.class);
+        fileService = mock(AttachmentFileApplicationService.class);
+        managedFileMapper = mock(ManagedFileMapper.class);
+        jobMapper = mock(ExportJobMapper.class);
+        completionService = mock(ExportJobCompletionService.class);
+        failureService = mock(ExportJobFailureService.class);
+        objectMapper = JsonMapper.builder().findAndAddModules().build();
+        ExportJobProperties properties = new ExportJobProperties();
+        properties.setQueryPageSize(2);
+        properties.setSheetMaxRows(10);
+        properties.setTempDirectory(tempDirectory);
+        service = new ExportJobExecutionService(
+                accessService, registry, templateMapper, contentService, parser, writer,
+                fileService, managedFileMapper, jobMapper, completionService, failureService,
+                objectMapper, properties);
+
+        when(registry.require(ExportJobType.GROWTH_POINT_LEDGER)).thenReturn(adapter);
+        when(templateMapper.findById(TEMPLATE_ID)).thenReturn(template());
+        when(contentService.read(TEMPLATE_FILE_ID)).thenReturn(new AttachmentContentView(
+                "report.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                new byte[]{1, 2, 3}));
+        when(parser.parse(any(), any(), any())).thenReturn(new ExportTemplateDefinition(
+                List.of(new ExportColumnDefinition("OCCURRED_AT", "发生时间", true)),
+                Map.of("OCCURRED_AT", 0)));
+        when(adapter.columns()).thenReturn(List.of(
+                new ExportColumnDefinition("OCCURRED_AT", "发生时间", true)));
+        when(adapter.count(any(), eq(1874244142494646999L))).thenReturn(1L);
+        when(adapter.fetchAfter(any(), eq(1874244142494646999L), eq(0L), eq(2)))
+                .thenReturn(new ExportDataPage(
+                        List.of(Map.of("OCCURRED_AT", "2026-09-03 10:00:00")),
+                        1874244142494646990L, false));
+        when(jobMapper.updateProgress(JOB_ID, 1L, 1L, 1L)).thenReturn(1);
+        when(contentService.store(eq(REQUESTER_ID), eq("EXPORT_JOB"), eq("REPORT_EXPORT"),
+                eq("导出结果-EXP-" + JOB_ID + ".xlsx"), any(), any()))
+                .thenReturn(resultFile());
+        when(fileService.attachToBusiness(any())).thenReturn(new FileRelation(
+                1874244142494646986L, RESULT_FILE_ID, "EXPORT_JOB", JOB_ID,
+                "EXPORT_JOB_RESULT", "BUSINESS_AUTHORIZED", FileRelationStatus.ACTIVE));
+        doAnswer(invocation -> {
+            @SuppressWarnings("unchecked")
+            Iterator<Map<String, Object>> rows = invocation.getArgument(2, Iterator.class);
+            while (rows.hasNext()) {
+                rows.next();
+            }
+            Path output = Files.createTempFile(tempDirectory, "writer-", ".xlsx");
+            Files.write(output, new byte[]{9, 8, 7});
+            return output;
+        }).when(writer).write(any(), any(), any(), eq(10), eq(tempDirectory));
+    }
+
+    @Test
+    void streamsPagesStoresUnifiedAttachmentAndCompletesWithLatestVersion() {
+        ExportJobRecord job = job(false, null);
+
+        assertThat(service.execute(job)).isTrue();
+
+        verify(accessService).requireExecution(job);
+        verify(accessService).requireFeatures();
+        verify(adapter).fetchAfter(any(), eq(1874244142494646999L), eq(0L), eq(2));
+        verify(jobMapper).updateProgress(JOB_ID, 1L, 1L, 1L);
+        verify(contentService).store(eq(REQUESTER_ID), eq("EXPORT_JOB"), eq("REPORT_EXPORT"),
+                eq("导出结果-EXP-" + JOB_ID + ".xlsx"), any(), eq(new byte[]{9, 8, 7}));
+        verify(fileService).attachToBusiness(any());
+        verify(completionService).complete(job, 2L, RESULT_FILE_ID, 1L, 1L);
+        verify(failureService, never()).fail(anyLong(), anyLong(), any(), any());
+    }
+
+    @Test
+    void revokesBeforeReadAndPersistsOnlyNeutralFailure() {
+        ExportJobRecord job = job(false, null);
+        doThrow(new IllegalStateException("模拟包含敏感范围的鉴权详情"))
+                .when(accessService).requireExecution(job);
+
+        assertThat(service.execute(job)).isFalse();
+
+        verify(templateMapper, never()).findById(anyLong());
+        verify(failureService).fail(
+                JOB_ID, 1L, "EXPORT_ACCESS_REVOKED", "当前导出权限或范围已失效");
+    }
+
+    @Test
+    void compensatesRelationMetadataAndContentWhenFinalCommitFails() {
+        ExportJobRecord job = job(false, null);
+        doThrow(new IllegalStateException("模拟结果文件唯一绑定冲突"))
+                .when(completionService).complete(job, 2L, RESULT_FILE_ID, 1L, 1L);
+        when(managedFileMapper.markRetired(RESULT_FILE_ID)).thenReturn(1);
+
+        assertThat(service.execute(job)).isFalse();
+
+        verify(fileService).releaseBusinessRelation(1874244142494646986L);
+        verify(managedFileMapper).markRetired(RESULT_FILE_ID);
+        verify(contentService).discardContent("attachment/export-result");
+        verify(failureService).fail(
+                JOB_ID, 2L, "EXPORT_GENERATION_FAILED", "导出文件生成失败");
+    }
+
+    @Test
+    void completionMarksSensitiveTaskEffectiveOnlyAfterJobSuccess() {
+        ExportJobMapper mapper = mock(ExportJobMapper.class);
+        ExportJobEventService eventService = mock(ExportJobEventService.class);
+        SystemTaskApplicationService taskService = mock(SystemTaskApplicationService.class);
+        Clock clock = Clock.fixed(Instant.parse("2026-09-03T06:00:00Z"), ZoneId.of("Asia/Shanghai"));
+        ExportJobCompletionService completion = new ExportJobCompletionService(
+                mapper, eventService, taskService, clock);
+        ExportJobRecord sensitive = job(true, 1874244142494646987L);
+        when(mapper.succeed(JOB_ID, 1L, RESULT_FILE_ID, 1L, 1L,
+                LocalDateTime.of(2026, 9, 3, 14, 0))).thenReturn(1);
+
+        completion.complete(sensitive, 1L, RESULT_FILE_ID, 1L, 1L);
+
+        verify(eventService).record(JOB_ID, ExportJobEventType.SUCCEEDED, null, "导出文件生成成功");
+        verify(taskService).markEffective(1874244142494646987L);
+    }
+
+    private ExportJobRecord job(boolean sensitive, Long systemTaskId) {
+        LocalDateTime now = LocalDateTime.of(2026, 9, 3, 13, 0);
+        try {
+            return new ExportJobRecord(
+                    JOB_ID, "EXP-" + JOB_ID, sensitive ? ExportJobType.IAM_CHANGE_AUDIT
+                    : ExportJobType.GROWTH_POINT_LEDGER, TEMPLATE_ID, "通用报表模板", "V1",
+                    REQUESTER_ID, sensitive ? null : STUDENT_ID, systemTaskId,
+                    objectMapper.writeValueAsString(new ExportFilterSnapshot(null, null, null)),
+                    objectMapper.writeValueAsString(List.of(
+                            new ExportColumnSnapshot("OCCURRED_AT", "发生时间"))),
+                    objectMapper.writeValueAsString(new ExportScopeSnapshot(
+                            sensitive ? null : STUDENT_ID, 1874244142494646999L)),
+                    objectMapper.writeValueAsString(new ExportMaskPolicySnapshot("FAMILY_NAME_STAR", 1)),
+                    "导出原因", sensitive, ExportJobStatus.EXPORTING, 1L, null,
+                    0L, 0L, null, null, "0".repeat(64), now.minusHours(1), null,
+                    now.minusMinutes(30), now, null, now.minusHours(1), now);
+        } catch (Exception exception) {
+            throw new IllegalStateException(exception);
+        }
+    }
+
+    private ImportExportTemplateRecord template() {
+        LocalDateTime now = LocalDateTime.of(2026, 9, 3, 13, 0);
+        return new ImportExportTemplateRecord(
+                TEMPLATE_ID, "通用报表模板", TemplateType.EXPORT, "REPORT", "V1",
+                TEMPLATE_FILE_ID, true, "DEFAULT", ImportExportTemplateStatus.ENABLED,
+                0L, now, now, "report.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 3L);
+    }
+
+    private ManagedFile resultFile() {
+        return new ManagedFile(
+                RESULT_FILE_ID, "attachment/export-result", "result.xlsx", "xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                3L, REQUESTER_ID, "EXPORT_JOB", "REPORT_EXPORT", "0".repeat(64),
+                FileStatus.AVAILABLE);
+    }
+}

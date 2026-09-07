@@ -103,4 +103,32 @@ describe('用户管理页面', () => {
       expect(usersApi.updateStatus).toHaveBeenCalledWith('1874244142494646324', 'DISABLED');
     });
   });
+
+  it('展示已注销用户且不提供状态变更操作', async () => {
+    usersApi.list.mockResolvedValue({
+      items: [{
+        id: '1874244142494646326',
+        username: 'cancelled_1874244142494646326',
+        displayName: '已注销用户',
+        mobile: null,
+        type: 'FAMILY',
+        status: 'CANCELLED',
+        createdAt: '2026-08-01T09:00:00',
+        updatedAt: '2026-08-14T09:00:00'
+      }],
+      page: 1,
+      pageSize: 20,
+      total: 1
+    });
+
+    renderPage();
+
+    const name = await screen.findByText('已注销用户');
+    const row = name.closest('tr');
+    if (!(row instanceof HTMLElement)) {
+      throw new Error('未找到已注销用户行');
+    }
+    expect(within(row).getByText('已注销')).toBeInTheDocument();
+    expect(within(row).queryByRole('button')).not.toBeInTheDocument();
+  });
 });

@@ -13,6 +13,10 @@ public record ImportExportTemplateRecord(
         Boolean defaultTemplate,
         String defaultScopeKey,
         ImportExportTemplateStatus status,
+        Long versionNo,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        String fileName,
+        String contentType,
+        Long sizeBytes
 ) { }

@@ -10,8 +10,8 @@ import java.time.LocalDateTime;
 public record DeviceSessionResponse(
         @JsonSerialize(using = ToStringSerializer.class) Long id,
         AuthClientType clientType,
-        String deviceId,
         String deviceName,
+        boolean current,
         LocalDateTime accessExpiresAt,
         LocalDateTime refreshExpiresAt,
         LocalDateTime lastActiveAt

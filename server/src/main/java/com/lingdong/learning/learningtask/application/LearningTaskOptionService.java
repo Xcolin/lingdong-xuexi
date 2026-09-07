@@ -13,7 +13,7 @@ import com.lingdong.learning.learningtask.infrastructure.persistence.StudentOpti
 import com.lingdong.learning.learningtask.infrastructure.persistence.TeacherClassMapper;
 import com.lingdong.learning.learningtask.infrastructure.persistence.TeacherOptionRow;
 import com.lingdong.learning.organization.domain.Organization;
-import com.lingdong.learning.organization.domain.OrganizationStatus;
+import com.lingdong.learning.organization.application.OrganizationOperationalStatusService;
 import com.lingdong.learning.organization.infrastructure.persistence.OrganizationMapper;
 import org.springframework.stereotype.Service;
 
@@ -123,7 +123,7 @@ public class LearningTaskOptionService {
     private StudentOption toStudentOption(StudentOptionRow row) {
         return new StudentOption(
                 row.id(), row.studentName(), maskStudentAccount(row.studentAccount()),
-                row.currentClassId(), row.currentClassName());
+                row.currentClassId(), row.currentClassName(), row.relationshipRole());
     }
 
     private String maskStudentAccount(String account) {
@@ -147,7 +147,7 @@ public class LearningTaskOptionService {
                 || !organizationDataScopeService.canAccess(currentUser.userId(), organizationId)) {
             throw notFound();
         }
-        if (organization.status() != OrganizationStatus.ENABLED) {
+        if (!OrganizationOperationalStatusService.isOperational(organization)) {
             throw new IllegalStateException("筛选组织已停用");
         }
         if (requireClass && !"CLASS".equals(organization.typeCode())) {

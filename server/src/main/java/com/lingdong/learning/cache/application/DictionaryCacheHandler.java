@@ -8,7 +8,7 @@ import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Component;
 
-/** Clears or warms the cache containing enabled dictionary items. */
+/** 清除或预热启用字典项缓存。 */
 @Component
 public class DictionaryCacheHandler implements ManagedCacheHandler {
     private final CacheManager cacheManager;

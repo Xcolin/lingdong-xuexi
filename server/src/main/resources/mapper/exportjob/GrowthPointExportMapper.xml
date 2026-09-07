@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.exportjob.infrastructure.persistence.GrowthPointExportMapper">
+    <resultMap id="ExportRowMap"
+               type="com.lingdong.learning.exportjob.infrastructure.persistence.GrowthPointExportRow">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="occurred_at" javaType="java.time.LocalDateTime"/>
+            <arg column="student_name" javaType="java.lang.String"/>
+            <arg column="change_type" javaType="com.lingdong.learning.growthpoint.domain.GrowthPointChangeType"/>
+            <arg column="amount" javaType="java.lang.Long"/>
+            <arg column="available_delta" javaType="java.lang.Long"/>
+            <arg column="source_type" javaType="com.lingdong.learning.learningtask.domain.LearningTaskSourceType"/>
+            <arg column="source_organization_name" javaType="java.lang.String"/>
+            <arg column="task_title" javaType="java.lang.String"/>
+            <arg column="reviewer_name" javaType="java.lang.String"/>
+            <arg column="remark" javaType="java.lang.String"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="filters">
+        WHERE ledger.student_id = #{studentId}
+        <if test="startedAt != null">AND ledger.occurred_at &gt;= #{startedAt}</if>
+        <if test="endedAt != null">AND ledger.occurred_at &lt;= #{endedAt}</if>
+    </sql>
+
+    <select id="findUpperBound" resultType="java.lang.Long">
+        SELECT MAX(ledger.id)
+        FROM growth_point_ledger ledger
+        <include refid="filters"/>
+    </select>
+
+    <select id="count" resultType="long">
+        SELECT COUNT(1)
+        FROM growth_point_ledger ledger
+        <include refid="filters"/>
+          AND ledger.id &lt;= #{upperBound}
+    </select>
+
+    <select id="findAfter" resultMap="ExportRowMap">
+        SELECT ledger.id,
+               ledger.occurred_at,
+               student.student_name,
+               ledger.change_type,
+               ledger.amount,
+               ledger.available_delta,
+               ledger.source_type,
+               organization.organization_name AS source_organization_name,
+               task.title AS task_title,
+               reviewer.display_name AS reviewer_name,
+               ledger.remark
+        FROM growth_point_ledger ledger
+        JOIN edu_student student ON student.id = ledger.student_id
+        LEFT JOIN sys_organization organization ON organization.id = ledger.source_organization_id
+        LEFT JOIN learn_task task ON task.id = ledger.source_task_id
+        LEFT JOIN sys_user reviewer ON reviewer.id = ledger.reviewer_user_id
+        <include refid="filters"/>
+          AND ledger.id &gt; #{cursor}
+          AND ledger.id &lt;= #{upperBound}
+        ORDER BY ledger.id ASC
+        LIMIT #{limit}
+    </select>
+</mapper>

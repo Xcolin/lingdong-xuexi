@@ -1,6 +1,6 @@
 # 灵动学习数据字典核心实施计划
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
+> **执行说明：** 建议使用 `superpowers:subagent-driven-development` 或 `superpowers:executing-plans` 逐项实施，并用复选框（`- [x]`）记录状态。
 
 **Goal:** 建立由系统管理员维护的数据字典类型和字典项核心能力，支持排序、启停、默认项、关键字典拦截和 Redis 缓存失效。
 

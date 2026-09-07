@@ -1,5 +1,6 @@
 package com.lingdong.learning.feature.application;
 
+import com.lingdong.learning.auth.infrastructure.persistence.DeviceSessionMapper;
 import com.lingdong.learning.common.id.IdGenerator;
 import com.lingdong.learning.audit.application.CreateSystemTaskCommand;
 import com.lingdong.learning.audit.application.ImpactScope;
@@ -12,14 +13,32 @@ import com.lingdong.learning.feature.infrastructure.persistence.FeatureToggleMap
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Applies a global toggle only after the linked high-risk system task has been approved. */
+import java.time.LocalDateTime;
+
+/** 仅在关联高风险系统任务获批后应用全局功能开关，并同步必要的安全失效动作。 */
 @Service
 public class FeatureToggleChangeService {
+    private static final String ORGANIZATION_MINIAPP_AUTH = "ORGANIZATION_MINIAPP_AUTH";
+
     private final FeatureToggleMapper toggleMapper;
     private final FeatureToggleChangeMapper changeMapper;
     private final SystemTaskApplicationService taskService;
     private final IdGenerator idGenerator;
-    public FeatureToggleChangeService(FeatureToggleMapper toggleMapper, FeatureToggleChangeMapper changeMapper, SystemTaskApplicationService taskService, IdGenerator idGenerator) { this.toggleMapper=toggleMapper; this.changeMapper=changeMapper; this.taskService=taskService; this.idGenerator=idGenerator; }
+    private final DeviceSessionMapper deviceSessionMapper;
+
+    public FeatureToggleChangeService(
+            FeatureToggleMapper toggleMapper,
+            FeatureToggleChangeMapper changeMapper,
+            SystemTaskApplicationService taskService,
+            IdGenerator idGenerator,
+            DeviceSessionMapper deviceSessionMapper
+    ) {
+        this.toggleMapper = toggleMapper;
+        this.changeMapper = changeMapper;
+        this.taskService = taskService;
+        this.idGenerator = idGenerator;
+        this.deviceSessionMapper = deviceSessionMapper;
+    }
 
     @Transactional
     public FeatureToggleChange createDraft(CreateGlobalFeatureToggleChangeCommand command) {
@@ -34,8 +53,14 @@ public class FeatureToggleChangeService {
     @Transactional
     public SystemTask approveAndApply(Long taskId, Long auditorId, String comment) {
         taskService.approve(taskId, auditorId, comment);
-        FeatureToggleChange change=changeMapper.findByTaskId(taskId);
-        if(change==null || toggleMapper.updateGlobalStatus(change.featureCode(), change.targetStatus())!=1) throw new IllegalStateException("功能开关变更执行失败");
+        FeatureToggleChange change = changeMapper.findByTaskId(taskId);
+        if (change == null || toggleMapper.updateGlobalStatus(change.featureCode(), change.targetStatus()) != 1) {
+            throw new IllegalStateException("功能开关变更执行失败");
+        }
+        if (ORGANIZATION_MINIAPP_AUTH.equals(change.featureCode())
+                && change.targetStatus() == com.lingdong.learning.feature.domain.FeatureStatus.DISABLED) {
+            deviceSessionMapper.revokeAllActiveOrganizationMiniappSessions(LocalDateTime.now());
+        }
         return taskService.markEffective(taskId);
     }
 }

@@ -3,4 +3,5 @@
 <mapper namespace="com.lingdong.learning.attachment.infrastructure.persistence.AttachmentRuleExtensionMapper">
  <insert id="insert">INSERT INTO sys_attachment_rule_extension(id,rule_id,extension) VALUES(#{id},#{ruleId},#{extension})</insert>
  <select id="findExtensionsByRuleId" resultType="java.lang.String">SELECT extension FROM sys_attachment_rule_extension WHERE rule_id=#{ruleId} ORDER BY extension</select>
+ <delete id="deleteByRuleId">DELETE FROM sys_attachment_rule_extension WHERE rule_id=#{ruleId}</delete>
 </mapper>

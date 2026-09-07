@@ -12,10 +12,22 @@
             <arg column="is_default" javaType="java.lang.Boolean"/>
             <arg column="default_scope_key" javaType="java.lang.String"/>
             <arg column="status" javaType="com.lingdong.learning.templateconfig.domain.ImportExportTemplateStatus"/>
+            <arg column="version_no" javaType="java.lang.Long"/>
             <arg column="created_at" javaType="java.time.LocalDateTime"/>
             <arg column="updated_at" javaType="java.time.LocalDateTime"/>
+            <arg column="file_name" javaType="java.lang.String"/>
+            <arg column="file_content_type" javaType="java.lang.String"/>
+            <arg column="file_size_bytes" javaType="java.lang.Long"/>
         </constructor>
     </resultMap>
+
+    <sql id="TemplateColumns">
+        template.id, template.template_name, template.template_type, template.module_code,
+        template.version, template.file_id, template.is_default, template.default_scope_key,
+        template.status, template.version_no, template.created_at, template.updated_at,
+        file.original_name AS file_name, file.content_type AS file_content_type,
+        file.size_bytes AS file_size_bytes
+    </sql>
 
     <insert id="insert">
         INSERT INTO sys_import_export_template
@@ -26,32 +38,68 @@
     </insert>
 
     <select id="findById" resultMap="TemplateMap">
-        SELECT id, template_name, template_type, module_code, version, file_id, is_default, default_scope_key, status, created_at, updated_at
-        FROM sys_import_export_template
-        WHERE id = #{id}
+        SELECT <include refid="TemplateColumns"/>
+        FROM sys_import_export_template template
+        INNER JOIN sys_file file ON file.id = template.file_id
+        WHERE template.id = #{id}
     </select>
 
     <select id="findByModuleTypeAndVersion" resultMap="TemplateMap">
-        SELECT id, template_name, template_type, module_code, version, file_id, is_default, default_scope_key, status, created_at, updated_at
-        FROM sys_import_export_template
-        WHERE module_code = #{moduleCode}
-          AND template_type = #{templateType}
-          AND version = #{version}
+        SELECT <include refid="TemplateColumns"/>
+        FROM sys_import_export_template template
+        INNER JOIN sys_file file ON file.id = template.file_id
+        WHERE template.module_code = #{moduleCode}
+          AND template.template_type = #{templateType}
+          AND template.version = #{version}
     </select>
 
     <select id="findCurrentDefault" resultMap="TemplateMap">
-        SELECT id, template_name, template_type, module_code, version, file_id, is_default, default_scope_key, status, created_at, updated_at
-        FROM sys_import_export_template
-        WHERE module_code = #{moduleCode}
-          AND template_type = #{templateType}
-          AND is_default = 1
-          AND status = 'ENABLED'
+        SELECT <include refid="TemplateColumns"/>
+        FROM sys_import_export_template template
+        INNER JOIN sys_file file ON file.id = template.file_id
+        WHERE template.module_code = #{moduleCode}
+          AND template.template_type = #{templateType}
+          AND template.is_default = 1
+          AND template.status = 'ENABLED'
+    </select>
+
+    <select id="findAll" resultMap="TemplateMap">
+        SELECT <include refid="TemplateColumns"/>
+        FROM sys_import_export_template template
+        INNER JOIN sys_file file ON file.id = template.file_id
+        <where>
+            <if test="templateName != null">
+                AND LOWER(template.template_name) LIKE CONCAT('%', LOWER(#{templateName}), '%')
+            </if>
+            <if test="templateType != null">
+                AND template.template_type = #{templateType}
+            </if>
+            <if test="moduleCode != null">
+                AND template.module_code = #{moduleCode}
+            </if>
+            <if test="status != null">
+                AND template.status = #{status}
+            </if>
+        </where>
+        ORDER BY template.updated_at DESC, template.id DESC
+        LIMIT 200
+    </select>
+
+    <select id="lockGroup" resultMap="TemplateMap">
+        SELECT <include refid="TemplateColumns"/>
+        FROM sys_import_export_template template
+        INNER JOIN sys_file file ON file.id = template.file_id
+        WHERE template.module_code = #{moduleCode}
+          AND template.template_type = #{templateType}
+        ORDER BY template.id ASC
+        FOR UPDATE
     </select>
 
     <update id="clearCurrentDefault">
         UPDATE sys_import_export_template
         SET is_default = 0,
             default_scope_key = CONCAT('ID:', id),
+            version_no = version_no + 1,
             updated_at = CURRENT_TIMESTAMP
         WHERE module_code = #{moduleCode}
           AND template_type = #{templateType}
@@ -62,9 +110,21 @@
         UPDATE sys_import_export_template
         SET is_default = 1,
             default_scope_key = 'DEFAULT',
+            version_no = version_no + 1,
             updated_at = CURRENT_TIMESTAMP
         WHERE id = #{id}
+          AND version_no = #{expectedVersion}
           AND status = 'ENABLED'
+    </update>
+
+    <update id="enable">
+        UPDATE sys_import_export_template
+        SET status = 'ENABLED',
+            version_no = version_no + 1,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+          AND version_no = #{expectedVersion}
+          AND status = 'DISABLED'
     </update>
 
     <update id="disable">
@@ -72,8 +132,19 @@
         SET status = 'DISABLED',
             is_default = 0,
             default_scope_key = CONCAT('ID:', id),
+            version_no = version_no + 1,
             updated_at = CURRENT_TIMESTAMP
         WHERE id = #{id}
+          AND version_no = #{expectedVersion}
           AND status = 'ENABLED'
+    </update>
+
+    <update id="incrementVersionIfDisabled">
+        UPDATE sys_import_export_template
+        SET version_no = version_no + 1,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+          AND version_no = #{expectedVersion}
+          AND status = 'DISABLED'
     </update>
 </mapper>

@@ -20,6 +20,6 @@ export default defineConfig({
     clearMocks: true,
     restoreMocks: true,
     // Ant Design 模态框在 jsdom 中完成焦点和动画相关状态同步需要超过默认 5 秒。
-    testTimeout: 15_000
+    testTimeout: 30_000
   }
 });

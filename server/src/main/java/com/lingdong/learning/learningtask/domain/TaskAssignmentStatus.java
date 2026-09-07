@@ -7,5 +7,6 @@ public enum TaskAssignmentStatus {
     PENDING_REVIEW,
     NEEDS_IMPROVEMENT,
     EXEMPT,
-    COMPLETED
+    COMPLETED,
+    INVALIDATED
 }

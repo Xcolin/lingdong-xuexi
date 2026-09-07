@@ -106,7 +106,7 @@ public class GrowthRewardExchangeService {
     public GrowthRewardExchangePage findManaged(
             AuthenticatedUser currentUser, Long studentId, int page, int pageSize
     ) {
-        requireAccessibleChild(currentUser, studentId);
+        requireReadableChild(currentUser, studentId);
         return exchangePage(studentId, requirePage(page, pageSize));
     }
 
@@ -177,10 +177,10 @@ public class GrowthRewardExchangeService {
         return exchange;
     }
 
-    private void requireAccessibleChild(AuthenticatedUser currentUser, Long studentId) {
+    private void requireReadableChild(AuthenticatedUser currentUser, Long studentId) {
         featureAccessService.requireEnabled(FEATURE_CODE, null);
         requireWebParent(currentUser);
-        if (studentId == null || !parentStudentMapper.existsActivePrimaryByParentAndStudent(
+        if (studentId == null || !parentStudentMapper.existsActiveByParentAndStudent(
                 currentUser.userId(), studentId)) {
             throw notFound();
         }
@@ -204,7 +204,7 @@ public class GrowthRewardExchangeService {
     private void requireWebParent(AuthenticatedUser currentUser) {
         if (currentUser == null || currentUser.clientType() != AuthClientType.WEB
                 || !currentUser.roleCodes().contains("PARENT")) {
-            throw new SystemOperationAccessDeniedException("仅 Web 端主家长可处理奖励兑换");
+            throw new SystemOperationAccessDeniedException("仅 Web 端家长可访问奖励兑换");
         }
     }
 

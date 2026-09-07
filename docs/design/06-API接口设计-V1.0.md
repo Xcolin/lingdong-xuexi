@@ -74,13 +74,15 @@
 | `GET /api/v1/auth/devices` | 当前用户的活动设备会话 | 有效 Bearer 访问凭证。 | 已实现，不返回令牌或其摘要。 |
 | `DELETE /api/v1/auth/devices/{sessionId}` | 下线指定自身设备会话 | 有效 Bearer 访问凭证，且会话归属当前用户。 | 已实现，返回 204。 |
 | `POST /api/v1/auth/devices/sign-out-all` | 撤销当前用户所有活动会话 | 有效 Bearer 访问凭证。 | 已实现，返回 204。 |
-| `POST /api/v1/auth/sms-codes` | 发送家长验证码 | 频率限制与图形/风控校验。 | 未实现。 |
-| `POST /api/v1/auth/sessions/sms` | 验证码登录 | 验证码有效且未超限。 | 未实现。 |
-| `POST /api/v1/auth/sessions/wechat` | 微信登录/会话换取 | 小程序微信授权；绑定与回退规则由账号用例执行。 | 未实现。 |
+| `POST /api/v1/auth/parent-sms-codes` | 发送家长验证码 | 按用途与客户端隔离并执行频控。 | V36 已实现；真实短信适配待批准环境。 |
+| `POST /api/v1/auth/parent-sessions/sms` | 家长验证码注册或登录 | 验证码有效且未超限。 | V36 已实现。 |
+| `POST /api/v1/auth/parent-wechat-sessions` | 家长微信登录/绑定票据换取 | 仅小程序；已绑定返回会话，未绑定只返回一次性票据。 | V37 已本地实现；真实微信待批准环境。 |
+| `POST /api/v1/auth/parent-wechat-bindings` | 家长微信手机号绑定 | 绑定票据、`WECHAT_BIND` 验证码与当前协议均有效。 | V37 已实现，成功只创建 `MINIAPP` 会话。 |
 | `GET /api/v1/public/capabilities?client=WEB|MINIAPP` | 客户端启动前读取非敏感能力摘要 | 公开；只接受 `WEB` 或 `MINIAPP`。 | V26 返回任务、积分查询和客户端纠错能力；`MINIAPP` 另返回有效的学生账号登录能力，纠错能力固定为否。 |
 | `POST /api/v1/auth/student-captchas` | 申请学生登录图形验证码 | 公开；`STUDENT_CODE_LOGIN` 启用，账号与设备标识非空。 | V21 已实现，返回挑战标识、Base64 图片和到期时间。 |
 | `POST /api/v1/auth/student-sessions/code` | 学生登录码登录 | 公开；功能启用，校验限流、锁定、按需图形验证码与登录码。 | V21 已实现，只创建 `MINIAPP` 会话。 |
-| `POST /api/v1/auth/student-sessions/scan` | 学生扫码登录 | 校验二维码有效期与绑定关系。 | 未实现。 |
+| `POST /api/v1/auth/student-sessions/qr` | 学生扫码登录 | 公开；校验 V35 一次性票据、登录码、限流、锁定和按需图形验证码。 | V35 已实现，只创建 `MINIAPP` 会话。 |
+| `POST /api/v1/auth/student-qr-captchas` | 扫码登录图形验证码 | 公开；使用仍有效的新二维码票据与设备标识。 | V35 已实现，不消费票据。 |
 
 ### 2.2 组织、用户、角色和权限
 
@@ -145,7 +147,8 @@
 | `PATCH /api/v1/students/{id}` | 待定义 | 学生基础资料修改尚未实现。 |
 | `POST /api/v1/students/{id}/credentials/initialize` | `STUDENT_CREDENTIAL_INITIALIZE`；活动主家长或学生当前组织的直接机构管理员。 | V21 已实现；只用于未关联学生用户的历史学生。 |
 | `POST /api/v1/students/{id}/login-code-resets` | `STUDENT_LOGIN_CODE_RESET`；活动主家长或学生当前组织的直接机构管理员。 | V21 已实现；覆盖凭证摘要并撤销该学生全部活动会话。 |
-| `PUT /api/v1/students/{studentId}/class` | `STUDENT_CLASS_ASSIGN`；机构管理员组织数据范围。 | V22 已实现；原子停用旧活动班级并配置唯一当前班级。 |
+| `POST /api/v1/students/{id}/login-qr-tickets` | `STUDENT_LOGIN_QR_CREATE`；活动主家长或学生当前组织的直接机构管理员。 | V35 已实现；撤销同学生旧活动票据并返回 5 分钟二维码内容。 |
+| `PUT /api/v1/students/{studentId}/class` | `STUDENT_CLASS_ASSIGN`；机构管理员组织数据范围。 | V41 保留的 Web 兼容入口；与显式转班接口共享生命周期服务、功能开关和不可变审计，新客户端不得继续使用。 |
 | `PUT /api/v1/teachers/{teacherUserId}/classes/{classId}` | `TEACHER_CLASS_ASSIGN`；机构管理员组织数据范围。 | V22 已实现；新增或重新启用教师班级关系。 |
 | `DELETE /api/v1/teachers/{teacherUserId}/classes/{classId}` | `TEACHER_CLASS_ASSIGN`；机构管理员组织数据范围。 | V22 已实现；将关系置为失效，不物理删除。 |
 | `GET /api/v1/teachers/{teacherUserId}/classes` | `TEACHER_CLASS_ASSIGN`；机构管理员可查范围或教师本人。 | V22 已实现；只返回活动关系。 |
@@ -174,6 +177,14 @@
 历史初始化与登录码重置均无请求体，成功返回 `studentAccount`、`loginCode`，登录码明文只在当前响应出现。对象不在当前主家长或直接机构管理员范围时统一返回 `404 RESOURCE_NOT_FOUND`；重复初始化、未初始化即重置或学生状态不允许时返回 `409 STATE_CONFLICT`。普通目录、详情、设备列表和数据库均不得返回登录码明文。
 
 `GET /api/v1/students` 支持可选 `keyword`、`page`、`pageSize` 参数。关键字去除首尾空格后最长 64 个字符；`page` 从 1 开始，`pageSize` 取值范围为 1 至 100；结果固定按 `created_at DESC, id DESC` 排序。响应结构为 `items`、`page`、`pageSize`、`total`，学生标识均以字符串返回。学生详情和目录范围均在服务端 SQL 或对象关系校验中执行，不允许客户端传入范围；普通已认证账号没有相应权限时返回 `403 ACCESS_DENIED`。
+
+#### 2.4.4 V35 学生扫码登录接口契约
+
+签发接口请求体为空，成功返回 `201` 及字符串 `ticketId`、`qrContent`、`expiresAt`。`qrContent` 格式为 `lingdong-learning://student-login?ticket=<随机票据>`，不包含学生账号、姓名、登录码、学生标识或用户标识。服务端只保存随机票据的 SHA-256 摘要；每次签发先撤销同学生旧活动票据。
+
+扫码登录请求体包含 `qrContent`、4 位 `loginCode`、`deviceId`、`deviceName` 及按需图形验证码字段。服务端先按摘要锁定并消费 5 分钟票据，再复用 V21 登录码失败次数、验证码、账号锁定、设备限流和会话创建。登录码正确或错误均不能重放原票据；过期、撤销、已消费或格式无效统一返回 `410 STUDENT_QR_TICKET_INVALID`。成功响应在会话 DTO 外返回 `studentAccount`，供小程序本地展示。
+
+当扫码登录返回 `428 CAPTCHA_REQUIRED` 时，客户端必须重新扫描由授权 Web 端签发的新二维码，并调用扫码验证码接口领取绑定学生账号和当前设备的单次图形验证码。验证码接口只解析仍有效票据，不提前消费；最终扫码登录仍执行一次性消费。
 
 ### 2.5 任务、打卡和审核
 
@@ -427,3 +438,323 @@ V29 不新增客户端写接口。任务审核通过仍使用既有审核端点�
 - [ ] 每个列表接口定义授权数据范围、筛选项、排序、分页上限和脱敏字段。
 - [ ] 每个文件、导出、对外接口均不返回长期有效的存储凭证或真实密钥。
 - [ ] 前端客户端由 OpenAPI 契约生成或校验类型，Web 与小程序不得各自猜测字段或状态。
+
+## 9. V36 家长手机号认证接口
+
+| 接口 | 认证 | 说明 |
+|---|---|---|
+| `GET /api/v1/public/parent-auth-context` | 公开 | 返回开关、当前协议版本、验证码有效期和重试间隔。 |
+| `POST /api/v1/auth/parent-sms-codes` | 公开 | 按 `REGISTER_OR_LOGIN`、`RESET_PASSWORD` 及 `WEB/MINIAPP` 隔离发送。 |
+| `POST /api/v1/auth/parent-sessions/sms` | 公开 | 注册或登录，返回嵌套会话及协议、引导状态。 |
+| `POST /api/v1/auth/parent-sessions/password` | 公开 | 家长专用密码登录，按请求客户端创建 `WEB` 或 `MINIAPP` 会话。 |
+| `GET /api/v1/auth/parent-state` | 家长会话 | 返回当前协议和首次引导前置状态。 |
+| `POST /api/v1/auth/parent-passwords` | 家长会话 | 设置或修改密码。 |
+| `POST /api/v1/auth/parent-password-resets` | 公开 | 使用重置用途验证码更新密码。 |
+| `POST /api/v1/auth/parent-agreement-acceptances` | 家长会话 | 接受后台当前协议版本，重复提交幂等。 |
+| `POST /api/v1/parent-onboarding/completion` | 家长会话 | 原子完成首次引导，重复提交幂等。 |
+
+验证码错误返回 `PARENT_SMS_VERIFICATION_FAILED`，超频返回 `RATE_LIMITED`，协议前置返回 `PARENT_AGREEMENT_REQUIRED`，引导前置返回 `PARENT_ONBOARDING_REQUIRED`。雪花标识继续按 JSON 字符串传输。
+
+## 10. V37 家长微信授权接口
+
+`POST /api/v1/auth/parent-wechat-sessions` 请求体为 `temporaryCode`、`deviceId`、`deviceName`。已绑定成功响应为 `bindingRequired=false` 和 `session`；未绑定响应为 `bindingRequired=true` 与 5 分钟一次性 `bindingTicket`，不得同时返回用户或会话。
+
+`POST /api/v1/auth/parent-wechat-bindings` 请求体为 `bindingTicket`、`mobile`、`smsCode`、`deviceId`、`deviceName`、`agreementAccepted`、`agreementVersion`。验证码必须先通过 `/auth/parent-sms-codes` 以 `WECHAT_BIND`、`MINIAPP` 申请；成功返回家长会话、协议和引导状态。票据无效或重放返回 `410`，功能或状态冲突返回 `409`，微信服务不可用返回 `503`。两个响应均不得返回 `openid`、`unionid`、`session_key`、应用密钥或微信临时凭证。
+
+## 11. V38 家长关系生命周期接口
+
+| 接口 | 认证与权限 | 说明 |
+|---|---|---|
+| `GET /api/v1/parent-relationships/students` | 家长会话，`PARENT_RELATIONSHIP_READ` | 返回当前家长活动关系学生及主副角色。 |
+| `GET /api/v1/students/{studentId}/parent-relationships` | 家长会话，`PARENT_RELATIONSHIP_READ` | 返回主副家长字符串标识、显示名和脱敏手机号。 |
+| `POST /api/v1/students/{studentId}/secondary-parent-invitations` | 活动主家长，`SECONDARY_PARENT_INVITE_CREATE` | 创建 5 分钟副家长邀请。 |
+| `DELETE /api/v1/students/{studentId}/secondary-parent-relationships/{parentUserId}` | 活动主家长，`SECONDARY_PARENT_UNBIND` | 解除指定活动副关系，成功返回 204。 |
+| `DELETE /api/v1/students/{studentId}/primary-parent-relationship` | 活动主家长，`PRIMARY_PARENT_SELF_UNBIND` | 自行解绑并返回晋升后的当前关系。 |
+| `POST /api/v1/students/{studentId}/primary-transfer-invitations` | 活动主家长，`PRIMARY_PARENT_TRANSFER_CREATE` | 创建 5 分钟监护权转移邀请。 |
+| `POST /api/v1/parent-relationship-invitations/{invitationId}/acceptance` | 匿名受控响应 | 手机验证码和协议通过后接受并返回家长会话。 |
+| `POST /api/v1/parent-relationship-invitations/{invitationId}/rejection` | 匿名受控响应 | 手机验证码通过后拒绝，成功返回 204。 |
+
+全部雪花标识按 JSON 字符串传输。匿名响应不表示无校验，仍要求邀请标识、目标手机号、关系专用验证码、客户端和来源限制；状态冲突、过期、重复响应和对象越权由后端统一处理，响应不得返回完整手机号、验证码、内部范围键或令牌摘要。
+
+## 15. V39 账号安全接口
+
+| 接口 | 鉴权 | 说明 |
+|---|---|---|
+| `GET /api/v1/auth/devices` | 当前用户 | 返回刷新凭证仍有效的活动设备，含字符串 `id` 和 `current`，不含原始设备标识。 |
+| `DELETE /api/v1/auth/devices/{sessionId}` | 当前用户 | 下线本人指定设备；其他用户会话按不存在处理。 |
+| `POST /api/v1/auth/devices/sign-out-all` | 当前用户 | 下线本人全部活动设备，包括当前设备。 |
+| `GET /api/v1/auth/security-events?unreadOnly=false` | 当前用户 | 返回最近 50 条本人事件，可筛选未读。 |
+| `POST /api/v1/auth/security-events/{eventId}/read` | 当前用户 | 幂等标记本人单条事件已读。 |
+| `POST /api/v1/auth/security-events/read-all` | 当前用户 | 幂等标记本人全部未读事件。 |
+
+事件响应只包含字符串标识、事件类型、风险级别、客户端、设备名称、状态和时间，不返回设备摘要、内部范围键或任何令牌字段。
+
+## 16. V40 机构管理员小程序接口
+
+| 接口 | 鉴权 | 说明 |
+|---|---|---|
+| `POST /api/v1/auth/organization-sessions/password` | 公开受控登录 | 服务端固定签发机构 `MINIAPP` 会话；请求不含客户端类型。 |
+| `GET /api/v1/organization-workbench/context` | 有效机构管理员小程序会话 | 返回当前用户和其直接管理的启用组织摘要。 |
+
+登录请求只含 `username`、`password`、`deviceId` 和 `deviceName`；身份条件或凭据失败统一返回 `AUTH_REQUIRED`，并对未知账号执行等价密码哈希校验；功能停用返回 `FEATURE_DISABLED`。工作台响应的用户和组织标识均为 JSON 字符串，不返回完整组织树、其他管理员、用户列表、路径或数据范围配置。机构 `MINIAPP` 会话调用权限目录标记为 `WEB` 的接口统一返回 `403 ACCESS_DENIED`，用户已有角色授权不能绕过客户端类型。
+
+## 17. V41 学生机构关系生命周期接口
+
+| 接口 | 鉴权 | 说明 |
+|---|---|---|
+| `GET /api/v1/students/organization-relationships` | `STUDENT_ORGANIZATION_MANAGE` | 返回当前机构管理员范围内的活动学员、入学组织和当前班级摘要。 |
+| `GET /api/v1/students/organization-relationship-classes` | 同上 | 返回当前管理员范围内的启用班级候选项；独立于学习任务管理接口和开关。 |
+| `GET /api/v1/students/{id}/organization-relationships` | 同上 | 返回当前关系和按时间倒序的不可变变更历史。 |
+| `POST /api/v1/students/{id}/class-transfers` | 同上 | 请求目标班级和 1 至 200 字原因，执行首次分班或校内转班。 |
+| `POST /api/v1/students/{id}/organization-deactivations` | 同上 | 请求活动入学组织和原因，执行离校或转学转出。 |
+| `PUT /api/v1/students/{id}/class` | `STUDENT_CLASS_ASSIGN`，仅 Web | 兼容旧调用；委托同一生命周期服务并以“兼容接口配置班级”记录原因，不允许绕过 V41 开关、范围或审计。 |
+
+## 18. V42 家长账号生命周期接口
+
+| 接口 | 权限与客户端 | 说明 |
+|---|---|---|
+| `GET /api/v1/auth/parent-account-lifecycle` | `PARENT_ACCOUNT_LIFECYCLE_MANAGE`，`BOTH` | 返回脱敏手机号、活动学生关系数和注销前置状态，雪花标识为字符串。 |
+| `POST /api/v1/auth/parent-mobile-change/current-codes` | 同上 | 向当前账号手机号发送旧号验证码。 |
+| `POST /api/v1/auth/parent-mobile-change-tickets` | 同上 | 消费旧号验证码并签发 5 分钟不透明票据。 |
+| `POST /api/v1/auth/parent-mobile-change/new-codes` | 同上 | 校验未消费票据与新手机号唯一性后发送新号验证码。 |
+| `POST /api/v1/auth/parent-mobile-changes` | 同上 | 消费新号验证码和票据，原子换绑、写审计并撤销全部会话，成功返回 204。 |
+| `POST /api/v1/auth/parent-account-cancellation-codes` | 同上 | 向当前手机号发送注销验证码。 |
+| `POST /api/v1/auth/parent-account-cancellations` | 同上 | 无活动学生关系且确认文本正确时创建或返回活动冷静期申请。 |
+| `DELETE /api/v1/auth/parent-account-cancellations/current` | 同上 | 仅在 7 天冷静期内撤销活动申请，成功返回 204。 |
+
+公共 `/auth/parent-sms-codes` 显式拒绝 V42 三种认证态用途。票据无效返回 `410 PARENT_MOBILE_CHANGE_TICKET_INVALID`，手机号条件冲突返回 `409 PARENT_MOBILE_CHANGE_CONFLICT`，注销前置冲突返回 `409 PARENT_ACCOUNT_CANCELLATION_CONFLICT`，功能停用返回 `409 FEATURE_DISABLED`。
+
+所有标识按 JSON 字符串输出。跨范围或非活动关系返回 404，跨机构直接迁移和非法组织类型返回 400，功能停用返回 409；同班重复提交返回当前关系且不新增审计。
+
+## 19. V43 最终注销接口边界
+
+V43 不新增对外 REST 接口。最终注销由后端条件调度调用应用服务完成，不能由前端传入用户标识直接触发。既有用户目录接口返回新增终态 `CANCELLED`，查询筛选允许该值；通用用户状态更新接口拒绝把任意账号改为 `CANCELLED`，也拒绝恢复已注销账号。注销后既有用户名、手机号、微信、访问令牌和刷新令牌继续使用统一认证失败响应，不暴露账号是否曾存在。
+
+## 20. V44 家长手机号人工核验换绑接口
+
+| 接口 | 说明 |
+|---|---|
+| `GET /api/v1/organization-parent-mobile-recoveries/candidates` | 返回当前机构管理员组织子树内活动学生和活动家长候选，标识为字符串，手机号脱敏。 |
+| `POST /api/v1/organization-parent-mobile-recoveries/codes` | 复核候选范围后向新手机号发送人工换绑专用验证码，成功返回 `201`。 |
+| `POST /api/v1/organization-parent-mobile-recoveries` | 校验验证码、原因和确认语句并原子换绑，成功返回 `204`。 |
+
+三个接口均要求 `PARENT_MOBILE_MANUAL_RECOVERY_MANAGE`，仅接受机构管理员的 `WEB` 或 `MINIAPP` 会话，并受 `PARENT_MOBILE_MANUAL_RECOVERY` 后端开关控制。对象越权统一按资源不可见处理；手机号占用、活动注销申请、验证码失败和并发更新使用统一业务错误响应。
+
+## 21. V45 学生账号注销接口
+
+| 接口 | 说明 |
+|---|---|
+| `GET /api/v1/student-account-cancellations/candidates` | 返回当前机构管理员范围内满足全部注销前置条件的学生；学生和组织雪花标识均以字符串返回。 |
+| `POST /api/v1/students/{studentId}/cancellations` | 接收 `reason` 与固定 `confirmation`，原子执行匿名化、凭据撤销和审计，成功返回 `204`。 |
+
+两个接口均要求 `STUDENT_ACCOUNT_CANCELLATION_MANAGE`，只接受机构管理员的 `WEB` 或 `MINIAPP` 会话，并受 `STUDENT_ACCOUNT_CANCELLATION` 后端开关控制。对象越权和无合法历史机构统一按资源不可见处理；活动关系恢复、状态变化和并发重复使用 `409/STUDENT_ACCOUNT_CANCELLATION_CONFLICT`。
+
+## V46 学生微信认证接口补充
+
+- `POST /api/v1/auth/student-wechat-sessions`：微信临时凭证交换，返回学生会话或一次性绑定票据。
+- `POST /api/v1/auth/student-wechat-binding-codes`：校验学生账号、登录码及风控状态，向服务端查询到的当前主监护人手机号发送验证码。
+- `POST /api/v1/auth/student-wechat-bindings`：消费最终校验票据与短信验证码，创建绑定、审计和学生小程序会话。
+- `GET /api/v1/student-wechat-bindings`：当前家长读取其主监护学生的脱敏绑定状态。
+- `POST /api/v1/students/{studentId}/wechat-unbindings`：当前主监护人使用固定确认语句解绑。
+
+三个认证接口公开但固定为小程序语义；两个管理接口要求有效家长会话和 `STUDENT_WECHAT_UNBIND` 权限。所有响应 ID 使用字符串序列化。
+
+## V47 组织节点生命周期接口补充
+
+| 接口 | 权限 | 主要规则 |
+|---|---|---|
+| `GET /api/v1/organizations` | `ORG_NODE_READ` | 返回树形组织、自身状态、有效状态和版本号；受组织管理开关控制。 |
+| `PUT /api/v1/organizations/{organizationId}` | `ORG_NODE_UPDATE` | 更新名称与排序，必须提交 `versionNo`；仅系统管理员。 |
+| `POST /api/v1/organizations/{organizationId}/enable` | `ORG_NODE_UPDATE` | 提交 `versionNo`，父组织必须有效启用；仅系统管理员。 |
+| `POST /api/v1/organization-changes` | `ORG_NODE_CHANGE_SUBMIT` | 提交组织、`DISABLE/MOVE/DELETE`、目标父节点、预期版本和原因；仅系统管理员。 |
+| `GET /api/v1/organization-changes` | 提交或审核权限任一 | 系统管理员只返回本人申请，系统审核员返回全部申请。 |
+| `POST /api/v1/organization-changes/{taskId}/approve` | `ORG_NODE_CHANGE_REVIEW` | 仅系统审核员；批准后执行并返回审核及执行状态。 |
+| `POST /api/v1/organization-changes/{taskId}/reject` | `ORG_NODE_CHANGE_REVIEW` | 仅系统审核员；可提交最长 500 字审核意见。 |
+
+全部雪花标识以 JSON 字符串返回，避免 JavaScript 数字精度丢失。功能关闭、角色不符、动态权限不符、版本冲突、非法移动及删除引用冲突均由后端强制校验。
+
+## V48 班级基础管理接口补充
+
+| 接口 | 权限 | 主要规则 |
+|---|---|---|
+| `GET /api/v1/classes/schools` | `CLASS_READ` | 返回当前机构管理员可管理且有效启用的学校。 |
+| `GET /api/v1/classes` | `CLASS_READ` | 返回授权学校范围内全部班级，包含停用班级。 |
+| `POST /api/v1/classes` | `CLASS_CREATE` | 创建学校直属班级；编码由服务端生成。 |
+| `PUT /api/v1/classes/{classId}` | `CLASS_UPDATE` | 只更新名称和排序，必须提交 `versionNo`。 |
+| `POST /api/v1/classes/{classId}/disable` | `CLASS_STATUS_CHANGE` | 按版本停用，并使班内未完成机构/教师任务失效。 |
+| `POST /api/v1/classes/{classId}/enable` | `CLASS_STATUS_CHANGE` | 按版本启用，所属学校必须有效启用。 |
+
+六个接口同时要求 `CLASS_MANAGEMENT` 功能启用、机构管理员角色、动态 `BOTH` 权限和组织数据范围。全部雪花标识按 JSON 字符串返回；教师绑定和学生关系继续复用既有接口，不新增同义接口。
+
+## V49 权限授权边界接口补充
+
+| 接口 | 访问主体 | 主要规则 |
+|---|---|---|
+| `GET /api/v1/roles/{roleId}/permissions` | 启用系统管理员 | 查询角色显式权限及 `ALLOW/DENY` 效果。 |
+| `PUT /api/v1/roles/{roleId}/permissions/{permissionId}` | 启用系统管理员 | 幂等新增或修改角色权限效果。 |
+| `DELETE /api/v1/roles/{roleId}/permissions/{permissionId}` | 启用系统管理员 | 撤销角色显式权限。 |
+| `GET /api/v1/users/{userId}/permissions` | 启用系统管理员 | 查询用户显式补充或限制权限。 |
+| `PUT /api/v1/users/{userId}/permissions/{permissionId}` | 启用系统管理员 | 幂等新增或修改用户权限效果；补充允许要求活动角色。 |
+| `DELETE /api/v1/users/{userId}/permissions/{permissionId}` | 启用系统管理员 | 撤销用户显式权限。 |
+
+请求体为 `{ "effect": "ALLOW" }` 或 `{ "effect": "DENY" }`。路径及响应中的 19 位标识均按字符串传输；停用权限不能配置，但允许通过删除接口清理历史关系。旧角色授权 `POST` 接口暂保留兼容行为。
+
+## 通用组织数据范围接口边界补充
+
+本专项不新增公开 REST 接口。业务接口继续只接收业务筛选和对象标识，不接收 `allOrganizations`、`rootPaths` 或可访问组织列表；后端在应用服务内部调用 `resolve(userId)`、`canAccess(userId, organizationId)` 或受限组织查询。空范围必须返回空结果或权限拒绝，禁止回退为全量查询。
+
+## V50 身份权限审计接口补充
+
+`GET /api/v1/iam/audits` 受 `IAM_AUDIT_READ` 保护，支持可选 `eventType`、`targetType`、`operatorId`、`targetId`、`startedAt`、`endedAt` 及必有默认值的 `page/pageSize`。页码为 1 至 1000000，每页为 1 至 100，起始时间不得晚于结束时间。响应包含 `items/page/pageSize/total`，全部雪花标识为字符串。
+
+## 统一访问边界接口验证补充
+
+本专项不新增 API。既有 `/api/v1/classes` 列表、创建和修改接口用于验证数据范围，权限失效返回 `ACCESS_DENIED`，跨组织对象返回 `RESOURCE_NOT_FOUND`，功能停用返回 `FEATURE_DISABLED`；`/api/v1/public/capabilities` 对 Web 和小程序返回一致关闭状态。
+
+## V51 数据字典接口补充
+
+新增 `GET/POST /api/v1/dictionaries/types`、`PUT /api/v1/dictionaries/types/{typeId}`、`GET/POST /api/v1/dictionaries/types/{typeId}/items` 和 `PUT /api/v1/dictionaries/items/{itemId}`。查询要求 `DICTIONARY_READ`，写入要求 `DICTIONARY_MANAGE`，全部先检查 `DICTIONARY_MANAGEMENT`；响应中的雪花标识按字符串返回。`GET /api/v1/auth/me` 新增 `permissionCodes` 数组，按会话客户端返回当前实时有效权限且不缓存进令牌。OpenAPI JSON 使用 `/api/v1/openapi`，沿用 `/api/v1/**` 认证边界。
+
+## V52 缓存管理接口补充
+
+| 接口 | 权限 | 说明 |
+|---|---|---|
+| `GET /api/v1/cache-management/operations` | `CACHE_READ` | 查询最近 200 条操作台账。 |
+| `POST /api/v1/cache-management/operations` | `CACHE_MANAGE` | 执行非全量、非用户会话缓存操作。 |
+| `POST /api/v1/cache-management/review-submissions` | `CACHE_MANAGE` + 活动 `SYS_ADMIN` | 创建并提交全量或用户会话清除任务。 |
+| `GET /api/v1/cache-management/review-queue` | `CACHE_REVIEW` + 活动 `SYS_AUDITOR` | 查询待审核高风险缓存任务。 |
+| `POST /api/v1/cache-management/review-queue/{taskId}/approve` | `CACHE_REVIEW` + 活动 `SYS_AUDITOR` | 批准并立即执行，成功后任务生效。 |
+| `POST /api/v1/cache-management/review-queue/{taskId}/reject` | `CACHE_REVIEW` + 活动 `SYS_AUDITOR` | 填写意见并驳回，不执行缓存操作。 |
+
+六个接口均要求 `CACHE_MANAGEMENT` 启用，雪花标识按字符串返回。公共能力新增仅对 Web 生效的 `cacheManagementEnabled`；OpenAPI JSON 继续使用受认证保护的 `/api/v1/openapi`。
+
+## V53 接口服务管理 API 补充
+
+| 方法与路径 | 权限与固定角色 | 说明 |
+|---|---|---|
+| `GET /api/v1/interface-services` | `INTERFACE_SERVICE_READ` | 条件查询已生效接口服务。 |
+| `GET /api/v1/interface-services/changes` | `INTERFACE_SERVICE_READ` | 查询最近变更及审核状态。 |
+| `GET /api/v1/interface-services/call-logs` | `INTERFACE_SERVICE_READ` | 按服务和结果查询最小调用台账。 |
+| `GET /api/v1/interface-services/review-queue` | `INTERFACE_SERVICE_REVIEW` + 活动 `SYS_AUDITOR` | 查询待审接口服务变更。 |
+| `POST /api/v1/interface-services/registration-submissions` | `INTERFACE_SERVICE_MANAGE` + 活动 `SYS_ADMIN` | 登记并提交接口服务审核。 |
+| `POST /api/v1/interface-services/{serviceId}/enable-submissions` | `INTERFACE_SERVICE_MANAGE` + 活动 `SYS_ADMIN` | 提交启用审核。 |
+| `POST /api/v1/interface-services/{serviceId}/disable-submissions` | `INTERFACE_SERVICE_MANAGE` + 活动 `SYS_ADMIN` | 提交停用审核。 |
+| `POST /api/v1/interface-services/{serviceId}/authorization-submissions` | `INTERFACE_SERVICE_MANAGE` + 活动 `SYS_ADMIN` | 提交授权范围变更审核。 |
+| `POST /api/v1/interface-services/review-tasks/{taskId}/approve` | `INTERFACE_SERVICE_REVIEW` + 活动 `SYS_AUDITOR` | 批准并执行已保存变更。 |
+| `POST /api/v1/interface-services/review-tasks/{taskId}/reject` | `INTERFACE_SERVICE_REVIEW` + 活动 `SYS_AUDITOR` | 填写意见并驳回，不改变服务。 |
+
+十个接口均要求 `INTERFACE_SERVICE_MANAGEMENT` 启用，雪花标识按字符串返回。公共能力新增仅对 Web 生效的 `interfaceServiceManagementEnabled`；OpenAPI JSON 继续使用受认证保护的 `/api/v1/openapi`。
+
+## V54 附件统一管理 API 补充
+
+| 接口 | 权限 | 说明 |
+|---|---|---|
+| `GET /api/v1/attachment-management/rules` | `ATTACHMENT_RULE_READ` | 按名称、模块、分类和状态查询规则。 |
+| `POST /api/v1/attachment-management/rules` | `ATTACHMENT_RULE_MANAGE` | 新增规则和扩展名白名单。 |
+| `PUT /api/v1/attachment-management/rules/{ruleId}` | `ATTACHMENT_RULE_MANAGE` | 携带版本编辑可变配置。 |
+| `POST /api/v1/attachment-management/rules/{ruleId}/enable` | `ATTACHMENT_RULE_MANAGE` | 携带版本启用规则。 |
+| `POST /api/v1/attachment-management/rules/{ruleId}/disable` | `ATTACHMENT_RULE_MANAGE` | 携带版本停用规则。 |
+| `GET /api/v1/attachment-management/files` | `ATTACHMENT_FILE_LEDGER_READ` | 查询安全文件元数据台账。 |
+| `GET /api/v1/attachment-management/files/{fileId}/relations` | `ATTACHMENT_FILE_LEDGER_READ` | 查询业务关系完整历史。 |
+
+七个管理接口均要求 `ATTACHMENT_SERVICE` 启用，列表最多返回 200 条，所有雪花标识按字符串返回。任务附件新增 `GET /api/v1/attachments/{fileId}/download`，复用预览的数据权限并返回附件内容处置。公共能力增加 `attachmentServiceEnabled`；字段明确为否时 Web 隐藏管理入口，uni-app 隐藏任务图片能力，后端仍独立拦截。
+
+## V55 导入导出模板管理 API 补充
+
+| 接口 | 权限 | 说明 |
+|---|---|---|
+| `GET /api/v1/import-export-templates/options` | `IMPORT_EXPORT_TEMPLATE_READ` | 返回启用的类型、模块和状态字典选项。 |
+| `GET /api/v1/import-export-templates` | `IMPORT_EXPORT_TEMPLATE_READ` | 按名称、类型、模块和状态组合查询模板。 |
+| `POST /api/v1/import-export-templates` | `IMPORT_EXPORT_TEMPLATE_MANAGE` | 使用 multipart 表单上传单个文件并创建模板版本。 |
+| `POST /api/v1/import-export-templates/{id}/enable` | `IMPORT_EXPORT_TEMPLATE_MANAGE` | 携带期望版本号启用模板。 |
+| `POST /api/v1/import-export-templates/{id}/disable` | `IMPORT_EXPORT_TEMPLATE_MANAGE` | 携带期望版本号停用模板并取消其默认状态。 |
+| `POST /api/v1/import-export-templates/{id}/default` | `IMPORT_EXPORT_TEMPLATE_MANAGE` | 携带期望版本号设置同组唯一默认模板。 |
+| `GET /api/v1/import-export-templates/{id}/download` | `IMPORT_EXPORT_TEMPLATE_READ` | 受控下载启用或停用模板文件。 |
+
+七个接口均要求模板管理和附件服务两个开关启用，服务层再次执行动态权限判断。所有雪花标识按字符串返回，409 表示重复版本或乐观锁冲突；下载文件名来自服务端安全记录并使用标准内容处置。OpenAPI 仅描述模板配置与文件传输，不声明字段映射、导入执行、错误文件或异步导出能力。
+
+## V56 通用导入校验作业 API 补充
+
+| 接口 | 权限 | 说明 |
+|---|---|---|
+| `GET /api/v1/import-export-templates/{id}/fields` | `IMPORT_EXPORT_TEMPLATE_READ` | 查询导入模板有序字段映射；导出模板拒绝。 |
+| `PUT /api/v1/import-export-templates/{id}/fields` | `IMPORT_EXPORT_TEMPLATE_MANAGE` | 携带模板版本号整体替换停用且未被作业引用的字段。 |
+| `POST /api/v1/import-jobs` | `IMPORT_JOB_CREATE` | multipart 上传单个 `.xlsx` 并创建只校验作业。 |
+| `GET /api/v1/import-jobs/options` | `IMPORT_JOB_READ` | 返回当前用户可用模板和组织范围选项。 |
+| `GET /api/v1/import-jobs` | `IMPORT_JOB_READ` | 按编码、模板、组织、状态分页查询授权作业。 |
+| `GET /api/v1/import-jobs/{id}` | `IMPORT_JOB_READ` | 返回作业和模板字段快照。 |
+| `GET /api/v1/import-jobs/{id}/errors` | `IMPORT_JOB_READ` | 分页返回行号及受限错误摘要。 |
+| `GET /api/v1/import-jobs/{id}/source-file` | `IMPORT_JOB_READ` | 按对象权限受控下载源文件。 |
+| `GET /api/v1/import-jobs/{id}/error-file` | `IMPORT_JOB_READ` | 受控下载错误文件；尚无错误文件时返回 404。 |
+
+作业接口同时要求数据导入校验、模板管理和附件服务三个开关启用，并在应用服务重新校验动态权限、创建人和当前组织范围。分页默认 20、最大 100；雪花标识统一按字符串返回。文件响应使用服务端安全文件名和标准 MIME，不返回存储键、摘要、永久 URL 或原始错误单元格值。OpenAPI 只声明校验作业，不声明业务写入成功。
+
+## V57 通用异步导出作业 API 补充
+
+| 接口 | 权限 | 说明 |
+|---|---|---|
+| `POST /api/v1/export-jobs` | 按数据集动态判断 | 创建普通积分导出或提交敏感权限审计导出申请。 |
+| `GET /api/v1/export-jobs` | `EXPORT_JOB_READ` | 按数据集、状态分页查询本人作业。 |
+| `GET /api/v1/export-jobs/options` | `EXPORT_JOB_READ` 加数据集权限 | 返回服务端允许的模板、列和学生选项。 |
+| `GET /api/v1/export-jobs/{id}` | `EXPORT_JOB_READ` 加对象权限 | 返回本人作业、安全快照摘要和不可变事件。 |
+| `GET /api/v1/export-jobs/{id}/download` | `EXPORT_JOB_READ` 加对象权限 | 仅成功状态受控下载 XLSX 结果。 |
+| `GET /api/v1/export-job-reviews` | `EXPORT_SENSITIVE_REVIEW` | 分页查询待审敏感导出申请。 |
+| `POST /api/v1/export-job-reviews/{taskId}/approve` | `EXPORT_SENSITIVE_REVIEW` | 批准系统管理员申请并进入导出队列。 |
+| `POST /api/v1/export-job-reviews/{taskId}/reject` | `EXPORT_SENSITIVE_REVIEW` | 驳回申请；审核意见按长度校验。 |
+
+全部接口只适用于 Web，并同时要求 `DATA_EXPORT`、`IMPORT_EXPORT_TEMPLATE_MANAGEMENT` 和 `ATTACHMENT_SERVICE` 启用。普通积分导出要求活动主家长、`EXPORT_JOB_CREATE`、`GROWTH_POINT_READ_CHILD` 和目标学生关系；敏感导出要求系统管理员、`EXPORT_SENSITIVE_SUBMIT` 与 `IAM_AUDIT_READ`；审核只允许系统审核员。分页默认 20、最大 100，雪花标识统一按字符串返回。响应不暴露筛选原始快照、范围上界、脱敏策略原文、请求来源摘要、系统内部载荷、存储键或永久 URL。
+
+## V58 机构学员批量导入接口补充
+
+| 接口 | 权限 | 说明 |
+|---|---|---|
+| `POST /api/v1/student-import-executions` | `STUDENT_IMPORT_EXECUTE` | 对本人已通过校验的机构学员文件创建唯一执行，可选班级。 |
+| `GET /api/v1/student-import-executions` | `STUDENT_IMPORT_RESULT_READ` | 分页查询本人执行，可按状态筛选。 |
+| `GET /api/v1/student-import-executions/{id}` | `STUDENT_IMPORT_RESULT_READ` | 查询本人执行详情和安全计数。 |
+| `GET /api/v1/student-import-executions/{id}/rows` | `STUDENT_IMPORT_RESULT_READ` | 分页查询源行号、状态、账号和失败摘要。 |
+| `POST /api/v1/student-import-executions/{id}/retry-failures` | `STUDENT_IMPORT_EXECUTE` | 在无可用旧凭证且未超限时仅重试失败行。 |
+| `GET /api/v1/student-import-executions/{id}/credentials` | `STUDENT_IMPORT_CREDENTIAL_DOWNLOAD` | 仅导入人于 24 小时内一次下载 XLSX，响应使用 `no-store`。 |
+
+以上接口仅适用于 Web，并同时要求四个依赖开关启用。雪花标识按字符串返回；普通响应不含姓名、登录码、密文、随机数、密钥版本、存储键或永久地址。
+
+## V59 教师管理接口补充
+
+| 接口 | 权限 | 说明 |
+|---|---|---|
+| `GET /api/v1/organization-teachers` | `TEACHER_READ` | 按组织范围分页查询教师，支持关键词、学校、班级和状态筛选。 |
+| `GET /api/v1/organization-teachers/{teacherUserId}` | `TEACHER_READ` | 查询单个教师安全详情。 |
+| `POST /api/v1/organization-teachers` | `TEACHER_CREATE` | 创建教师；携带初始班级时还要求 `TEACHER_CLASS_ASSIGN`。 |
+| `PUT /api/v1/organization-teachers/{teacherUserId}/profile` | `TEACHER_UPDATE` | 修改姓名和可选手机号，显式标记可清空手机号。 |
+| `PUT /api/v1/organization-teachers/{teacherUserId}/status` | `TEACHER_STATUS_CHANGE` | 启用、停用或锁定教师。 |
+| `POST /api/v1/organization-teachers/{teacherUserId}/password-resets` | `TEACHER_PASSWORD_RESET` | 重置密码并撤销活动会话，成功返回 204。 |
+| `POST /api/v1/organization-teachers/batch` | `TEACHER_BATCH_MANAGE` | 仅 Web；最多 100 项，状态或班级操作还要求对应基础权限。 |
+| `PUT /api/v1/teachers/{teacherUserId}/classes/{classId}` | `TEACHER_CLASS_ASSIGN` | 单项绑定同校启用班级。 |
+| `DELETE /api/v1/teachers/{teacherUserId}/classes/{classId}` | `TEACHER_CLASS_ASSIGN` | 单项解绑班级，待审核冲突时拒绝。 |
+
+除批量接口外，教师管理接口可由 Web 与机构小程序分别调用，并统一要求教师管理开关、机构管理员角色和组织范围。所有雪花标识按字符串返回，手机号脱敏；响应不包含密码、摘要、会话、内部范围根路径或范围外对象存在性。
+
+## V60 机构与教师任务接口补充
+
+| 接口 | 权限 | 说明 |
+|---|---|---|
+| `GET /api/v1/teacher-workbench/context` | 工作台组合权限 | 返回当前教师实时小程序权限和有效班级摘要。 |
+| `PUT /api/v1/learning-tasks/{taskId}` | `LEARNING_TASK_CREATE` | 与既有 `PATCH` 语义一致，供不支持 PATCH 的 uni-app 请求层编辑草稿。 |
+| `GET /api/v1/learning-tasks/{taskId}/progress` | `LEARNING_TASK_PROGRESS_READ` | 分页返回授权范围内学生级任务进度。 |
+| `GET /api/v1/task-reviews` | `TASK_ASSIGNMENT_REVIEW` | 小程序复用既有本人审核待办分页。 |
+| `POST /api/v1/task-reviews/{assignmentId}/approve` | `TASK_ASSIGNMENT_REVIEW` | 复用既有审核通过与积分发放。 |
+| `POST /api/v1/task-reviews/{assignmentId}/reject` | `TASK_ASSIGNMENT_REVIEW` | 复用既有驳回，意见必填。 |
+
+任务创建、查询、发布、审核和进度接口同时要求学习任务开关，并按当前客户端、角色、组织或班级范围失败关闭。全部标识继续按字符串返回，进度中的学生账号只返回脱敏值，不返回内部组织路径、存储字段或范围外对象存在性。
+
+## V61 学生异常报备接口补充
+
+| 接口 | 权限 | 说明 |
+|---|---|---|
+| `GET /api/v1/exception-reports` | `EXCEPTION_REPORT_READ` | 按角色和对象范围分页查询，可选班级、学生、异常类型和状态。 |
+| `GET /api/v1/exception-reports/{id}` | `EXCEPTION_REPORT_READ` | 返回脱敏报备详情和不可变动作历史。 |
+| `GET /api/v1/exception-reports/class-options` | `EXCEPTION_REPORT_READ` | 教师返回本人活动班级，机构管理员返回组织范围内有效班级。 |
+| `GET /api/v1/exception-reports/student-options` | `EXCEPTION_REPORT_CREATE` | 返回教师指定活动班级内的有效学生脱敏选项。 |
+| `POST /api/v1/exception-reports` | `EXCEPTION_REPORT_CREATE` | 教师提交异常报备；请求携带 8 至 64 位幂等键。 |
+| `POST /api/v1/exception-reports/{id}/handle` | `EXCEPTION_REPORT_HANDLE` | 机构管理员以当前版本和必填处理说明完成单向处理。 |
+
+六个接口均要求 `STUDENT_EXCEPTION_REPORT` 启用，并在服务端实时校验教师班级或机构组织范围。范围外对象统一返回不可见语义，19 位标识均按字符串响应，学生账号脱敏；接口不返回家庭私有信息、内部消息接收范围或完整账号。

@@ -43,9 +43,18 @@
         SELECT <include refid="sessionColumns"/> FROM auth_device_session
         WHERE refresh_token_hash = #{refreshTokenHash} AND status = 'ACTIVE'
     </select>
+    <select id="existsByUserClientAndDevice" resultType="boolean">
+        SELECT CASE WHEN COUNT(*) &gt; 0 THEN TRUE ELSE FALSE END
+        FROM auth_device_session
+        WHERE user_id = #{userId}
+          AND client_type = #{clientType}
+          AND device_id = #{deviceId}
+    </select>
     <select id="findActiveByUserId" resultMap="DeviceSessionMap">
         SELECT <include refid="sessionColumns"/> FROM auth_device_session
-        WHERE user_id = #{userId} AND status = 'ACTIVE'
+        WHERE user_id = #{userId}
+          AND status = 'ACTIVE'
+          AND refresh_expires_at &gt; #{now}
         ORDER BY last_active_at DESC, id DESC
     </select>
 
@@ -74,5 +83,25 @@
             signed_out_at = #{occurredAt},
             updated_at = #{occurredAt}
         WHERE user_id = #{userId} AND status = 'ACTIVE'
+    </update>
+    <update id="revokeAllActiveSessions">
+        UPDATE auth_device_session
+        SET status = 'REVOKED',
+            signed_out_at = #{occurredAt},
+            updated_at = #{occurredAt}
+        WHERE status = 'ACTIVE'
+    </update>
+    <update id="revokeAllActiveOrganizationMiniappSessions">
+        UPDATE auth_device_session
+        SET status = 'REVOKED',
+            signed_out_at = #{occurredAt},
+            updated_at = #{occurredAt}
+        WHERE client_type = 'MINIAPP'
+          AND status = 'ACTIVE'
+          AND user_id IN (
+              SELECT id
+              FROM sys_user
+              WHERE user_type = 'ORGANIZATION'
+          )
     </update>
 </mapper>

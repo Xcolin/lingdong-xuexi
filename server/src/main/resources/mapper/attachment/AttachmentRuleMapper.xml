@@ -1,9 +1,92 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.lingdong.learning.attachment.infrastructure.persistence.AttachmentRuleMapper">
- <resultMap id="RuleMap" type="com.lingdong.learning.attachment.domain.AttachmentRuleRecord"><constructor><idArg column="id" javaType="java.lang.Long"/><arg column="module_code" javaType="java.lang.String"/><arg column="file_category" javaType="java.lang.String"/><arg column="rule_name" javaType="java.lang.String"/><arg column="max_file_size_bytes" javaType="long"/><arg column="max_batch_count" javaType="int"/><arg column="preview_enabled" javaType="boolean"/><arg column="download_scope" javaType="java.lang.String"/><arg column="status" javaType="com.lingdong.learning.attachment.domain.AttachmentRuleStatus"/><arg column="created_at" javaType="java.time.LocalDateTime"/><arg column="updated_at" javaType="java.time.LocalDateTime"/></constructor></resultMap>
- <insert id="insert">INSERT INTO sys_attachment_rule(id,module_code,file_category,rule_name,max_file_size_bytes,max_batch_count,preview_enabled,download_scope,status) VALUES(#{rule.id},#{rule.moduleCode},#{rule.fileCategory},#{rule.ruleName},#{rule.maxFileSizeBytes},#{rule.maxBatchCount},#{rule.previewEnabled},#{rule.downloadScope},#{rule.status})</insert>
- <select id="findById" resultMap="RuleMap">SELECT id,module_code,file_category,rule_name,max_file_size_bytes,max_batch_count,preview_enabled,download_scope,status,created_at,updated_at FROM sys_attachment_rule WHERE id=#{id}</select>
- <select id="findByModuleAndCategory" resultMap="RuleMap">SELECT id,module_code,file_category,rule_name,max_file_size_bytes,max_batch_count,preview_enabled,download_scope,status,created_at,updated_at FROM sys_attachment_rule WHERE module_code=#{moduleCode} AND file_category=#{fileCategory}</select>
- <update id="updateStatus">UPDATE sys_attachment_rule SET status=#{status},updated_at=CURRENT_TIMESTAMP WHERE id=#{id}</update>
+    <resultMap id="RuleMap" type="com.lingdong.learning.attachment.domain.AttachmentRuleRecord">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="module_code" javaType="java.lang.String"/>
+            <arg column="file_category" javaType="java.lang.String"/>
+            <arg column="rule_name" javaType="java.lang.String"/>
+            <arg column="max_file_size_bytes" javaType="java.lang.Long"/>
+            <arg column="max_batch_count" javaType="java.lang.Integer"/>
+            <arg column="preview_enabled" javaType="java.lang.Boolean"/>
+            <arg column="download_scope" javaType="java.lang.String"/>
+            <arg column="status" javaType="com.lingdong.learning.attachment.domain.AttachmentRuleStatus"/>
+            <arg column="version_no" javaType="java.lang.Long"/>
+            <arg column="created_at" javaType="java.time.LocalDateTime"/>
+            <arg column="updated_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="RuleColumns">
+        id, module_code, file_category, rule_name, max_file_size_bytes, max_batch_count,
+        preview_enabled, download_scope, status, version_no, created_at, updated_at
+    </sql>
+
+    <insert id="insert">
+        INSERT INTO sys_attachment_rule (
+            id, module_code, file_category, rule_name, max_file_size_bytes, max_batch_count,
+            preview_enabled, download_scope, status, version_no
+        ) VALUES (
+            #{rule.id}, #{rule.moduleCode}, #{rule.fileCategory}, #{rule.ruleName},
+            #{rule.maxFileSizeBytes}, #{rule.maxBatchCount}, #{rule.previewEnabled},
+            #{rule.downloadScope}, #{rule.status}, #{rule.versionNo}
+        )
+    </insert>
+
+    <select id="findById" resultMap="RuleMap">
+        SELECT <include refid="RuleColumns"/>
+        FROM sys_attachment_rule
+        WHERE id = #{id}
+    </select>
+
+    <select id="findByModuleAndCategory" resultMap="RuleMap">
+        SELECT <include refid="RuleColumns"/>
+        FROM sys_attachment_rule
+        WHERE module_code = #{moduleCode}
+          AND file_category = #{fileCategory}
+    </select>
+
+    <select id="findAll" resultMap="RuleMap">
+        SELECT <include refid="RuleColumns"/>
+        FROM sys_attachment_rule
+        <where>
+            <if test="ruleName != null">
+                AND rule_name LIKE CONCAT('%', #{ruleName}, '%')
+            </if>
+            <if test="moduleCode != null">
+                AND module_code = #{moduleCode}
+            </if>
+            <if test="fileCategory != null">
+                AND file_category = #{fileCategory}
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+        </where>
+        ORDER BY updated_at DESC, id DESC
+        LIMIT 200
+    </select>
+
+    <update id="updateConfiguration">
+        UPDATE sys_attachment_rule
+        SET rule_name = #{rule.ruleName},
+            max_file_size_bytes = #{rule.maxFileSizeBytes},
+            max_batch_count = #{rule.maxBatchCount},
+            preview_enabled = #{rule.previewEnabled},
+            version_no = version_no + 1,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{rule.id}
+          AND version_no = #{expectedVersion}
+    </update>
+
+    <update id="updateStatus">
+        UPDATE sys_attachment_rule
+        SET status = #{status},
+            version_no = version_no + 1,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+          AND status = #{expectedStatus}
+          AND version_no = #{expectedVersion}
+    </update>
 </mapper>

@@ -1,6 +1,8 @@
 package com.lingdong.learning.learningtask.infrastructure.persistence;
 
 import com.lingdong.learning.learningtask.domain.TeacherClassRelation;
+import com.lingdong.learning.learningtask.domain.TeacherClassChangeEvent;
+import com.lingdong.learning.teacher.application.TeacherClassSummary;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -16,6 +18,10 @@ public interface TeacherClassMapper {
 
     List<TeacherClassRelation> findActiveByTeacher(@Param("teacherUserId") Long teacherUserId);
 
+    boolean existsActiveOperationalClassByTeacher(@Param("teacherUserId") Long teacherUserId);
+
+    List<TeacherClassSummary> findActiveClassSummaries(@Param("teacherUserId") Long teacherUserId);
+
     boolean existsTeacherOrganizationInClassAncestors(
             @Param("teacherUserId") Long teacherUserId,
             @Param("classOrganizationId") Long classOrganizationId
@@ -28,4 +34,12 @@ public interface TeacherClassMapper {
 
     int deactivate(@Param("teacherUserId") Long teacherUserId,
                    @Param("classOrganizationId") Long classOrganizationId);
+
+    int insertChangeLog(
+            @Param("id") Long id,
+            @Param("teacherUserId") Long teacherUserId,
+            @Param("classOrganizationId") Long classOrganizationId,
+            @Param("eventType") TeacherClassChangeEvent eventType,
+            @Param("operatorUserId") Long operatorUserId
+    );
 }

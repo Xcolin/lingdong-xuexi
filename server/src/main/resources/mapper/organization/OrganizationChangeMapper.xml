@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.organization.infrastructure.persistence.OrganizationChangeMapper">
+    <resultMap id="OrganizationChangeResultMap" type="com.lingdong.learning.organization.domain.OrganizationChange">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="task_id" javaType="java.lang.Long"/>
+            <arg column="organization_id" javaType="java.lang.Long"/>
+            <arg column="change_type" javaType="com.lingdong.learning.organization.domain.OrganizationChangeType"/>
+            <arg column="target_parent_id" javaType="java.lang.Long"/>
+            <arg column="expected_version" javaType="java.lang.Integer"/>
+            <arg column="organization_code_snapshot" javaType="java.lang.String"/>
+            <arg column="organization_name_snapshot" javaType="java.lang.String"/>
+            <arg column="from_parent_id_snapshot" javaType="java.lang.Long"/>
+            <arg column="reason" javaType="java.lang.String"/>
+            <arg column="execution_status" javaType="com.lingdong.learning.organization.domain.OrganizationChangeExecutionStatus"/>
+            <arg column="failure_reason" javaType="java.lang.String"/>
+            <arg column="created_at" javaType="java.time.LocalDateTime"/>
+            <arg column="updated_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="columns">
+        id, task_id, organization_id, change_type, target_parent_id, expected_version,
+        organization_code_snapshot, organization_name_snapshot, from_parent_id_snapshot,
+        reason, execution_status, failure_reason, created_at, updated_at
+    </sql>
+
+    <insert id="insert">
+        INSERT INTO sys_organization_change (
+            id, task_id, organization_id, change_type, target_parent_id, expected_version,
+            organization_code_snapshot, organization_name_snapshot, from_parent_id_snapshot,
+            reason, execution_status, failure_reason
+        ) VALUES (
+            #{change.id}, #{change.taskId}, #{change.organizationId}, #{change.changeType},
+            #{change.targetParentId, jdbcType=BIGINT}, #{change.expectedVersion},
+            #{change.organizationCodeSnapshot}, #{change.organizationNameSnapshot},
+            #{change.fromParentIdSnapshot, jdbcType=BIGINT}, #{change.reason},
+            #{change.executionStatus}, #{change.failureReason, jdbcType=VARCHAR}
+        )
+    </insert>
+
+    <select id="findByTaskId" resultMap="OrganizationChangeResultMap">
+        SELECT <include refid="columns"/>
+        FROM sys_organization_change
+        WHERE task_id = #{taskId}
+    </select>
+
+    <select id="findAll" resultMap="OrganizationChangeResultMap">
+        SELECT <include refid="columns"/>
+        FROM sys_organization_change
+        ORDER BY created_at DESC, id DESC
+    </select>
+
+    <select id="existsActiveByOrganizationId" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM sys_organization_change change_record
+            JOIN sys_system_task task ON task.id = change_record.task_id
+            WHERE change_record.organization_id = #{organizationId}
+              AND change_record.execution_status = 'PENDING'
+              AND task.status IN ('DRAFT', 'PENDING_REVIEW', 'APPROVED')
+        )
+    </select>
+
+    <update id="markApplied">
+        UPDATE sys_organization_change
+        SET execution_status = 'APPLIED', failure_reason = NULL, updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id} AND execution_status = 'PENDING'
+    </update>
+
+    <update id="markFailed">
+        UPDATE sys_organization_change
+        SET execution_status = 'FAILED', failure_reason = #{failureReason}, updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id} AND execution_status = 'PENDING'
+    </update>
+</mapper>

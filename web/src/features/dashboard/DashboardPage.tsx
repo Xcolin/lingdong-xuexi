@@ -1,28 +1,39 @@
 import { useEffect, useState } from 'react';
 import { Alert, Button, Descriptions, Popconfirm, Space, Table, Tag, message } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
-import { LogOut, MonitorX, RefreshCw } from 'lucide-react';
-import { authApi, type CurrentUser, type DeviceSession } from '../../api/auth';
+import { ClipboardCheck, LogOut, MonitorX, RefreshCw } from 'lucide-react';
+import { authApi, type AccountSecurityEvent, type CurrentUser, type DeviceSession } from '../../api/auth';
+import { ParentAccountLifecyclePanel } from './ParentAccountLifecyclePanel';
 
 interface DashboardPageProps {
   currentUser: CurrentUser;
+  accountSecurityManagementEnabled: boolean;
+  parentAccountLifecycleEnabled?: boolean;
   onSessionEnded: () => void;
+  attendanceAvailable?: boolean;
+  onOpenAttendance?: () => void;
 }
 
-export function DashboardPage({ currentUser, onSessionEnded }: DashboardPageProps) {
+export function DashboardPage({ currentUser, accountSecurityManagementEnabled, parentAccountLifecycleEnabled = false, attendanceAvailable = false, onOpenAttendance, onSessionEnded }: DashboardPageProps) {
   const [devices, setDevices] = useState<DeviceSession[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [events, setEvents] = useState<AccountSecurityEvent[]>([]);
+  const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    void loadDevices();
-  }, []);
+    if (accountSecurityManagementEnabled) void loadSecurityData();
+  }, [accountSecurityManagementEnabled]);
 
-  async function loadDevices(): Promise<void> {
+  async function loadSecurityData(): Promise<void> {
     setLoading(true);
     setErrorMessage(null);
     try {
-      setDevices(await authApi.listDevices());
+      const [deviceRows, eventRows] = await Promise.all([
+        authApi.listDevices(),
+        authApi.listSecurityEvents()
+      ]);
+      setDevices(deviceRows);
+      setEvents(eventRows);
     } catch (error) {
       setErrorMessage(toMessage(error));
     } finally {
@@ -34,7 +45,7 @@ export function DashboardPage({ currentUser, onSessionEnded }: DashboardPageProp
     try {
       await authApi.signOutDevice(sessionId);
       message.success('设备会话已下线');
-      await loadDevices();
+      await loadSecurityData();
     } catch (error) {
       message.error(toMessage(error));
     }
@@ -50,9 +61,34 @@ export function DashboardPage({ currentUser, onSessionEnded }: DashboardPageProp
     }
   }
 
+  async function markEventRead(eventId: string): Promise<void> {
+    try {
+      await authApi.markSecurityEventRead(eventId);
+      setEvents((current) => current.map((event) => event.id === eventId
+        ? { ...event, status: 'READ', readAt: new Date().toISOString() }
+        : event));
+    } catch (error) {
+      message.error(toMessage(error));
+    }
+  }
+
+  async function markAllEventsRead(): Promise<void> {
+    try {
+      await authApi.markAllSecurityEventsRead();
+      const readAt = new Date().toISOString();
+      setEvents((current) => current.map((event) => ({ ...event, status: 'READ', readAt })));
+    } catch (error) {
+      message.error(toMessage(error));
+    }
+  }
+
   return (
     <div className="page-stack">
-      <div className="page-heading"><h1>工作台</h1><Button icon={<RefreshCw size={16} />} onClick={() => void loadDevices()}>刷新</Button></div>
+      <div className="page-heading">
+        <h1>工作台</h1>
+        {attendanceAvailable && <Button icon={<ClipboardCheck size={16} />} onClick={onOpenAttendance}>考勤台账</Button>}
+        {accountSecurityManagementEnabled && <Button icon={<RefreshCw size={16} />} onClick={() => void loadSecurityData()}>刷新</Button>}
+      </div>
       {errorMessage && <Alert type="error" showIcon message={errorMessage} />}
       <ProCard className="content-panel" title="当前身份" bordered={false}>
         <div className="identity-grid">
@@ -67,27 +103,60 @@ export function DashboardPage({ currentUser, onSessionEnded }: DashboardPageProp
           </div>
         </div>
       </ProCard>
-      <ProCard className="content-panel" title="设备会话" bordered={false}>
-        <Table<DeviceSession>
-          rowKey="id"
-          loading={loading}
-          dataSource={devices}
-          pagination={false}
-          locale={{ emptyText: '暂无活动设备' }}
-          columns={[
-            { title: '设备名称', dataIndex: 'deviceName', key: 'deviceName' },
-            { title: '客户端', dataIndex: 'clientType', key: 'clientType', width: 110 },
-            { title: '最近活动', dataIndex: 'lastActiveAt', key: 'lastActiveAt', render: formatTime },
-            {
-              title: '操作', key: 'action', width: 94,
-              render: (_, device) => <Popconfirm title="确认下线此设备？" onConfirm={() => void signOutDevice(device.id)}><Button danger type="text" icon={<MonitorX size={16} />} aria-label={`下线 ${device.deviceName}`} /></Popconfirm>
-            }
-          ]}
-        />
-        <div className="panel-footer"><Popconfirm title="确认下线全部设备？" onConfirm={() => void signOutAllDevices()}><Button danger>下线全部设备</Button></Popconfirm></div>
-      </ProCard>
+      {parentAccountLifecycleEnabled && currentUser.roleCodes.includes('PARENT')
+        && <ParentAccountLifecyclePanel onSessionEnded={onSessionEnded} />}
+      {accountSecurityManagementEnabled && <>
+        <ProCard className="content-panel" title="账号安全事件" bordered={false}>
+          {events.some((event) => event.riskLevel === 'WARNING' && event.status === 'UNREAD') && (
+            <Alert type="warning" showIcon message="检测到新的 Web 设备登录" />
+          )}
+          <Table<AccountSecurityEvent>
+            rowKey="id"
+            loading={loading}
+            dataSource={events}
+            pagination={false}
+            locale={{ emptyText: '暂无安全事件' }}
+            columns={[
+              { title: '事件', key: 'eventType', render: (_, event) => eventTitle(event) },
+              { title: '设备', dataIndex: 'deviceName', key: 'deviceName' },
+              { title: '发生时间', dataIndex: 'occurredAt', key: 'occurredAt', render: formatTime },
+              { title: '状态', key: 'status', width: 120, render: (_, event) => event.status === 'UNREAD'
+                ? <Button type="link" onClick={() => void markEventRead(event.id)}>标记已读</Button>
+                : <Tag>已读</Tag> }
+            ]}
+          />
+          <div className="panel-footer"><Button onClick={() => void markAllEventsRead()}>全部标记已读</Button></div>
+        </ProCard>
+        <ProCard className="content-panel" title="设备会话" bordered={false}>
+          <Table<DeviceSession>
+            rowKey="id"
+            loading={loading}
+            dataSource={devices}
+            pagination={false}
+            locale={{ emptyText: '暂无活动设备' }}
+            columns={[
+              { title: '设备名称', dataIndex: 'deviceName', key: 'deviceName' },
+              { title: '客户端', dataIndex: 'clientType', key: 'clientType', width: 110 },
+              { title: '最近活动', dataIndex: 'lastActiveAt', key: 'lastActiveAt', render: formatTime },
+              {
+                title: '操作', key: 'action', width: 110,
+                render: (_, device) => device.current
+                  ? <Tag color="green">当前设备</Tag>
+                  : <Popconfirm title="确认下线此设备？" onConfirm={() => void signOutDevice(device.id)}><Button danger type="text" icon={<MonitorX size={16} />} aria-label={`下线 ${device.deviceName}`} /></Popconfirm>
+              }
+            ]}
+          />
+          <div className="panel-footer"><Popconfirm title="确认下线全部设备？" onConfirm={() => void signOutAllDevices()}><Button danger>下线全部设备</Button></Popconfirm></div>
+        </ProCard>
+      </>}
     </div>
   );
+}
+
+function eventTitle(event: AccountSecurityEvent): string {
+  if (event.eventType === 'NEW_DEVICE_LOGIN') return `新设备登录（${event.clientType === 'WEB' ? 'Web' : '小程序'}）`;
+  if (event.eventType === 'DEVICE_REVOKED') return '设备已下线';
+  return '全部设备已下线';
 }
 
 function formatTime(value: string): string {

@@ -2,9 +2,9 @@ package com.lingdong.learning.attachment.domain;
 
 import java.time.LocalDateTime;
 
-/** Persisted attachment-rule fields excluding its separately normalized extension allowlist. */
+/** 附件规则持久化字段，扩展名白名单使用独立表规范化存储。 */
 public record AttachmentRuleRecord(
         Long id, String moduleCode, String fileCategory, String ruleName, Long maxFileSizeBytes,
         Integer maxBatchCount, Boolean previewEnabled, String downloadScope, AttachmentRuleStatus status,
-        LocalDateTime createdAt, LocalDateTime updatedAt
+        Long versionNo, LocalDateTime createdAt, LocalDateTime updatedAt
 ) { }

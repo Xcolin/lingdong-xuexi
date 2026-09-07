@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.importjob.infrastructure.persistence.ImportJobMapper">
+    <resultMap id="ImportJobMap" type="com.lingdong.learning.importjob.domain.ImportJobRecord">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="job_code" javaType="java.lang.String"/>
+            <arg column="template_id" javaType="java.lang.Long"/>
+            <arg column="template_version" javaType="java.lang.String"/>
+            <arg column="template_name" javaType="java.lang.String"/>
+            <arg column="field_mapping_snapshot" javaType="java.lang.String"/>
+            <arg column="source_file_id" javaType="java.lang.Long"/>
+            <arg column="error_file_id" javaType="java.lang.Long"/>
+            <arg column="requester_id" javaType="java.lang.Long"/>
+            <arg column="organization_id" javaType="java.lang.Long"/>
+            <arg column="status" javaType="com.lingdong.learning.importjob.domain.ImportJobStatus"/>
+            <arg column="version_no" javaType="java.lang.Long"/>
+            <arg column="failure_code" javaType="java.lang.String"/>
+            <arg column="failure_message" javaType="java.lang.String"/>
+            <arg column="total_rows" javaType="java.lang.Integer"/>
+            <arg column="processed_rows" javaType="java.lang.Integer"/>
+            <arg column="valid_rows" javaType="java.lang.Integer"/>
+            <arg column="invalid_rows" javaType="java.lang.Integer"/>
+            <arg column="queued_at" javaType="java.time.LocalDateTime"/>
+            <arg column="started_at" javaType="java.time.LocalDateTime"/>
+            <arg column="completed_at" javaType="java.time.LocalDateTime"/>
+            <arg column="created_at" javaType="java.time.LocalDateTime"/>
+            <arg column="updated_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <insert id="insert">
+        INSERT INTO sys_import_job
+        (id, job_code, template_id, template_version, template_name, field_mapping_snapshot,
+         source_file_id, error_file_id, requester_id, organization_id, status, version_no,
+         failure_code, failure_message, total_rows, processed_rows, valid_rows, invalid_rows,
+         queued_at, started_at, completed_at)
+        VALUES
+        (#{job.id}, #{job.jobCode}, #{job.templateId}, #{job.templateVersion}, #{job.templateName},
+         #{job.fieldMappingSnapshot}, #{job.sourceFileId}, #{job.errorFileId}, #{job.requesterId},
+         #{job.organizationId}, #{job.status}, #{job.versionNo}, #{job.failureCode}, #{job.failureMessage},
+         #{job.totalRows}, #{job.processedRows}, #{job.validRows}, #{job.invalidRows},
+         #{job.queuedAt}, #{job.startedAt}, #{job.completedAt})
+    </insert>
+
+    <select id="findById" resultMap="ImportJobMap">
+        SELECT id, job_code, template_id, template_version, template_name, field_mapping_snapshot,
+               source_file_id, error_file_id, requester_id, organization_id, status, version_no,
+               failure_code, failure_message, total_rows, processed_rows, valid_rows, invalid_rows,
+               queued_at, started_at, completed_at, created_at, updated_at
+        FROM sys_import_job
+        WHERE id = #{id}
+    </select>
+
+    <select id="findQueued" resultMap="ImportJobMap">
+        SELECT id, job_code, template_id, template_version, template_name, field_mapping_snapshot,
+               source_file_id, error_file_id, requester_id, organization_id, status, version_no,
+               failure_code, failure_message, total_rows, processed_rows, valid_rows, invalid_rows,
+               queued_at, started_at, completed_at, created_at, updated_at
+        FROM sys_import_job
+        WHERE status = 'QUEUED'
+        ORDER BY queued_at ASC, id ASC
+        LIMIT #{limit}
+    </select>
+
+    <sql id="JobQueryWhere">
+        <where>
+            <if test="query.jobCode != null and query.jobCode != ''">
+                AND LOWER(job_code) LIKE CONCAT('%', LOWER(#{query.jobCode}), '%')
+            </if>
+            <if test="query.templateId != null">
+                AND template_id = #{query.templateId}
+            </if>
+            <if test="query.organizationId != null">
+                AND organization_id = #{query.organizationId}
+            </if>
+            <if test="query.status != null">
+                AND status = #{query.status}
+            </if>
+            <if test="query.queuedFrom != null">
+                AND queued_at <![CDATA[ >= ]]> #{query.queuedFrom}
+            </if>
+            <if test="query.queuedTo != null">
+                AND queued_at <![CDATA[ <= ]]> #{query.queuedTo}
+            </if>
+            <if test="ownerId != null">
+                AND requester_id = #{ownerId}
+                <choose>
+                    <when test="accessibleOrganizationIds != null and !accessibleOrganizationIds.isEmpty()">
+                        AND (organization_id IS NULL OR organization_id IN
+                        <foreach collection="accessibleOrganizationIds" item="organizationId"
+                                 open="(" separator="," close=")">
+                            #{organizationId}
+                        </foreach>
+                        )
+                    </when>
+                    <otherwise>
+                        AND organization_id IS NULL
+                    </otherwise>
+                </choose>
+            </if>
+        </where>
+    </sql>
+
+    <select id="findPage" resultMap="ImportJobMap">
+        SELECT id, job_code, template_id, template_version, template_name, field_mapping_snapshot,
+               source_file_id, error_file_id, requester_id, organization_id, status, version_no,
+               failure_code, failure_message, total_rows, processed_rows, valid_rows, invalid_rows,
+               queued_at, started_at, completed_at, created_at, updated_at
+        FROM sys_import_job
+        <include refid="JobQueryWhere"/>
+        ORDER BY queued_at DESC, id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="count" resultType="long">
+        SELECT COUNT(*)
+        FROM sys_import_job
+        <include refid="JobQueryWhere"/>
+    </select>
+
+    <update id="claim">
+        UPDATE sys_import_job
+        SET status = 'VALIDATING',
+            version_no = version_no + 1,
+            started_at = CURRENT_TIMESTAMP,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+          AND status = 'QUEUED'
+          AND version_no = #{expectedVersion}
+    </update>
+
+    <update id="finish">
+        UPDATE sys_import_job
+        SET status = #{status},
+            error_file_id = #{errorFileId},
+            total_rows = #{totalRows},
+            processed_rows = #{processedRows},
+            valid_rows = #{validRows},
+            invalid_rows = #{invalidRows},
+            failure_code = #{failureCode},
+            failure_message = #{failureMessage},
+            completed_at = CURRENT_TIMESTAMP,
+            version_no = version_no + 1,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+          AND status = 'VALIDATING'
+          AND version_no = #{expectedVersion}
+    </update>
+
+    <update id="markSystemFailed">
+        UPDATE sys_import_job
+        SET status = 'SYSTEM_FAILED',
+            failure_code = #{failureCode},
+            failure_message = #{failureMessage},
+            completed_at = CURRENT_TIMESTAMP,
+            version_no = version_no + 1,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+          AND status = 'VALIDATING'
+          AND version_no = #{expectedVersion}
+    </update>
+</mapper>

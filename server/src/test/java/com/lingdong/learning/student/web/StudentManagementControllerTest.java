@@ -153,7 +153,7 @@ class StudentManagementControllerTest {
     }
 
     @Test
-    void assignsAndSwitchesAStudentsCurrentClassWithinOrganizationScope() throws Exception {
+    void keepsLegacyClassAssignmentInsideTheOrganizationLifecycleBoundary() throws Exception {
         User systemAdministrator = createUserWithRole(
                 "student_class_sys_admin", "班级配置系统管理员", UserType.PLATFORM, "SYS_ADMIN");
         User organizationAdministrator = createUser(
@@ -218,6 +218,11 @@ class StudentManagementControllerTest {
                 """, String.class, studentId);
         assertThat(activeClassCount).isEqualTo(1);
         assertThat(activeClassId).isEqualTo(secondClass.id().toString());
+        Integer changeCount = jdbcTemplate.queryForObject("""
+                select count(*) from edu_student_organization_change
+                where student_id = ?
+                """, Integer.class, studentId);
+        assertThat(changeCount).isEqualTo(2);
 
         mockMvc.perform(put("/api/v1/students/{studentId}/class", studentId)
                         .header("Authorization", "Bearer " + accessToken)
@@ -233,13 +238,129 @@ class StudentManagementControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
 
-        featureToggleMapper.updateGlobalStatus("LEARNING_TASK_MANAGEMENT", FeatureStatus.DISABLED);
+        featureToggleMapper.updateGlobalStatus(
+                "STUDENT_ORGANIZATION_RELATIONSHIP", FeatureStatus.DISABLED);
         mockMvc.perform(put("/api/v1/students/{studentId}/class", studentId)
                         .header("Authorization", "Bearer " + accessToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"classOrganizationId\":\"%s\"}".formatted(firstClass.id())))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("FEATURE_DISABLED"));
+    }
+
+    @Test
+    void transfersAndDeactivatesStudentOrganizationRelationshipsWithImmutableHistory() throws Exception {
+        User systemAdministrator = createUserWithRole(
+                "student_lifecycle_sys_admin", "关系生命周期系统管理员", UserType.PLATFORM, "SYS_ADMIN");
+        User organizationAdministrator = createUser(
+                "student_lifecycle_org_admin", "关系生命周期机构管理员", UserType.PLATFORM);
+        Organization sourceSchool = organizationApplicationService.createOrganization(
+                new CreateOrganizationCommand("STUDENT_LIFECYCLE_SOURCE", "转出学校", "SCHOOL", null, 10));
+        Organization firstClass = organizationApplicationService.createOrganization(
+                new CreateOrganizationCommand("STUDENT_LIFECYCLE_CLASS_ONE", "转班一班", "CLASS", sourceSchool.id(), 10));
+        Organization secondClass = organizationApplicationService.createOrganization(
+                new CreateOrganizationCommand("STUDENT_LIFECYCLE_CLASS_TWO", "转班二班", "CLASS", sourceSchool.id(), 20));
+        Organization targetSchool = organizationApplicationService.createOrganization(
+                new CreateOrganizationCommand("STUDENT_LIFECYCLE_TARGET", "转入学校", "SCHOOL", null, 20));
+        Organization targetClass = organizationApplicationService.createOrganization(
+                new CreateOrganizationCommand("STUDENT_LIFECYCLE_TARGET_CLASS", "转入学校一班", "CLASS", targetSchool.id(), 10));
+        userAccessApplicationService.associateWithOrganization(
+                new AssociateUserWithOrganizationCommand(organizationAdministrator.id(), sourceSchool.id()));
+        userAccessApplicationService.associateWithOrganization(
+                new AssociateUserWithOrganizationCommand(organizationAdministrator.id(), targetSchool.id()));
+        assignRole(organizationAdministrator, "ORG_ADMIN", sourceSchool.id());
+        assignRole(organizationAdministrator, "ORG_ADMIN", targetSchool.id());
+        organizationAdminMapper.insert(
+                1_874_244_142_494_646_402L, organizationAdministrator.id(), sourceSchool.id());
+        organizationAdminMapper.insert(
+                1_874_244_142_494_646_403L, organizationAdministrator.id(), targetSchool.id());
+        setPassword(systemAdministrator, organizationAdministrator);
+        setPassword(systemAdministrator, systemAdministrator);
+        String accessToken = loginAccessToken("student_lifecycle_org_admin");
+
+        MvcResult createResult = mockMvc.perform(post("/api/v1/students")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"studentName\":\"转班学生\",\"organizationId\":\"%s\"}"
+                                .formatted(sourceSchool.id())))
+                .andExpect(status().isCreated())
+                .andReturn();
+        Long studentId = objectMapper.readTree(createResult.getResponse().getContentAsString()).path("id").asLong();
+
+        mockMvc.perform(post("/api/v1/students/{studentId}/class-transfers", studentId)
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"classOrganizationId\":\"%s\",\"reason\":\"新生分班\"}"
+                                .formatted(firstClass.id())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.studentId").value(studentId.toString()))
+                .andExpect(jsonPath("$.enrollmentOrganizationId").value(sourceSchool.id().toString()))
+                .andExpect(jsonPath("$.currentClassOrganizationId").value(firstClass.id().toString()))
+                .andExpect(jsonPath("$.status").value("ACTIVE"));
+
+        mockMvc.perform(post("/api/v1/students/{studentId}/class-transfers", studentId)
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"classOrganizationId\":\"%s\",\"reason\":\"调整学习班级\"}"
+                                .formatted(secondClass.id())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.currentClassOrganizationId").value(secondClass.id().toString()));
+
+        mockMvc.perform(post("/api/v1/students/{studentId}/class-transfers", studentId)
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"classOrganizationId\":\"%s\",\"reason\":\"重复提交\"}"
+                                .formatted(secondClass.id())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.changes.length()").value(2));
+
+        mockMvc.perform(post("/api/v1/students/{studentId}/class-transfers", studentId)
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"classOrganizationId\":\"%s\",\"reason\":\"跨校直接转入\"}"
+                                .formatted(targetClass.id())))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+
+        mockMvc.perform(get("/api/v1/students/{studentId}/organization-relationships", studentId)
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.currentClassOrganizationId").value(secondClass.id().toString()))
+                .andExpect(jsonPath("$.changes.length()").value(2))
+                .andExpect(jsonPath("$.changes[0].changeType").value("CLASS_TRANSFER"))
+                .andExpect(jsonPath("$.changes[1].changeType").value("CLASS_ASSIGN"));
+
+        featureToggleMapper.updateGlobalStatus(
+                "STUDENT_ORGANIZATION_RELATIONSHIP", FeatureStatus.DISABLED);
+        mockMvc.perform(get("/api/v1/students/organization-relationships")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("FEATURE_DISABLED"));
+        featureToggleMapper.updateGlobalStatus(
+                "STUDENT_ORGANIZATION_RELATIONSHIP", FeatureStatus.ENABLED);
+
+        mockMvc.perform(post("/api/v1/students/{studentId}/organization-deactivations", studentId)
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"organizationId\":\"%s\",\"reason\":\"跨机构转学转出\"}"
+                                .formatted(sourceSchool.id())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("INACTIVE"))
+                .andExpect(jsonPath("$.currentClassOrganizationId").doesNotExist());
+
+        Integer activeRelationshipCount = jdbcTemplate.queryForObject("""
+                select count(*) from edu_student_organization
+                where student_id = ? and status = 'ACTIVE'
+                """, Integer.class, studentId);
+        Integer changeCount = jdbcTemplate.queryForObject("""
+                select count(*) from edu_student_organization_change
+                where student_id = ?
+                """, Integer.class, studentId);
+        String studentStatus = jdbcTemplate.queryForObject(
+                "select status from edu_student where id = ?", String.class, studentId);
+        assertThat(activeRelationshipCount).isZero();
+        assertThat(changeCount).isEqualTo(3);
+        assertThat(studentStatus).isEqualTo("ENABLED");
     }
 
     private User createUserWithRole(String username, String displayName, UserType userType, String roleCode) {

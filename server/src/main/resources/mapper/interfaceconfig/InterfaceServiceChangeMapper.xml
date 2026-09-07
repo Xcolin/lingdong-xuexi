@@ -42,4 +42,51 @@
         FROM sys_interface_service_change
         WHERE task_id = #{taskId}
     </select>
+
+    <resultMap id="InterfaceServiceChangeViewResultMap"
+               type="com.lingdong.learning.interfaceconfig.application.InterfaceServiceChangeView">
+        <constructor>
+            <idArg column="change_id" javaType="java.lang.Long"/>
+            <arg column="task_id" javaType="java.lang.Long"/>
+            <arg column="service_id" javaType="java.lang.Long"/>
+            <arg column="change_type" javaType="com.lingdong.learning.interfaceconfig.domain.InterfaceServiceChangeType"/>
+            <arg column="service_name" javaType="java.lang.String"/>
+            <arg column="direction" javaType="com.lingdong.learning.interfaceconfig.domain.InterfaceDirection"/>
+            <arg column="purpose" javaType="com.lingdong.learning.interfaceconfig.domain.InterfacePurpose"/>
+            <arg column="caller_name" javaType="java.lang.String"/>
+            <arg column="authorization_scope" javaType="com.lingdong.learning.interfaceconfig.domain.InterfaceAuthorizationScope"/>
+            <arg column="authorization_scope_value" javaType="java.lang.String"/>
+            <arg column="owner_id" javaType="java.lang.Long"/>
+            <arg column="target_status" javaType="com.lingdong.learning.interfaceconfig.domain.InterfaceServiceStatus"/>
+            <arg column="task_title" javaType="java.lang.String"/>
+            <arg column="task_description" javaType="java.lang.String"/>
+            <arg column="task_status" javaType="com.lingdong.learning.audit.application.SystemTaskStatus"/>
+            <arg column="submitted_by" javaType="java.lang.Long"/>
+            <arg column="submitted_at" javaType="java.time.LocalDateTime"/>
+            <arg column="reviewed_by" javaType="java.lang.Long"/>
+            <arg column="reviewed_at" javaType="java.time.LocalDateTime"/>
+            <arg column="review_comment" javaType="java.lang.String"/>
+            <arg column="change_created_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findRecent" resultMap="InterfaceServiceChangeViewResultMap">
+        SELECT change_record.id AS change_id, change_record.task_id, change_record.service_id,
+               change_record.change_type,
+               COALESCE(change_record.service_name, service.service_name) AS service_name,
+               change_record.direction,
+               change_record.purpose, change_record.caller_name, change_record.authorization_scope,
+               change_record.authorization_scope_value, change_record.owner_id, change_record.target_status,
+               task.task_title, task.task_description, task.status AS task_status,
+               task.submitted_by, task.submitted_at, task.reviewed_by, task.reviewed_at, task.review_comment,
+               change_record.created_at AS change_created_at
+        FROM sys_interface_service_change change_record
+        JOIN sys_system_task task ON task.id = change_record.task_id
+        LEFT JOIN sys_interface_service service ON service.id = change_record.service_id
+        <if test="pendingOnly">
+            WHERE task.status = 'PENDING_REVIEW'
+        </if>
+        ORDER BY change_record.created_at DESC, change_record.id DESC
+        LIMIT #{limit}
+    </select>
 </mapper>

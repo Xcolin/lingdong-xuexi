@@ -1,6 +1,7 @@
 package com.lingdong.learning.permission.infrastructure.persistence;
 
 import com.lingdong.learning.permission.domain.Permission;
+import com.lingdong.learning.permission.domain.PermissionClient;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -18,4 +19,9 @@ public interface PermissionMapper {
     int insert(@Param("permission") Permission permission);
 
     List<Permission> findAll();
+
+    List<String> findAllowedCodes(
+            @Param("userId") Long userId,
+            @Param("client") PermissionClient client
+    );
 }

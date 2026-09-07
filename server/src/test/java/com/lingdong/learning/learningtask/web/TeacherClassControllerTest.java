@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lingdong.learning.auth.application.AuthenticationApplicationService;
 import com.lingdong.learning.auth.application.SetPlatformUserPasswordCommand;
+import com.lingdong.learning.common.id.IdGenerator;
 import com.lingdong.learning.datascope.infrastructure.persistence.OrganizationAdminMapper;
 import com.lingdong.learning.iam.domain.Role;
 import com.lingdong.learning.iam.infrastructure.persistence.RoleMapper;
@@ -35,6 +36,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -48,6 +52,7 @@ class TeacherClassControllerTest {
     @Autowired private OrganizationApplicationService organizationApplicationService;
     @Autowired private OrganizationAdminMapper organizationAdminMapper;
     @Autowired private JdbcTemplate jdbcTemplate;
+    @Autowired private IdGenerator idGenerator;
 
     @Test
     void bindsListsDeactivatesAndReactivatesTeacherClassRelations() throws Exception {
@@ -93,6 +98,11 @@ class TeacherClassControllerTest {
                         .header("Authorization", "Bearer " + administratorToken))
                 .andExpect(status().isOk());
 
+        assertThat(jdbcTemplate.queryForObject("""
+                select count(*) from edu_teacher_class_change_log
+                where teacher_user_id = ? and class_organization_id = ? and event_type = 'BIND'
+                """, Integer.class, teacher.id(), classOrganization.id())).isEqualTo(1);
+
         mockMvc.perform(get("/api/v1/teachers/{teacherUserId}/classes", teacher.id())
                         .header("Authorization", "Bearer " + teacherToken))
                 .andExpect(status().isOk())
@@ -111,10 +121,44 @@ class TeacherClassControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
 
+        Long studentId = idGenerator.nextId();
+        Long taskId = idGenerator.nextId();
+        Long assignmentId = idGenerator.nextId();
+        jdbcTemplate.update("insert into edu_student (id, student_name) values (?, ?)", studentId, "班级解绑保护学生");
+        jdbcTemplate.update("""
+                insert into edu_student_organization
+                    (id, student_id, organization_id, relation_type, status)
+                values (?, ?, ?, 'CLASS', 'ACTIVE')
+                """, idGenerator.nextId(), studentId, classOrganization.id());
+        jdbcTemplate.update("""
+                insert into learn_task (
+                    id, source_type, source_organization_id, creator_user_id, title,
+                    difficulty_level, base_points, duration_minutes, scheduled_date,
+                    reviewer_user_id, review_timeout_hours, status
+                ) values (?, 'ORGANIZATION', ?, ?, '班级解绑保护任务', 1, 10, 30, ?, ?, 72, 'PUBLISHED')
+                """, taskId, school.id(), organizationAdministrator.id(), LocalDate.now(), teacher.id());
+        jdbcTemplate.update("""
+                insert into learn_task_assignment (
+                    id, task_id, student_id, source_type, source_organization_id,
+                    current_status, current_reviewer_id, scheduled_date, due_at
+                ) values (?, ?, ?, 'ORGANIZATION', ?, 'PENDING_REVIEW', ?, ?, ?)
+                """, assignmentId, taskId, studentId, school.id(), teacher.id(), LocalDate.now(),
+                LocalDateTime.now().plusDays(1));
+
         mockMvc.perform(delete("/api/v1/teachers/{teacherUserId}/classes/{classId}",
                         teacher.id(), classOrganization.id())
-                        .header("Authorization", "Bearer " + administratorToken))
+                .header("Authorization", "Bearer " + administratorToken))
                 .andExpect(status().isNoContent());
+        assertThat(jdbcTemplate.queryForObject("""
+                select current_reviewer_id from learn_task_assignment where id = ?
+                """, Long.class, assignmentId)).isEqualTo(organizationAdministrator.id());
+        assertThat(jdbcTemplate.queryForObject("""
+                select count(*) from learn_task_reviewer_transfer
+                where assignment_id = ?
+                  and from_reviewer_user_id = ?
+                  and to_reviewer_user_id = ?
+                """, Integer.class, assignmentId, teacher.id(), organizationAdministrator.id()))
+                .isEqualTo(1);
 
         mockMvc.perform(get("/api/v1/teachers/{teacherUserId}/classes", teacher.id())
                         .header("Authorization", "Bearer " + teacherToken))
@@ -136,6 +180,13 @@ class TeacherClassControllerTest {
                 """, String.class, teacher.id(), classOrganization.id());
         assertThat(relationCount).isEqualTo(1);
         assertThat(statusValue).isEqualTo("ACTIVE");
+        assertThat(jdbcTemplate.queryForList("""
+                select id from edu_teacher_class_change_log
+                where teacher_user_id = ? and class_organization_id = ?
+                order by created_at, id
+                """, Long.class, teacher.id(), classOrganization.id()))
+                .hasSize(3)
+                .allSatisfy(id -> assertThat(Long.toString(id)).hasSize(19));
     }
 
     private User createUserWithRole(String username, String displayName, String roleCode, Long organizationId) {

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.student.infrastructure.persistence.StudentOrganizationChangeMapper">
+    <resultMap id="studentOrganizationChangeMap"
+               type="com.lingdong.learning.student.domain.StudentOrganizationChange">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long" />
+            <arg column="student_id" javaType="java.lang.Long" />
+            <arg column="change_type"
+                 javaType="com.lingdong.learning.student.domain.StudentOrganizationChangeType" />
+            <arg column="from_organization_id" javaType="java.lang.Long" />
+            <arg column="to_organization_id" javaType="java.lang.Long" />
+            <arg column="reason" javaType="java.lang.String" />
+            <arg column="operator_user_id" javaType="java.lang.Long" />
+            <arg column="occurred_at" javaType="java.time.LocalDateTime" />
+            <arg column="created_at" javaType="java.time.LocalDateTime" />
+        </constructor>
+    </resultMap>
+
+    <insert id="insert">
+        INSERT INTO edu_student_organization_change (
+            id, student_id, change_type, from_organization_id, to_organization_id,
+            reason, operator_user_id, occurred_at
+        ) VALUES (
+            #{id}, #{studentId}, #{changeType}, #{fromOrganizationId}, #{toOrganizationId},
+            #{reason}, #{operatorUserId}, #{occurredAt}
+        )
+    </insert>
+
+    <select id="findByStudentId" resultMap="studentOrganizationChangeMap">
+        SELECT id, student_id, change_type, from_organization_id, to_organization_id,
+               reason, operator_user_id, occurred_at, created_at
+        FROM edu_student_organization_change
+        WHERE student_id = #{studentId}
+        ORDER BY occurred_at DESC, id DESC
+    </select>
+</mapper>

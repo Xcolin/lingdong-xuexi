@@ -6,7 +6,7 @@ import com.lingdong.learning.common.web.ResourceNotFoundException;
 import com.lingdong.learning.datascope.application.OrganizationDataScopeService;
 import com.lingdong.learning.feature.application.FeatureAccessService;
 import com.lingdong.learning.organization.domain.Organization;
-import com.lingdong.learning.organization.domain.OrganizationStatus;
+import com.lingdong.learning.organization.application.OrganizationOperationalStatusService;
 import com.lingdong.learning.organization.infrastructure.persistence.OrganizationMapper;
 import com.lingdong.learning.student.domain.Student;
 import com.lingdong.learning.student.domain.StudentStatus;
@@ -73,7 +73,7 @@ public class StudentClassAssignmentService {
         if (!CLASS_ORGANIZATION_TYPE.equals(classOrganization.typeCode())) {
             throw new IllegalArgumentException("目标组织不是班级");
         }
-        if (classOrganization.status() != OrganizationStatus.ENABLED) {
+        if (!OrganizationOperationalStatusService.isOperational(classOrganization)) {
             throw new IllegalStateException("目标班级已停用");
         }
         if (!studentOrganizationMapper.existsActiveEnrollmentInClassAncestors(

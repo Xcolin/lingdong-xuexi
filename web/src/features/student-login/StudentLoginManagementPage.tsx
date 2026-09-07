@@ -1,13 +1,21 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Button, Input, Modal, QRCode, Space, Table, Tag, Tooltip, message } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
-import { QrCode, RefreshCw, Search } from 'lucide-react';
-import { studentLoginApi, type StudentDirectoryItem, type StudentDirectoryPage, type StudentLoginQrTicket } from './api';
+import { QrCode, RefreshCw, Search, Unlink } from 'lucide-react';
+import { studentLoginApi, type StudentDirectoryItem, type StudentDirectoryPage, type StudentLoginQrTicket, type StudentWechatBindingSummary } from './api';
 
 const PAGE_SIZE = 20;
 
 /** 主家长和直接机构管理员生成其数据范围内学生的一次性登录二维码。 */
-export function StudentLoginManagementPage() {
+interface StudentLoginManagementPageProps {
+  studentWechatAuthEnabled?: boolean;
+  canManageStudentWechat?: boolean;
+}
+
+export function StudentLoginManagementPage({
+  studentWechatAuthEnabled = false,
+  canManageStudentWechat = false
+}: StudentLoginManagementPageProps) {
   const [directory, setDirectory] = useState<StudentDirectoryPage>({ items: [], page: 1, pageSize: PAGE_SIZE, total: 0 });
   const [keyword, setKeyword] = useState('');
   const [loading, setLoading] = useState(true);
@@ -16,18 +24,41 @@ export function StudentLoginManagementPage() {
   const [ticket, setTicket] = useState<StudentLoginQrTicket | null>(null);
   const [ticketLoading, setTicketLoading] = useState(false);
   const [remainingSeconds, setRemainingSeconds] = useState(0);
+  const [wechatBindings, setWechatBindings] = useState<Record<string, StudentWechatBindingSummary>>({});
 
   const loadStudents = useCallback(async (nextKeyword: string, page: number) => {
     setLoading(true);
     setErrorMessage(null);
     try {
-      setDirectory(await studentLoginApi.list(nextKeyword || undefined, page, PAGE_SIZE));
+      const [students, bindings] = await Promise.all([
+        studentLoginApi.list(nextKeyword || undefined, page, PAGE_SIZE),
+        studentWechatAuthEnabled && canManageStudentWechat
+          ? studentLoginApi.listWechatBindings()
+          : Promise.resolve([])
+      ]);
+      setDirectory(students);
+      setWechatBindings(Object.fromEntries(bindings.map((binding) => [binding.studentId, binding])));
     } catch (error) {
       setErrorMessage(toMessage(error));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [canManageStudentWechat, studentWechatAuthEnabled]);
+
+  function confirmWechatUnbinding(student: StudentDirectoryItem): void {
+    Modal.confirm({
+      title: `解绑${student.studentName}的微信？`,
+      content: '解绑后该学生不能继续使用微信快捷登录，账号登录和已有学习数据不受影响。',
+      okText: '确认解绑',
+      okButtonProps: { danger: true },
+      cancelText: '取消',
+      async onOk() {
+        await studentLoginApi.unbindWechat(student.id);
+        message.success('学生微信已解绑');
+        await loadStudents(keyword.trim(), directory.page);
+      }
+    });
+  }
 
   useEffect(() => {
     void loadStudents('', 1);
@@ -102,18 +133,38 @@ export function StudentLoginManagementPage() {
             { title: '学生姓名', dataIndex: 'studentName', key: 'studentName' },
             { title: '年级', dataIndex: 'gradeCode', key: 'gradeCode', width: 140, render: (value: string | null) => value || '-' },
             { title: '状态', dataIndex: 'status', key: 'status', width: 110, render: (status: StudentDirectoryItem['status']) => <Tag color={status === 'ENABLED' ? 'green' : 'default'}>{status === 'ENABLED' ? '启用' : '停用'}</Tag> },
+            ...(studentWechatAuthEnabled && canManageStudentWechat ? [{
+              title: '微信绑定', key: 'wechatBinding', width: 140,
+              render: (_: unknown, student: StudentDirectoryItem) => {
+                const binding = wechatBindings[student.id];
+                return <Tag color={binding?.bound ? 'green' : 'default'}>{binding?.bound ? '已绑定' : '未绑定'}</Tag>;
+              }
+            }] : []),
             {
-              title: '操作', key: 'action', width: 96,
+              title: '操作', key: 'action', width: 128,
               render: (_, student) => (
-                <Tooltip title="登录二维码">
-                  <Button
-                    type="text"
-                    icon={<QrCode size={18} />}
-                    aria-label={`生成 ${student.studentName} 的登录二维码`}
-                    disabled={student.status !== 'ENABLED'}
-                    onClick={() => openQr(student)}
-                  />
-                </Tooltip>
+                <Space size={2}>
+                  <Tooltip title="登录二维码">
+                    <Button
+                      type="text"
+                      icon={<QrCode size={18} />}
+                      aria-label={`生成 ${student.studentName} 的登录二维码`}
+                      disabled={student.status !== 'ENABLED'}
+                      onClick={() => openQr(student)}
+                    />
+                  </Tooltip>
+                  {studentWechatAuthEnabled && canManageStudentWechat && wechatBindings[student.id]?.bound && (
+                    <Tooltip title="解绑微信">
+                      <Button
+                        danger
+                        type="text"
+                        icon={<Unlink size={18} />}
+                        aria-label={`解绑 ${student.studentName} 的微信`}
+                        onClick={() => confirmWechatUnbinding(student)}
+                      />
+                    </Tooltip>
+                  )}
+                </Space>
               )
             }
           ]}

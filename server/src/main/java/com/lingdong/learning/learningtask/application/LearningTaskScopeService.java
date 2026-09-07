@@ -6,12 +6,14 @@ import com.lingdong.learning.common.web.ResourceNotFoundException;
 import com.lingdong.learning.datascope.application.OrganizationDataScopeService;
 import com.lingdong.learning.learningtask.domain.LearningTask;
 import com.lingdong.learning.learningtask.domain.LearningTaskSourceType;
+import com.lingdong.learning.learningtask.domain.LearningTaskStatus;
 import com.lingdong.learning.learningtask.domain.LearningTaskTargetType;
 import com.lingdong.learning.learningtask.domain.TeacherClassRelation;
 import com.lingdong.learning.learningtask.domain.TeacherClassStatus;
 import com.lingdong.learning.learningtask.infrastructure.persistence.TeacherClassMapper;
+import com.lingdong.learning.learningtask.infrastructure.persistence.LearningTaskAssignmentMapper;
 import com.lingdong.learning.organization.domain.Organization;
-import com.lingdong.learning.organization.domain.OrganizationStatus;
+import com.lingdong.learning.organization.application.OrganizationOperationalStatusService;
 import com.lingdong.learning.organization.infrastructure.persistence.OrganizationMapper;
 import com.lingdong.learning.student.infrastructure.persistence.ParentStudentMapper;
 import com.lingdong.learning.student.infrastructure.persistence.StudentOrganizationMapper;
@@ -33,6 +35,7 @@ public class LearningTaskScopeService {
     private final TeacherClassMapper teacherClassMapper;
     private final UserMapper userMapper;
     private final UserRoleMapper userRoleMapper;
+    private final LearningTaskAssignmentMapper assignmentMapper;
 
     public LearningTaskScopeService(
             OrganizationMapper organizationMapper,
@@ -41,7 +44,8 @@ public class LearningTaskScopeService {
             StudentOrganizationMapper studentOrganizationMapper,
             TeacherClassMapper teacherClassMapper,
             UserMapper userMapper,
-            UserRoleMapper userRoleMapper
+            UserRoleMapper userRoleMapper,
+            LearningTaskAssignmentMapper assignmentMapper
     ) {
         this.organizationMapper = organizationMapper;
         this.organizationDataScopeService = organizationDataScopeService;
@@ -50,6 +54,7 @@ public class LearningTaskScopeService {
         this.teacherClassMapper = teacherClassMapper;
         this.userMapper = userMapper;
         this.userRoleMapper = userRoleMapper;
+        this.assignmentMapper = assignmentMapper;
     }
 
     public Long validateAndResolveReviewer(
@@ -88,6 +93,41 @@ public class LearningTaskScopeService {
         if (!manageable) {
             throw notFound();
         }
+    }
+
+    /** 任务管理者或任务所涉学生的活动家长可以读取已发布任务。 */
+    public void requireReadable(AuthenticatedUser currentUser, LearningTask task) {
+        if (currentUser == null || task == null) {
+            throw notFound();
+        }
+        if (task.status() == LearningTaskStatus.PUBLISHED
+                && hasRole(currentUser, "PARENT")
+                && assignmentMapper.existsTaskAssignedToActiveParent(
+                task.id(), currentUser.userId())) {
+            return;
+        }
+        requireManageable(currentUser, task);
+    }
+
+    /** 任务创建者及本班已接收机构任务的教师可查看学生进度。 */
+    public void requireProgressReadable(AuthenticatedUser currentUser, LearningTask task) {
+        if (currentUser == null || task == null || task.sourceType() == LearningTaskSourceType.FAMILY) {
+            throw notFound();
+        }
+        if (hasRole(currentUser, "ORG_ADMIN") && task.sourceType() == LearningTaskSourceType.ORGANIZATION
+                && task.sourceOrganizationId() != null
+                && organizationDataScopeService.canAccess(currentUser.userId(), task.sourceOrganizationId())) {
+            return;
+        }
+        if (hasRole(currentUser, "TEACHER")
+                && (task.creatorUserId().equals(currentUser.userId())
+                || task.status() == LearningTaskStatus.PUBLISHED
+                && task.sourceType() == LearningTaskSourceType.ORGANIZATION
+                && assignmentMapper.existsTaskVisibleToActiveTeacher(
+                        task.id(), currentUser.userId()))) {
+            return;
+        }
+        throw notFound();
     }
 
     private Long validateFamily(
@@ -135,7 +175,7 @@ public class LearningTaskScopeService {
             if (target.targetType() == LearningTaskTargetType.ORGANIZATION) {
                 Organization targetOrganization = organizationMapper.findById(target.targetId());
                 if (targetOrganization == null
-                        || targetOrganization.status() != OrganizationStatus.ENABLED
+                        || !OrganizationOperationalStatusService.isOperational(targetOrganization)
                         || !targetOrganization.path().startsWith(source.path())) {
                     throw notFound();
                 }
@@ -162,7 +202,7 @@ public class LearningTaskScopeService {
     ) {
         requireRole(currentUser, "TEACHER");
         Organization source = organizationMapper.findById(sourceOrganizationId);
-        if (source == null || source.status() != OrganizationStatus.ENABLED
+        if (!OrganizationOperationalStatusService.isOperational(source)
                 || !"CLASS".equals(source.typeCode())) {
             throw notFound();
         }
@@ -192,8 +232,7 @@ public class LearningTaskScopeService {
             throw new IllegalArgumentException("机构任务来源组织不能为空");
         }
         Organization organization = organizationMapper.findById(organizationId);
-        if (organization == null
-                || organization.status() != OrganizationStatus.ENABLED
+        if (!OrganizationOperationalStatusService.isOperational(organization)
                 || !organizationDataScopeService.canAccess(currentUser.userId(), organizationId)) {
             throw notFound();
         }

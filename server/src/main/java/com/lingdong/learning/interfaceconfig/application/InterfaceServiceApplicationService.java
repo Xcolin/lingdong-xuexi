@@ -6,6 +6,7 @@ import com.lingdong.learning.audit.application.SystemTask;
 import com.lingdong.learning.audit.application.SystemTaskApplicationService;
 import com.lingdong.learning.audit.application.SystemTaskType;
 import com.lingdong.learning.common.id.IdGenerator;
+import com.lingdong.learning.common.security.SystemOperationAccessDeniedException;
 import com.lingdong.learning.interfaceconfig.domain.InterfaceAuthorizationScope;
 import com.lingdong.learning.interfaceconfig.domain.InterfaceCallResult;
 import com.lingdong.learning.interfaceconfig.domain.InterfaceService;
@@ -16,6 +17,8 @@ import com.lingdong.learning.interfaceconfig.domain.InterfaceServiceStatus;
 import com.lingdong.learning.interfaceconfig.infrastructure.persistence.InterfaceServiceChangeMapper;
 import com.lingdong.learning.interfaceconfig.infrastructure.persistence.InterfaceServiceCallLogMapper;
 import com.lingdong.learning.interfaceconfig.infrastructure.persistence.InterfaceServiceMapper;
+import com.lingdong.learning.permission.application.PermissionDecisionService;
+import com.lingdong.learning.permission.domain.PermissionClient;
 import com.lingdong.learning.user.infrastructure.persistence.UserMapper;
 import com.lingdong.learning.user.infrastructure.persistence.UserRoleMapper;
 import org.springframework.stereotype.Service;
@@ -24,13 +27,13 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.Objects;
+import java.util.List;
 
-/**
- * Coordinates high-risk interface-service changes with the existing system-task approval workflow.
- */
+/** 协调接口服务查询、高风险变更、系统任务审批和最小化调用台账。 */
 @Service
 public class InterfaceServiceApplicationService {
     private static final String SYSTEM_ADMIN_ROLE = "SYS_ADMIN";
+    private static final int MAX_QUERY_SIZE = 200;
 
     private final InterfaceServiceMapper interfaceServiceMapper;
     private final InterfaceServiceChangeMapper changeMapper;
@@ -38,6 +41,7 @@ public class InterfaceServiceApplicationService {
     private final SystemTaskApplicationService taskService;
     private final UserMapper userMapper;
     private final UserRoleMapper userRoleMapper;
+    private final PermissionDecisionService permissionDecisionService;
     private final IdGenerator idGenerator;
     private final TransactionTemplate transactionTemplate;
 
@@ -48,6 +52,7 @@ public class InterfaceServiceApplicationService {
             SystemTaskApplicationService taskService,
             UserMapper userMapper,
             UserRoleMapper userRoleMapper,
+            PermissionDecisionService permissionDecisionService,
             IdGenerator idGenerator,
             PlatformTransactionManager transactionManager
     ) {
@@ -57,15 +62,17 @@ public class InterfaceServiceApplicationService {
         this.taskService = taskService;
         this.userMapper = userMapper;
         this.userRoleMapper = userRoleMapper;
+        this.permissionDecisionService = permissionDecisionService;
         this.idGenerator = idGenerator;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
     }
 
-    /** Creates a pending registration proposal; no effective service is written at this stage. */
+    /** 创建待审核登记快照，此时不写入生效服务。 */
     @Transactional
     public InterfaceServiceChange createDraft(CreateInterfaceServiceChangeCommand command) {
         Objects.requireNonNull(command, "接口服务登记请求不能为空");
         requireSystemAdmin(command.submitterId());
+        requirePermission(command.submitterId(), "INTERFACE_SERVICE_MANAGE");
         String serviceName = requiredText(command.serviceName(), "服务名称", 100);
         String callerName = requiredText(command.callerName(), "调用方", 100);
         if (command.direction() == null || command.purpose() == null) {
@@ -83,11 +90,12 @@ public class InterfaceServiceApplicationService {
         return change;
     }
 
-    /** Creates a pending stop proposal while leaving the current service enabled until approval is applied. */
+    /** 创建待审核停用快照，审批生效前继续保持当前启用状态。 */
     @Transactional
     public InterfaceServiceChange createDisableDraft(CreateInterfaceServiceDisableCommand command) {
         Objects.requireNonNull(command, "接口服务停用请求不能为空");
         requireSystemAdmin(command.submitterId());
+        requirePermission(command.submitterId(), "INTERFACE_SERVICE_MANAGE");
         InterfaceService service = requireService(command.serviceId());
         if (service.status() != InterfaceServiceStatus.ENABLED) {
             throw new IllegalStateException("接口服务已停用：" + service.id());
@@ -99,11 +107,29 @@ public class InterfaceServiceApplicationService {
         return change;
     }
 
-    /** Creates a pending authorization-boundary proposal without changing the effective service immediately. */
+    /** 创建待审核启用快照，审批生效前继续保持当前停用状态。 */
+    @Transactional
+    public InterfaceServiceChange createEnableDraft(CreateInterfaceServiceEnableCommand command) {
+        Objects.requireNonNull(command, "接口服务启用请求不能为空");
+        requireSystemAdmin(command.submitterId());
+        requirePermission(command.submitterId(), "INTERFACE_SERVICE_MANAGE");
+        InterfaceService service = requireService(command.serviceId());
+        if (service.status() != InterfaceServiceStatus.DISABLED) {
+            throw new IllegalStateException("仅已停用接口服务可重新启用：" + service.id());
+        }
+
+        SystemTask task = createTask(command.submitterId(), command.taskTitle(), command.taskDescription());
+        InterfaceServiceChange change = InterfaceServiceChange.enable(idGenerator.nextId(), task.id(), service.id());
+        insertChange(change);
+        return change;
+    }
+
+    /** 创建待审核授权范围变更快照，不立即改变当前授权边界。 */
     @Transactional
     public InterfaceServiceChange createAuthorizationChangeDraft(CreateInterfaceServiceAuthorizationChangeCommand command) {
         Objects.requireNonNull(command, "接口服务授权范围变更请求不能为空");
         requireSystemAdmin(command.submitterId());
+        requirePermission(command.submitterId(), "INTERFACE_SERVICE_MANAGE");
         InterfaceService service = requireService(command.serviceId());
         Scope scope = normalizeScope(command.authorizationScope(), command.authorizationScopeValue());
 
@@ -115,16 +141,48 @@ public class InterfaceServiceApplicationService {
         return change;
     }
 
-    /** Delegates draft submission to the shared system-task state machine. */
+    /** 将草稿提交到共享系统任务状态机。 */
     public void submit(Long taskId, Long submitterId) {
+        requirePermission(submitterId, "INTERFACE_SERVICE_MANAGE");
         taskService.submit(taskId, submitterId);
     }
 
+    @Transactional
+    public InterfaceServiceChange createAndSubmitRegistration(CreateInterfaceServiceChangeCommand command) {
+        InterfaceServiceChange change = createDraft(command);
+        submit(change.taskId(), command.submitterId());
+        return change;
+    }
+
+    @Transactional
+    public InterfaceServiceChange createAndSubmitDisable(CreateInterfaceServiceDisableCommand command) {
+        InterfaceServiceChange change = createDisableDraft(command);
+        submit(change.taskId(), command.submitterId());
+        return change;
+    }
+
+    @Transactional
+    public InterfaceServiceChange createAndSubmitEnable(CreateInterfaceServiceEnableCommand command) {
+        InterfaceServiceChange change = createEnableDraft(command);
+        submit(change.taskId(), command.submitterId());
+        return change;
+    }
+
+    @Transactional
+    public InterfaceServiceChange createAndSubmitAuthorization(
+            CreateInterfaceServiceAuthorizationChangeCommand command
+    ) {
+        InterfaceServiceChange change = createAuthorizationChangeDraft(command);
+        submit(change.taskId(), command.submitterId());
+        return change;
+    }
+
     /**
-     * Approves first, then applies the already stored proposal in a separate transaction.
-     * An execution failure therefore rolls back only the business mutation and leaves the task approved, not effective.
+     * 先完成审批，再在独立事务中执行已保存的变更提案。
+     * 执行失败时只回滚业务变更，任务保持已批准但未生效状态，便于后续处置和审计。
      */
     public SystemTask approveAndApply(Long taskId, Long auditorId, String comment) {
+        requirePermission(auditorId, "INTERFACE_SERVICE_REVIEW");
         InterfaceServiceChange change = requireChange(taskId);
         taskService.approve(taskId, auditorId, comment);
         SystemTask effectiveTask = transactionTemplate.execute(status -> {
@@ -134,7 +192,54 @@ public class InterfaceServiceApplicationService {
         return Objects.requireNonNull(effectiveTask, "接口服务变更生效失败");
     }
 
-    /** Records a minimal call outcome only after the target service is confirmed as enabled. */
+    /** 驳回变更任务，保留变更快照但不修改生效服务。 */
+    public SystemTask reject(Long taskId, Long auditorId, String comment) {
+        requirePermission(auditorId, "INTERFACE_SERVICE_REVIEW");
+        requireChange(taskId);
+        return taskService.reject(taskId, auditorId, comment);
+    }
+
+    public List<InterfaceService> listServices(
+            Long operatorId,
+            String serviceName,
+            String callerName,
+            InterfaceServiceStatus status,
+            com.lingdong.learning.interfaceconfig.domain.InterfacePurpose purpose,
+            Long ownerId,
+            Integer limit
+    ) {
+        requirePermission(operatorId, "INTERFACE_SERVICE_READ");
+        return interfaceServiceMapper.findAll(
+                optionalText(serviceName, 100),
+                optionalText(callerName, 100),
+                status,
+                purpose,
+                ownerId,
+                normalizeLimit(limit)
+        );
+    }
+
+    public List<InterfaceServiceChangeView> listChanges(Long operatorId, Integer limit) {
+        requirePermission(operatorId, "INTERFACE_SERVICE_READ");
+        return changeMapper.findRecent(false, normalizeLimit(limit));
+    }
+
+    public List<InterfaceServiceChangeView> listPendingReviews(Long operatorId, Integer limit) {
+        requirePermission(operatorId, "INTERFACE_SERVICE_REVIEW");
+        return changeMapper.findRecent(true, normalizeLimit(limit));
+    }
+
+    public List<InterfaceServiceCallLogView> listCallLogs(
+            Long operatorId,
+            Long serviceId,
+            InterfaceCallResult result,
+            Integer limit
+    ) {
+        requirePermission(operatorId, "INTERFACE_SERVICE_READ");
+        return callLogMapper.findRecent(serviceId, result, normalizeLimit(limit));
+    }
+
+    /** 仅在目标服务启用时记录最小化调用结果。 */
     @Transactional
     public InterfaceServiceCallLog recordCall(RecordInterfaceServiceCallCommand command) {
         Objects.requireNonNull(command, "接口服务调用记录不能为空");
@@ -177,6 +282,7 @@ public class InterfaceServiceApplicationService {
     private void apply(InterfaceServiceChange change) {
         int affectedRows = switch (change.changeType()) {
             case CREATE -> interfaceServiceMapper.insert(InterfaceService.enabled(idGenerator.nextId(), change));
+            case ENABLE -> interfaceServiceMapper.enable(change.serviceId());
             case DISABLE -> interfaceServiceMapper.updateStatus(change.serviceId(), InterfaceServiceStatus.DISABLED);
             case CHANGE_AUTHORIZATION -> interfaceServiceMapper.updateAuthorizationScope(
                     change.serviceId(), change.authorizationScope(), change.authorizationScopeValue()
@@ -219,6 +325,22 @@ public class InterfaceServiceApplicationService {
         if (userId == null || !userRoleMapper.hasRoleCode(userId, SYSTEM_ADMIN_ROLE)) {
             throw new IllegalStateException("仅系统管理员可发起接口服务变更");
         }
+    }
+
+    private void requirePermission(Long operatorId, String permissionCode) {
+        if (!permissionDecisionService.isAllowed(operatorId, PermissionClient.WEB, permissionCode)) {
+            throw new SystemOperationAccessDeniedException("当前账号无权执行该接口服务管理操作");
+        }
+    }
+
+    private int normalizeLimit(Integer limit) {
+        if (limit == null) {
+            return MAX_QUERY_SIZE;
+        }
+        if (limit < 1 || limit > MAX_QUERY_SIZE) {
+            throw new IllegalArgumentException("查询数量必须在1到" + MAX_QUERY_SIZE + "之间");
+        }
+        return limit;
     }
 
     private Scope normalizeScope(InterfaceAuthorizationScope scope, String scopeValue) {

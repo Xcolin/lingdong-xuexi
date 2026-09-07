@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Alert, Button, Form, Input, Modal, Popconfirm, Select, Space, Table, Tag, Tooltip, message } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
 import { CircleCheck, CircleOff, LockKeyhole, Search, UserPlus } from 'lucide-react';
-import { usersApi, type CreateUserInput, type ManagedUser, type UserDirectoryPage, type UserStatus, type UserType } from '../../api/users';
+import { usersApi, type CreateUserInput, type ManagedUser, type MutableUserStatus, type UserDirectoryPage, type UserStatus, type UserType } from '../../api/users';
 
 const PAGE_SIZE = 20;
 
@@ -16,7 +16,8 @@ const userTypeOptions: Array<{ value: UserType; label: string }> = [
 const statusOptions: Array<{ value: UserStatus; label: string }> = [
   { value: 'ENABLED', label: '启用' },
   { value: 'DISABLED', label: '停用' },
-  { value: 'LOCKED', label: '锁定' }
+  { value: 'LOCKED', label: '锁定' },
+  { value: 'CANCELLED', label: '已注销' }
 ];
 
 interface FilterValues {
@@ -77,7 +78,7 @@ export function UserManagementPage() {
     }
   }
 
-  async function updateStatus(user: ManagedUser, status: UserStatus): Promise<void> {
+  async function updateStatus(user: ManagedUser, status: MutableUserStatus): Promise<void> {
     try {
       await usersApi.updateStatus(user.id, status);
       message.success(`账号已${statusLabel(status)}`);
@@ -125,7 +126,7 @@ export function UserManagementPage() {
             { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', width: 170, render: formatTime },
             {
               title: '操作', key: 'actions', width: 128,
-              render: (_, user) => <Space size={2}>
+              render: (_, user) => user.status === 'CANCELLED' ? null : <Space size={2}>
                 {user.status !== 'ENABLED' && <StatusAction user={user} status="ENABLED" icon={<CircleCheck size={16} />} />}
                 {user.status !== 'DISABLED' && <StatusAction user={user} status="DISABLED" icon={<CircleOff size={16} />} />}
                 {user.status !== 'LOCKED' && <StatusAction user={user} status="LOCKED" icon={<LockKeyhole size={16} />} />}
@@ -147,7 +148,7 @@ export function UserManagementPage() {
     </div>
   );
 
-  function StatusAction({ user, status, icon }: { user: ManagedUser; status: UserStatus; icon: ReactNode }) {
+  function StatusAction({ user, status, icon }: { user: ManagedUser; status: MutableUserStatus; icon: ReactNode }) {
     const label = statusLabel(status);
     return (
       <Tooltip title={label}>
@@ -168,7 +169,7 @@ function statusLabel(status: UserStatus): string {
 }
 
 function statusColor(status: UserStatus): string {
-  return status === 'ENABLED' ? 'green' : status === 'LOCKED' ? 'orange' : 'default';
+  return status === 'ENABLED' ? 'green' : status === 'LOCKED' ? 'orange' : status === 'CANCELLED' ? 'red' : 'default';
 }
 
 function formatTime(value: string): string {

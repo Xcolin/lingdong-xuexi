@@ -35,6 +35,25 @@
           AND caller_name = #{callerName}
     </select>
 
+    <select id="findAll" resultMap="InterfaceServiceResultMap">
+        SELECT id, service_name, direction, purpose, caller_name, authorization_scope, authorization_scope_value,
+               owner_id, status, created_at, updated_at
+        FROM sys_interface_service
+        <where>
+            <if test="serviceName != null and serviceName != ''">
+                AND LOWER(service_name) LIKE CONCAT('%', LOWER(#{serviceName}), '%')
+            </if>
+            <if test="callerName != null and callerName != ''">
+                AND LOWER(caller_name) LIKE CONCAT('%', LOWER(#{callerName}), '%')
+            </if>
+            <if test="status != null">AND status = #{status}</if>
+            <if test="purpose != null">AND purpose = #{purpose}</if>
+            <if test="ownerId != null">AND owner_id = #{ownerId}</if>
+        </where>
+        ORDER BY updated_at DESC, id DESC
+        LIMIT #{limit}
+    </select>
+
     <insert id="insert">
         INSERT INTO sys_interface_service (
             id, service_name, direction, purpose, caller_name, authorization_scope, authorization_scope_value,
@@ -51,6 +70,13 @@
         SET status = #{status}, updated_at = CURRENT_TIMESTAMP
         WHERE id = #{id}
           AND status = 'ENABLED'
+    </update>
+
+    <update id="enable">
+        UPDATE sys_interface_service
+        SET status = 'ENABLED', updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+          AND status = 'DISABLED'
     </update>
 
     <update id="updateAuthorizationScope">

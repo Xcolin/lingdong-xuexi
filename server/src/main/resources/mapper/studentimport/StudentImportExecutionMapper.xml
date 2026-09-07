@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.studentimport.infrastructure.persistence.StudentImportExecutionMapper">
+    <resultMap id="ExecutionMap" type="com.lingdong.learning.studentimport.domain.StudentImportExecutionRecord">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="execution_code" javaType="java.lang.String"/>
+            <arg column="validation_job_id" javaType="java.lang.Long"/>
+            <arg column="requester_id" javaType="java.lang.Long"/>
+            <arg column="organization_id" javaType="java.lang.Long"/>
+            <arg column="class_organization_id" javaType="java.lang.Long"/>
+            <arg column="status" javaType="com.lingdong.learning.studentimport.domain.StudentImportExecutionStatus"/>
+            <arg column="version_no" javaType="java.lang.Long"/>
+            <arg column="total_rows" javaType="java.lang.Integer"/>
+            <arg column="processed_rows" javaType="java.lang.Integer"/>
+            <arg column="succeeded_rows" javaType="java.lang.Integer"/>
+            <arg column="failed_rows" javaType="java.lang.Integer"/>
+            <arg column="failure_code" javaType="java.lang.String"/>
+            <arg column="failure_message" javaType="java.lang.String"/>
+            <arg column="credential_file_id" javaType="java.lang.Long"/>
+            <arg column="credential_status" javaType="com.lingdong.learning.studentimport.domain.StudentImportCredentialStatus"/>
+            <arg column="credential_expires_at" javaType="java.time.LocalDateTime"/>
+            <arg column="credential_downloaded_at" javaType="java.time.LocalDateTime"/>
+            <arg column="queued_at" javaType="java.time.LocalDateTime"/>
+            <arg column="started_at" javaType="java.time.LocalDateTime"/>
+            <arg column="completed_at" javaType="java.time.LocalDateTime"/>
+            <arg column="created_at" javaType="java.time.LocalDateTime"/>
+            <arg column="updated_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="columns">
+        id, execution_code, validation_job_id, requester_id, organization_id,
+        class_organization_id, status, version_no, total_rows, processed_rows,
+        succeeded_rows, failed_rows, failure_code, failure_message,
+        credential_file_id, credential_status, credential_expires_at,
+        credential_downloaded_at, queued_at, started_at, completed_at,
+        created_at, updated_at
+    </sql>
+
+    <insert id="insert">
+        INSERT INTO sys_student_import_execution (
+            id, execution_code, validation_job_id, requester_id, organization_id,
+            class_organization_id, status, version_no, total_rows, processed_rows,
+            succeeded_rows, failed_rows, failure_code, failure_message,
+            credential_file_id, credential_status, credential_expires_at,
+            credential_downloaded_at, queued_at, started_at, completed_at
+        ) VALUES (
+            #{execution.id}, #{execution.executionCode}, #{execution.validationJobId},
+            #{execution.requesterId}, #{execution.organizationId},
+            #{execution.classOrganizationId,jdbcType=BIGINT}, #{execution.status},
+            #{execution.versionNo}, #{execution.totalRows}, #{execution.processedRows},
+            #{execution.succeededRows}, #{execution.failedRows},
+            #{execution.failureCode,jdbcType=VARCHAR}, #{execution.failureMessage,jdbcType=VARCHAR},
+            #{execution.credentialFileId,jdbcType=BIGINT}, #{execution.credentialStatus},
+            #{execution.credentialExpiresAt,jdbcType=TIMESTAMP},
+            #{execution.credentialDownloadedAt,jdbcType=TIMESTAMP}, #{execution.queuedAt},
+            #{execution.startedAt,jdbcType=TIMESTAMP}, #{execution.completedAt,jdbcType=TIMESTAMP}
+        )
+    </insert>
+
+    <select id="findById" resultMap="ExecutionMap">
+        SELECT <include refid="columns"/> FROM sys_student_import_execution WHERE id = #{id}
+    </select>
+
+    <select id="findByValidationJobId" resultMap="ExecutionMap">
+        SELECT <include refid="columns"/> FROM sys_student_import_execution
+        WHERE validation_job_id = #{validationJobId}
+    </select>
+
+    <select id="findQueued" resultMap="ExecutionMap">
+        SELECT <include refid="columns"/> FROM sys_student_import_execution
+        WHERE status = 'QUEUED' ORDER BY queued_at, id LIMIT #{limit}
+    </select>
+
+    <select id="findPageByRequester" resultMap="ExecutionMap">
+        SELECT <include refid="columns"/> FROM sys_student_import_execution
+        WHERE requester_id = #{requesterId}
+        <if test="status != null">AND status = #{status}</if>
+        ORDER BY created_at DESC, id DESC LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countByRequester" resultType="long">
+        SELECT COUNT(*) FROM sys_student_import_execution WHERE requester_id = #{requesterId}
+        <if test="status != null">AND status = #{status}</if>
+    </select>
+
+    <update id="claim">
+        UPDATE sys_student_import_execution
+        SET status = 'RUNNING', version_no = version_no + 1,
+            started_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id} AND status = 'QUEUED' AND version_no = #{expectedVersion}
+    </update>
+
+    <update id="complete">
+        UPDATE sys_student_import_execution
+        SET status = #{status}, processed_rows = #{processedRows},
+            succeeded_rows = #{succeededRows}, failed_rows = #{failedRows},
+            credential_file_id = #{credentialFileId,jdbcType=BIGINT},
+            credential_status = CASE WHEN #{credentialFileId,jdbcType=BIGINT} IS NULL
+                THEN 'NONE' ELSE 'AVAILABLE' END,
+            credential_expires_at = #{credentialExpiresAt,jdbcType=TIMESTAMP},
+            completed_at = #{completedAt}, version_no = version_no + 1,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id} AND status = 'RUNNING' AND version_no = #{expectedVersion}
+          AND #{processedRows} = #{succeededRows} + #{failedRows}
+          AND #{processedRows} &lt;= total_rows
+          AND #{status} IN ('SUCCEEDED', 'PARTIAL_SUCCEEDED', 'FAILED')
+    </update>
+
+    <update id="fail">
+        UPDATE sys_student_import_execution
+        SET status = 'FAILED', failure_code = #{failureCode}, failure_message = #{failureMessage},
+            completed_at = #{completedAt}, version_no = version_no + 1,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id} AND status = 'RUNNING' AND version_no = #{expectedVersion}
+    </update>
+
+    <update id="requeueFailures">
+        UPDATE sys_student_import_execution
+        SET status = 'QUEUED', processed_rows = succeeded_rows, failed_rows = 0,
+            failure_code = NULL, failure_message = NULL, credential_file_id = NULL,
+            credential_status = 'NONE', credential_expires_at = NULL,
+            credential_downloaded_at = NULL, queued_at = #{queuedAt}, started_at = NULL,
+            completed_at = NULL, version_no = version_no + 1,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id} AND version_no = #{expectedVersion}
+          AND status IN ('PARTIAL_SUCCEEDED', 'FAILED') AND failed_rows &gt; 0
+          AND credential_status IN ('NONE', 'CONSUMED', 'EXPIRED')
+    </update>
+
+    <update id="consumeCredential">
+        UPDATE sys_student_import_execution
+        SET credential_status = 'CONSUMED', credential_downloaded_at = #{downloadedAt},
+            version_no = version_no + 1, updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id} AND credential_status = 'AVAILABLE'
+          AND version_no = #{expectedVersion} AND credential_expires_at &gt; #{now}
+    </update>
+
+    <select id="findExpiredCredentials" resultMap="ExecutionMap">
+        SELECT <include refid="columns"/> FROM sys_student_import_execution
+        WHERE credential_status = 'AVAILABLE' AND credential_expires_at &lt;= #{now}
+        ORDER BY credential_expires_at, id LIMIT #{limit}
+    </select>
+
+    <update id="expireCredential">
+        UPDATE sys_student_import_execution
+        SET credential_status = 'EXPIRED', version_no = version_no + 1,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id} AND credential_status = 'AVAILABLE'
+          AND version_no = #{expectedVersion} AND credential_expires_at &lt;= #{now}
+    </update>
+</mapper>

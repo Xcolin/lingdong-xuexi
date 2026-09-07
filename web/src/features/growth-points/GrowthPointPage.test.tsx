@@ -4,6 +4,10 @@ import userEvent from '@testing-library/user-event';
 import { App as AntdApp } from 'antd';
 import { GrowthPointPage } from './GrowthPointPage';
 
+const exportJobApi = vi.hoisted(() => ({
+  options: vi.fn(), create: vi.fn()
+}));
+
 const growthPointApi = vi.hoisted(() => ({
   listStudents: vi.fn(),
   account: vi.fn(),
@@ -12,6 +16,7 @@ const growthPointApi = vi.hoisted(() => ({
 }));
 
 vi.mock('./api', () => ({ growthPointApi }));
+vi.mock('../../api/export-jobs', () => ({ exportJobApi }));
 
 describe('家长积分台账页面', () => {
   beforeEach(() => {
@@ -44,6 +49,11 @@ describe('家长积分台账页面', () => {
       originalLedgerId: '1874244142494647401', correctionLedgerId: '1874244142494647402',
       correctedPoints: 20, totalPoints: 0, availablePoints: 0,
       currentStatus: 'PENDING_REVIEW', occurredAt: '2026-08-03T10:00:00'
+    });
+    exportJobApi.options.mockResolvedValue({
+      exportType: 'GROWTH_POINT_LEDGER', templateName: '报表导出模板', templateVersion: 'V1',
+      columns: [{ code: 'OCCURRED_AT', header: '发生时间', defaultSelected: true }],
+      students: [{ id: '1874244142494647101', name: '小灵' }], sensitive: false
     });
   });
 
@@ -103,5 +113,21 @@ describe('家长积分台账页面', () => {
 
     expect(await screen.findByText('奖励兑换：周末观影')).toBeInTheDocument();
     expect(screen.getByText('-20')).toBeInTheDocument();
+  });
+
+  it('功能和权限同时允许时从当前孩子快捷发起导出', async () => {
+    const user = userEvent.setup();
+    render(<AntdApp><GrowthPointPage dataExportEnabled canCreateExport /></AntdApp>);
+
+    await screen.findByText('每日阅读打卡');
+    await user.click(screen.getByRole('button', { name: '导出积分台账' }));
+    expect(await screen.findByRole('dialog', { name: '新建数据导出' })).toBeInTheDocument();
+    await waitFor(() => expect(exportJobApi.options).toHaveBeenCalledWith('GROWTH_POINT_LEDGER'));
+  });
+
+  it('导出功能关闭时不渲染快捷入口', async () => {
+    render(<AntdApp><GrowthPointPage dataExportEnabled={false} canCreateExport /></AntdApp>);
+    await screen.findByText('每日阅读打卡');
+    expect(screen.queryByRole('button', { name: '导出积分台账' })).not.toBeInTheDocument();
   });
 });

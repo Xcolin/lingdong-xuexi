@@ -24,7 +24,7 @@ import java.time.LocalDateTime;
 /**
  * 积分账户与台账安全查询服务。
  *
- * <p>统一账户包含家庭、机构和教师来源，因此只向学生本人和活动主关系家长开放。</p>
+ * <p>统一账户包含家庭、机构和教师来源，因此只向学生本人和任一活动关系家长开放。</p>
  */
 @Service
 public class GrowthPointQueryService {
@@ -104,7 +104,7 @@ public class GrowthPointQueryService {
 
     private void requireAccessibleChild(AuthenticatedUser currentUser, Long studentId) {
         requireWebParent(currentUser);
-        if (studentId == null || !parentStudentMapper.existsActivePrimaryByParentAndStudent(
+        if (studentId == null || !parentStudentMapper.existsActiveByParentAndStudent(
                 currentUser.userId(), studentId)) {
             throw new ResourceNotFoundException("学生积分账户不存在或不可访问");
         }
@@ -113,7 +113,7 @@ public class GrowthPointQueryService {
     private void requireWebParent(AuthenticatedUser currentUser) {
         if (currentUser == null || currentUser.clientType() != AuthClientType.WEB
                 || !currentUser.roleCodes().contains("PARENT")) {
-            throw new SystemOperationAccessDeniedException("仅 Web 端主家长可查询孩子积分");
+            throw new SystemOperationAccessDeniedException("仅 Web 端活动关系家长可查询孩子积分");
         }
     }
 

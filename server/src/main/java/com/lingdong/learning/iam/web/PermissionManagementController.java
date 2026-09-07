@@ -4,6 +4,7 @@ import com.lingdong.learning.auth.application.AuthenticatedUser;
 import com.lingdong.learning.common.security.RequirePermission;
 import com.lingdong.learning.iam.application.IamQueryApplicationService;
 import com.lingdong.learning.permission.application.ConfigureUserPermissionCommand;
+import com.lingdong.learning.permission.application.ConfigureRolePermissionCommand;
 import com.lingdong.learning.permission.application.CreatePermissionCommand;
 import com.lingdong.learning.permission.application.GrantRolePermissionCommand;
 import com.lingdong.learning.permission.application.PermissionAdministrationService;
@@ -11,6 +12,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -67,6 +69,41 @@ public class PermissionManagementController {
         ));
     }
 
+    @RequirePermission("IAM_ROLE_PERMISSION_GRANT")
+    @GetMapping("/roles/{roleId}/permissions")
+    public List<PermissionAssignmentResponse> listRolePermissions(
+            @AuthenticationPrincipal AuthenticatedUser currentUser,
+            @PathVariable Long roleId
+    ) {
+        return permissionAdministrationService.listRolePermissions(currentUser.userId(), roleId)
+                .stream().map(PermissionAssignmentResponse::from).toList();
+    }
+
+    @RequirePermission("IAM_ROLE_PERMISSION_GRANT")
+    @PutMapping("/roles/{roleId}/permissions/{permissionId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void configureRolePermission(
+            @AuthenticationPrincipal AuthenticatedUser currentUser,
+            @PathVariable Long roleId,
+            @PathVariable Long permissionId,
+            @Valid @RequestBody ConfigureUserPermissionRequest request
+    ) {
+        permissionAdministrationService.configureRolePermission(new ConfigureRolePermissionCommand(
+                currentUser.userId(), roleId, permissionId, request.effect()));
+    }
+
+    @RequirePermission("IAM_ROLE_PERMISSION_GRANT")
+    @DeleteMapping("/roles/{roleId}/permissions/{permissionId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void removeRolePermission(
+            @AuthenticationPrincipal AuthenticatedUser currentUser,
+            @PathVariable Long roleId,
+            @PathVariable Long permissionId
+    ) {
+        permissionAdministrationService.removeRolePermission(
+                currentUser.userId(), roleId, permissionId);
+    }
+
     @RequirePermission("IAM_USER_PERMISSION_CONFIGURE")
     @PutMapping("/users/{userId}/permissions/{permissionId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -79,5 +116,27 @@ public class PermissionManagementController {
         permissionAdministrationService.configureUserPermission(new ConfigureUserPermissionCommand(
                 currentUser.userId(), userId, permissionId, request.effect()
         ));
+    }
+
+    @RequirePermission("IAM_USER_PERMISSION_CONFIGURE")
+    @GetMapping("/users/{userId}/permissions")
+    public List<PermissionAssignmentResponse> listUserPermissions(
+            @AuthenticationPrincipal AuthenticatedUser currentUser,
+            @PathVariable Long userId
+    ) {
+        return permissionAdministrationService.listUserPermissions(currentUser.userId(), userId)
+                .stream().map(PermissionAssignmentResponse::from).toList();
+    }
+
+    @RequirePermission("IAM_USER_PERMISSION_CONFIGURE")
+    @DeleteMapping("/users/{userId}/permissions/{permissionId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void removeUserPermission(
+            @AuthenticationPrincipal AuthenticatedUser currentUser,
+            @PathVariable Long userId,
+            @PathVariable Long permissionId
+    ) {
+        permissionAdministrationService.removeUserPermission(
+                currentUser.userId(), userId, permissionId);
     }
 }

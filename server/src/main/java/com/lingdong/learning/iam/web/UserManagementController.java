@@ -64,34 +64,40 @@ public class UserManagementController {
     @RequirePermission("IAM_USER_CREATE")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public UserResponse createUser(@Valid @RequestBody CreateUserRequest request) {
+    public UserResponse createUser(@AuthenticationPrincipal AuthenticatedUser currentUser,
+                                   @Valid @RequestBody CreateUserRequest request) {
         return UserResponse.from(userAccessApplicationService.createUser(new CreateUserCommand(
-                request.username(), request.displayName(), request.mobile(), request.type()
+                request.username(), request.displayName(), request.mobile(), request.type(), currentUser.userId()
         )));
     }
 
     @RequirePermission("IAM_USER_STATUS_CHANGE")
     @PatchMapping("/{id}/status")
-    public UserResponse updateUserStatus(@PathVariable Long id, @Valid @RequestBody UpdateUserStatusRequest request) {
-        return UserResponse.from(userAccessApplicationService.updateStatus(new UpdateUserStatusCommand(id, request.status())));
+    public UserResponse updateUserStatus(@AuthenticationPrincipal AuthenticatedUser currentUser,
+                                         @PathVariable Long id, @Valid @RequestBody UpdateUserStatusRequest request) {
+        return UserResponse.from(userAccessApplicationService.updateStatus(
+                new UpdateUserStatusCommand(id, request.status(), currentUser.userId())));
     }
 
     @RequirePermission("IAM_USER_ORGANIZATION_ASSIGN")
     @PostMapping("/{id}/organizations")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void associateUserWithOrganization(
+            @AuthenticationPrincipal AuthenticatedUser currentUser,
             @PathVariable Long id, @Valid @RequestBody AssociateUserOrganizationRequest request
     ) {
         userAccessApplicationService.associateWithOrganization(
-                new AssociateUserWithOrganizationCommand(id, request.organizationId())
+                new AssociateUserWithOrganizationCommand(id, request.organizationId(), currentUser.userId())
         );
     }
 
     @RequirePermission("IAM_USER_ROLE_ASSIGN")
     @PostMapping("/{id}/roles")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void assignRoleToUser(@PathVariable Long id, @Valid @RequestBody AssignUserRoleRequest request) {
-        userAccessApplicationService.assignRole(new AssignRoleToUserCommand(id, request.roleId(), request.organizationId()));
+    public void assignRoleToUser(@AuthenticationPrincipal AuthenticatedUser currentUser,
+                                 @PathVariable Long id, @Valid @RequestBody AssignUserRoleRequest request) {
+        userAccessApplicationService.assignRole(new AssignRoleToUserCommand(
+                id, request.roleId(), request.organizationId(), currentUser.userId()));
     }
 
     @RequirePermission("IAM_USER_PASSWORD_SET")

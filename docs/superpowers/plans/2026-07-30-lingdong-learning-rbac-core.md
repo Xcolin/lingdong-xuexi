@@ -1,6 +1,6 @@
 # 灵动学习 RBAC 核心实施计划
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **执行说明：** 建议使用 `superpowers:subagent-driven-development` 或 `superpowers:executing-plans` 逐项实施，并用复选框（`- [ ]`）记录状态。
 
 **Goal:** 建立组织、用户、角色、权限关系的 Flyway 数据模型，并交付可创建自定义角色且防止角色编码重复的事务型应用服务。
 

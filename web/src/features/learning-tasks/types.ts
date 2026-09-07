@@ -88,6 +88,7 @@ export interface StudentOption {
   studentAccountMasked: string | null;
   currentClassId: string | null;
   currentClassName: string | null;
+  relationshipRole: 'PRIMARY_GUARDIAN' | 'SECONDARY_GUARDIAN' | null;
 }
 
 export interface TeacherOption {
@@ -113,6 +114,27 @@ export interface BatchPublishResult {
   successCount: number;
   failureCount: number;
   items: BatchPublishItemResult[];
+}
+
+export interface ManagedTaskProgressItem {
+  assignmentId: string;
+  studentId: string;
+  studentName: string;
+  studentAccountMasked: string | null;
+  classOrganizationId: string | null;
+  className: string | null;
+  currentStatus: TaskAssignmentStatus;
+  scheduledDate: string;
+  claimedAt: string | null;
+  completedAt: string | null;
+  lastTransitionAt: string | null;
+}
+
+export interface ManagedTaskProgressPage {
+  items: ManagedTaskProgressItem[];
+  page: number;
+  pageSize: number;
+  total: number;
 }
 
 export interface StopRecurringTaskResult {

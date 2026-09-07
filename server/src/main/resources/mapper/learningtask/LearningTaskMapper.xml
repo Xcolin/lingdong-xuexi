@@ -47,6 +47,19 @@
                 </if>
                 <if test="query.teacher">
                     OR (source_type = 'TEACHER' AND creator_user_id = #{query.currentUserId})
+                    OR (source_type = 'ORGANIZATION' AND status = 'PUBLISHED' AND EXISTS (
+                        SELECT 1
+                        FROM learn_task_assignment visible_assignment
+                        JOIN edu_student_organization visible_student_class
+                          ON visible_student_class.student_id = visible_assignment.student_id
+                         AND visible_student_class.relation_type = 'CLASS'
+                         AND visible_student_class.status = 'ACTIVE'
+                        JOIN edu_teacher_class visible_teacher_class
+                          ON visible_teacher_class.class_organization_id = visible_student_class.organization_id
+                         AND visible_teacher_class.status = 'ACTIVE'
+                        WHERE visible_assignment.task_id = learn_task.id
+                          AND visible_teacher_class.teacher_user_id = #{query.currentUserId}
+                    ))
                 </if>
                 <if test="query.organizationAdministrator">
                     OR (source_type = 'ORGANIZATION' AND EXISTS (

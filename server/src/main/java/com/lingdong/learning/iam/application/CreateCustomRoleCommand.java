@@ -9,6 +9,10 @@ public record CreateCustomRoleCommand(
         String code,
         String name,
         String description,
-        RoleDataScope dataScope
+        RoleDataScope dataScope,
+        Long operatorId
 ) {
+    public CreateCustomRoleCommand(String code, String name, String description, RoleDataScope dataScope) {
+        this(code, name, description, dataScope, null);
+    }
 }

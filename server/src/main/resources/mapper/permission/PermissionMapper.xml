@@ -35,6 +35,60 @@
         SELECT <include refid="columns"/> FROM sys_permission ORDER BY permission_code ASC
     </select>
 
+    <select id="findAllowedCodes" resultType="java.lang.String">
+        SELECT permission.permission_code
+        FROM sys_permission permission
+        JOIN sys_user user_account
+          ON user_account.id = #{userId}
+         AND user_account.status = 'ENABLED'
+        WHERE permission.status = 'ENABLED'
+          AND permission.client_type IN ('BOTH', #{client})
+          AND EXISTS (
+              SELECT 1
+              FROM sys_user_role user_role
+              JOIN sys_role role ON role.id = user_role.role_id
+              WHERE user_role.user_id = #{userId}
+                AND role.status = 'ENABLED'
+          )
+          AND NOT EXISTS (
+              SELECT 1
+              FROM sys_user_role user_role
+              JOIN sys_role role ON role.id = user_role.role_id
+              JOIN sys_role_permission role_permission ON role_permission.role_id = role.id
+              WHERE user_role.user_id = #{userId}
+                AND role.status = 'ENABLED'
+                AND role_permission.permission_id = permission.id
+                AND role_permission.effect = 'DENY'
+          )
+          AND NOT EXISTS (
+              SELECT 1
+              FROM sys_user_permission user_permission
+              WHERE user_permission.user_id = #{userId}
+                AND user_permission.permission_id = permission.id
+                AND user_permission.effect = 'DENY'
+          )
+          AND (
+              EXISTS (
+                  SELECT 1
+                  FROM sys_user_role user_role
+                  JOIN sys_role role ON role.id = user_role.role_id
+                  JOIN sys_role_permission role_permission ON role_permission.role_id = role.id
+                  WHERE user_role.user_id = #{userId}
+                    AND role.status = 'ENABLED'
+                    AND role_permission.permission_id = permission.id
+                    AND role_permission.effect = 'ALLOW'
+              )
+              OR EXISTS (
+                  SELECT 1
+                  FROM sys_user_permission user_permission
+                  WHERE user_permission.user_id = #{userId}
+                    AND user_permission.permission_id = permission.id
+                    AND user_permission.effect = 'ALLOW'
+              )
+          )
+        ORDER BY permission.permission_code ASC
+    </select>
+
     <insert id="insert">
         INSERT INTO sys_permission (
             id, permission_code, permission_name, resource_type, client_type, parent_id, status

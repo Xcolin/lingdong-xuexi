@@ -1,6 +1,6 @@
 # 灵动学习组织树核心实施计划
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **执行说明：** 建议使用 `superpowers:subagent-driven-development` 或 `superpowers:executing-plans` 逐项实施，并用复选框（`- [ ]`）记录状态。
 
 **Goal:** 交付可配置组织类型、可创建区域到班级树形节点的后端应用服务，并以组织路径、父节点状态和同级名称唯一性保障组织边界。
 

@@ -1,7 +1,8 @@
 import { apiClient } from './http';
 
 export type UserType = 'PLATFORM' | 'ORGANIZATION' | 'FAMILY' | 'STUDENT';
-export type UserStatus = 'ENABLED' | 'DISABLED' | 'LOCKED';
+export type UserStatus = 'ENABLED' | 'DISABLED' | 'LOCKED' | 'CANCELLED';
+export type MutableUserStatus = Exclude<UserStatus, 'CANCELLED'>;
 
 export interface ManagedUser {
   id: string;
@@ -47,7 +48,7 @@ export const usersApi = {
   create(input: CreateUserInput): Promise<ManagedUser> {
     return apiClient.post<ManagedUser>('/users', input);
   },
-  updateStatus(userId: string, status: UserStatus): Promise<ManagedUser> {
+  updateStatus(userId: string, status: MutableUserStatus): Promise<ManagedUser> {
     return apiClient.patch<ManagedUser>(`/users/${userId}/status`, { status });
   }
 };

@@ -65,7 +65,7 @@ async function request<T>(
   const headers = new Headers(init.headers);
   const session = authSessionStore.get();
 
-  if (init.body && !headers.has('Content-Type')) {
+  if (init.body && !(init.body instanceof FormData) && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }
   if (authenticated && session) {
@@ -135,11 +135,20 @@ async function toApiRequestError(response: Response): Promise<ApiRequestError> {
 }
 
 export const apiClient = {
+  publicGet<T>(path: string): Promise<T> {
+    return request<T>(path, {}, { authenticated: false });
+  },
+  publicPost<T>(path: string, body: unknown): Promise<T> {
+    return request<T>(path, { method: 'POST', body: JSON.stringify(body) }, { authenticated: false });
+  },
   get<T>(path: string): Promise<T> {
     return request<T>(path);
   },
   post<T>(path: string, body: unknown): Promise<T> {
     return request<T>(path, { method: 'POST', body: JSON.stringify(body) });
+  },
+  postForm<T>(path: string, body: FormData): Promise<T> {
+    return request<T>(path, { method: 'POST', body });
   },
   put<T>(path: string, body: unknown): Promise<T> {
     return request<T>(path, { method: 'PUT', body: JSON.stringify(body) });
@@ -149,6 +158,9 @@ export const apiClient = {
   },
   delete(path: string): Promise<void> {
     return request<void>(path, { method: 'DELETE' });
+  },
+  deleteWithResponse<T>(path: string): Promise<T> {
+    return request<T>(path, { method: 'DELETE' });
   },
   getBlob(path: string): Promise<Blob> {
     return requestBlob(path);

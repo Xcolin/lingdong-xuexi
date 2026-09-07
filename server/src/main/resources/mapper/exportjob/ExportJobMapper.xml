@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.exportjob.infrastructure.persistence.ExportJobMapper">
+    <resultMap id="ExportJobMap" type="com.lingdong.learning.exportjob.domain.ExportJobRecord">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="job_code" javaType="java.lang.String"/>
+            <arg column="export_type" javaType="com.lingdong.learning.exportjob.domain.ExportJobType"/>
+            <arg column="template_id" javaType="java.lang.Long"/>
+            <arg column="template_name" javaType="java.lang.String"/>
+            <arg column="template_version" javaType="java.lang.String"/>
+            <arg column="requester_id" javaType="java.lang.Long"/>
+            <arg column="student_id" javaType="java.lang.Long"/>
+            <arg column="system_task_id" javaType="java.lang.Long"/>
+            <arg column="filter_snapshot" javaType="java.lang.String"/>
+            <arg column="column_snapshot" javaType="java.lang.String"/>
+            <arg column="scope_snapshot" javaType="java.lang.String"/>
+            <arg column="mask_policy_snapshot" javaType="java.lang.String"/>
+            <arg column="request_reason" javaType="java.lang.String"/>
+            <arg column="sensitive_flag" javaType="java.lang.Boolean"/>
+            <arg column="status" javaType="com.lingdong.learning.exportjob.domain.ExportJobStatus"/>
+            <arg column="version_no" javaType="java.lang.Long"/>
+            <arg column="result_file_id" javaType="java.lang.Long"/>
+            <arg column="total_rows" javaType="java.lang.Long"/>
+            <arg column="processed_rows" javaType="java.lang.Long"/>
+            <arg column="failure_code" javaType="java.lang.String"/>
+            <arg column="failure_message" javaType="java.lang.String"/>
+            <arg column="request_source_hash" javaType="java.lang.String"/>
+            <arg column="requested_at" javaType="java.time.LocalDateTime"/>
+            <arg column="reviewed_at" javaType="java.time.LocalDateTime"/>
+            <arg column="queued_at" javaType="java.time.LocalDateTime"/>
+            <arg column="started_at" javaType="java.time.LocalDateTime"/>
+            <arg column="completed_at" javaType="java.time.LocalDateTime"/>
+            <arg column="created_at" javaType="java.time.LocalDateTime"/>
+            <arg column="updated_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="columns">
+        id, job_code, export_type, template_id, template_name, template_version,
+        requester_id, student_id, system_task_id, filter_snapshot, column_snapshot,
+        scope_snapshot, mask_policy_snapshot, request_reason, sensitive_flag, status,
+        version_no, result_file_id, total_rows, processed_rows, failure_code,
+        failure_message, request_source_hash, requested_at, reviewed_at, queued_at,
+        started_at, completed_at, created_at, updated_at
+    </sql>
+
+    <insert id="insert">
+        INSERT INTO sys_export_job (
+            id, job_code, export_type, template_id, template_name, template_version,
+            requester_id, student_id, system_task_id, filter_snapshot, column_snapshot,
+            scope_snapshot, mask_policy_snapshot, request_reason, sensitive_flag, status,
+            version_no, result_file_id, total_rows, processed_rows, failure_code,
+            failure_message, request_source_hash, requested_at, reviewed_at, queued_at,
+            started_at, completed_at
+        ) VALUES (
+            #{job.id}, #{job.jobCode}, #{job.exportType}, #{job.templateId},
+            #{job.templateName}, #{job.templateVersion}, #{job.requesterId},
+            #{job.studentId,jdbcType=BIGINT}, #{job.systemTaskId,jdbcType=BIGINT},
+            #{job.filterSnapshot}, #{job.columnSnapshot}, #{job.scopeSnapshot},
+            #{job.maskPolicySnapshot}, #{job.requestReason}, #{job.sensitive},
+            #{job.status}, #{job.versionNo}, #{job.resultFileId,jdbcType=BIGINT},
+            #{job.totalRows}, #{job.processedRows}, #{job.failureCode,jdbcType=VARCHAR},
+            #{job.failureMessage,jdbcType=VARCHAR}, #{job.requestSourceHash},
+            #{job.requestedAt}, #{job.reviewedAt,jdbcType=TIMESTAMP},
+            #{job.queuedAt,jdbcType=TIMESTAMP}, #{job.startedAt,jdbcType=TIMESTAMP},
+            #{job.completedAt,jdbcType=TIMESTAMP}
+        )
+    </insert>
+
+    <select id="findById" resultMap="ExportJobMap">
+        SELECT <include refid="columns"/> FROM sys_export_job WHERE id = #{id}
+    </select>
+
+    <select id="findBySystemTaskId" resultMap="ExportJobMap">
+        SELECT <include refid="columns"/> FROM sys_export_job
+        WHERE system_task_id = #{systemTaskId}
+    </select>
+
+    <select id="findQueued" resultMap="ExportJobMap">
+        SELECT <include refid="columns"/> FROM sys_export_job
+        WHERE status = 'QUEUED'
+        ORDER BY queued_at, id
+        LIMIT #{limit}
+    </select>
+
+    <sql id="requesterFilters">
+        WHERE requester_id = #{requesterId}
+        <if test="exportType != null">AND export_type = #{exportType}</if>
+        <if test="status != null">AND status = #{status}</if>
+    </sql>
+
+    <select id="findPageByRequester" resultMap="ExportJobMap">
+        SELECT <include refid="columns"/> FROM sys_export_job
+        <include refid="requesterFilters"/>
+        ORDER BY requested_at DESC, id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countByRequester" resultType="long">
+        SELECT COUNT(*) FROM sys_export_job
+        <include refid="requesterFilters"/>
+    </select>
+
+    <select id="findPendingReviews" resultMap="ExportJobMap">
+        SELECT <include refid="columns"/> FROM sys_export_job
+        WHERE status = 'PENDING_REVIEW' AND sensitive_flag = 1
+        ORDER BY requested_at, id
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countPendingReviews" resultType="long">
+        SELECT COUNT(*) FROM sys_export_job
+        WHERE status = 'PENDING_REVIEW' AND sensitive_flag = 1
+    </select>
+
+    <update id="claim">
+        UPDATE sys_export_job
+        SET status = 'EXPORTING', version_no = version_no + 1,
+            started_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id} AND status = 'QUEUED' AND version_no = #{expectedVersion}
+    </update>
+
+    <update id="updateProgress">
+        UPDATE sys_export_job
+        SET total_rows = #{totalRows}, processed_rows = #{processedRows},
+            version_no = version_no + 1, updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id} AND status = 'EXPORTING' AND version_no = #{expectedVersion}
+          AND #{totalRows} &gt;= 0 AND #{processedRows} &gt;= processed_rows
+          AND #{processedRows} &lt;= #{totalRows}
+    </update>
+
+    <update id="queueAfterReview">
+        UPDATE sys_export_job
+        SET status = 'QUEUED', reviewed_at = #{reviewedAt}, queued_at = #{reviewedAt},
+            version_no = version_no + 1, updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id} AND status = 'PENDING_REVIEW' AND version_no = #{expectedVersion}
+    </update>
+
+    <update id="rejectAfterReview">
+        UPDATE sys_export_job
+        SET status = 'REJECTED', reviewed_at = #{reviewedAt}, completed_at = #{reviewedAt},
+            version_no = version_no + 1, updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id} AND status = 'PENDING_REVIEW' AND version_no = #{expectedVersion}
+    </update>
+
+    <update id="succeed">
+        UPDATE sys_export_job
+        SET status = 'SUCCEEDED', result_file_id = #{resultFileId},
+            total_rows = #{totalRows}, processed_rows = #{processedRows},
+            completed_at = #{completedAt}, version_no = version_no + 1,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id} AND status = 'EXPORTING' AND version_no = #{expectedVersion}
+          AND #{processedRows} = #{totalRows}
+    </update>
+
+    <update id="fail">
+        UPDATE sys_export_job
+        SET status = 'FAILED', failure_code = #{failureCode},
+            failure_message = #{failureMessage}, completed_at = #{completedAt},
+            version_no = version_no + 1, updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id} AND status = 'EXPORTING' AND version_no = #{expectedVersion}
+    </update>
+</mapper>

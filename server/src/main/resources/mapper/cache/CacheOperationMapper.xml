@@ -22,6 +22,21 @@
         </constructor>
     </resultMap>
 
+    <resultMap id="CacheReviewQueueResultMap" type="com.lingdong.learning.cache.application.CacheReviewQueueItem">
+        <constructor>
+            <idArg column="operation_id" javaType="java.lang.Long"/>
+            <arg column="task_id" javaType="java.lang.Long"/>
+            <arg column="cache_domain" javaType="com.lingdong.learning.cache.domain.CacheDomain"/>
+            <arg column="operation_type" javaType="com.lingdong.learning.cache.domain.CacheOperationType"/>
+            <arg column="operation_status" javaType="com.lingdong.learning.cache.domain.CacheOperationStatus"/>
+            <arg column="impact_description" javaType="java.lang.String"/>
+            <arg column="task_status" javaType="com.lingdong.learning.audit.application.SystemTaskStatus"/>
+            <arg column="task_title" javaType="java.lang.String"/>
+            <arg column="submitted_by" javaType="java.lang.Long"/>
+            <arg column="submitted_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
     <sql id="CacheOperationColumns">
         id, operation_code, task_id, cache_domain, operation_type, status, impact_description,
         requested_by, executed_by, failure_message, executed_at, created_at, updated_at
@@ -43,6 +58,32 @@
         SELECT <include refid="CacheOperationColumns"/>
         FROM sys_cache_operation_log
         WHERE task_id = #{taskId}
+    </select>
+
+    <select id="findRecent" resultMap="CacheOperationResultMap">
+        SELECT <include refid="CacheOperationColumns"/>
+        FROM sys_cache_operation_log
+        ORDER BY created_at DESC, id DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="findPendingReviews" resultMap="CacheReviewQueueResultMap">
+        SELECT operation.id AS operation_id,
+               operation.task_id,
+               operation.cache_domain,
+               operation.operation_type,
+               operation.status AS operation_status,
+               operation.impact_description,
+               task.status AS task_status,
+               task.task_title,
+               task.submitted_by,
+               task.submitted_at
+        FROM sys_cache_operation_log operation
+        INNER JOIN sys_system_task task ON task.id = operation.task_id
+        WHERE task.task_type = 'CACHE_CLEAR'
+          AND task.status = 'PENDING_REVIEW'
+          AND operation.status = 'PENDING'
+        ORDER BY task.submitted_at ASC, task.id ASC
     </select>
 
     <insert id="insert">
@@ -73,6 +114,14 @@
             executed_by = #{executedBy},
             failure_message = NULL,
             executed_at = CURRENT_TIMESTAMP,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+          AND status = 'PENDING'
+    </update>
+
+    <update id="markRejected">
+        UPDATE sys_cache_operation_log
+        SET status = 'REJECTED',
             updated_at = CURRENT_TIMESTAMP
         WHERE id = #{id}
           AND status = 'PENDING'

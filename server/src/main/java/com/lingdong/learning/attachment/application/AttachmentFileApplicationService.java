@@ -16,7 +16,7 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.UUID;
 
-/** Manages attachment metadata and visibility relations without coupling to a storage supplier SDK. */
+/** 管理附件元数据和可见关系，不与具体存储供应商 SDK 耦合。 */
 @Service
 public class AttachmentFileApplicationService {
     private final AttachmentRuleApplicationService ruleService;

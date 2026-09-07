@@ -1,108 +1,108 @@
-# Lingdong Learning Interface Service Implementation Plan
+# 灵动学习接口服务核心实施计划
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
+> **执行说明：** 建议使用 `superpowers:subagent-driven-development` 或 `superpowers:executing-plans` 逐项实施，并用复选框（`- [x]`）记录状态。
 
-**Goal:** Add audited interface-service registration, authorization-scope changes, disable operations, and privacy-safe call-result logging.
+**目标：** 实现可审计的接口服务登记、授权范围变更、停用操作和隐私安全的调用结果记录。
 
-**Architecture:** V12 creates three Snowflake-primary-key tables. `InterfaceServiceApplicationService` creates a linked `INTERFACE_SERVICE_CHANGE` system task for every high-risk service mutation and marks it effective only after its persistence change succeeds; a separate call-log method allows future adapters to enforce enabled registration without embedding supplier behavior.
+**架构：** V12 创建三张使用雪花主键的表。`InterfaceServiceApplicationService` 为每个高风险服务变更创建关联的 `INTERFACE_SERVICE_CHANGE` 系统任务，仅在持久化变更成功后标记生效；独立调用日志方法为后续适配器校验服务已启用提供基础，不在核心中固化供应商行为。
 
-**Tech Stack:** Java 17, Spring Boot 3.4, MyBatis XML, Flyway, MySQL 8, H2, JUnit 5, AssertJ.
+**技术栈：** Java 17、Spring Boot 3.4、MyBatis XML、Flyway、MySQL 8、H2、JUnit 5、AssertJ。
 
 ---
 
-### Task 1: Add V12 schema and failing migration tests
+### 任务 1：新增 V12 表结构和迁移失败测试
 
-**Files:**
-- Create: `server/src/main/resources/db/migration/V12__create_interface_service_tables.sql`
-- Modify: `server/src/test/java/com/lingdong/learning/FlywayMigrationTest.java`
+**文件：**
+- 新建：`server/src/main/resources/db/migration/V12__create_interface_service_tables.sql`
+- 修改：`server/src/test/java/com/lingdong/learning/FlywayMigrationTest.java`
 
-- [x] **Step 1: Write failing Flyway assertions**
+- [x] **步骤 1：编写预期失败的 Flyway 断言**
 
-Add a test asserting `sys_interface_service`, `sys_interface_service_change`, and `sys_interface_call_log` exist; each has a non-identity `BIGINT id`; `task_id` is unique in the change table; and the call-log table has `service_id`, `result`, `error_summary`, and `trace_id` columns.
+增加测试，断言 `sys_interface_service`、`sys_interface_service_change` 和 `sys_interface_call_log` 存在；每张表都使用非自增 `BIGINT id`；变更表的 `task_id` 唯一；调用日志表包含 `service_id`、`result`、`error_summary` 和 `trace_id` 字段。
 
-- [x] **Step 2: Run the focused test and verify it fails**
+- [x] **步骤 2：运行专测并确认预期失败**
 
-Run: `$env:JAVA_HOME = 'C:\Program Files\Microsoft\jdk-17.0.13.11-hotspot'; & mvn test "-Dtest=FlywayMigrationTest"`
+运行：`$env:JAVA_HOME = 'C:\Program Files\Microsoft\jdk-17.0.13.11-hotspot'; & mvn test "-Dtest=FlywayMigrationTest"`
 
-Expected: new table assertions fail because V12 does not exist.
+预期：V12 尚不存在，新表断言失败。
 
-- [x] **Step 3: Create the V12 schema**
+- [x] **步骤 3：创建 V12 表结构**
 
-Create the three tables defined in the design. All IDs are `BIGINT NOT NULL PRIMARY KEY`; add foreign keys to `sys_user`, `sys_system_task`, and `sys_interface_service`; index service status/purpose, change status lookup through `task_id`, and call-log service/time lookup. Do not add credentials, URLs, request bodies, response bodies, location data, or seed data.
+创建设计中定义的三张表。所有标识均为 `BIGINT NOT NULL PRIMARY KEY`；增加指向 `sys_user`、`sys_system_task` 和 `sys_interface_service` 的外键；为服务状态与用途、通过 `task_id` 查询变更、按服务和时间查询调用日志建立索引。不得增加凭据、网址、请求正文、响应正文、位置数据或基础种子。
 
-- [x] **Step 4: Verify migration tests pass**
+- [x] **步骤 4：确认迁移测试通过**
 
-Run the Task 1 command. Expected: Flyway applies V1-V12 from an empty H2 database and all migration assertions pass.
+运行任务 1 命令。预期：Flyway 在空 H2 数据库连续执行 V1-V12，全部迁移断言通过。
 
-### Task 2: Implement audited interface-service change application
+### 任务 2：实现可审计的接口服务变更应用层
 
-**Files:**
-- Create: `server/src/main/java/com/lingdong/learning/interfaceconfig/domain/InterfaceDirection.java`
-- Create: `server/src/main/java/com/lingdong/learning/interfaceconfig/domain/InterfacePurpose.java`
-- Create: `server/src/main/java/com/lingdong/learning/interfaceconfig/domain/InterfaceAuthorizationScope.java`
-- Create: `server/src/main/java/com/lingdong/learning/interfaceconfig/domain/InterfaceServiceStatus.java`
-- Create: `server/src/main/java/com/lingdong/learning/interfaceconfig/domain/InterfaceServiceChangeType.java`
-- Create: `server/src/main/java/com/lingdong/learning/interfaceconfig/domain/InterfaceService.java`
-- Create: `server/src/main/java/com/lingdong/learning/interfaceconfig/domain/InterfaceServiceChange.java`
-- Create: `server/src/main/java/com/lingdong/learning/interfaceconfig/application/CreateInterfaceServiceChangeCommand.java`
-- Create: `server/src/main/java/com/lingdong/learning/interfaceconfig/application/CreateInterfaceServiceDisableCommand.java`
-- Create: `server/src/main/java/com/lingdong/learning/interfaceconfig/application/CreateInterfaceServiceAuthorizationChangeCommand.java`
-- Create: `server/src/main/java/com/lingdong/learning/interfaceconfig/application/InterfaceServiceApplicationService.java`
-- Create: `server/src/main/java/com/lingdong/learning/interfaceconfig/infrastructure/persistence/InterfaceServiceMapper.java`
-- Create: `server/src/main/java/com/lingdong/learning/interfaceconfig/infrastructure/persistence/InterfaceServiceChangeMapper.java`
-- Create: `server/src/main/resources/mapper/interfaceconfig/InterfaceServiceMapper.xml`
-- Create: `server/src/main/resources/mapper/interfaceconfig/InterfaceServiceChangeMapper.xml`
-- Test: `server/src/test/java/com/lingdong/learning/interfaceconfig/application/InterfaceServiceApplicationServiceTest.java`
+**文件：**
+- 新建：`server/src/main/java/com/lingdong/learning/interfaceconfig/domain/InterfaceDirection.java`
+- 新建：`server/src/main/java/com/lingdong/learning/interfaceconfig/domain/InterfacePurpose.java`
+- 新建：`server/src/main/java/com/lingdong/learning/interfaceconfig/domain/InterfaceAuthorizationScope.java`
+- 新建：`server/src/main/java/com/lingdong/learning/interfaceconfig/domain/InterfaceServiceStatus.java`
+- 新建：`server/src/main/java/com/lingdong/learning/interfaceconfig/domain/InterfaceServiceChangeType.java`
+- 新建：`server/src/main/java/com/lingdong/learning/interfaceconfig/domain/InterfaceService.java`
+- 新建：`server/src/main/java/com/lingdong/learning/interfaceconfig/domain/InterfaceServiceChange.java`
+- 新建：`server/src/main/java/com/lingdong/learning/interfaceconfig/application/CreateInterfaceServiceChangeCommand.java`
+- 新建：`server/src/main/java/com/lingdong/learning/interfaceconfig/application/CreateInterfaceServiceDisableCommand.java`
+- 新建：`server/src/main/java/com/lingdong/learning/interfaceconfig/application/CreateInterfaceServiceAuthorizationChangeCommand.java`
+- 新建：`server/src/main/java/com/lingdong/learning/interfaceconfig/application/InterfaceServiceApplicationService.java`
+- 新建：`server/src/main/java/com/lingdong/learning/interfaceconfig/infrastructure/persistence/InterfaceServiceMapper.java`
+- 新建：`server/src/main/java/com/lingdong/learning/interfaceconfig/infrastructure/persistence/InterfaceServiceChangeMapper.java`
+- 新建：`server/src/main/resources/mapper/interfaceconfig/InterfaceServiceMapper.xml`
+- 新建：`server/src/main/resources/mapper/interfaceconfig/InterfaceServiceChangeMapper.xml`
+- 测试：`server/src/test/java/com/lingdong/learning/interfaceconfig/application/InterfaceServiceApplicationServiceTest.java`
 
-- [x] **Step 1: Write failing approval-flow tests**
+- [x] **步骤 1：编写预期失败的审批流程测试**
 
-Create a system administrator and system auditor using existing helpers. Test that a create draft returns a task ID but does not create a service; after submit and approve-and-apply, the service exists with a 19-digit ID and `ENABLED` status. Test that disable and authorization-scope-change drafts leave the existing service unchanged until the linked task is approved and applied.
+使用既有辅助方法创建系统管理员和系统审核员。验证创建草稿返回任务标识但不创建服务；提交并批准执行后，服务以 19 位标识和 `ENABLED` 状态存在。验证停用和授权范围变更草稿在关联任务批准执行前不改变现有服务。
 
-- [x] **Step 2: Run the focused test and verify it fails**
+- [x] **步骤 2：运行专测并确认预期失败**
 
-Run: `$env:JAVA_HOME = 'C:\Program Files\Microsoft\jdk-17.0.13.11-hotspot'; & mvn test "-Dtest=InterfaceServiceApplicationServiceTest"`
+运行：`$env:JAVA_HOME = 'C:\Program Files\Microsoft\jdk-17.0.13.11-hotspot'; & mvn test "-Dtest=InterfaceServiceApplicationServiceTest"`
 
-Expected: compilation failure because the interface-service module is absent.
+预期：接口服务模块尚不存在，编译失败。
 
-- [x] **Step 3: Implement commands, domain records, Mappers, and service**
+- [x] **步骤 3：实现命令、领域记录、Mapper 和应用服务**
 
-Require `SYS_ADMIN` in draft creation. Validate service name and caller name at 100 characters, authorization scope value at 128 characters, and owner existence. Create a `SystemTaskType.INTERFACE_SERVICE_CHANGE` task plus a Snowflake-ID change record. `submit` delegates to the linked task. `approveAndApply` approves, applies exactly one of create/disable/authorization change, and calls `markEffective` only after the corresponding Mapper mutation returns one row.
+创建草稿时要求 `SYS_ADMIN`。服务名称和调用方名称最长 100 字符，授权范围值最长 128 字符，并校验责任人存在。创建 `SystemTaskType.INTERFACE_SERVICE_CHANGE` 任务和雪花标识变更记录。`submit` 委托关联任务提交；`approveAndApply` 批准后只执行登记、停用或授权变更之一，且仅在对应 Mapper 更新一行后调用 `markEffective`。
 
-- [x] **Step 4: Verify approval-flow tests pass**
+- [x] **步骤 4：确认审批流程测试通过**
 
-Run the Task 2 command. Expected: all workflow tests pass and rejected or merely approved changes do not report an effective service mutation.
+运行任务 2 命令。预期：全部流程测试通过，已驳回或仅批准但未执行的变更不得报告为服务已生效。
 
-### Task 3: Add enabled-service call logging and complete verification
+### 任务 3：增加已启用服务调用日志并完成验证
 
-**Files:**
-- Create: `server/src/main/java/com/lingdong/learning/interfaceconfig/domain/InterfaceCallResult.java`
-- Create: `server/src/main/java/com/lingdong/learning/interfaceconfig/domain/InterfaceServiceCallLog.java`
-- Create: `server/src/main/java/com/lingdong/learning/interfaceconfig/application/RecordInterfaceServiceCallCommand.java`
-- Modify: `server/src/main/java/com/lingdong/learning/interfaceconfig/application/InterfaceServiceApplicationService.java`
-- Create: `server/src/main/java/com/lingdong/learning/interfaceconfig/infrastructure/persistence/InterfaceServiceCallLogMapper.java`
-- Create: `server/src/main/resources/mapper/interfaceconfig/InterfaceServiceCallLogMapper.xml`
-- Modify: `docs/design/03-系统架构设计-HLD-V1.0.md`
-- Modify: `docs/design/04-数据库设计-V1.0.md`
-- Modify: `docs/design/05-Flyway迁移规范-V1.0.md`
-- Modify: `docs/design/12-当前实现一致性核对-V1.0.md`
-- Test: `server/src/test/java/com/lingdong/learning/interfaceconfig/application/InterfaceServiceApplicationServiceTest.java`
+**文件：**
+- 新建：`server/src/main/java/com/lingdong/learning/interfaceconfig/domain/InterfaceCallResult.java`
+- 新建：`server/src/main/java/com/lingdong/learning/interfaceconfig/domain/InterfaceServiceCallLog.java`
+- 新建：`server/src/main/java/com/lingdong/learning/interfaceconfig/application/RecordInterfaceServiceCallCommand.java`
+- 修改：`server/src/main/java/com/lingdong/learning/interfaceconfig/application/InterfaceServiceApplicationService.java`
+- 新建：`server/src/main/java/com/lingdong/learning/interfaceconfig/infrastructure/persistence/InterfaceServiceCallLogMapper.java`
+- 新建：`server/src/main/resources/mapper/interfaceconfig/InterfaceServiceCallLogMapper.xml`
+- 修改：`docs/design/03-系统架构设计-HLD-V1.0.md`
+- 修改：`docs/design/04-数据库设计-V1.0.md`
+- 修改：`docs/design/05-Flyway迁移规范-V1.0.md`
+- 修改：`docs/design/12-当前实现一致性核对-V1.0.md`
+- 测试：`server/src/test/java/com/lingdong/learning/interfaceconfig/application/InterfaceServiceApplicationServiceTest.java`
 
-- [x] **Step 1: Write failing call-log tests**
+- [x] **步骤 1：编写预期失败的调用日志测试**
 
-Assert that recording a call for an unregistered or disabled service throws an exception. After an enabled service has been approved and applied, record a failed call and assert the persisted row has a 19-digit ID, the expected result, caller, trace ID, and bounded error summary; no payload or credential field exists in the table.
+断言为未登记或已停用服务记录调用时抛出异常。已启用服务批准生效后，记录一次失败调用，断言持久化记录包含 19 位标识、预期结果、调用方、追踪标识和受限长度异常摘要；表中不存在报文或凭据字段。
 
-- [x] **Step 2: Run the focused test and verify it fails**
+- [x] **步骤 2：运行专测并确认预期失败**
 
-Run the Task 2 command. Expected: the call-record API is absent or rejects the expected enabled service flow.
+运行任务 2 命令。预期：调用记录 API 尚不存在，或无法完成预期的已启用服务流程。
 
-- [x] **Step 3: Implement the call-log write path and document V12**
+- [x] **步骤 3：实现调用日志写入路径并记录 V12**
 
-Read the service by ID, reject missing or disabled services, validate caller/error/trace lengths, allocate an ID through `IdGenerator`, and insert only the allowed summary fields. Update design documents to mark interface-service metadata, approval flow, and call-result logging as implemented while stating that no concrete supplier adapter or REST Controller exists yet.
+按标识读取服务，拒绝不存在或已停用服务，校验调用方、异常和追踪字段长度，通过 `IdGenerator` 分配标识，只插入允许的摘要字段。更新设计文档，将接口服务元数据、审批流程和调用结果记录标记为已实现，同时明确当时尚无具体供应商适配器或 REST 控制器。
 
-- [x] **Step 4: Run static checks and the full suite**
+- [x] **步骤 4：运行静态检查和全量测试**
 
-Run: `rg -n "AUTO_INCREMENT|PRIMARY KEY \\([^)]*_id" src/main/resources/db/migration`
+运行：`rg -n "AUTO_INCREMENT|PRIMARY KEY \\([^)]*_id" src/main/resources/db/migration`
 
-Expected: no matches. Then run: `$env:JAVA_HOME = 'C:\Program Files\Microsoft\jdk-17.0.13.11-hotspot'; & mvn test`
+预期：无匹配。然后运行：`$env:JAVA_HOME = 'C:\Program Files\Microsoft\jdk-17.0.13.11-hotspot'; & mvn test`
 
-Expected: all tests pass with Flyway V1-V12 applied.
+预期：Flyway V1-V12 执行后全部测试通过。

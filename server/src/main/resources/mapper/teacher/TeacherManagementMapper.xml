@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.teacher.infrastructure.persistence.TeacherManagementMapper">
+    <resultMap id="TeacherDirectoryRowMap"
+               type="com.lingdong.learning.teacher.infrastructure.persistence.TeacherDirectoryRow">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="username" javaType="java.lang.String"/>
+            <arg column="display_name" javaType="java.lang.String"/>
+            <arg column="mobile" javaType="java.lang.String"/>
+            <arg column="status" javaType="com.lingdong.learning.user.domain.UserStatus"/>
+            <arg column="school_id" javaType="java.lang.Long"/>
+            <arg column="school_name" javaType="java.lang.String"/>
+            <arg column="created_at" javaType="java.time.LocalDateTime"/>
+            <arg column="updated_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="TeacherClassIdRowMap"
+               type="com.lingdong.learning.teacher.infrastructure.persistence.TeacherClassIdRow">
+        <constructor>
+            <idArg column="teacher_user_id" javaType="java.lang.Long"/>
+            <arg column="class_organization_id" javaType="java.lang.Long"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="teacherScopeFilters">
+        teacher.user_type = 'ORGANIZATION'
+        AND EXISTS (
+            SELECT 1
+            FROM sys_user_role teacher_role_assignment
+            JOIN sys_role teacher_role ON teacher_role.id = teacher_role_assignment.role_id
+            WHERE teacher_role_assignment.user_id = teacher.id
+              AND teacher_role.role_code = 'TEACHER'
+              AND teacher_role.status = 'ENABLED'
+        )
+        AND school.organization_type = 'SCHOOL'
+        <if test="!criteria.allOrganizations">
+            AND (
+                <foreach collection="criteria.rootPaths" item="rootPath" separator=" OR ">
+                    school.organization_path LIKE CONCAT(#{rootPath}, '%')
+                </foreach>
+            )
+        </if>
+        <if test="criteria.keyword != null">
+            AND (teacher.username LIKE CONCAT('%', #{criteria.keyword}, '%')
+                OR teacher.display_name LIKE CONCAT('%', #{criteria.keyword}, '%'))
+        </if>
+        <if test="criteria.schoolId != null">
+            AND school.id = #{criteria.schoolId}
+        </if>
+        <if test="criteria.status != null">
+            AND teacher.status = #{criteria.status}
+        </if>
+        <if test="criteria.classOrganizationId != null">
+            AND EXISTS (
+                SELECT 1 FROM edu_teacher_class class_filter
+                WHERE class_filter.teacher_user_id = teacher.id
+                  AND class_filter.class_organization_id = #{criteria.classOrganizationId}
+                  AND class_filter.status = 'ACTIVE'
+            )
+        </if>
+    </sql>
+
+    <select id="findPage" resultMap="TeacherDirectoryRowMap">
+        SELECT teacher.id, teacher.username, teacher.display_name, teacher.mobile, teacher.status,
+               MIN(school.id) AS school_id, MIN(school.organization_name) AS school_name,
+               teacher.created_at, teacher.updated_at
+        FROM sys_user teacher
+        JOIN sys_user_organization teacher_membership
+          ON teacher_membership.user_id = teacher.id
+        JOIN sys_organization school
+          ON school.id = teacher_membership.organization_id
+        WHERE <include refid="teacherScopeFilters"/>
+        GROUP BY teacher.id, teacher.username, teacher.display_name, teacher.mobile,
+                 teacher.status, teacher.created_at, teacher.updated_at
+        ORDER BY teacher.created_at DESC, teacher.id DESC
+        LIMIT #{criteria.limit} OFFSET #{criteria.offset}
+    </select>
+
+    <select id="count" resultType="long">
+        SELECT COUNT(DISTINCT teacher.id)
+        FROM sys_user teacher
+        JOIN sys_user_organization teacher_membership
+          ON teacher_membership.user_id = teacher.id
+        JOIN sys_organization school
+          ON school.id = teacher_membership.organization_id
+        WHERE <include refid="teacherScopeFilters"/>
+    </select>
+
+    <select id="findActiveClassIds" resultMap="TeacherClassIdRowMap">
+        SELECT teacher_user_id, class_organization_id
+        FROM edu_teacher_class
+        WHERE status = 'ACTIVE'
+          AND teacher_user_id IN
+          <foreach collection="teacherUserIds" item="teacherUserId" open="(" separator="," close=")">
+              #{teacherUserId}
+          </foreach>
+        ORDER BY teacher_user_id, class_organization_id
+    </select>
+
+    <select id="findAccessibleById" resultMap="TeacherDirectoryRowMap">
+        SELECT teacher.id, teacher.username, teacher.display_name, teacher.mobile, teacher.status,
+               MIN(school.id) AS school_id, MIN(school.organization_name) AS school_name,
+               teacher.created_at, teacher.updated_at
+        FROM sys_user teacher
+        JOIN sys_user_organization teacher_membership
+          ON teacher_membership.user_id = teacher.id
+        JOIN sys_organization school
+          ON school.id = teacher_membership.organization_id
+        WHERE teacher.id = #{teacherUserId}
+          AND teacher.user_type = 'ORGANIZATION'
+          AND school.organization_type = 'SCHOOL'
+          AND EXISTS (
+              SELECT 1
+              FROM sys_user_role teacher_role_assignment
+              JOIN sys_role teacher_role ON teacher_role.id = teacher_role_assignment.role_id
+              WHERE teacher_role_assignment.user_id = teacher.id
+                AND teacher_role.role_code = 'TEACHER'
+                AND teacher_role.status = 'ENABLED'
+          )
+          <if test="!allOrganizations">
+              AND (
+                  <foreach collection="rootPaths" item="rootPath" separator=" OR ">
+                      school.organization_path LIKE CONCAT(#{rootPath}, '%')
+                  </foreach>
+              )
+          </if>
+        GROUP BY teacher.id, teacher.username, teacher.display_name, teacher.mobile,
+                 teacher.status, teacher.created_at, teacher.updated_at
+    </select>
+
+    <select id="existsMobileExcludingId" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1 FROM sys_user
+            WHERE mobile = #{mobile} AND id &lt;&gt; #{teacherUserId}
+        )
+    </select>
+
+    <update id="updateProfile">
+        UPDATE sys_user
+        SET display_name = #{displayName},
+            mobile = #{mobile, jdbcType=VARCHAR},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{teacherUserId}
+    </update>
+
+    <select id="hasPendingReviews" resultType="boolean" useCache="false" flushCache="true">
+        SELECT EXISTS(
+            SELECT 1
+            FROM learn_task_assignment
+            WHERE current_reviewer_id = #{teacherUserId}
+              AND current_status = 'PENDING_REVIEW'
+        )
+    </select>
+</mapper>

@@ -2,7 +2,7 @@ package com.lingdong.learning.cache.domain;
 
 import java.time.LocalDateTime;
 
-/** Immutable audit record for a requested cache operation and its execution outcome. */
+/** 缓存操作请求及其执行结果的不可变审计记录。 */
 public record CacheOperation(
         Long id,
         String code,

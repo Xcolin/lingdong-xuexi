@@ -37,6 +37,39 @@
         ORDER BY class_organization_id
     </select>
 
+    <select id="existsActiveOperationalClassByTeacher" resultType="boolean">
+        SELECT EXISTS(SELECT 1
+        FROM edu_teacher_class teacher_class
+        JOIN sys_organization class_organization
+          ON class_organization.id = teacher_class.class_organization_id
+        WHERE teacher_class.teacher_user_id = #{teacherUserId}
+          AND teacher_class.status = 'ACTIVE'
+          AND class_organization.status = 'ENABLED'
+          AND class_organization.effective_status = 'ENABLED'
+          AND class_organization.organization_type = 'CLASS')
+    </select>
+
+    <select id="findActiveClassSummaries"
+            resultType="com.lingdong.learning.teacher.application.TeacherClassSummary">
+        SELECT class_organization.id AS classId,
+               class_organization.organization_name AS className,
+               school_organization.id AS schoolId,
+               school_organization.organization_name AS schoolName
+        FROM edu_teacher_class teacher_class
+        JOIN sys_organization class_organization
+          ON class_organization.id = teacher_class.class_organization_id
+        JOIN sys_organization school_organization
+          ON school_organization.id = class_organization.parent_id
+        WHERE teacher_class.teacher_user_id = #{teacherUserId}
+          AND teacher_class.status = 'ACTIVE'
+          AND class_organization.status = 'ENABLED'
+          AND class_organization.effective_status = 'ENABLED'
+          AND school_organization.status = 'ENABLED'
+          AND school_organization.effective_status = 'ENABLED'
+        ORDER BY school_organization.sort_order, class_organization.sort_order,
+                 class_organization.id
+    </select>
+
     <select id="existsTeacherOrganizationInClassAncestors" resultType="boolean">
         SELECT EXISTS(SELECT 1
         FROM sys_user_organization user_organization
@@ -72,4 +105,12 @@
           AND class_organization_id = #{classOrganizationId}
           AND status = 'ACTIVE'
     </update>
+
+    <insert id="insertChangeLog">
+        INSERT INTO edu_teacher_class_change_log (
+            id, teacher_user_id, class_organization_id, event_type, operator_user_id
+        ) VALUES (
+            #{id}, #{teacherUserId}, #{classOrganizationId}, #{eventType}, #{operatorUserId}
+        )
+    </insert>
 </mapper>

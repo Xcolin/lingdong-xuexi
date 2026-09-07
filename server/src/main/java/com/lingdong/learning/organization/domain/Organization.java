@@ -15,6 +15,8 @@ public record Organization(
         String path,
         Integer sortOrder,
         OrganizationStatus status,
+        OrganizationEffectiveStatus effectiveStatus,
+        Integer versionNo,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
@@ -38,6 +40,8 @@ public record Organization(
                 path,
                 sortOrder,
                 OrganizationStatus.ENABLED,
+                OrganizationEffectiveStatus.ENABLED,
+                1,
                 null,
                 null
         );

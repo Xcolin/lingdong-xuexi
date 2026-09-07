@@ -59,6 +59,13 @@
         ORDER BY i.sort_order ASC, i.id ASC
     </select>
 
+    <select id="findAllByTypeId" resultMap="DictionaryItemResultMap">
+        SELECT <include refid="DictionaryItemColumns"/>
+        FROM sys_dictionary_item
+        WHERE type_id = #{typeId}
+        ORDER BY sort_order ASC, id ASC
+    </select>
+
     <update id="clearDefaultByTypeId">
         UPDATE sys_dictionary_item
         SET is_default = 0,

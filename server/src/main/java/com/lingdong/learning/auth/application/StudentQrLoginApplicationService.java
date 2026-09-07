@@ -31,7 +31,8 @@ public class StudentQrLoginApplicationService {
             StudentAuthenticationFailedException.class,
             CaptchaRequiredException.class,
             StudentAccountLockedException.class,
-            StudentQrTicketInvalidException.class
+            StudentQrTicketInvalidException.class,
+            RateLimitedException.class
     })
     public StudentQrAuthenticatedSession login(StudentQrLoginCommand command) {
         Objects.requireNonNull(command, "学生扫码登录请求不能为空");

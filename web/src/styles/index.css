@@ -5,6 +5,33 @@
   text-rendering: optimizeLegibility;
 }
 
+.dictionary-workspace {
+  display: grid;
+  grid-template-columns: minmax(360px, 0.9fr) minmax(520px, 1.4fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.table-row-selected > td {
+  background: #e6f4ff !important;
+}
+
+.cache-risk-form { margin-top: 18px; }
+
+.page-stack > .ant-tabs,
+.page-stack > .ant-tabs .ant-tabs-content-holder,
+.page-stack > .ant-tabs .ant-tabs-content,
+.page-stack > .ant-tabs .ant-tabs-tabpane {
+  width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 1100px) {
+  .dictionary-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 * { box-sizing: border-box; }
 
 body { margin: 0; min-width: 320px; min-height: 100vh; }
@@ -47,6 +74,64 @@ button, input, textarea { font: inherit; }
 
 .login-alert { margin: 20px 0 12px; }
 
+.login-form { margin-top: 20px; }
+
+.login-code-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 116px;
+  gap: 10px;
+}
+
+.onboarding-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #e9f0ed;
+}
+
+.onboarding-surface {
+  width: min(100%, 760px);
+  padding: 36px;
+  border: 1px solid #d5e0db;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.onboarding-content {
+  min-height: 150px;
+  margin-top: 30px;
+  padding: 24px 0;
+  border-top: 1px solid #e2e9e6;
+  border-bottom: 1px solid #e2e9e6;
+}
+
+.onboarding-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.invitation-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #e9f0ed;
+}
+
+.invitation-surface {
+  width: min(100%, 520px);
+  padding: 32px;
+  border: 1px solid #d5e0db;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.invitation-alert { margin-bottom: 18px; }
+.invitation-actions { width: 100%; justify-content: flex-end; }
+
 .app-shell { min-height: 100vh; }
 
 .app-shell > .ant-layout,
@@ -66,6 +151,15 @@ button, input, textarea { font: inherit; }
   font-weight: 700;
   white-space: nowrap;
   overflow: hidden;
+}
+
+.app-sider.ant-layout-sider-collapsed .brand-lockup {
+  justify-content: center;
+  padding-inline: 0;
+}
+
+.app-sider.ant-layout-sider-collapsed .brand-lockup span {
+  display: none;
 }
 
 .app-sider .ant-menu { background: transparent; border-inline-end: 0; }
@@ -101,6 +195,67 @@ button, input, textarea { font: inherit; }
 
 .content-panel .ant-pro-card-header { min-height: 50px; }
 
+.attachment-table-panel {
+  min-width: 0;
+  padding: 18px 20px 8px;
+  background: #ffffff;
+  border-block: 1px solid #dce6e0;
+}
+
+.attachment-uploader { display: grid; gap: 2px; min-width: 0; }
+.attachment-uploader span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.attachment-uploader small { color: #6a7b75; font-size: 11px; }
+
+.template-filter-panel,
+.template-table-panel {
+  min-width: 0;
+  padding: 18px 20px;
+  background: #ffffff;
+  border-block: 1px solid #dce6e0;
+}
+
+.template-filter-panel .directory-filters { margin-bottom: 0; }
+.template-table-panel { padding-block: 8px; overflow: hidden; }
+.template-table-panel .ant-table-wrapper { min-width: 0; }
+.template-file-meta { display: grid; gap: 2px; min-width: 0; }
+.template-file-meta span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.template-file-meta small { color: #6a7b75; font-size: 11px; }
+.template-create-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.template-field-editor { display: grid; gap: 12px; margin-bottom: 20px; }
+.template-field-editor-heading { display: flex; align-items: center; min-height: 28px; }
+.template-field-table { min-width: 0; overflow-x: auto; }
+.template-field-row {
+  min-width: 700px;
+  display: grid;
+  grid-template-columns: minmax(132px, 1.1fr) minmax(132px, 1.1fr) 112px 96px minmax(132px, 1fr) 62px auto;
+  gap: 8px;
+  align-items: end;
+  padding: 10px 0;
+  border-bottom: 1px solid #e4ebe7;
+}
+.template-field-row:first-child { padding-top: 0; }
+.template-field-row .ant-form-item { min-width: 0; margin-bottom: 0; }
+.template-field-row .ant-input-number { width: 100%; }
+.template-field-actions { align-self: end; min-height: 32px; }
+.import-job-detail { display: grid; gap: 22px; }
+.import-job-detail section { min-width: 0; padding-top: 18px; border-top: 1px solid #e2e9e5; }
+.import-job-detail h2 { margin: 0 0 12px; font-size: 15px; line-height: 1.4; font-weight: 650; letter-spacing: 0; }
+.student-import-actions { margin-top: 12px; flex-wrap: wrap; }
+.empty-inline { padding: 14px 0; color: #66746e; }
+.export-job-tabs > .ant-tabs-nav { margin: 0; padding-inline: 20px; background: #ffffff; border-block: 1px solid #dce6e0; }
+.export-filter-panel,
+.export-table-panel { min-width: 0; padding: 18px 20px; background: #ffffff; border-block: 1px solid #dce6e0; }
+.export-filter-panel .directory-filters { margin-bottom: 0; }
+.export-table-panel { padding-block: 8px; overflow: hidden; }
+.export-panel-toolbar { min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 16px; color: #61736c; }
+.export-options-loading { min-height: 72px; display: grid; place-items: center; }
+.export-time-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.export-column-grid { width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 16px; }
+.export-column-grid .ant-checkbox-wrapper { margin-inline-start: 0; }
+.export-job-detail { display: grid; gap: 22px; }
+.export-job-detail section { min-width: 0; padding-top: 18px; border-top: 1px solid #e2e9e5; }
+.export-job-detail h2 { margin: 0 0 12px; font-size: 15px; line-height: 1.4; font-weight: 650; letter-spacing: 0; }
+
 .identity-grid { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px; align-items: start; }
 
 .identity-actions { display: flex; justify-content: flex-end; }
@@ -110,6 +265,9 @@ button, input, textarea { font: inherit; }
 .form-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 24px; }
 
 .directory-filters { margin-bottom: 20px; }
+.teacher-management-page .ant-table-wrapper { min-width: 0; }
+.teacher-class-checkboxes { display: grid; grid-template-columns: 1fr; gap: 10px; width: 100%; }
+.teacher-class-checkboxes .ant-checkbox-wrapper { margin-inline-start: 0; }
 
 .review-drawer-content { display: grid; gap: 20px; }
 
@@ -128,6 +286,16 @@ button, input, textarea { font: inherit; }
 .full-width { width: 100%; }
 
 .organization-tree { min-height: 282px; padding: 8px 0; }
+
+.organization-node-actions { width: 100%; margin-top: 18px; padding-top: 16px; border-top: 1px solid #e2e9e5; }
+
+.organization-change-panel { min-width: 0; padding: 18px 20px 4px; background: #ffffff; border: 1px solid #dce6e0; border-radius: 6px; }
+
+.section-heading { min-height: 38px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+
+.section-heading h2 { margin: 0; font-size: 17px; line-height: 1.4; font-weight: 650; letter-spacing: 0; }
+
+.secondary-text { margin-top: 3px; color: #6a7b75; font-size: 12px; line-height: 1.4; }
 
 .empty-state { min-height: 200px; display: grid; place-items: center; color: #788981; }
 
@@ -161,6 +329,10 @@ button, input, textarea { font: inherit; }
 .student-login-toolbar .ant-input-affix-wrapper { width: 240px; }
 .student-login-qr { min-height: 350px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
 .student-login-qr-status { min-height: 24px; color: #687a73; }
+
+.parent-relationship-student-select { width: 220px; }
+.parent-relationship-panel .ant-pro-card-body { padding-top: 8px; }
+.parent-relationship-actions { width: 100%; justify-content: flex-end; margin-bottom: 16px; }
 
 .batch-result-summary {
   display: flex;
@@ -234,17 +406,43 @@ button, input, textarea { font: inherit; }
   .app-content { padding: 18px 14px 28px; }
   .app-header { padding: 0 16px; }
   .page-heading { align-items: flex-start; flex-direction: column; }
+  .section-heading { align-items: flex-start; flex-direction: column; }
+  .organization-change-panel { padding: 16px 14px 2px; }
   .identity-grid { grid-template-columns: 1fr; }
   .identity-actions { justify-content: flex-start; }
   .directory-filters { display: grid; grid-template-columns: 1fr; }
   .directory-filters .ant-form-item { margin-inline-end: 0; }
   .directory-filters .ant-input, .directory-filters .filter-select { width: 100%; }
+  .attachment-table-panel { padding: 14px 0 6px; }
+  .attachment-table-panel .directory-filters { padding-inline: 12px; }
+  .attachment-table-panel .ant-picker { width: 100%; }
+  .template-filter-panel { padding: 14px 12px; }
+  .template-table-panel { padding: 6px 0; }
+  .template-create-grid { grid-template-columns: 1fr; gap: 0; }
+  .template-create-modal { max-width: calc(100vw - 24px); }
+  .import-job-create-modal { max-width: calc(100vw - 24px); }
+  .export-job-create-modal { max-width: calc(100vw - 24px); }
+  .export-job-tabs > .ant-tabs-nav { padding-inline: 12px; }
+  .export-filter-panel { padding: 14px 12px; }
+  .export-table-panel { padding: 6px 0; }
+  .export-panel-toolbar { padding-inline: 12px; }
+  .export-time-grid, .export-column-grid { grid-template-columns: 1fr; gap: 0; }
+  .template-field-row { min-width: 680px; }
+  .ant-drawer { max-width: 100vw; }
   .login-surface { padding: 28px 22px; }
+  .login-code-row { grid-template-columns: 1fr; }
+  .onboarding-page { padding: 14px; }
+  .onboarding-surface { padding: 24px 18px; }
+  .invitation-page { padding: 14px; }
+  .invitation-surface { padding: 24px 18px; }
+  .invitation-actions { justify-content: stretch; }
   .task-editor-grid { grid-template-columns: 1fr; }
   .task-target-row { display: grid; grid-template-columns: 1fr auto; }
   .task-target-type, .task-target-value { width: 100%; }
   .student-login-toolbar { justify-content: stretch; }
   .student-login-toolbar .ant-input-affix-wrapper { width: 100%; }
+  .parent-relationship-student-select { width: 100%; }
+  .parent-relationship-actions { justify-content: flex-start; }
   .growth-point-student-select { width: min(240px, calc(100vw - 100px)); }
   .growth-point-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
   .growth-point-summary > div:first-child { grid-column: 1 / -1; }

@@ -5,7 +5,9 @@ import com.lingdong.learning.attachment.domain.AttachmentRuleStatus;
 import com.lingdong.learning.attachment.infrastructure.persistence.AttachmentRuleExtensionMapper;
 import com.lingdong.learning.attachment.infrastructure.persistence.AttachmentRuleMapper;
 import com.lingdong.learning.common.id.IdGenerator;
-import com.lingdong.learning.user.infrastructure.persistence.UserRoleMapper;
+import com.lingdong.learning.common.security.SystemOperationAccessDeniedException;
+import com.lingdong.learning.permission.application.PermissionDecisionService;
+import com.lingdong.learning.permission.domain.PermissionClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,44 +16,40 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 
-/** Centralizes attachment configuration and validation before any storage operation may begin. */
+/** 统一处理附件规则配置，以及存储操作开始前的规则校验。 */
 @Service
 public class AttachmentRuleApplicationService {
-    private static final String SYSTEM_ADMIN_ROLE = "SYS_ADMIN";
+    private static final String RULE_READ_PERMISSION = "ATTACHMENT_RULE_READ";
+    private static final String RULE_MANAGE_PERMISSION = "ATTACHMENT_RULE_MANAGE";
     private static final String BUSINESS_AUTHORIZED_DOWNLOAD_SCOPE = "BUSINESS_AUTHORIZED";
 
     private final AttachmentRuleMapper ruleMapper;
     private final AttachmentRuleExtensionMapper extensionMapper;
-    private final UserRoleMapper userRoleMapper;
+    private final PermissionDecisionService permissionDecisionService;
     private final IdGenerator idGenerator;
 
     public AttachmentRuleApplicationService(
             AttachmentRuleMapper ruleMapper,
             AttachmentRuleExtensionMapper extensionMapper,
-            UserRoleMapper userRoleMapper,
+            PermissionDecisionService permissionDecisionService,
             IdGenerator idGenerator
     ) {
         this.ruleMapper = ruleMapper;
         this.extensionMapper = extensionMapper;
-        this.userRoleMapper = userRoleMapper;
+        this.permissionDecisionService = permissionDecisionService;
         this.idGenerator = idGenerator;
     }
 
-    /** Creates an enabled rule and its normalized extension allowlist atomically. */
+    /** 在同一事务内创建启用状态的规则及规范化扩展名白名单。 */
     @Transactional
     public AttachmentRule createRule(CreateAttachmentRuleCommand command) {
         Objects.requireNonNull(command, "附件规则创建请求不能为空");
-        requireSystemAdmin(command.operatorId());
+        requirePermission(command.operatorId(), RULE_MANAGE_PERMISSION);
         String moduleCode = requiredCode(command.moduleCode(), "模块编码");
         String fileCategory = requiredCode(command.fileCategory(), "文件分类");
         String ruleName = requiredText(command.ruleName(), "规则名称", 100);
         List<String> extensions = normalizeExtensions(command.allowedExtensions());
-        if (command.maxFileSizeBytes() <= 0) {
-            throw new IllegalArgumentException("单文件大小限制必须大于零");
-        }
-        if (command.maxBatchCount() <= 0) {
-            throw new IllegalArgumentException("单批上传数量必须大于零");
-        }
+        validateLimits(command.maxFileSizeBytes(), command.maxBatchCount());
         if (ruleMapper.findByModuleAndCategory(moduleCode, fileCategory) != null) {
             throw new IllegalStateException("附件规则已存在：" + moduleCode + "/" + fileCategory);
         }
@@ -59,7 +57,7 @@ public class AttachmentRuleApplicationService {
         AttachmentRuleRecord record = new AttachmentRuleRecord(
                 idGenerator.nextId(), moduleCode, fileCategory, ruleName, command.maxFileSizeBytes(),
                 command.maxBatchCount(), command.previewEnabled(), BUSINESS_AUTHORIZED_DOWNLOAD_SCOPE,
-                AttachmentRuleStatus.ENABLED, null, null
+                AttachmentRuleStatus.ENABLED, 0L, null, null
         );
         if (ruleMapper.insert(record) != 1) {
             throw new IllegalStateException("附件规则保存失败");
@@ -72,20 +70,58 @@ public class AttachmentRuleApplicationService {
         return toApplicationRule(record, extensions);
     }
 
-    /** Stops a rule immediately so it cannot authorize new file registrations. */
-    @Transactional
-    public void disableRule(Long operatorId, Long ruleId) {
-        requireSystemAdmin(operatorId);
-        AttachmentRuleRecord record = requireRule(ruleId);
-        if (record.status() == AttachmentRuleStatus.DISABLED) {
-            return;
-        }
-        if (ruleMapper.updateStatus(record.id(), AttachmentRuleStatus.DISABLED) != 1) {
-            throw new IllegalStateException("附件规则停用失败");
-        }
+    /** 查询后台规则台账，所有条件均可选且最多返回 200 条。 */
+    public List<AttachmentRule> listRules(AttachmentRuleQuery query) {
+        Objects.requireNonNull(query, "附件规则查询条件不能为空");
+        requirePermission(query.operatorId(), RULE_READ_PERMISSION);
+        String ruleName = optionalText(query.ruleName(), 100);
+        String moduleCode = optionalCode(query.moduleCode(), "模块编码");
+        String fileCategory = optionalCode(query.fileCategory(), "文件分类");
+        return ruleMapper.findAll(ruleName, moduleCode, fileCategory, query.status()).stream()
+                .map(record -> toApplicationRule(record, extensionMapper.findExtensionsByRuleId(record.id())))
+                .toList();
     }
 
-    /** Validates a batch before the object-storage adapter is asked to authorize an upload. */
+    /** 在保留模块编码和文件分类的前提下更新规则配置。 */
+    @Transactional
+    public AttachmentRule updateRule(UpdateAttachmentRuleCommand command) {
+        Objects.requireNonNull(command, "附件规则编辑请求不能为空");
+        requirePermission(command.operatorId(), RULE_MANAGE_PERMISSION);
+        AttachmentRuleRecord current = requireRule(command.ruleId());
+        Long expectedVersion = requiredVersion(command.versionNo());
+        String ruleName = requiredText(command.ruleName(), "规则名称", 100);
+        List<String> extensions = normalizeExtensions(command.allowedExtensions());
+        validateLimits(command.maxFileSizeBytes(), command.maxBatchCount());
+        AttachmentRuleRecord updated = new AttachmentRuleRecord(
+                current.id(), current.moduleCode(), current.fileCategory(), ruleName,
+                command.maxFileSizeBytes(), command.maxBatchCount(), command.previewEnabled(),
+                current.downloadScope(), current.status(), current.versionNo(), current.createdAt(), current.updatedAt()
+        );
+        if (ruleMapper.updateConfiguration(updated, expectedVersion) != 1) {
+            throw versionConflict(current.id());
+        }
+        extensionMapper.deleteByRuleId(current.id());
+        for (String extension : extensions) {
+            if (extensionMapper.insert(idGenerator.nextId(), current.id(), extension) != 1) {
+                throw new IllegalStateException("附件规则扩展名保存失败");
+            }
+        }
+        return loadApplicationRule(current.id());
+    }
+
+    /** 停用规则后，该规则不能再授权新文件登记。 */
+    @Transactional
+    public AttachmentRule disableRule(Long operatorId, Long ruleId, Long versionNo) {
+        return changeStatus(operatorId, ruleId, versionNo, AttachmentRuleStatus.DISABLED);
+    }
+
+    /** 恢复规则，使其可以继续授权新文件登记。 */
+    @Transactional
+    public AttachmentRule enableRule(Long operatorId, Long ruleId, Long versionNo) {
+        return changeStatus(operatorId, ruleId, versionNo, AttachmentRuleStatus.ENABLED);
+    }
+
+    /** 在对象存储适配器授权上传前校验整批文件。 */
     public void validateNewFiles(String moduleCode, String fileCategory, List<AttachmentCandidate> candidates) {
         AttachmentRule rule = findRule(moduleCode, fileCategory);
         if (rule.status() != AttachmentRuleStatus.ENABLED) {
@@ -132,9 +168,37 @@ public class AttachmentRuleApplicationService {
         return record;
     }
 
+    private AttachmentRule changeStatus(
+            Long operatorId,
+            Long ruleId,
+            Long versionNo,
+            AttachmentRuleStatus targetStatus
+    ) {
+        requirePermission(operatorId, RULE_MANAGE_PERMISSION);
+        Long expectedVersion = requiredVersion(versionNo);
+        AttachmentRuleRecord current = requireRule(ruleId);
+        if (current.status() == targetStatus) {
+            return toApplicationRule(current, extensionMapper.findExtensionsByRuleId(current.id()));
+        }
+        if (ruleMapper.updateStatus(current.id(), targetStatus, current.status(), expectedVersion) != 1) {
+            AttachmentRuleRecord latest = requireRule(ruleId);
+            if (latest.status() == targetStatus) {
+                return toApplicationRule(latest, extensionMapper.findExtensionsByRuleId(latest.id()));
+            }
+            throw versionConflict(current.id());
+        }
+        return loadApplicationRule(current.id());
+    }
+
+    private AttachmentRule loadApplicationRule(Long ruleId) {
+        AttachmentRuleRecord record = requireRule(ruleId);
+        return toApplicationRule(record, extensionMapper.findExtensionsByRuleId(ruleId));
+    }
+
     private AttachmentRule toApplicationRule(AttachmentRuleRecord record, List<String> extensions) {
         return new AttachmentRule(record.id(), record.moduleCode(), record.fileCategory(), record.ruleName(),
-                List.copyOf(extensions), record.maxFileSizeBytes(), record.maxBatchCount(), record.previewEnabled(), record.status());
+                List.copyOf(extensions), record.maxFileSizeBytes(), record.maxBatchCount(), record.previewEnabled(),
+                record.status(), record.versionNo());
     }
 
     private List<String> normalizeExtensions(List<String> extensions) {
@@ -162,10 +226,46 @@ public class AttachmentRuleApplicationService {
         return filename.substring(separatorIndex + 1).toLowerCase(Locale.ROOT);
     }
 
-    private void requireSystemAdmin(Long userId) {
-        if (userId == null || !userRoleMapper.hasRoleCode(userId, SYSTEM_ADMIN_ROLE)) {
-            throw new IllegalStateException("仅系统管理员可维护附件规则");
+    private void requirePermission(Long userId, String permissionCode) {
+        if (!permissionDecisionService.isAllowed(userId, PermissionClient.WEB, permissionCode)) {
+            throw new SystemOperationAccessDeniedException("当前账号缺少附件规则管理权限：" + permissionCode);
         }
+    }
+
+    private void validateLimits(long maxFileSizeBytes, int maxBatchCount) {
+        if (maxFileSizeBytes <= 0) {
+            throw new IllegalArgumentException("单文件大小限制必须大于零");
+        }
+        if (maxBatchCount <= 0) {
+            throw new IllegalArgumentException("单批上传数量必须大于零");
+        }
+    }
+
+    private Long requiredVersion(Long versionNo) {
+        if (versionNo == null || versionNo < 0) {
+            throw new IllegalArgumentException("附件规则版本号必须为非负整数");
+        }
+        return versionNo;
+    }
+
+    private IllegalStateException versionConflict(Long ruleId) {
+        return new IllegalStateException("附件规则版本已变化，请刷新后重试：" + ruleId);
+    }
+
+    private String optionalCode(String value, String fieldName) {
+        String normalized = optionalText(value, 64);
+        return normalized == null ? null : normalized.toUpperCase(Locale.ROOT);
+    }
+
+    private String optionalText(String value, int maxLength) {
+        if (value == null || value.trim().isEmpty()) {
+            return null;
+        }
+        String normalized = value.trim();
+        if (normalized.length() > maxLength) {
+            throw new IllegalArgumentException("文本长度不能超过" + maxLength + "个字符");
+        }
+        return normalized;
     }
 
     private String requiredCode(String value, String fieldName) {

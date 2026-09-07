@@ -3,6 +3,7 @@ package com.lingdong.learning.organization.web;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.lingdong.learning.organization.domain.Organization;
+import com.lingdong.learning.organization.domain.OrganizationEffectiveStatus;
 import com.lingdong.learning.organization.domain.OrganizationStatus;
 
 import java.time.LocalDateTime;
@@ -18,6 +19,8 @@ public record OrganizationTreeNodeResponse(
         String path,
         Integer sortOrder,
         OrganizationStatus status,
+        OrganizationEffectiveStatus effectiveStatus,
+        Integer versionNo,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
         List<OrganizationTreeNodeResponse> children
@@ -32,7 +35,8 @@ public record OrganizationTreeNodeResponse(
     ) {
         return new OrganizationTreeNodeResponse(
                 organization.id(), organization.parentId(), organization.code(), organization.name(), organization.typeCode(),
-                organization.path(), organization.sortOrder(), organization.status(), organization.createdAt(), organization.updatedAt(),
+                organization.path(), organization.sortOrder(), organization.status(), organization.effectiveStatus(),
+                organization.versionNo(), organization.createdAt(), organization.updatedAt(),
                 children
         );
     }

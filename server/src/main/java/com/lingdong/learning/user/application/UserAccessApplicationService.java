@@ -4,10 +4,13 @@ import com.lingdong.learning.auth.application.AuthenticationApplicationService;
 import com.lingdong.learning.common.id.IdGenerator;
 import com.lingdong.learning.common.web.ResourceNotFoundException;
 import com.lingdong.learning.iam.domain.Role;
+import com.lingdong.learning.iam.audit.application.IamChangeAuditEventType;
+import com.lingdong.learning.iam.audit.application.IamChangeAuditService;
+import com.lingdong.learning.iam.audit.application.IamChangeTargetType;
 import com.lingdong.learning.iam.domain.RoleStatus;
 import com.lingdong.learning.iam.infrastructure.persistence.RoleMapper;
 import com.lingdong.learning.organization.domain.Organization;
-import com.lingdong.learning.organization.domain.OrganizationStatus;
+import com.lingdong.learning.organization.application.OrganizationOperationalStatusService;
 import com.lingdong.learning.organization.infrastructure.persistence.OrganizationMapper;
 import com.lingdong.learning.user.domain.User;
 import com.lingdong.learning.user.domain.UserStatus;
@@ -35,6 +38,7 @@ public class UserAccessApplicationService {
     private final UserRoleMapper userRoleMapper;
     private final IdGenerator idGenerator;
     private final AuthenticationApplicationService authenticationApplicationService;
+    private final IamChangeAuditService auditService;
 
     public UserAccessApplicationService(
             UserMapper userMapper,
@@ -43,7 +47,8 @@ public class UserAccessApplicationService {
             UserOrganizationMapper userOrganizationMapper,
             UserRoleMapper userRoleMapper,
             IdGenerator idGenerator,
-            AuthenticationApplicationService authenticationApplicationService
+            AuthenticationApplicationService authenticationApplicationService,
+            IamChangeAuditService auditService
     ) {
         this.userMapper = userMapper;
         this.organizationMapper = organizationMapper;
@@ -52,6 +57,7 @@ public class UserAccessApplicationService {
         this.userRoleMapper = userRoleMapper;
         this.idGenerator = idGenerator;
         this.authenticationApplicationService = authenticationApplicationService;
+        this.auditService = auditService;
     }
 
     /**
@@ -76,7 +82,10 @@ public class UserAccessApplicationService {
         User user = User.create(idGenerator.nextId(), username, displayName, mobile, type);
         try {
             userMapper.insert(user);
-            return userMapper.findByUsername(username);
+            User created = userMapper.findByUsername(username);
+            auditService.record(IamChangeAuditEventType.USER_CREATE, command.operatorId(),
+                    IamChangeTargetType.USER, created.id(), null, null, null, created.type().name());
+            return created;
         } catch (DuplicateKeyException exception) {
             throw new DuplicateUserAccountException(username);
         }
@@ -90,14 +99,18 @@ public class UserAccessApplicationService {
         Objects.requireNonNull(command, "用户组织关联请求不能为空");
         requireUser(command.userId());
         Organization organization = requireOrganization(command.organizationId());
-        if (organization.status() != OrganizationStatus.ENABLED) {
+        if (!OrganizationOperationalStatusService.isOperational(organization)) {
             throw new IllegalStateException("组织已停用，不能建立用户组织关联：" + organization.id());
         }
         if (userOrganizationMapper.exists(command.userId(), command.organizationId())) {
             throw new IllegalStateException("用户已关联该组织");
         }
         try {
-            userOrganizationMapper.insert(idGenerator.nextId(), command.userId(), command.organizationId());
+            Long relationId = idGenerator.nextId();
+            userOrganizationMapper.insert(relationId, command.userId(), command.organizationId());
+            auditService.record(IamChangeAuditEventType.USER_ORGANIZATION_ASSOCIATE, command.operatorId(),
+                    IamChangeTargetType.USER_ORGANIZATION, command.userId(), command.organizationId(),
+                    command.organizationId(), null, "ASSOCIATED");
         } catch (DuplicateKeyException exception) {
             throw new IllegalStateException("用户已关联该组织");
         }
@@ -121,7 +134,11 @@ public class UserAccessApplicationService {
         }
 
         try {
-            userRoleMapper.insert(idGenerator.nextId(), command.userId(), command.roleId(), command.organizationId(), scopeKey);
+            Long assignmentId = idGenerator.nextId();
+            userRoleMapper.insert(assignmentId, command.userId(), command.roleId(), command.organizationId(), scopeKey);
+            auditService.record(IamChangeAuditEventType.USER_ROLE_ASSIGN, command.operatorId(),
+                    IamChangeTargetType.USER_ROLE, command.userId(), command.roleId(),
+                    command.organizationId(), null, "ASSIGNED");
         } catch (DuplicateKeyException exception) {
             throw new DuplicateUserRoleAssignmentException();
         }
@@ -133,6 +150,9 @@ public class UserAccessApplicationService {
         Objects.requireNonNull(command, "用户状态变更请求不能为空");
         User user = requireUser(command.userId());
         UserStatus targetStatus = Objects.requireNonNull(command.status(), "用户状态不能为空");
+        if (targetStatus == UserStatus.CANCELLED || user.status() == UserStatus.CANCELLED) {
+            throw new IllegalArgumentException("已注销状态只能由账号注销流程维护");
+        }
         if (user.status() == targetStatus) {
             return user;
         }
@@ -142,6 +162,8 @@ public class UserAccessApplicationService {
         if (targetStatus != UserStatus.ENABLED) {
             authenticationApplicationService.revokeAllActiveSessionsForUser(user.id());
         }
+        auditService.record(IamChangeAuditEventType.USER_STATUS_CHANGE, command.operatorId(),
+                IamChangeTargetType.USER, user.id(), null, null, user.status().name(), targetStatus.name());
         return requireUser(user.id());
     }
 
@@ -151,7 +173,7 @@ public class UserAccessApplicationService {
         }
 
         Organization organization = requireOrganization(organizationId);
-        if (organization.status() != OrganizationStatus.ENABLED) {
+        if (!OrganizationOperationalStatusService.isOperational(organization)) {
             throw new IllegalStateException("组织已停用，不能授予组织范围角色：" + organization.id());
         }
         if (!userOrganizationMapper.exists(userId, organizationId)) {

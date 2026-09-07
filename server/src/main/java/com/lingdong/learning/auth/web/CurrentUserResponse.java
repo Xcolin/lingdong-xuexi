@@ -13,5 +13,6 @@ public record CurrentUserResponse(
         String username,
         String displayName,
         AuthClientType clientType,
-        List<String> roleCodes
+        List<String> roleCodes,
+        List<String> permissionCodes
 ) { }

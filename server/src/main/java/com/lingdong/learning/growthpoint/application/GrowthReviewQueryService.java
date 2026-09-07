@@ -72,7 +72,7 @@ public class GrowthReviewQueryService {
             int page,
             int pageSize
     ) {
-        requireAccessibleChild(currentUser, studentId);
+        requireReadableChild(currentUser, studentId);
         return findPage(studentId, periodType, page, pageSize);
     }
 
@@ -90,7 +90,7 @@ public class GrowthReviewQueryService {
             Long studentId,
             Long reviewId
     ) {
-        requireAccessibleChild(currentUser, studentId);
+        requireReadableChild(currentUser, studentId);
         return requireDetail(studentId, reviewId);
     }
 
@@ -111,7 +111,7 @@ public class GrowthReviewQueryService {
             Long reviewId,
             AddGrowthReviewSupplementCommand command
     ) {
-        requireAccessibleChild(currentUser, studentId);
+        requireWritableChild(currentUser, studentId);
         return addSupplement(studentId, reviewId, currentUser.userId(), "PARENT", command);
     }
 
@@ -225,10 +225,21 @@ public class GrowthReviewQueryService {
         return currentStudentAccessService.require(currentUser);
     }
 
-    private void requireAccessibleChild(AuthenticatedUser currentUser, Long studentId) {
+    private void requireReadableChild(AuthenticatedUser currentUser, Long studentId) {
         if (currentUser == null || currentUser.clientType() != AuthClientType.WEB
                 || !currentUser.roleCodes().contains("PARENT")) {
-            throw new SystemOperationAccessDeniedException("仅 Web 端主家长可访问孩子成长复盘");
+            throw new SystemOperationAccessDeniedException("仅 Web 端活动关系家长可访问孩子成长复盘");
+        }
+        if (studentId == null || !parentStudentMapper.existsActiveByParentAndStudent(
+                currentUser.userId(), studentId)) {
+            throw notFound();
+        }
+    }
+
+    private void requireWritableChild(AuthenticatedUser currentUser, Long studentId) {
+        if (currentUser == null || currentUser.clientType() != AuthClientType.WEB
+                || !currentUser.roleCodes().contains("PARENT")) {
+            throw new SystemOperationAccessDeniedException("仅 Web 端主家长可补录孩子成长复盘");
         }
         if (studentId == null || !parentStudentMapper.existsActivePrimaryByParentAndStudent(
                 currentUser.userId(), studentId)) {

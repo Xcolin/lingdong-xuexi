@@ -80,6 +80,28 @@ public class TaskAttachmentController {
                 .body(content.content());
     }
 
+    @RequirePermission("ATTACHMENT_READ")
+    @GetMapping("/{id}/download")
+    public ResponseEntity<byte[]> download(
+            @AuthenticationPrincipal AuthenticatedUser currentUser, @PathVariable Long id
+    ) {
+        AttachmentContentView content = attachmentService.readContent(currentUser, id);
+        MediaType mediaType;
+        try {
+            mediaType = MediaType.parseMediaType(content.contentType());
+        } catch (IllegalArgumentException exception) {
+            mediaType = MediaType.APPLICATION_OCTET_STREAM;
+        }
+        ContentDisposition disposition = ContentDisposition.attachment()
+                .filename(content.originalName(), StandardCharsets.UTF_8)
+                .build();
+        return ResponseEntity.ok()
+                .contentType(mediaType)
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
+                .contentLength(content.content().length)
+                .body(content.content());
+    }
+
     @RequirePermission("ATTACHMENT_UPLOAD")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(

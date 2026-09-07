@@ -2,6 +2,9 @@ package com.lingdong.learning.iam.application;
 
 import com.lingdong.learning.common.id.IdGenerator;
 import com.lingdong.learning.iam.domain.Role;
+import com.lingdong.learning.iam.audit.application.IamChangeAuditEventType;
+import com.lingdong.learning.iam.audit.application.IamChangeAuditService;
+import com.lingdong.learning.iam.audit.application.IamChangeTargetType;
 import com.lingdong.learning.iam.domain.RoleDataScope;
 import com.lingdong.learning.iam.infrastructure.persistence.RoleMapper;
 import org.springframework.dao.DuplicateKeyException;
@@ -20,10 +23,12 @@ public class RoleApplicationService {
 
     private final RoleMapper roleMapper;
     private final IdGenerator idGenerator;
+    private final IamChangeAuditService auditService;
 
-    public RoleApplicationService(RoleMapper roleMapper, IdGenerator idGenerator) {
+    public RoleApplicationService(RoleMapper roleMapper, IdGenerator idGenerator, IamChangeAuditService auditService) {
         this.roleMapper = roleMapper;
         this.idGenerator = idGenerator;
+        this.auditService = auditService;
     }
 
     /**
@@ -49,7 +54,10 @@ public class RoleApplicationService {
         Role role = Role.custom(idGenerator.nextId(), code, name, description, dataScope);
         try {
             roleMapper.insert(role);
-            return roleMapper.findByCode(code);
+            Role created = roleMapper.findByCode(code);
+            auditService.record(IamChangeAuditEventType.ROLE_CREATE, command.operatorId(),
+                    IamChangeTargetType.ROLE, created.id(), null, null, null, created.dataScope().name());
+            return created;
         } catch (DuplicateKeyException exception) {
             throw new DuplicateRoleCodeException(code);
         }

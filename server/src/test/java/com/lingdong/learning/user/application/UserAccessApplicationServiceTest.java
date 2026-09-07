@@ -6,6 +6,7 @@ import com.lingdong.learning.organization.application.CreateOrganizationCommand;
 import com.lingdong.learning.organization.application.OrganizationApplicationService;
 import com.lingdong.learning.organization.domain.Organization;
 import com.lingdong.learning.user.domain.User;
+import com.lingdong.learning.user.domain.UserStatus;
 import com.lingdong.learning.user.domain.UserType;
 import com.lingdong.learning.user.infrastructure.persistence.UserRoleMapper;
 import org.junit.jupiter.api.Test;
@@ -77,6 +78,38 @@ class UserAccessApplicationServiceTest {
     }
 
     @Test
+    void rejectsOrganizationAssociationAndScopedRoleWhenAncestorMakesOrganizationIneffective() {
+        User associatedUser = userAccessApplicationService.createUser(
+                new CreateUserCommand("teacher_ineffective_role", "有效停用授权教师", null, UserType.ORGANIZATION)
+        );
+        User newUser = userAccessApplicationService.createUser(
+                new CreateUserCommand("teacher_ineffective_relation", "有效停用关联教师", null, UserType.ORGANIZATION)
+        );
+        Organization organization = createSchool(
+                "REGION_USER_INEFFECTIVE", "SCHOOL_USER_INEFFECTIVE", "上级停用学校");
+        Role teacher = roleMapper.findByCode("TEACHER");
+        userAccessApplicationService.associateWithOrganization(
+                new AssociateUserWithOrganizationCommand(associatedUser.id(), organization.id())
+        );
+
+        jdbcTemplate.update(
+                "update sys_organization set effective_status = 'DISABLED' where id = ?",
+                organization.id());
+
+        assertThat(jdbcTemplate.queryForObject(
+                "select status from sys_organization where id = ?", String.class, organization.id()))
+                .isEqualTo("ENABLED");
+        assertThatThrownBy(() -> userAccessApplicationService.associateWithOrganization(
+                new AssociateUserWithOrganizationCommand(newUser.id(), organization.id())))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("组织已停用");
+        assertThatThrownBy(() -> userAccessApplicationService.assignRole(
+                new AssignRoleToUserCommand(associatedUser.id(), teacher.id(), organization.id())))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("组织已停用");
+    }
+
+    @Test
     void grantsGlobalRoleToIndependentParent() {
         User parent = userAccessApplicationService.createUser(
                 new CreateUserCommand("parent_liu", "刘家长", "13800000003", UserType.FAMILY)
@@ -88,6 +121,22 @@ class UserAccessApplicationServiceTest {
         );
 
         assertThat(userRoleMapper.exists(parent.id(), parentRole.id(), "GLOBAL")).isTrue();
+    }
+
+    @Test
+    void rejectsSettingCancelledStatusThroughGeneralAccountManagement() {
+        User parent = userAccessApplicationService.createUser(
+                new CreateUserCommand("parent_cancel_guard", "注销保护家长", "13800000004", UserType.FAMILY)
+        );
+
+        assertThatThrownBy(() -> userAccessApplicationService.updateStatus(
+                new UpdateUserStatusCommand(parent.id(), UserStatus.CANCELLED)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("注销流程");
+
+        assertThat(userAccessApplicationService.updateStatus(
+                new UpdateUserStatusCommand(parent.id(), UserStatus.ENABLED)).status())
+                .isEqualTo(UserStatus.ENABLED);
     }
 
     private Organization createSchool(String regionCode, String schoolCode, String schoolName) {

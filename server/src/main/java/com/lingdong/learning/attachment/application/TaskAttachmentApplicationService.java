@@ -10,9 +10,6 @@ import com.lingdong.learning.feature.application.FeatureAccessService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.HexFormat;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -23,33 +20,35 @@ public class TaskAttachmentApplicationService {
     public static final String MODULE_CODE = "LEARNING_TASK_CHECKIN";
     public static final String FILE_CATEGORY = "IMAGE";
     private static final String RELATION_TYPE = "IMAGE";
-    private static final String FEATURE_CODE = "LEARNING_TASK_MANAGEMENT";
+    private static final String ATTACHMENT_FEATURE_CODE = "ATTACHMENT_SERVICE";
+    private static final String LEARNING_TASK_FEATURE_CODE = "LEARNING_TASK_MANAGEMENT";
     private static final int MAX_FILE_COUNT = 9;
 
     private final AttachmentFileApplicationService fileService;
     private final ManagedFileMapper fileMapper;
     private final FileRelationMapper relationMapper;
-    private final AttachmentContentStorage contentStorage;
+    private final ManagedAttachmentContentService contentService;
     private final FeatureAccessService featureAccessService;
 
     public TaskAttachmentApplicationService(
             AttachmentFileApplicationService fileService,
             ManagedFileMapper fileMapper,
             FileRelationMapper relationMapper,
-            AttachmentContentStorage contentStorage,
+            ManagedAttachmentContentService contentService,
             FeatureAccessService featureAccessService
     ) {
         this.fileService = fileService;
         this.fileMapper = fileMapper;
         this.relationMapper = relationMapper;
-        this.contentStorage = contentStorage;
+        this.contentService = contentService;
         this.featureAccessService = featureAccessService;
     }
 
     @Transactional
     public TaskAttachmentView upload(AuthenticatedUser currentUser, UploadTaskAttachmentCommand command) {
         requireCurrentUser(currentUser);
-        featureAccessService.requireEnabled(FEATURE_CODE, null);
+        requireAttachmentEnabled();
+        featureAccessService.requireEnabled(LEARNING_TASK_FEATURE_CODE, null);
         if (command == null || command.content() == null || command.content().length == 0) {
             throw new IllegalArgumentException("上传图片不能为空");
         }
@@ -59,23 +58,19 @@ public class TaskAttachmentApplicationService {
         }
         String detectedContentType = validateImageContent(
                 command.originalName(), command.contentType(), command.content());
-        ManagedFile registered = fileService.registerUpload(new RegisterAttachmentFileCommand(
-                currentUser.userId(), MODULE_CODE, FILE_CATEGORY, command.originalName(),
-                detectedContentType, command.content().length));
-        try {
-            contentStorage.store(registered.storageKey(), command.content());
-            ManagedFile completed = fileService.completeUpload(new CompleteAttachmentUploadCommand(
-                    registered.id(), command.content().length, detectedContentType, sha256(command.content())));
-            return toView(completed);
-        } catch (RuntimeException exception) {
-            contentStorage.delete(registered.storageKey());
-            throw exception;
-        }
+        ManagedFile completed = contentService.store(
+                currentUser.userId(), MODULE_CODE, FILE_CATEGORY,
+                command.originalName(), detectedContentType, command.content());
+        return toView(completed);
     }
 
     @Transactional
     public void attachToCheckIn(Long uploaderId, List<Long> fileIds, Long checkInId) {
         List<Long> normalizedIds = normalizeFileIds(fileIds);
+        if (normalizedIds.isEmpty()) {
+            return;
+        }
+        requireAttachmentEnabled();
         for (Long fileId : normalizedIds) {
             ManagedFileRecord file = requireFile(fileId);
             if (!uploaderId.equals(file.uploaderId()) || file.status() != FileStatus.AVAILABLE
@@ -98,14 +93,14 @@ public class TaskAttachmentApplicationService {
     @Transactional(readOnly = true)
     public AttachmentContentView readContent(AuthenticatedUser currentUser, Long fileId) {
         ManagedFileRecord file = requireReadable(currentUser, fileId);
-        return new AttachmentContentView(
-                file.originalName(), file.contentType(), contentStorage.read(file.storageKey()));
+        return contentService.read(file.id());
     }
 
     @Transactional
     public void deleteUnattached(AuthenticatedUser currentUser, Long fileId) {
         requireCurrentUser(currentUser);
-        featureAccessService.requireEnabled(FEATURE_CODE, null);
+        requireAttachmentEnabled();
+        featureAccessService.requireEnabled(LEARNING_TASK_FEATURE_CODE, null);
         ManagedFileRecord file = requireFile(fileId);
         if (!currentUser.userId().equals(file.uploaderId())) {
             throw new ResourceNotFoundException("附件不存在或不可删除");
@@ -119,12 +114,12 @@ public class TaskAttachmentApplicationService {
         if (fileMapper.markRetired(file.id()) != 1) {
             throw new IllegalStateException("附件状态已变化");
         }
-        contentStorage.delete(file.storageKey());
+        contentService.discardContent(file.storageKey());
     }
 
     @Transactional(readOnly = true)
     public List<TaskAttachmentView> findByCheckInId(Long checkInId) {
-        if (checkInId == null) {
+        if (!featureAccessService.isEnabled(ATTACHMENT_FEATURE_CODE, null) || checkInId == null) {
             return List.of();
         }
         return relationMapper.findActiveFilesByBusiness(MODULE_CODE, checkInId, RELATION_TYPE)
@@ -133,7 +128,8 @@ public class TaskAttachmentApplicationService {
 
     private ManagedFileRecord requireReadable(AuthenticatedUser currentUser, Long fileId) {
         requireCurrentUser(currentUser);
-        featureAccessService.requireEnabled(FEATURE_CODE, null);
+        requireAttachmentEnabled();
+        featureAccessService.requireEnabled(LEARNING_TASK_FEATURE_CODE, null);
         ManagedFileRecord file = requireFile(fileId);
         boolean uploader = currentUser.userId().equals(file.uploaderId());
         boolean reviewer = relationMapper.countReadableByCurrentReviewer(file.id(), currentUser.userId()) > 0;
@@ -199,14 +195,6 @@ public class TaskAttachmentApplicationService {
         return value == null ? "" : value.trim().toUpperCase(Locale.ROOT);
     }
 
-    private String sha256(byte[] content) {
-        try {
-            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(content));
-        } catch (NoSuchAlgorithmException exception) {
-            throw new IllegalStateException("运行环境不支持SHA-256", exception);
-        }
-    }
-
     private TaskAttachmentView toView(ManagedFile file) {
         return new TaskAttachmentView(file.id(), file.originalName(), file.contentType(),
                 file.sizeBytes(), "/api/v1/attachments/" + file.id() + "/content");
@@ -221,5 +209,9 @@ public class TaskAttachmentApplicationService {
         if (currentUser == null || currentUser.userId() == null) {
             throw new ResourceNotFoundException("附件不存在或不可访问");
         }
+    }
+
+    private void requireAttachmentEnabled() {
+        featureAccessService.requireEnabled(ATTACHMENT_FEATURE_CODE, null);
     }
 }

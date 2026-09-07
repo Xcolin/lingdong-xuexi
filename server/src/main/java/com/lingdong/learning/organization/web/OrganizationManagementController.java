@@ -5,12 +5,15 @@ import com.lingdong.learning.common.security.RequirePermission;
 import com.lingdong.learning.organization.application.CreateOrganizationCommand;
 import com.lingdong.learning.organization.application.CreateOrganizationTypeCommand;
 import com.lingdong.learning.organization.application.OrganizationManagementApplicationService;
+import com.lingdong.learning.organization.application.UpdateOrganizationCommand;
 import com.lingdong.learning.organization.domain.Organization;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -72,6 +75,32 @@ public class OrganizationManagementController {
     ) {
         Organization organization = organizationManagementApplicationService.createOrganization(currentUser.userId(),
                 new CreateOrganizationCommand(request.code(), request.name(), request.typeCode(), request.parentId(), request.sortOrder()));
+        return OrganizationTreeNodeResponse.from(organization);
+    }
+
+    @RequirePermission("ORG_NODE_UPDATE")
+    @PutMapping("/organizations/{organizationId}")
+    public OrganizationTreeNodeResponse updateOrganization(
+            @AuthenticationPrincipal AuthenticatedUser currentUser,
+            @PathVariable Long organizationId,
+            @Valid @RequestBody UpdateOrganizationRequest request
+    ) {
+        Organization organization = organizationManagementApplicationService.updateOrganization(
+                currentUser.userId(),
+                new UpdateOrganizationCommand(
+                        organizationId, request.name(), request.sortOrder(), request.versionNo()));
+        return OrganizationTreeNodeResponse.from(organization);
+    }
+
+    @RequirePermission("ORG_NODE_UPDATE")
+    @PostMapping("/organizations/{organizationId}/enable")
+    public OrganizationTreeNodeResponse enableOrganization(
+            @AuthenticationPrincipal AuthenticatedUser currentUser,
+            @PathVariable Long organizationId,
+            @Valid @RequestBody EnableOrganizationRequest request
+    ) {
+        Organization organization = organizationManagementApplicationService.enableOrganization(
+                currentUser.userId(), organizationId, request.versionNo());
         return OrganizationTreeNodeResponse.from(organization);
     }
 

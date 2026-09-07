@@ -1,6 +1,6 @@
 # 灵动学习 V27 家庭奖励与积分兑换实施计划
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **执行说明：** 建议使用 `superpowers:subagent-driven-development` 或 `superpowers:executing-plans` 逐项实施，并用复选框（`- [ ]`）记录状态。
 
 **Goal:** 实现学生独立家庭奖励库、兑换申请、主家长审批扣分、驳回、核销和超时/到期处理闭环。
 

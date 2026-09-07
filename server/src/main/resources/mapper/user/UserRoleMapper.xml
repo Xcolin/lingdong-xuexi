@@ -16,7 +16,17 @@
         ORDER BY r.role_code
     </select>
     <select id="hasPermissionViaRole" resultType="boolean">
-        SELECT EXISTS(SELECT 1 FROM sys_user_role ur JOIN sys_role r ON r.id=ur.role_id JOIN sys_role_permission rp ON rp.role_id=r.id WHERE ur.user_id=#{userId} AND rp.permission_id=#{permissionId} AND r.status='ENABLED')
+        SELECT EXISTS(SELECT 1 FROM sys_user_role ur JOIN sys_role r ON r.id=ur.role_id JOIN sys_role_permission rp ON rp.role_id=r.id WHERE ur.user_id=#{userId} AND rp.permission_id=#{permissionId} AND rp.effect='ALLOW' AND r.status='ENABLED')
+    </select>
+
+    <select id="hasAnyEnabledRole" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM sys_user_role user_role
+            JOIN sys_role role ON role.id = user_role.role_id
+            WHERE user_role.user_id = #{userId}
+              AND role.status = 'ENABLED'
+        )
     </select>
 
     <select id="exists" resultType="boolean">

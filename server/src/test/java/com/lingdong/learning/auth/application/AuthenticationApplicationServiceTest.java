@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -25,6 +26,7 @@ class AuthenticationApplicationServiceTest {
     @Autowired private UserMapper userMapper;
     @Autowired private RoleMapper roleMapper;
     @Autowired private JdbcTemplate jdbcTemplate;
+    @Autowired private PasswordEncoder passwordEncoder;
 
     @Test
     void allowsOnlySystemAdministratorsToSetAStrongPasswordForPlatformUsers() {
@@ -83,6 +85,35 @@ class AuthenticationApplicationServiceTest {
     }
 
     @Test
+    void rejectsPasswordAccessTokenAndRefreshTokenAfterAccountCancellation() {
+        User familyUser = createUser("auth_cancelled_family", "注销认证家长", UserType.FAMILY);
+        Role parentRole = roleMapper.findByCode("PARENT");
+        userAccessApplicationService.assignRole(
+                new AssignRoleToUserCommand(familyUser.id(), parentRole.id(), null));
+        setPasswordHash(familyUser.id(), "FamilyPassword1");
+        jdbcTemplate.update("""
+                insert into auth_parent_profile (
+                    id, user_id, onboarding_status, first_login_at, onboarding_completed_at
+                ) values (?, ?, 'COMPLETED', current_timestamp, current_timestamp)
+                """, 1874244142494646692L, familyUser.id());
+        AuthenticatedSession session = authenticationApplicationService.loginByPassword(
+                new PasswordLoginCommand(familyUser.username(), "FamilyPassword1",
+                        "cancelled-family-web", "注销认证浏览器"));
+
+        jdbcTemplate.update("update sys_user set status = 'CANCELLED' where id = ?", familyUser.id());
+
+        assertThatThrownBy(() -> authenticationApplicationService.loginByPassword(
+                new PasswordLoginCommand(familyUser.username(), "FamilyPassword1",
+                        "cancelled-family-web-2", "注销认证浏览器")))
+                .isInstanceOf(AuthenticationFailedException.class);
+        assertThatThrownBy(() -> authenticationApplicationService.authenticateAccessToken(session.accessToken()))
+                .isInstanceOf(AuthenticationFailedException.class);
+        assertThatThrownBy(() -> authenticationApplicationService.refreshSession(
+                new RefreshSessionCommand(session.refreshToken())))
+                .isInstanceOf(AuthenticationFailedException.class);
+    }
+
+    @Test
     void rotatesRefreshTokensAndRevokesOnlySessionsOwnedByTheCurrentUser() {
         User administrator = createUserWithRole("auth_session_admin", "认证会话管理员", "SYS_ADMIN");
         User owner = createUser("auth_session_owner", "会话归属用户", UserType.PLATFORM);
@@ -109,8 +140,8 @@ class AuthenticationApplicationServiceTest {
         assertThatThrownBy(() -> authenticationApplicationService.authenticateAccessToken(original.accessToken()))
                 .isInstanceOf(AuthenticationFailedException.class);
         assertThatThrownBy(() -> authenticationApplicationService.signOutDevice(owner.id(), otherSession.sessionId()))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("无权");
+                .isInstanceOf(com.lingdong.learning.common.web.ResourceNotFoundException.class)
+                .hasMessageContaining("不存在");
 
         authenticationApplicationService.logoutCurrentSession(owner.id(), refreshed.sessionId());
 
@@ -120,7 +151,7 @@ class AuthenticationApplicationServiceTest {
         AuthenticatedSession anotherOwnerSession = authenticationApplicationService.loginByPassword(new PasswordLoginCommand(
                 "auth_session_owner", "Password123", "owner-device-002", "归属用户第二浏览器"
         ));
-        authenticationApplicationService.signOutAllDevices(owner.id());
+        authenticationApplicationService.signOutAllDevices(owner.id(), anotherOwnerSession.sessionId());
 
         assertThatThrownBy(() -> authenticationApplicationService.authenticateAccessToken(anotherOwnerSession.accessToken()))
                 .isInstanceOf(AuthenticationFailedException.class);
@@ -149,6 +180,86 @@ class AuthenticationApplicationServiceTest {
         assertThat(refreshed.accessToken()).isNotEqualTo(session.accessToken());
         assertThat(authenticationApplicationService.authenticateAccessToken(refreshed.accessToken()).userId())
                 .isEqualTo(platformUser.id());
+    }
+
+    @Test
+    void supportsFamilySessionsOnBothClientsAndOrganizationPasswordOnWebOnly() {
+        User familyUser = createUser("auth_family_user", "家长用户", UserType.FAMILY);
+        Role parentRole = roleMapper.findByCode("PARENT");
+        userAccessApplicationService.assignRole(new AssignRoleToUserCommand(familyUser.id(), parentRole.id(), null));
+        setPasswordHash(familyUser.id(), "FamilyPassword1");
+        jdbcTemplate.update("""
+                insert into auth_parent_profile (
+                    id, user_id, onboarding_status, first_login_at, onboarding_completed_at
+                ) values (?, ?, 'COMPLETED', current_timestamp, current_timestamp)
+                """, 1874244142494646691L, familyUser.id());
+
+        AuthenticatedSession webFamilySession = authenticationApplicationService.loginByPassword(new PasswordLoginCommand(
+                familyUser.username(), "FamilyPassword1", "family-web", "家长浏览器"));
+        AuthenticatedSession miniFamilySession = authenticationApplicationService.createSession(
+                familyUser.id(), com.lingdong.learning.auth.domain.AuthClientType.MINIAPP,
+                "family-mini", "家长小程序");
+
+        assertThat(authenticationApplicationService.authenticateAccessToken(webFamilySession.accessToken()).userId())
+                .isEqualTo(familyUser.id());
+        assertThat(authenticationApplicationService.authenticateAccessToken(miniFamilySession.accessToken()).userId())
+                .isEqualTo(familyUser.id());
+
+        User organizationUser = createUser("auth_org_login", "机构登录用户", UserType.ORGANIZATION);
+        setPasswordHash(organizationUser.id(), "Organization1");
+        AuthenticatedSession organizationWebSession = authenticationApplicationService.loginByPassword(
+                new PasswordLoginCommand(organizationUser.username(), "Organization1", "org-web", "机构浏览器"));
+        assertThat(authenticationApplicationService.authenticateAccessToken(organizationWebSession.accessToken()).userId())
+                .isEqualTo(organizationUser.id());
+
+        AuthenticatedSession organizationMiniSession = authenticationApplicationService.createSession(
+                organizationUser.id(), com.lingdong.learning.auth.domain.AuthClientType.MINIAPP,
+                "org-mini", "机构小程序");
+        assertThatThrownBy(() -> authenticationApplicationService.authenticateAccessToken(
+                organizationMiniSession.accessToken())).isInstanceOf(AuthenticationFailedException.class);
+    }
+
+    @Test
+    void recordsFirstSeenDevicesAndUserInitiatedRevocationsWithoutDuplicatingKnownDevices() {
+        User administrator = createUserWithRole("auth_security_admin", "安全事件管理员", "SYS_ADMIN");
+        User owner = createUser("auth_security_owner", "安全事件归属用户", UserType.PLATFORM);
+        authenticationApplicationService.setPlatformUserPassword(new SetPlatformUserPasswordCommand(
+                administrator.id(), owner.id(), "Password123"));
+
+        AuthenticatedSession firstWeb = authenticationApplicationService.loginByPassword(
+                new PasswordLoginCommand(owner.username(), "Password123", "known-web", "已知浏览器"));
+        AuthenticatedSession secondWeb = authenticationApplicationService.loginByPassword(
+                new PasswordLoginCommand(owner.username(), "Password123", "known-web", "已知浏览器"));
+        AuthenticatedSession miniapp = authenticationApplicationService.createSession(
+                owner.id(), com.lingdong.learning.auth.domain.AuthClientType.MINIAPP,
+                "known-web", "同标识小程序");
+
+        assertThat(eventCount(owner.id(), "NEW_DEVICE_LOGIN")).isEqualTo(2);
+        assertThat(jdbcTemplate.queryForObject("""
+                select count(*) from auth_security_event
+                where user_id = ? and event_type = 'NEW_DEVICE_LOGIN'
+                  and risk_level = 'WARNING' and status = 'UNREAD'
+                """, Integer.class, owner.id())).isEqualTo(2);
+
+        authenticationApplicationService.logoutCurrentSession(owner.id(), firstWeb.sessionId());
+        assertThat(eventCount(owner.id(), "NEW_DEVICE_LOGIN")).isEqualTo(2);
+
+        authenticationApplicationService.signOutDevice(owner.id(), secondWeb.sessionId());
+        assertThat(eventCount(owner.id(), "DEVICE_REVOKED")).isEqualTo(1);
+
+        authenticationApplicationService.signOutAllDevices(owner.id(), miniapp.sessionId());
+        assertThat(eventCount(owner.id(), "ALL_SESSIONS_REVOKED")).isEqualTo(1);
+    }
+
+    private int eventCount(Long userId, String eventType) {
+        return jdbcTemplate.queryForObject("""
+                select count(*) from auth_security_event
+                where user_id = ? and event_type = ?
+                """, Integer.class, userId, eventType);
+    }
+
+    private void setPasswordHash(Long userId, String password) {
+        assertThat(userMapper.updatePasswordHash(userId, passwordEncoder.encode(password))).isEqualTo(1);
     }
 
     private User createUserWithRole(String username, String displayName, String roleCode) {

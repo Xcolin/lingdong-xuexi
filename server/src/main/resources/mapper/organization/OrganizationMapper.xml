@@ -15,6 +15,8 @@
             <arg column="organization_path" javaType="java.lang.String"/>
             <arg column="sort_order" javaType="java.lang.Integer"/>
             <arg column="status" javaType="com.lingdong.learning.organization.domain.OrganizationStatus"/>
+            <arg column="effective_status" javaType="com.lingdong.learning.organization.domain.OrganizationEffectiveStatus"/>
+            <arg column="version_no" javaType="java.lang.Integer"/>
             <arg column="created_at" javaType="java.time.LocalDateTime"/>
             <arg column="updated_at" javaType="java.time.LocalDateTime"/>
         </constructor>
@@ -31,10 +33,22 @@
             organization_path,
             sort_order,
             status,
+            effective_status,
+            version_no,
             created_at,
             updated_at
         FROM sys_organization
         WHERE id = #{id}
+    </select>
+
+    <select id="findByIdForUpdate" resultMap="OrganizationResultMap">
+        SELECT
+            id, parent_id, parent_scope_key, organization_code, organization_name,
+            organization_type, organization_path, sort_order, status,
+            effective_status, version_no, created_at, updated_at
+        FROM sys_organization
+        WHERE id = #{id}
+        FOR UPDATE
     </select>
 
     <select id="findByCode" resultMap="OrganizationResultMap">
@@ -48,6 +62,8 @@
             organization_path,
             sort_order,
             status,
+            effective_status,
+            version_no,
             created_at,
             updated_at
         FROM sys_organization
@@ -71,6 +87,16 @@
         )
     </select>
 
+    <select id="existsByParentScopeAndNameExcludingId" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM sys_organization
+            WHERE parent_scope_key = #{parentScopeKey}
+              AND organization_name = #{name}
+              AND id != #{excludedId}
+        )
+    </select>
+
     <insert id="insert">
         INSERT INTO sys_organization (
             id,
@@ -82,6 +108,8 @@
             organization_path,
             sort_order,
             status
+            , effective_status
+            , version_no
         ) VALUES (
             #{organization.id},
             #{organization.parentId, jdbcType=BIGINT},
@@ -92,8 +120,158 @@
             #{organization.path},
             #{organization.sortOrder},
             #{organization.status}
+            , #{organization.effectiveStatus}
+            , #{organization.versionNo}
         )
     </insert>
+
+    <update id="updateDetails">
+        UPDATE sys_organization
+        SET organization_name = #{name},
+            sort_order = #{sortOrder},
+            version_no = version_no + 1,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+          AND version_no = #{expectedVersion}
+    </update>
+
+    <select id="findSubtreeByPathForUpdate" resultMap="OrganizationResultMap">
+        SELECT
+            id, parent_id, parent_scope_key, organization_code, organization_name,
+            organization_type, organization_path, sort_order, status,
+            effective_status, version_no, created_at, updated_at
+        FROM sys_organization
+        WHERE organization_path LIKE CONCAT(#{path}, '%')
+        ORDER BY organization_path ASC
+        FOR UPDATE
+    </select>
+
+    <update id="updateStatusAndEffectiveStatus">
+        UPDATE sys_organization
+        SET status = #{status},
+            effective_status = #{effectiveStatus},
+            version_no = version_no + 1,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+          AND version_no = #{expectedVersion}
+    </update>
+
+    <update id="updateEffectiveStatus">
+        UPDATE sys_organization
+        SET effective_status = #{effectiveStatus},
+            version_no = version_no + 1,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+          AND version_no = #{expectedVersion}
+    </update>
+
+    <update id="disableDescendantEffectiveStatus">
+        UPDATE sys_organization
+        SET effective_status = 'DISABLED',
+            version_no = version_no + 1,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE organization_path LIKE CONCAT(#{rootPath}, '%')
+          AND id != #{rootId}
+          AND effective_status != 'DISABLED'
+    </update>
+
+    <update id="updateLocationAndPath">
+        UPDATE sys_organization
+        SET parent_id = #{parentId},
+            parent_scope_key = #{parentScopeKey},
+            organization_path = #{path},
+            effective_status = #{effectiveStatus},
+            version_no = version_no + 1,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+          AND version_no = #{expectedVersion}
+    </update>
+
+    <update id="updatePathAndEffectiveStatus">
+        UPDATE sys_organization
+        SET organization_path = #{path},
+            effective_status = #{effectiveStatus},
+            version_no = version_no + 1,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+          AND version_no = #{expectedVersion}
+    </update>
+
+    <select id="countDeleteReferences" resultType="long">
+        SELECT
+            (SELECT COUNT(*) FROM sys_organization WHERE parent_id = #{id})
+          + (SELECT COUNT(*) FROM sys_user_role WHERE organization_id = #{id})
+          + (SELECT COUNT(*) FROM sys_organization_admin WHERE organization_id = #{id})
+          + (SELECT COUNT(*) FROM sys_user_organization WHERE organization_id = #{id})
+          + (SELECT COUNT(*) FROM sys_feature_toggle WHERE organization_id = #{id})
+          + (SELECT COUNT(*) FROM sys_role_data_scope WHERE organization_id = #{id})
+          + (SELECT COUNT(*) FROM sys_import_job WHERE organization_id = #{id})
+          + (SELECT COUNT(*) FROM sys_student_import_execution WHERE organization_id = #{id})
+          + (SELECT COUNT(*) FROM sys_student_import_execution WHERE class_organization_id = #{id})
+          + (SELECT COUNT(*) FROM edu_student_organization WHERE organization_id = #{id})
+          + (SELECT COUNT(*) FROM edu_parent_binding_invitation WHERE organization_id = #{id})
+          + (SELECT COUNT(*) FROM edu_teacher_class WHERE class_organization_id = #{id})
+          + (SELECT COUNT(*) FROM edu_teacher_class_change_log WHERE class_organization_id = #{id})
+          + (SELECT COUNT(*) FROM learn_task WHERE source_organization_id = #{id})
+          + (SELECT COUNT(*) FROM learn_task_assignment WHERE source_organization_id = #{id})
+          + (SELECT COUNT(*) FROM growth_point_ledger WHERE source_organization_id = #{id})
+          + (SELECT COUNT(*) FROM edu_student_organization_change WHERE from_organization_id = #{id})
+          + (SELECT COUNT(*) FROM edu_student_organization_change WHERE to_organization_id = #{id})
+          + (SELECT COUNT(*) FROM auth_parent_mobile_manual_recovery WHERE organization_id = #{id})
+          + (SELECT COUNT(*) FROM auth_student_account_cancellation WHERE organization_id = #{id})
+          + (SELECT COUNT(*) FROM edu_exception_report WHERE class_organization_id = #{id})
+          + (SELECT COUNT(*) FROM attendance_record WHERE class_organization_id = #{id})
+          AS reference_count
+    </select>
+
+    <delete id="deleteLeaf">
+        DELETE FROM sys_organization
+        WHERE id = #{id}
+          AND version_no = #{expectedVersion}
+          AND NOT EXISTS (
+              SELECT 1 FROM sys_organization child WHERE child.parent_id = #{id}
+          )
+    </delete>
+
+    <select id="findOperationalSchoolsByOrganizationAdministrator" resultMap="OrganizationResultMap">
+        SELECT DISTINCT
+            organization.id, organization.parent_id, organization.parent_scope_key,
+            organization.organization_code, organization.organization_name,
+            organization.organization_type, organization.organization_path,
+            organization.sort_order, organization.status, organization.effective_status,
+            organization.version_no, organization.created_at, organization.updated_at
+        FROM sys_organization_admin organization_admin
+        JOIN sys_organization administrator_root
+          ON administrator_root.id = organization_admin.organization_id
+        JOIN sys_organization organization
+          ON organization.organization_path LIKE CONCAT(administrator_root.organization_path, '%')
+        WHERE organization_admin.user_id = #{userId}
+          AND administrator_root.status = 'ENABLED'
+          AND administrator_root.effective_status = 'ENABLED'
+          AND organization.organization_type = 'SCHOOL'
+          AND organization.status = 'ENABLED'
+          AND organization.effective_status = 'ENABLED'
+        ORDER BY organization.organization_path, organization.sort_order, organization.id
+    </select>
+
+    <select id="findClassesByOrganizationAdministrator" resultMap="OrganizationResultMap">
+        SELECT DISTINCT
+            organization.id, organization.parent_id, organization.parent_scope_key,
+            organization.organization_code, organization.organization_name,
+            organization.organization_type, organization.organization_path,
+            organization.sort_order, organization.status, organization.effective_status,
+            organization.version_no, organization.created_at, organization.updated_at
+        FROM sys_organization_admin organization_admin
+        JOIN sys_organization administrator_root
+          ON administrator_root.id = organization_admin.organization_id
+        JOIN sys_organization organization
+          ON organization.organization_path LIKE CONCAT(administrator_root.organization_path, '%')
+        WHERE organization_admin.user_id = #{userId}
+          AND administrator_root.status = 'ENABLED'
+          AND administrator_root.effective_status = 'ENABLED'
+          AND organization.organization_type = 'CLASS'
+        ORDER BY organization.organization_path, organization.sort_order, organization.id
+    </select>
 
     <select id="findAll" resultMap="OrganizationResultMap">
         SELECT
@@ -106,9 +284,37 @@
             organization_path,
             sort_order,
             status,
+            effective_status,
+            version_no,
             created_at,
             updated_at
         FROM sys_organization
+        ORDER BY organization_path ASC, sort_order ASC, organization_code ASC
+    </select>
+
+    <select id="findByIds" resultMap="OrganizationResultMap">
+        SELECT
+            id, parent_id, parent_scope_key, organization_code, organization_name,
+            organization_type, organization_path, sort_order, status,
+            effective_status, version_no, created_at, updated_at
+        FROM sys_organization
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        ORDER BY organization_path ASC, sort_order ASC, organization_code ASC
+    </select>
+
+    <select id="findByRootPaths" resultMap="OrganizationResultMap">
+        SELECT
+            id, parent_id, parent_scope_key, organization_code, organization_name,
+            organization_type, organization_path, sort_order, status,
+            effective_status, version_no, created_at, updated_at
+        FROM sys_organization
+        WHERE
+        <foreach collection="rootPaths" item="rootPath" open="(" separator=" OR " close=")">
+            organization_path LIKE CONCAT(#{rootPath}, '%')
+        </foreach>
         ORDER BY organization_path ASC, sort_order ASC, organization_code ASC
     </select>
 </mapper>

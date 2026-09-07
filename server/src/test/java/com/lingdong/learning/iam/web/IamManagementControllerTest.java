@@ -31,6 +31,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -285,6 +286,67 @@ class IamManagementControllerTest {
     }
 
     @Test
+    void managesRoleAndUserPermissionEffectsWithResourceEndpoints() throws Exception {
+        User administrator = createUserWithRole(
+                "iam_effect_admin", "权限效果管理员", "SYS_ADMIN");
+        User targetUser = createUserWithRole(
+                "iam_effect_target", "权限效果目标用户", "PARENT");
+        User ordinaryUser = createUserWithRole(
+                "iam_effect_ordinary", "权限效果普通用户", "PARENT");
+        setPassword(administrator, administrator);
+        setPassword(administrator, ordinaryUser);
+        String administratorToken = loginAccessToken("iam_effect_admin");
+        String ordinaryToken = loginAccessToken("iam_effect_ordinary");
+        Role parentRole = roleMapper.findByCode("PARENT");
+        Long permissionId = permissionMapper.findByCode("IAM_USER_READ").id();
+
+        mockMvc.perform(put("/api/v1/roles/{roleId}/permissions/{permissionId}",
+                        parentRole.id(), permissionId)
+                        .header("Authorization", "Bearer " + administratorToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"effect\":\"DENY\"}"))
+                .andExpect(status().isNoContent());
+        mockMvc.perform(get("/api/v1/roles/{roleId}/permissions", parentRole.id())
+                        .header("Authorization", "Bearer " + administratorToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].permissionId").value(permissionId.toString()))
+                .andExpect(jsonPath("$[0].effect").value("DENY"));
+        mockMvc.perform(delete("/api/v1/roles/{roleId}/permissions/{permissionId}",
+                        parentRole.id(), permissionId)
+                        .header("Authorization", "Bearer " + administratorToken))
+                .andExpect(status().isNoContent());
+        mockMvc.perform(get("/api/v1/roles/{roleId}/permissions", parentRole.id())
+                        .header("Authorization", "Bearer " + administratorToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.permissionId == '%s')]".formatted(permissionId)).isEmpty());
+
+        mockMvc.perform(put("/api/v1/users/{userId}/permissions/{permissionId}",
+                        targetUser.id(), permissionId)
+                        .header("Authorization", "Bearer " + administratorToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"effect\":\"DENY\"}"))
+                .andExpect(status().isNoContent());
+        mockMvc.perform(get("/api/v1/users/{userId}/permissions", targetUser.id())
+                        .header("Authorization", "Bearer " + administratorToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].permissionId").value(permissionId.toString()))
+                .andExpect(jsonPath("$[0].effect").value("DENY"));
+        mockMvc.perform(delete("/api/v1/users/{userId}/permissions/{permissionId}",
+                        targetUser.id(), permissionId)
+                        .header("Authorization", "Bearer " + administratorToken))
+                .andExpect(status().isNoContent());
+        mockMvc.perform(get("/api/v1/users/{userId}/permissions", targetUser.id())
+                        .header("Authorization", "Bearer " + administratorToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isEmpty());
+
+        mockMvc.perform(get("/api/v1/roles/{roleId}/permissions", parentRole.id())
+                        .header("Authorization", "Bearer " + ordinaryToken))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
+    }
+
+    @Test
     void configuresCustomRoleDataScopesAndOrganizationAdministrators() throws Exception {
         User administrator = createUserWithRole("iam_scope_admin", "数据范围管理员", "SYS_ADMIN");
         User organizationAdministrator = createUser("iam_org_admin", "机构管理员候选人");
@@ -377,6 +439,43 @@ class IamManagementControllerTest {
                                 """))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("RESOURCE_NOT_FOUND"));
+    }
+
+    @Test
+    void queriesImmutableIamChangeAuditsAndRejectsOrdinaryUsers() throws Exception {
+        User administrator = createUserWithRole("iam_audit_admin", "审计查询管理员", "SYS_ADMIN");
+        User ordinaryUser = createUser("iam_audit_ordinary", "审计查询普通用户");
+        setPassword(administrator, administrator);
+        setPassword(administrator, ordinaryUser);
+        String administratorToken = loginAccessToken("iam_audit_admin");
+
+        MvcResult createdUserResult = mockMvc.perform(post("/api/v1/users")
+                        .header("Authorization", "Bearer " + administratorToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"username":"iam_audit_target","displayName":"审计目标用户","type":"PLATFORM"}
+                                """))
+                .andExpect(status().isCreated())
+                .andReturn();
+        String targetId = objectMapper.readTree(createdUserResult.getResponse().getContentAsString()).path("id").asText();
+
+        mockMvc.perform(get("/api/v1/iam/audits")
+                        .param("eventType", "USER_CREATE")
+                        .param("targetId", targetId)
+                        .param("page", "1")
+                        .param("pageSize", "20")
+                        .header("Authorization", "Bearer " + administratorToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(1))
+                .andExpect(jsonPath("$.items[0].id").isString())
+                .andExpect(jsonPath("$.items[0].operatorId").value(administrator.id().toString()))
+                .andExpect(jsonPath("$.items[0].targetId").value(targetId))
+                .andExpect(jsonPath("$.items[0].eventType").value("USER_CREATE"));
+
+        mockMvc.perform(get("/api/v1/iam/audits")
+                        .header("Authorization", "Bearer " + loginAccessToken("iam_audit_ordinary")))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
     }
 
     private void setPassword(User administrator, User targetUser) {

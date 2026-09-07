@@ -1,6 +1,6 @@
 package com.lingdong.learning.attachment.domain;
 
-/** Determines whether an attachment rule may validate new file registrations. */
+/** 标识附件规则当前是否允许校验并登记新文件。 */
 public enum AttachmentRuleStatus {
     ENABLED,
     DISABLED

@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.attendance.infrastructure.persistence.AttendanceMapper">
+    <resultMap id="recordMap" type="com.lingdong.learning.attendance.domain.AttendanceRecord">
+        <constructor>
+            <arg column="id" javaType="java.lang.Long"/>
+            <arg column="student_id" javaType="java.lang.Long"/>
+            <arg column="class_organization_id" javaType="java.lang.Long"/>
+            <arg column="attendance_date" javaType="java.time.LocalDate"/>
+            <arg column="status" javaType="com.lingdong.learning.attendance.domain.AttendanceStatus"/>
+            <arg column="checkin_time" javaType="java.time.LocalTime"/>
+            <arg column="checkout_time" javaType="java.time.LocalTime"/>
+            <arg column="source" javaType="java.lang.String"/>
+            <arg column="recorded_by" javaType="java.lang.Long"/>
+            <arg column="version_no" javaType="_long"/>
+            <arg column="created_at" javaType="java.time.LocalDateTime"/>
+            <arg column="updated_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+    <resultMap id="rowMap" type="com.lingdong.learning.attendance.infrastructure.persistence.AttendanceRow">
+        <constructor>
+            <arg column="id" javaType="java.lang.Long"/>
+            <arg column="student_id" javaType="java.lang.Long"/>
+            <arg column="student_name" javaType="java.lang.String"/>
+            <arg column="class_organization_id" javaType="java.lang.Long"/>
+            <arg column="class_name" javaType="java.lang.String"/>
+            <arg column="attendance_date" javaType="java.time.LocalDate"/>
+            <arg column="status" javaType="com.lingdong.learning.attendance.domain.AttendanceStatus"/>
+            <arg column="checkin_time" javaType="java.time.LocalTime"/>
+            <arg column="checkout_time" javaType="java.time.LocalTime"/>
+            <arg column="source" javaType="java.lang.String"/>
+            <arg column="recorded_by" javaType="java.lang.Long"/>
+            <arg column="recorder_name" javaType="java.lang.String"/>
+            <arg column="version_no" javaType="_long"/>
+            <arg column="created_at" javaType="java.time.LocalDateTime"/>
+            <arg column="updated_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+    <resultMap id="actionMap" type="com.lingdong.learning.attendance.infrastructure.persistence.AttendanceActionRow">
+        <constructor>
+            <arg column="id" javaType="java.lang.Long"/>
+            <arg column="action_type" javaType="java.lang.String"/>
+            <arg column="operator_user_id" javaType="java.lang.Long"/>
+            <arg column="operator_name" javaType="java.lang.String"/>
+            <arg column="before_status" javaType="com.lingdong.learning.attendance.domain.AttendanceStatus"/>
+            <arg column="after_status" javaType="com.lingdong.learning.attendance.domain.AttendanceStatus"/>
+            <arg column="before_checkin_time" javaType="java.time.LocalTime"/>
+            <arg column="after_checkin_time" javaType="java.time.LocalTime"/>
+            <arg column="before_checkout_time" javaType="java.time.LocalTime"/>
+            <arg column="after_checkout_time" javaType="java.time.LocalTime"/>
+            <arg column="created_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <!-- 所有范围仅使用服务端身份参数；空范围强制返回零行。 -->
+    <sql id="classScope">
+        <choose>
+            <when test="scope.mode == 'TEACHER'">
+                EXISTS (SELECT 1 FROM edu_teacher_class tc WHERE tc.teacher_user_id = #{scope.userId}
+                    AND tc.class_organization_id = c.id AND tc.status = 'ACTIVE')
+            </when>
+            <when test="scope.mode == 'ORGANIZATION' and scope.allOrganizations">1 = 1</when>
+            <when test="scope.mode == 'ORGANIZATION' and scope.rootPaths.size() > 0">
+                (<foreach collection="scope.rootPaths" item="path" separator=" OR ">
+                    LEFT(c.organization_path, CHAR_LENGTH(#{path})) = #{path}
+                </foreach>)
+            </when>
+            <otherwise>1 = 0</otherwise>
+        </choose>
+    </sql>
+    <sql id="recordScope">
+        <choose>
+            <when test="scope.mode == 'PARENT'">
+                EXISTS (SELECT 1 FROM edu_parent_student ps WHERE ps.parent_user_id = #{scope.userId}
+                    AND ps.student_id = r.student_id AND ps.status = 'ACTIVE')
+            </when>
+            <when test="scope.mode == 'STUDENT'">s.student_user_id = #{scope.userId}</when>
+            <otherwise><include refid="classScope"/></otherwise>
+        </choose>
+    </sql>
+    <sql id="columns">
+        r.id, r.student_id, s.student_name, r.class_organization_id, c.organization_name AS class_name,
+        r.attendance_date, r.status, r.checkin_time, r.checkout_time, r.source, r.recorded_by,
+        u.display_name AS recorder_name, r.version_no, r.created_at, r.updated_at
+    </sql>
+    <sql id="joins">
+        FROM attendance_record r JOIN edu_student s ON s.id = r.student_id
+        JOIN sys_organization c ON c.id = r.class_organization_id
+        JOIN sys_user u ON u.id = r.recorded_by
+    </sql>
+    <sql id="filters">
+        <include refid="recordScope"/>
+        AND r.attendance_date BETWEEN #{query.dateFrom} AND #{query.dateTo}
+        <if test="query.classOrganizationId != null">AND r.class_organization_id = #{query.classOrganizationId}</if>
+        <if test="query.studentId != null">AND r.student_id = #{query.studentId}</if>
+        <if test="query.status != null">AND r.status = #{query.status}</if>
+        <if test="query.keyword != null">AND LOCATE(#{query.keyword}, s.student_name) > 0</if>
+    </sql>
+    <select id="findPage" resultMap="rowMap">
+        <bind name="scope" value="query.scope"/>
+        SELECT <include refid="columns"/> <include refid="joins"/>
+        WHERE <include refid="filters"/>
+        ORDER BY r.attendance_date DESC, r.id DESC LIMIT #{query.limit} OFFSET #{query.offset}
+    </select>
+    <select id="count" resultType="long">
+        <bind name="scope" value="query.scope"/>
+        SELECT COUNT(*) <include refid="joins"/> WHERE <include refid="filters"/>
+    </select>
+    <select id="findVisible" resultMap="rowMap">
+        SELECT <include refid="columns"/> <include refid="joins"/>
+        WHERE r.id = #{id} AND <include refid="recordScope"/>
+    </select>
+    <select id="findClasses" resultType="com.lingdong.learning.attendance.infrastructure.persistence.AttendanceClassRow">
+        SELECT c.id AS classOrganizationId, c.organization_name AS className
+        FROM sys_organization c WHERE c.organization_type = 'CLASS'
+        <if test="operational">AND c.status = 'ENABLED' AND c.effective_status = 'ENABLED'</if>
+        AND
+        <choose>
+            <when test="scope.mode == 'PARENT' or scope.mode == 'STUDENT'">
+                EXISTS (SELECT 1 FROM attendance_record r JOIN edu_student s ON s.id = r.student_id
+                    WHERE r.class_organization_id = c.id AND <include refid="recordScope"/>)
+            </when>
+            <otherwise><include refid="classScope"/></otherwise>
+        </choose>
+        ORDER BY c.organization_path, c.sort_order, c.id
+    </select>
+    <select id="canAccessClass" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM sys_organization c WHERE c.id = #{classId}
+            AND c.organization_type = 'CLASS' AND <include refid="classScope"/>)
+    </select>
+    <sql id="eligibleStudent">
+        FROM edu_student s JOIN edu_student_organization sc ON sc.student_id = s.id
+        WHERE sc.organization_id = #{classId} AND sc.relation_type = 'CLASS' AND sc.status = 'ACTIVE'
+          AND s.status = 'ENABLED' AND CAST(sc.effective_from AS DATE) &lt;= #{date}
+          AND (sc.effective_to IS NULL OR CAST(sc.effective_to AS DATE) >= #{date})
+    </sql>
+    <select id="findRoster" resultType="com.lingdong.learning.attendance.infrastructure.persistence.AttendanceStudentRow">
+        SELECT s.id AS studentId, s.student_name AS studentName <include refid="eligibleStudent"/>
+        ORDER BY s.student_name, s.id
+    </select>
+    <select id="lockEligibleStudent" resultType="java.lang.Long">
+        SELECT s.id <include refid="eligibleStudent"/> AND s.id = #{studentId} FOR UPDATE
+    </select>
+    <select id="findExisting" resultMap="recordMap">
+        SELECT id, student_id, class_organization_id, attendance_date, status, checkin_time,
+               checkout_time, source, recorded_by, version_no, created_at, updated_at
+        FROM attendance_record WHERE class_organization_id = #{classId} AND student_id = #{studentId}
+            AND attendance_date = #{date}
+    </select>
+    <insert id="insert">
+        INSERT INTO attendance_record(id,student_id,class_organization_id,attendance_date,status,
+            checkin_time,checkout_time,source,recorded_by,version_no,created_at,updated_at)
+        VALUES(#{record.id},#{record.studentId},#{record.classOrganizationId},#{record.attendanceDate},
+            #{record.status},#{record.checkinTime},#{record.checkoutTime},#{record.source},
+            #{record.recordedBy},#{record.versionNo},#{record.createdAt},#{record.updatedAt})
+    </insert>
+    <update id="correct">
+        UPDATE attendance_record SET status=#{record.status},checkin_time=#{record.checkinTime},
+            checkout_time=#{record.checkoutTime},recorded_by=#{record.recordedBy},
+            version_no=#{record.versionNo},updated_at=#{record.updatedAt}
+        WHERE id=#{record.id} AND version_no=#{expectedVersion}
+    </update>
+    <insert id="insertAction">
+        INSERT INTO attendance_record_action(id,record_id,action_type,operator_user_id,
+            before_status,after_status,before_checkin_time,after_checkin_time,
+            before_checkout_time,after_checkout_time,version_no,created_at)
+        VALUES(#{id},#{after.id},
+            <choose><when test="before == null">'CREATE'</when><otherwise>'CORRECT'</otherwise></choose>,
+            #{after.recordedBy},
+            <choose><when test="before == null">NULL</when><otherwise>#{before.status}</otherwise></choose>,
+            #{after.status},
+            <choose><when test="before == null">NULL</when><otherwise>#{before.checkinTime}</otherwise></choose>,
+            #{after.checkinTime},
+            <choose><when test="before == null">NULL</when><otherwise>#{before.checkoutTime}</otherwise></choose>,
+            #{after.checkoutTime},#{after.versionNo},#{after.updatedAt})
+    </insert>
+    <select id="findActions" resultMap="actionMap">
+        SELECT a.id,a.action_type,a.operator_user_id,u.display_name AS operator_name,
+            a.before_status,a.after_status,a.before_checkin_time,a.after_checkin_time,
+            a.before_checkout_time,a.after_checkout_time,a.created_at
+        FROM attendance_record_action a JOIN sys_user u ON u.id=a.operator_user_id
+        WHERE a.record_id=#{id} ORDER BY a.version_no,a.id
+    </select>
+</mapper>

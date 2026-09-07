@@ -6,5 +6,6 @@ package com.lingdong.learning.user.domain;
 public enum UserStatus {
     ENABLED,
     DISABLED,
-    LOCKED
+    LOCKED,
+    CANCELLED
 }

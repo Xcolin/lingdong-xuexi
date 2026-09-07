@@ -3,14 +3,17 @@ package com.lingdong.learning.organization.application;
 import com.lingdong.learning.common.id.IdGenerator;
 import com.lingdong.learning.common.web.ResourceNotFoundException;
 import com.lingdong.learning.organization.domain.Organization;
+import com.lingdong.learning.organization.domain.OrganizationChangeAudit;
 import com.lingdong.learning.organization.domain.OrganizationStatus;
 import com.lingdong.learning.organization.domain.OrganizationType;
+import com.lingdong.learning.organization.infrastructure.persistence.OrganizationChangeAuditMapper;
 import com.lingdong.learning.organization.infrastructure.persistence.OrganizationMapper;
 import com.lingdong.learning.organization.infrastructure.persistence.OrganizationTypeMapper;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
@@ -25,15 +28,21 @@ public class OrganizationApplicationService {
 
     private final OrganizationMapper organizationMapper;
     private final OrganizationTypeMapper organizationTypeMapper;
+    private final OrganizationChangeAuditMapper organizationChangeAuditMapper;
+    private final OrganizationOperationalStatusService organizationOperationalStatusService;
     private final IdGenerator idGenerator;
 
     public OrganizationApplicationService(
             OrganizationMapper organizationMapper,
             OrganizationTypeMapper organizationTypeMapper,
+            OrganizationChangeAuditMapper organizationChangeAuditMapper,
+            OrganizationOperationalStatusService organizationOperationalStatusService,
             IdGenerator idGenerator
     ) {
         this.organizationMapper = organizationMapper;
         this.organizationTypeMapper = organizationTypeMapper;
+        this.organizationChangeAuditMapper = organizationChangeAuditMapper;
+        this.organizationOperationalStatusService = organizationOperationalStatusService;
         this.idGenerator = idGenerator;
     }
 
@@ -120,6 +129,52 @@ public class OrganizationApplicationService {
         }
     }
 
+    /**
+     * 直接编辑组织名称和排序，并使用乐观锁阻止旧页面覆盖最新数据。
+     */
+    @Transactional
+    public Organization updateOrganization(Long operatorUserId, UpdateOrganizationCommand command) {
+        Objects.requireNonNull(operatorUserId, "操作人不能为空");
+        Objects.requireNonNull(command, "编辑组织请求不能为空");
+        Objects.requireNonNull(command.organizationId(), "组织ID不能为空");
+        Objects.requireNonNull(command.versionNo(), "组织版本号不能为空");
+        if (command.versionNo() < 1) {
+            throw new IllegalArgumentException("组织版本号必须大于0");
+        }
+
+        Organization current = organizationMapper.findByIdForUpdate(command.organizationId());
+        if (current == null) {
+            throw new ResourceNotFoundException("组织不存在：" + command.organizationId());
+        }
+
+        String name = requiredText(command.name(), "组织名称", maximumNameLength(current.typeCode()));
+        Integer sortOrder = normalizeSortOrder(command.sortOrder());
+        if (organizationMapper.existsByParentScopeAndNameExcludingId(
+                current.parentScopeKey(), name, current.id())) {
+            throw new DuplicateOrganizationNameException(name);
+        }
+
+        int affectedRows = organizationMapper.updateDetails(
+                current.id(), name, sortOrder, command.versionNo());
+        if (affectedRows != 1) {
+            throw new OrganizationVersionConflictException();
+        }
+
+        Organization updated = organizationMapper.findById(current.id());
+        organizationChangeAuditMapper.insert(OrganizationChangeAudit.directUpdate(
+                idGenerator.nextId(), current, updated, operatorUserId, LocalDateTime.now()));
+        return updated;
+    }
+
+    public Organization enableOrganization(Long operatorUserId, Long organizationId, Integer expectedVersion) {
+        return organizationOperationalStatusService.enableOrganization(
+                operatorUserId, organizationId, expectedVersion);
+    }
+
+    public Organization requireOperational(Long organizationId) {
+        return organizationOperationalStatusService.requireOperational(organizationId);
+    }
+
     private ParentContext resolveParent(Long parentId) {
         if (parentId == null) {
             return new ParentContext(ROOT_SCOPE_KEY, "/");
@@ -129,7 +184,8 @@ public class OrganizationApplicationService {
         if (parent == null) {
             throw new ResourceNotFoundException("父级组织不存在：" + parentId);
         }
-        if (parent.status() != OrganizationStatus.ENABLED) {
+        if (parent.status() != OrganizationStatus.ENABLED
+                || parent.effectiveStatus() != com.lingdong.learning.organization.domain.OrganizationEffectiveStatus.ENABLED) {
             throw new IllegalStateException("父级组织已停用，不能新增下级组织：" + parentId);
         }
         return new ParentContext("PARENT:" + parent.id(), parent.path());

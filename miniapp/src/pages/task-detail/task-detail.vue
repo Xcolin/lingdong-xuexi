@@ -53,7 +53,7 @@
           <text class="submission-number">第 {{ task.latestCheckIn.submissionNo }} 次</text>
         </view>
         <text v-if="task.latestCheckIn.content" class="remark-text">{{ task.latestCheckIn.content }}</text>
-        <view v-if="task.latestCheckIn.attachments.length" class="history-image-grid">
+        <view v-if="attachmentServiceEnabled && task.latestCheckIn.attachments.length" class="history-image-grid">
           <view
             v-for="(attachment, index) in task.latestCheckIn.attachments"
             :key="attachment.id"
@@ -90,7 +90,7 @@
             placeholder="记录本次完成情况"
             :disabled="working"
           />
-          <view class="upload-section">
+          <view v-if="attachmentServiceEnabled" class="upload-section">
             <view class="pending-image-grid">
               <view v-for="item in pendingImages" :key="item.localId" class="pending-image-item">
                 <image :src="item.filePath" mode="aspectFill" @tap="previewPendingImage(item.filePath)" />
@@ -199,6 +199,7 @@ const task = ref<StudentTaskAssignment | null>(null);
 const loading = ref(true);
 const working = ref(false);
 const learningTaskEnabled = ref(false);
+const attachmentServiceEnabled = ref(true);
 const errorMessage = ref('');
 const checkInContent = ref('');
 const pendingImages = ref<PendingImage[]>([]);
@@ -228,6 +229,8 @@ async function initialize(): Promise<void> {
   try {
     const capabilities = await getMiniappCapabilities();
     learningTaskEnabled.value = capabilities.learningTaskManagementEnabled;
+    attachmentServiceEnabled.value = capabilities.attachmentServiceEnabled !== false;
+    if (!attachmentServiceEnabled.value) pendingImages.value = [];
     task.value = learningTaskEnabled.value
       ? await getStudentTaskAssignment(assignmentId.value)
       : null;
@@ -266,7 +269,7 @@ function submitCheckIn(): void {
 }
 
 function chooseImages(): void {
-  if (working.value || pendingImages.value.length >= 9) return;
+  if (!attachmentServiceEnabled.value || working.value || pendingImages.value.length >= 9) return;
   uni.chooseImage({
     count: 9 - pendingImages.value.length,
     sizeType: ['compressed'],
@@ -323,11 +326,12 @@ async function removeImage(item: PendingImage): Promise<void> {
 }
 
 function previewPendingImage(filePath: string): void {
+  if (!attachmentServiceEnabled.value) return;
   uni.previewImage({ current: filePath, urls: pendingImages.value.map((item) => item.filePath) });
 }
 
 function previewHistoryImage(index: number): void {
-  if (!task.value?.latestCheckIn) return;
+  if (!attachmentServiceEnabled.value || !task.value?.latestCheckIn) return;
   const urls = task.value.latestCheckIn.attachments
     .map((attachment) => historyPreviewPaths.value[attachment.id])
     .filter((path): path is string => Boolean(path));
@@ -337,6 +341,10 @@ function previewHistoryImage(index: number): void {
 }
 
 async function prepareHistoryPreviews(): Promise<void> {
+  if (!attachmentServiceEnabled.value) {
+    historyPreviewPaths.value = {};
+    return;
+  }
   const attachments = task.value?.latestCheckIn?.attachments ?? [];
   historyPreviewPaths.value = {};
   await Promise.all(attachments.map(async (attachment) => {

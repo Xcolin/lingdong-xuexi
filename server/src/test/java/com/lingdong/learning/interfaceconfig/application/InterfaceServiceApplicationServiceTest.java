@@ -104,6 +104,32 @@ class InterfaceServiceApplicationServiceTest {
     }
 
     @Test
+    void reEnablesDisabledServiceOnlyAfterApprovalIsApplied() {
+        User administrator = createUserWithRole("interface_enable_admin", "接口启用管理员", "SYS_ADMIN");
+        User auditor = createUserWithRole("interface_enable_auditor", "接口启用审核员", "SYS_AUDITOR");
+        User owner = createUser("interface_enable_owner", "接口启用责任人");
+        InterfaceService service = createEnabledService(administrator, auditor, owner, "短信验证码", "sms-adapter");
+        InterfaceServiceChange disableChange = interfaceServiceApplicationService.createDisableDraft(
+                new CreateInterfaceServiceDisableCommand(
+                        administrator.id(), service.id(), "停用短信验证码接口", "暂停短信验证码调用"
+                )
+        );
+        interfaceServiceApplicationService.submit(disableChange.taskId(), administrator.id());
+        interfaceServiceApplicationService.approveAndApply(disableChange.taskId(), auditor.id(), "同意停用");
+
+        InterfaceServiceChange enableChange = interfaceServiceApplicationService.createEnableDraft(
+                new CreateInterfaceServiceEnableCommand(
+                        administrator.id(), service.id(), "重新启用短信验证码接口", "恢复短信验证码调用"
+                )
+        );
+
+        assertThat(interfaceServiceMapper.findById(service.id()).status()).isEqualTo(InterfaceServiceStatus.DISABLED);
+        interfaceServiceApplicationService.submit(enableChange.taskId(), administrator.id());
+        interfaceServiceApplicationService.approveAndApply(enableChange.taskId(), auditor.id(), "同意启用");
+        assertThat(interfaceServiceMapper.findById(service.id()).status()).isEqualTo(InterfaceServiceStatus.ENABLED);
+    }
+
+    @Test
     void onlySystemAdministratorsCanCreateServiceChangeDrafts() {
         User ordinaryUser = createUser("interface_ordinary_user", "普通用户");
         User owner = createUser("interface_permission_owner", "权限接口责任人");

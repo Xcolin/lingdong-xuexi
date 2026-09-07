@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.importjob.infrastructure.persistence.ImportJobRowResultMapper">
+    <resultMap id="ImportJobRowMap" type="com.lingdong.learning.importjob.domain.ImportJobRowResultRecord">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="job_id" javaType="java.lang.Long"/>
+            <arg column="row_number" javaType="java.lang.Integer"/>
+            <arg column="status" javaType="com.lingdong.learning.importjob.domain.ImportJobRowStatus"/>
+            <arg column="error_summary" javaType="java.lang.String"/>
+            <arg column="created_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <insert id="insertBatch">
+        INSERT INTO sys_import_job_row_result
+        (id, job_id, row_number, status, error_summary)
+        VALUES
+        <foreach collection="rows" item="row" separator=",">
+            (#{row.id}, #{row.jobId}, #{row.rowNumber}, #{row.status}, #{row.errorSummary})
+        </foreach>
+    </insert>
+
+    <select id="findByJobId" resultMap="ImportJobRowMap">
+        SELECT id, job_id, row_number, status, error_summary, created_at
+        FROM sys_import_job_row_result
+        WHERE job_id = #{jobId}
+        <if test="invalidOnly">
+            AND status = 'INVALID'
+        </if>
+        ORDER BY row_number ASC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countByJobId" resultType="long">
+        SELECT COUNT(*) FROM sys_import_job_row_result
+        WHERE job_id = #{jobId}
+        <if test="invalidOnly">
+            AND status = 'INVALID'
+        </if>
+    </select>
+</mapper>

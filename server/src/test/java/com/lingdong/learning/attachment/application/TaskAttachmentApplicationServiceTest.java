@@ -7,9 +7,9 @@ import com.lingdong.learning.attachment.infrastructure.persistence.ManagedFileMa
 import com.lingdong.learning.auth.application.AuthenticatedUser;
 import com.lingdong.learning.auth.domain.AuthClientType;
 import com.lingdong.learning.feature.application.FeatureAccessService;
+import com.lingdong.learning.feature.application.FeatureDisabledException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 
 import java.util.List;
 
@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -25,7 +26,8 @@ class TaskAttachmentApplicationServiceTest {
     private AttachmentFileApplicationService fileService;
     private ManagedFileMapper fileMapper;
     private FileRelationMapper relationMapper;
-    private AttachmentContentStorage contentStorage;
+    private ManagedAttachmentContentService contentService;
+    private FeatureAccessService featureAccessService;
     private TaskAttachmentApplicationService service;
     private AuthenticatedUser student;
 
@@ -34,10 +36,10 @@ class TaskAttachmentApplicationServiceTest {
         fileService = mock(AttachmentFileApplicationService.class);
         fileMapper = mock(ManagedFileMapper.class);
         relationMapper = mock(FileRelationMapper.class);
-        contentStorage = mock(AttachmentContentStorage.class);
+        contentService = mock(ManagedAttachmentContentService.class);
+        featureAccessService = mock(FeatureAccessService.class);
         service = new TaskAttachmentApplicationService(
-                fileService, fileMapper, relationMapper, contentStorage,
-                mock(FeatureAccessService.class));
+                fileService, fileMapper, relationMapper, contentService, featureAccessService);
         student = new AuthenticatedUser(
                 1874244142494647001L, 1874244142494647002L,
                 "student", "学生", AuthClientType.MINIAPP, List.of("STUDENT"));
@@ -46,11 +48,9 @@ class TaskAttachmentApplicationServiceTest {
     @Test
     void uploadsRealJpegAndPersistsSha256WithoutExposingStorageKey() {
         byte[] content = {(byte) 0xff, (byte) 0xd8, (byte) 0xff, 0x01};
-        ManagedFile registered = file(FileStatus.UPLOADING, null);
         ManagedFile completed = file(FileStatus.AVAILABLE,
                 "829b21a0693c4e12098f545e2a1e4dd0078a834f1df32f850503edb8b055f37a");
-        when(fileService.registerUpload(any())).thenReturn(registered);
-        when(fileService.completeUpload(any())).thenReturn(completed);
+        when(contentService.store(any(), any(), any(), any(), any(), any())).thenReturn(completed);
 
         TaskAttachmentView result = service.upload(student, new UploadTaskAttachmentCommand(
                 "LEARNING_TASK_CHECKIN", "IMAGE", "reading.jpg", "image/jpeg", content));
@@ -58,11 +58,10 @@ class TaskAttachmentApplicationServiceTest {
         assertThat(result.id()).isEqualTo(1874244142494647003L);
         assertThat(result.contentUrl()).isEqualTo(
                 "/api/v1/attachments/1874244142494647003/content");
-        verify(contentStorage).store("attachment/test/reading", content);
-        ArgumentCaptor<CompleteAttachmentUploadCommand> captor =
-                ArgumentCaptor.forClass(CompleteAttachmentUploadCommand.class);
-        verify(fileService).completeUpload(captor.capture());
-        assertThat(captor.getValue().contentSha256()).matches("[0-9a-f]{64}");
+        verify(contentService).store(
+                student.userId(), "LEARNING_TASK_CHECKIN", "IMAGE", "reading.jpg", "image/jpeg", content);
+        verify(featureAccessService).requireEnabled("ATTACHMENT_SERVICE", null);
+        verify(featureAccessService).requireEnabled("LEARNING_TASK_MANAGEMENT", null);
     }
 
     @Test
@@ -73,7 +72,7 @@ class TaskAttachmentApplicationServiceTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("真实格式");
 
-        verify(fileService, never()).registerUpload(any());
+        verify(contentService, never()).store(any(), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -82,6 +81,46 @@ class TaskAttachmentApplicationServiceTest {
                 student.userId(), List.of(1L, 1L), 2L))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("重复");
+    }
+
+    @Test
+    void blocksAttachmentOperationsAndDegradesBusinessCollectionWhenServiceIsDisabled() {
+        doThrow(new FeatureDisabledException("ATTACHMENT_SERVICE"))
+                .when(featureAccessService).requireEnabled("ATTACHMENT_SERVICE", null);
+        when(featureAccessService.isEnabled("ATTACHMENT_SERVICE", null)).thenReturn(false);
+        UploadTaskAttachmentCommand upload = new UploadTaskAttachmentCommand(
+                "LEARNING_TASK_CHECKIN", "IMAGE", "reading.jpg", "image/jpeg",
+                new byte[]{(byte) 0xff, (byte) 0xd8, (byte) 0xff});
+
+        assertThatThrownBy(() -> service.upload(student, upload))
+                .isInstanceOf(FeatureDisabledException.class)
+                .hasMessageContaining("ATTACHMENT_SERVICE");
+        assertThatThrownBy(() -> service.attachToCheckIn(student.userId(), List.of(1L), 2L))
+                .isInstanceOf(FeatureDisabledException.class);
+        assertThatThrownBy(() -> service.findMetadata(student, 1L))
+                .isInstanceOf(FeatureDisabledException.class);
+        assertThatThrownBy(() -> service.readContent(student, 1L))
+                .isInstanceOf(FeatureDisabledException.class);
+        assertThatThrownBy(() -> service.deleteUnattached(student, 1L))
+                .isInstanceOf(FeatureDisabledException.class);
+        assertThat(service.findByCheckInId(2L)).isEmpty();
+
+        verify(fileMapper, never()).findById(any());
+        verify(relationMapper, never()).findActiveFilesByBusiness(any(), any(), any());
+    }
+
+    @Test
+    void stillHonorsLearningTaskToggleAfterAttachmentServiceIsEnabled() {
+        doThrow(new FeatureDisabledException("LEARNING_TASK_MANAGEMENT"))
+                .when(featureAccessService).requireEnabled("LEARNING_TASK_MANAGEMENT", null);
+
+        assertThatThrownBy(() -> service.upload(student, new UploadTaskAttachmentCommand(
+                "LEARNING_TASK_CHECKIN", "IMAGE", "reading.jpg", "image/jpeg",
+                new byte[]{(byte) 0xff, (byte) 0xd8, (byte) 0xff})))
+                .isInstanceOf(FeatureDisabledException.class)
+                .hasMessageContaining("LEARNING_TASK_MANAGEMENT");
+
+        verify(featureAccessService).requireEnabled("ATTACHMENT_SERVICE", null);
     }
 
     private ManagedFile file(FileStatus status, String contentSha256) {

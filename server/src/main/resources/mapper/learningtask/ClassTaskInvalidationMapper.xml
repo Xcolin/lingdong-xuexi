@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.learningtask.infrastructure.persistence.ClassTaskInvalidationMapper">
+    <select id="findUnfinishedByClassForUpdate"
+            resultType="com.lingdong.learning.learningtask.infrastructure.persistence.ClassTaskAssignmentStateRow">
+        SELECT assignment.id AS assignment_id,
+               assignment.current_status,
+               assignment.version_no
+        FROM learn_task_assignment assignment
+        JOIN edu_student_organization class_relation
+          ON class_relation.student_id = assignment.student_id
+         AND class_relation.organization_id = #{classOrganizationId}
+         AND class_relation.relation_type = 'CLASS'
+         AND class_relation.status = 'ACTIVE'
+        WHERE assignment.source_type IN ('ORGANIZATION', 'TEACHER')
+          AND assignment.current_status IN (
+              'PENDING_CLAIM', 'IN_PROGRESS', 'PENDING_REVIEW', 'NEEDS_IMPROVEMENT'
+          )
+        ORDER BY assignment.id
+        FOR UPDATE
+    </select>
+
+    <update id="invalidate">
+        UPDATE learn_task_assignment
+        SET current_status = 'INVALIDATED',
+            last_transition_at = #{occurredAt},
+            version_no = version_no + 1,
+            updated_at = #{occurredAt}
+        WHERE id = #{assignmentId}
+          AND current_status = #{expectedStatus}
+          AND version_no = #{expectedVersion}
+    </update>
+</mapper>

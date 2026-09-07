@@ -9,4 +9,5 @@ import java.util.List;
 public interface AttachmentRuleExtensionMapper {
     int insert(@Param("id") Long id, @Param("ruleId") Long ruleId, @Param("extension") String extension);
     List<String> findExtensionsByRuleId(@Param("ruleId") Long ruleId);
+    int deleteByRuleId(@Param("ruleId") Long ruleId);
 }

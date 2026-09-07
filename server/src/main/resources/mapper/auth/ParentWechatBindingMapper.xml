@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.auth.infrastructure.persistence.ParentWechatBindingMapper">
+    <resultMap id="ParentWechatBindingResultMap"
+               type="com.lingdong.learning.auth.application.ParentWechatBinding">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="user_id" javaType="java.lang.Long"/>
+            <arg column="app_id" javaType="java.lang.String"/>
+            <arg column="open_id" javaType="java.lang.String"/>
+            <arg column="union_id" javaType="java.lang.String"/>
+            <arg column="status" javaType="com.lingdong.learning.auth.application.ParentWechatBindingStatus"/>
+            <arg column="bound_at" javaType="java.time.LocalDateTime"/>
+            <arg column="last_login_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findActiveByIdentity" resultMap="ParentWechatBindingResultMap">
+        SELECT id, user_id, app_id, open_id, union_id, status, bound_at, last_login_at
+        FROM auth_parent_wechat_binding
+        WHERE app_id = #{appId} AND open_id = #{openId} AND status = 'ACTIVE'
+    </select>
+
+    <select id="findByUserId" resultMap="ParentWechatBindingResultMap">
+        SELECT id, user_id, app_id, open_id, union_id, status, bound_at, last_login_at
+        FROM auth_parent_wechat_binding
+        WHERE user_id = #{userId}
+    </select>
+
+    <insert id="insert">
+        INSERT INTO auth_parent_wechat_binding (
+            id, user_id, app_id, open_id, union_id, status, bound_at, last_login_at
+        ) VALUES (
+            #{binding.id}, #{binding.userId}, #{binding.appId}, #{binding.openId},
+            #{binding.unionId, jdbcType=VARCHAR}, #{binding.status}, #{binding.boundAt},
+            #{binding.lastLoginAt, jdbcType=TIMESTAMP}
+        )
+    </insert>
+
+    <update id="touchLastLogin">
+        UPDATE auth_parent_wechat_binding
+        SET last_login_at = #{lastLoginAt}, updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id} AND status = 'ACTIVE'
+    </update>
+
+    <delete id="deleteByUserId">
+        DELETE FROM auth_parent_wechat_binding
+        WHERE user_id = #{userId}
+    </delete>
+</mapper>

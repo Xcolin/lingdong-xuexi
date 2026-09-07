@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.organization.infrastructure.persistence.OrganizationChangeAuditMapper">
+    <insert id="insert">
+        INSERT INTO sys_organization_change_audit (
+            id, organization_id, task_id, event_type, change_type,
+            before_name, after_name, before_sort_order, after_sort_order,
+            before_parent_id, after_parent_id, before_status, after_status,
+            operator_user_id, reason, occurred_at
+        ) VALUES (
+            #{audit.id}, #{audit.organizationId}, #{audit.taskId, jdbcType=BIGINT},
+            #{audit.eventType}, #{audit.changeType, jdbcType=VARCHAR},
+            #{audit.beforeName, jdbcType=VARCHAR}, #{audit.afterName, jdbcType=VARCHAR},
+            #{audit.beforeSortOrder, jdbcType=INTEGER}, #{audit.afterSortOrder, jdbcType=INTEGER},
+            #{audit.beforeParentId, jdbcType=BIGINT}, #{audit.afterParentId, jdbcType=BIGINT},
+            #{audit.beforeStatus, jdbcType=VARCHAR}, #{audit.afterStatus, jdbcType=VARCHAR},
+            #{audit.operatorUserId}, #{audit.reason, jdbcType=VARCHAR}, #{audit.occurredAt}
+        )
+    </insert>
+</mapper>

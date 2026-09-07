@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.learningtask.infrastructure.persistence.ManagedTaskProgressMapper">
+    <resultMap id="ProgressRowMap"
+               type="com.lingdong.learning.learningtask.application.ManagedTaskProgressRow">
+        <constructor>
+            <idArg column="assignment_id" javaType="java.lang.Long"/>
+            <arg column="student_id" javaType="java.lang.Long"/>
+            <arg column="student_name" javaType="java.lang.String"/>
+            <arg column="student_account" javaType="java.lang.String"/>
+            <arg column="class_organization_id" javaType="java.lang.Long"/>
+            <arg column="class_name" javaType="java.lang.String"/>
+            <arg column="current_status" javaType="com.lingdong.learning.learningtask.domain.TaskAssignmentStatus"/>
+            <arg column="scheduled_date" javaType="java.time.LocalDate"/>
+            <arg column="claimed_at" javaType="java.time.LocalDateTime"/>
+            <arg column="completed_at" javaType="java.time.LocalDateTime"/>
+            <arg column="last_transition_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="progressFromAndFilter">
+        FROM learn_task_assignment assignment
+        JOIN edu_student student ON student.id = assignment.student_id
+        LEFT JOIN sys_user student_user ON student_user.id = student.student_user_id
+        LEFT JOIN edu_student_organization student_class
+          ON student_class.student_id = student.id
+         AND student_class.relation_type = 'CLASS'
+         AND student_class.status = 'ACTIVE'
+        LEFT JOIN sys_organization class_organization
+          ON class_organization.id = student_class.organization_id
+        WHERE assignment.task_id = #{query.taskId}
+        <if test="query.teacherUserId != null">
+          AND EXISTS (
+              SELECT 1 FROM edu_student_organization visible_class
+              JOIN edu_teacher_class teacher_class
+                ON teacher_class.class_organization_id = visible_class.organization_id
+               AND teacher_class.teacher_user_id = #{query.teacherUserId}
+               AND teacher_class.status = 'ACTIVE'
+              WHERE visible_class.student_id = assignment.student_id
+                AND visible_class.relation_type = 'CLASS'
+                AND visible_class.status = 'ACTIVE'
+          )
+        </if>
+    </sql>
+
+    <select id="findPage" resultMap="ProgressRowMap">
+        SELECT assignment.id AS assignment_id,
+               student.id AS student_id,
+               student.student_name,
+               student_user.username AS student_account,
+               class_organization.id AS class_organization_id,
+               class_organization.organization_name AS class_name,
+               assignment.current_status,
+               assignment.scheduled_date,
+               assignment.claimed_at,
+               assignment.completed_at,
+               assignment.last_transition_at
+        <include refid="progressFromAndFilter"/>
+        ORDER BY class_organization.sort_order, student.student_name, assignment.id
+        LIMIT #{query.limit} OFFSET #{query.offset}
+    </select>
+
+    <select id="count" resultType="long">
+        SELECT COUNT(1)
+        <include refid="progressFromAndFilter"/>
+    </select>
+</mapper>

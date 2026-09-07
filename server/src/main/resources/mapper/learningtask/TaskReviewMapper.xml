@@ -116,4 +116,61 @@
           AND assignment.current_reviewer_id = #{reviewerUserId}
         FOR UPDATE
     </select>
+
+    <sql id="pendingReviewerStateColumns">
+        assignment.id AS assignment_id, assignment.task_id, assignment.student_id,
+        task.base_points, assignment.source_type, assignment.source_organization_id,
+        assignment.scheduled_date, assignment.current_status,
+        assignment.current_reviewer_id, assignment.version_no
+    </sql>
+
+    <select id="findPendingByReviewerForUpdate" resultMap="TaskReviewStateRowMap">
+        SELECT <include refid="pendingReviewerStateColumns"/>
+        FROM learn_task_assignment assignment
+        JOIN learn_task task ON task.id = assignment.task_id
+        WHERE assignment.current_reviewer_id = #{reviewerUserId}
+          AND assignment.current_status = 'PENDING_REVIEW'
+        ORDER BY assignment.id
+        FOR UPDATE
+    </select>
+
+    <select id="findPendingByReviewerAndClassForUpdate" resultMap="TaskReviewStateRowMap">
+        SELECT <include refid="pendingReviewerStateColumns"/>
+        FROM learn_task_assignment assignment
+        JOIN learn_task task ON task.id = assignment.task_id
+        WHERE assignment.current_reviewer_id = #{reviewerUserId}
+          AND assignment.current_status = 'PENDING_REVIEW'
+          AND EXISTS (
+              SELECT 1 FROM edu_student_organization student_class
+              WHERE student_class.student_id = assignment.student_id
+                AND student_class.organization_id = #{classOrganizationId}
+                AND student_class.relation_type = 'CLASS'
+                AND student_class.status = 'ACTIVE'
+          )
+        ORDER BY assignment.id
+        FOR UPDATE
+    </select>
+
+    <select id="findFamilyPendingByStudentForUpdate"
+            resultType="com.lingdong.learning.learningtask.infrastructure.persistence.ParentRelationshipTaskReviewRow">
+        SELECT id AS assignment_id, current_reviewer_id
+        FROM learn_task_assignment
+        WHERE student_id = #{studentId}
+          AND source_type = 'FAMILY'
+          AND current_status = 'PENDING_REVIEW'
+          AND current_reviewer_id = #{reviewerUserId}
+        ORDER BY id
+        FOR UPDATE
+    </select>
+
+    <update id="transferFamilyPendingReviewer">
+        UPDATE learn_task_assignment
+        SET current_reviewer_id = #{toReviewerUserId},
+            version_no = version_no + 1,
+            updated_at = #{updatedAt}
+        WHERE id = #{assignmentId}
+          AND source_type = 'FAMILY'
+          AND current_status = 'PENDING_REVIEW'
+          AND current_reviewer_id = #{fromReviewerUserId}
+    </update>
 </mapper>

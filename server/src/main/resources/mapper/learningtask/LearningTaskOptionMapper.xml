@@ -22,6 +22,8 @@
             <arg column="student_account" javaType="java.lang.String"/>
             <arg column="current_class_id" javaType="java.lang.Long"/>
             <arg column="current_class_name" javaType="java.lang.String"/>
+            <arg column="relationship_role"
+                 javaType="com.lingdong.learning.student.domain.ParentRelationshipRole"/>
         </constructor>
     </resultMap>
 
@@ -57,12 +59,15 @@
                organization.parent_id, organization.organization_path
         FROM sys_organization organization
         WHERE organization.status = 'ENABLED'
+          AND organization.effective_status = 'ENABLED'
           AND EXISTS (
               SELECT 1
               FROM sys_organization_admin organization_admin
               JOIN sys_organization administrator_root
                 ON administrator_root.id = organization_admin.organization_id
               WHERE organization_admin.user_id = #{userId}
+                AND administrator_root.status = 'ENABLED'
+                AND administrator_root.effective_status = 'ENABLED'
                 AND organization.organization_path LIKE CONCAT(administrator_root.organization_path, '%')
           )
         <if test="organizationType != null">
@@ -80,6 +85,7 @@
         WHERE teacher_class.teacher_user_id = #{userId}
           AND teacher_class.status = 'ACTIVE'
           AND organization.status = 'ENABLED'
+          AND organization.effective_status = 'ENABLED'
         <if test="organizationType != null">
           AND organization.organization_type = #{organizationType}
         </if>
@@ -87,14 +93,13 @@
     </select>
 
     <select id="findFamilyStudentOptions" resultMap="StudentOptionRowMap">
-        SELECT <include refid="studentOptionColumns"/>
+        SELECT <include refid="studentOptionColumns"/>,
+               parent_student.relation_role AS relationship_role
         FROM edu_student student
         JOIN edu_parent_student parent_student
-          ON parent_student.student_id = student.id
+         ON parent_student.student_id = student.id
          AND parent_student.parent_user_id = #{userId}
          AND parent_student.status = 'ACTIVE'
-         AND parent_student.relation_role = 'PRIMARY_GUARDIAN'
-         AND parent_student.primary_scope_key = 'PRIMARY'
         <include refid="studentOptionCurrentClassJoins"/>
         WHERE student.status = 'ENABLED'
         <if test="keyword != null">
@@ -104,7 +109,8 @@
     </select>
 
     <select id="findOrganizationStudentOptions" resultMap="StudentOptionRowMap">
-        SELECT DISTINCT <include refid="studentOptionColumns"/>
+        SELECT DISTINCT <include refid="studentOptionColumns"/>,
+               NULL AS relationship_role
         FROM edu_student student
         <include refid="studentOptionCurrentClassJoins"/>
         WHERE student.status = 'ENABLED'
@@ -113,6 +119,8 @@
               FROM edu_student_organization scoped_relation
               JOIN sys_organization scoped_organization
                 ON scoped_organization.id = scoped_relation.organization_id
+               AND scoped_organization.status = 'ENABLED'
+               AND scoped_organization.effective_status = 'ENABLED'
               WHERE scoped_relation.student_id = student.id
                 AND scoped_relation.status = 'ACTIVE'
                 AND EXISTS (
@@ -121,6 +129,8 @@
                     JOIN sys_organization administrator_root
                       ON administrator_root.id = organization_admin.organization_id
                     WHERE organization_admin.user_id = #{userId}
+                      AND administrator_root.status = 'ENABLED'
+                      AND administrator_root.effective_status = 'ENABLED'
                       AND scoped_organization.organization_path
                           LIKE CONCAT(administrator_root.organization_path, '%')
                 )
@@ -130,6 +140,8 @@
               SELECT 1
               FROM sys_organization filter_organization
               WHERE filter_organization.id = #{organizationId}
+                AND filter_organization.status = 'ENABLED'
+                AND filter_organization.effective_status = 'ENABLED'
                 AND (
                     (filter_organization.organization_type = 'CLASS'
                         AND EXISTS (
@@ -147,6 +159,8 @@
                             FROM edu_student_organization filter_relation
                             JOIN sys_organization relation_organization
                               ON relation_organization.id = filter_relation.organization_id
+                             AND relation_organization.status = 'ENABLED'
+                             AND relation_organization.effective_status = 'ENABLED'
                             WHERE filter_relation.student_id = student.id
                               AND filter_relation.status = 'ACTIVE'
                               AND relation_organization.organization_path
@@ -162,7 +176,8 @@
     </select>
 
     <select id="findTeacherStudentOptions" resultMap="StudentOptionRowMap">
-        SELECT DISTINCT <include refid="studentOptionColumns"/>
+        SELECT DISTINCT <include refid="studentOptionColumns"/>,
+               NULL AS relationship_role
         FROM edu_student student
         <include refid="studentOptionCurrentClassJoins"/>
         JOIN edu_teacher_class teacher_class
@@ -170,6 +185,8 @@
          AND teacher_class.class_organization_id = current_class.organization_id
          AND teacher_class.status = 'ACTIVE'
         WHERE student.status = 'ENABLED'
+          AND current_class_organization.status = 'ENABLED'
+          AND current_class_organization.effective_status = 'ENABLED'
         <if test="organizationId != null">
           AND current_class.organization_id = #{organizationId}
         </if>
@@ -194,6 +211,10 @@
              JOIN sys_organization_admin organization_admin
                ON organization_admin.organization_id = administrator_root.id
              WHERE teacher_class_organization.id = teacher_class.class_organization_id
+               AND teacher_class_organization.status = 'ENABLED'
+               AND teacher_class_organization.effective_status = 'ENABLED'
+               AND administrator_root.status = 'ENABLED'
+               AND administrator_root.effective_status = 'ENABLED'
                AND organization_admin.user_id = #{userId}
          )
         WHERE teacher.status = 'ENABLED'
@@ -216,6 +237,10 @@
               JOIN sys_organization_admin organization_admin
                 ON organization_admin.organization_id = administrator_root.id
               WHERE teacher_membership.user_id = teacher.id
+                AND teacher_organization.status = 'ENABLED'
+                AND teacher_organization.effective_status = 'ENABLED'
+                AND administrator_root.status = 'ENABLED'
+                AND administrator_root.effective_status = 'ENABLED'
                 AND organization_admin.user_id = #{userId}
           )
         <if test="classId != null">

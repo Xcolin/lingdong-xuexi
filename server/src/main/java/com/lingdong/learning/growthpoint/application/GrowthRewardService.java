@@ -21,7 +21,7 @@ import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/** 家庭奖励配置服务，集中执行功能开关、端侧和主家长关系校验。 */
+/** 家庭奖励配置服务，集中执行功能开关、端侧和家长关系校验。 */
 @Service
 public class GrowthRewardService {
     private static final String FEATURE_CODE = "REWARD_EXCHANGE";
@@ -56,7 +56,7 @@ public class GrowthRewardService {
     public GrowthRewardPage findManaged(
             AuthenticatedUser currentUser, Long studentId, int page, int pageSize
     ) {
-        requireAccessibleChild(currentUser, studentId);
+        requireReadableChild(currentUser, studentId);
         PageRequest pagination = requirePage(page, pageSize);
         return new GrowthRewardPage(
                 rewardMapper.findManagedByStudentId(
@@ -95,7 +95,7 @@ public class GrowthRewardService {
     public GrowthReward create(
             AuthenticatedUser currentUser, Long studentId, SaveGrowthRewardCommand command
     ) {
-        requireAccessibleChild(currentUser, studentId);
+        requireWritableChild(currentUser, studentId);
         NormalizedReward normalized = normalize(command);
         LocalDateTime now = LocalDateTime.now(clock);
         GrowthReward reward = new GrowthReward(
@@ -114,7 +114,7 @@ public class GrowthRewardService {
     ) {
         featureAccessService.requireEnabled(FEATURE_CODE, null);
         GrowthReward existing = requireMutableReward(rewardId);
-        requireAccessibleChild(currentUser, existing.studentId());
+        requireWritableChild(currentUser, existing.studentId());
         NormalizedReward normalized = normalize(command);
         LocalDateTime now = LocalDateTime.now(clock);
         GrowthReward updated = new GrowthReward(
@@ -131,7 +131,7 @@ public class GrowthRewardService {
     public void delete(AuthenticatedUser currentUser, Long rewardId) {
         featureAccessService.requireEnabled(FEATURE_CODE, null);
         GrowthReward existing = requireMutableReward(rewardId);
-        requireAccessibleChild(currentUser, existing.studentId());
+        requireWritableChild(currentUser, existing.studentId());
         if (rewardMapper.softDelete(
                 existing.id(), existing.versionNo(), LocalDateTime.now(clock)) != 1) {
             throw new IllegalStateException("家庭奖励已被其他操作修改");
@@ -149,7 +149,16 @@ public class GrowthRewardService {
         return reward;
     }
 
-    private void requireAccessibleChild(AuthenticatedUser currentUser, Long studentId) {
+    private void requireReadableChild(AuthenticatedUser currentUser, Long studentId) {
+        featureAccessService.requireEnabled(FEATURE_CODE, null);
+        requireWebParent(currentUser);
+        if (studentId == null || !parentStudentMapper.existsActiveByParentAndStudent(
+                currentUser.userId(), studentId)) {
+            throw notFound();
+        }
+    }
+
+    private void requireWritableChild(AuthenticatedUser currentUser, Long studentId) {
         featureAccessService.requireEnabled(FEATURE_CODE, null);
         requireWebParent(currentUser);
         if (studentId == null || !parentStudentMapper.existsActivePrimaryByParentAndStudent(
@@ -168,7 +177,7 @@ public class GrowthRewardService {
     private void requireWebParent(AuthenticatedUser currentUser) {
         if (currentUser == null || currentUser.clientType() != AuthClientType.WEB
                 || !currentUser.roleCodes().contains("PARENT")) {
-            throw new SystemOperationAccessDeniedException("仅 Web 端主家长可管理家庭奖励");
+            throw new SystemOperationAccessDeniedException("仅 Web 端家长可访问家庭奖励");
         }
     }
 

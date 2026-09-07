@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.iam.audit.infrastructure.persistence.IamChangeAuditMapper">
+    <resultMap id="AuditMap" type="com.lingdong.learning.iam.audit.application.IamChangeAudit">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="event_type" javaType="com.lingdong.learning.iam.audit.application.IamChangeAuditEventType"/>
+            <arg column="operator_id" javaType="java.lang.Long"/>
+            <arg column="target_type" javaType="com.lingdong.learning.iam.audit.application.IamChangeTargetType"/>
+            <arg column="target_id" javaType="java.lang.Long"/>
+            <arg column="related_id" javaType="java.lang.Long"/>
+            <arg column="organization_id" javaType="java.lang.Long"/>
+            <arg column="before_value" javaType="java.lang.String"/>
+            <arg column="after_value" javaType="java.lang.String"/>
+            <arg column="occurred_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+    <sql id="columns">id, event_type, operator_id, target_type, target_id, related_id, organization_id, before_value, after_value, occurred_at</sql>
+    <sql id="filters">
+        <where>
+            <if test="query.eventType != null">AND event_type = #{query.eventType}</if>
+            <if test="query.targetType != null">AND target_type = #{query.targetType}</if>
+            <if test="query.operatorId != null">AND operator_id = #{query.operatorId}</if>
+            <if test="query.targetId != null">AND target_id = #{query.targetId}</if>
+            <if test="query.startedAt != null">AND occurred_at &gt;= #{query.startedAt}</if>
+            <if test="query.endedAt != null">AND occurred_at &lt;= #{query.endedAt}</if>
+        </where>
+    </sql>
+    <insert id="insert">
+        INSERT INTO sys_iam_change_audit (
+            id, event_type, operator_id, target_type, target_id, related_id,
+            organization_id, before_value, after_value, occurred_at
+        ) VALUES (
+            #{audit.id}, #{audit.eventType}, #{audit.operatorId,jdbcType=BIGINT}, #{audit.targetType},
+            #{audit.targetId}, #{audit.relatedId,jdbcType=BIGINT}, #{audit.organizationId,jdbcType=BIGINT},
+            #{audit.beforeValue,jdbcType=VARCHAR}, #{audit.afterValue,jdbcType=VARCHAR}, #{audit.occurredAt}
+        )
+    </insert>
+    <select id="findPage" resultMap="AuditMap">
+        SELECT <include refid="columns"/> FROM sys_iam_change_audit
+        <include refid="filters"/>
+        ORDER BY occurred_at DESC, id DESC
+        LIMIT #{query.limit} OFFSET #{query.offset}
+    </select>
+    <select id="count" resultType="long">
+        SELECT COUNT(1) FROM sys_iam_change_audit
+        <include refid="filters"/>
+    </select>
+</mapper>

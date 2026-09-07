@@ -21,7 +21,7 @@
 
 | 项目 | 规定 |
 |---|---|
-| 当前最高版本 | 当前最高版本是 `V34`；后续迁移从 `V35__...sql` 开始。 |
+| 当前最高版本 | 当前本地版本是 `V57`；后续迁移从 `V58__...sql` 开始。V57 未在远程 MySQL、Redis、共享测试、预生产或生产环境执行。 |
 | 版本号 | 按单调递增整数分配；不得补写已低于共享环境版本的脚本。 |
 | 描述 | 使用英文小写与下划线，准确说明变更目的，例如 `V10__create_dictionary_tables.sql`。 |
 | 一个脚本的范围 | 一个可独立验证的业务数据变更单元；不把无关模块改动混在同一脚本。 |
@@ -214,6 +214,20 @@ V33 初始化 `COPY_PREVIOUS_DAY_TASK` 功能开关、`LEARNING_TASK_COPY_PREVIO
 
 V34 初始化 `LEARNING_TASK_TEMPLATE` 功能开关、读取与个人管理双权限、家长角色授权，以及“每日阅读30分钟”“口算练习”两条系统模板。新增 9 个基础标识均为 19 位数字；迁移后共有 60 张显式非自增 `BIGINT id` 主键表。后续变更必须从 `V35` 顺序新增，不重写 V1-V34。
 
+### 8.16 V35 学生扫码登录迁移
+
+`V35__add_student_qr_login.sql` 新增 `auth_student_qr_ticket`，保存学生、学生用户、票据摘要、活动/已消费/已撤销状态、到期与消费时间及签发人。票据摘要唯一，状态与消费时间通过检查约束保持一致；学生、学生用户和签发人均使用外键。
+
+V35 初始化 `STUDENT_QR_LOGIN` 功能开关、`STUDENT_LOGIN_QR_CREATE` Web 权限及家长、机构管理员授权。新增 4 个基础数据标识均为 19 位数字；迁移后共有 61 张显式非自增 `BIGINT id` 主键表。
+
+### 8.17 V36 家长手机号认证数据基础
+
+`V36__add_parent_phone_auth.sql` 新增协议接受事实表与家长首次引导档案表，复用 V4 已建立的手机号唯一约束；初始化当前协议版本配置和 `PARENT_PHONE_AUTH` 功能开关。两张新表使用显式非自增 `BIGINT id`，迁移后共有 63 张主键表。V36 业务实现与本地回归已完成，后续迁移从 V37 新增，不修改 V1-V36。
+
+### 8.18 V37 家长微信授权绑定
+
+`V37__add_parent_wechat_auth.sql` 新增家长微信绑定表，建立用户唯一约束和 `app_id + open_id` 联合唯一约束，初始化默认停用的 `PARENT_WECHAT_AUTH` 功能开关。新表主键为应用层 19 位雪花 `BIGINT`，不保存临时凭证、`session_key`、绑定票据或验证码；迁移后共有 64 张主键表。
+
 ## 9. 验收清单
 
 - [ ] 空库执行所有迁移成功，`validate` 成功。
@@ -223,3 +237,115 @@ V34 初始化 `LEARNING_TASK_TEMPLATE` 功能开关、读取与个人管理双�
 - [ ] 不修改已在共享环境执行的脚本。
 - [ ] 不包含密钥、生产个人信息、手工执行说明或不可审计 SQL。
 - [ ] 迁移后后端集成测试和受影响业务流程通过。
+
+V38 已验证从空库连续执行 38 个迁移，66 张主键表均不含自增语法；本轮未在共享测试、预生产或生产数据库执行。后续数据库变更必须从 `V39__...sql` 开始，且不得修改 V1-V38。
+
+### 8.19 V38 家长关系生命周期迁移
+
+`V38__add_parent_relationship_lifecycle.sql` 扩展当前关系角色和范围键长度，新增关系邀请表、关系变更日志表、默认停用功能开关及关系管理权限。邀请状态、类型和待处理唯一性由检查与唯一约束兜底；变更日志不提供更新或删除 Mapper。新增两张表均使用应用层 19 位雪花 `BIGINT id`，迁移后共有 66 张显式非自增主键表。
+
+### 8.20 V39 账号安全事件迁移
+
+`V39__add_account_security_event.sql` 新增账号安全事件表、查询索引和设备历史索引，并写入默认启用的 `ACCOUNT_SECURITY_MANAGEMENT` 全局开关。空 H2 MySQL 兼容库已连续执行 V1-V39，67 张主键表均为显式非自增 `BIGINT id`。本轮未对远程 MySQL、Redis、共享测试、预生产或生产环境执行迁移或写入；后续迁移从 V40 开始且不得修改 V1-V39。
+
+### 8.21 V40 机构管理员小程序认证迁移
+
+`V40__add_organization_miniapp_auth.sql` 只写入默认启用的 `ORGANIZATION_MINIAPP_AUTH` 全局内置开关，不创建或修改业务表。空 H2 MySQL 兼容库已连续执行 V1-V40，仍为 67 张显式非自增 `BIGINT id` 主键表；新增基础数据标识为 19 位数字。本轮未对远程 MySQL、Redis、共享测试、预生产或生产环境执行迁移或写入；后续迁移从 V41 开始且不得修改 V1-V40。
+
+### 8.22 V41 学生机构关系生命周期迁移
+
+`V41__add_student_organization_lifecycle.sql` 新增只追加的学生机构关系变更表、默认启用的 `STUDENT_ORGANIZATION_RELATIONSHIP` 开关、`BOTH` 客户端管理权限及机构管理员授权。空 H2 MySQL 兼容库已连续执行 V1-V41，68 张主键表均为显式非自增 `BIGINT id`，新增基础数据标识均为 19 位数字。未对远程 MySQL、Redis、共享测试、预生产或生产环境执行迁移或写入；后续迁移从 V42 开始且不得修改 V1-V41。
+
+### 8.23 V42 家长账号生命周期迁移
+
+`V42__add_parent_account_lifecycle.sql` 新增手机号换绑审计表、注销申请表、默认启用的 `PARENT_ACCOUNT_LIFECYCLE` 开关、`BOTH` 权限及家长角色授权。空 H2 MySQL 兼容库已连续执行 V1-V42，70 张主键表均为显式非自增 `BIGINT id`，新增基础数据标识均为 19 位数字。未对远程 MySQL、Redis、共享测试、预生产或生产环境执行迁移或写入；后续迁移从 V43 开始且不得修改 V1-V42。
+
+### 8.24 V43 家长账号最终注销迁移
+
+`V43__finalize_parent_account_cancellation.sql` 只扩展既有注销申请表，增加终结尝试、下次执行和业务错误码字段，回填活动申请的下次执行时间并建立到期扫描索引；不新增表或主键。空 H2 MySQL 兼容库已连续执行 V1-V43，70 张主键表均为显式非自增 `BIGINT id`。未对远程 MySQL、Redis、共享测试、预生产或生产环境执行迁移或写入；后续迁移从 V44 开始且不得修改 V1-V43。
+
+### 8.25 V44 家长手机号人工核验换绑迁移
+
+`V44__add_parent_mobile_manual_recovery.sql` 新增不可变摘要审计表、默认停用的 `PARENT_MOBILE_MANUAL_RECOVERY` 开关、`BOTH` 管理权限及机构管理员授权。空 H2 MySQL 兼容库已连续执行 V1-V44，71 张主键表均为显式非自增 `BIGINT id`，新增基础标识均为 19 位数字。未对远程 MySQL、Redis、共享测试、预生产或生产环境执行迁移或写入；后续迁移从 V45 开始且不得修改 V1-V44。
+
+### 8.26 V45 学生账号注销迁移
+
+`V45__add_student_account_cancellation.sql` 新增不可变注销审计表、默认停用的 `STUDENT_ACCOUNT_CANCELLATION` 开关、`BOTH` 管理权限及机构管理员授权。空 H2 MySQL 兼容库已连续执行 V1-V45，72 张主键表均为显式非自增 `BIGINT id`，V45 三个基础标识均为 19 位数字。未对远程 MySQL、Redis、共享测试、预生产或生产环境执行迁移或写入；后续迁移从 V46 开始且不得修改 V1-V45。
+
+## V46 迁移记录
+
+`V46__add_student_wechat_auth.sql` 创建学生微信当前绑定表和不可变审计表，初始化默认停用的 `STUDENT_WECHAT_AUTH` 功能开关、`BOTH` 客户端的 `STUDENT_WECHAT_UNBIND` 权限并只授予内置家长角色。迁移和基础数据 ID 均为 19 位雪花数字；该迁移未在共享测试、预生产或生产库执行，后续不得修改已发布环境中的历史脚本。
+
+## V47 迁移记录
+
+`V47__add_organization_node_lifecycle.sql` 为组织表增加有效状态和乐观锁版本，创建组织变更及不可变审计表，并初始化 `ORGANIZATION_MANAGEMENT` 全局开关以及编辑、提交、审核三个 Web 权限。迁移中的新表主键和基础数据标识均为 19 位雪花数字，不使用自增列；V1-V47 当前共 76 张显式非自增 `BIGINT id` 主键表。
+
+V47 只在本地 H2 MySQL 兼容测试库中验证，未在远程 MySQL、共享测试、预生产或生产数据库执行。脚本进入外部环境后禁止修改。
+
+## V48 迁移记录
+
+`V48__add_class_management.sql` 不新增表，扩展任务实例、任务事件和组织审计约束，初始化 `CLASS_MANAGEMENT` 全局开关、四项 `BOTH` 班级权限及机构管理员授权，并将既有 `TEACHER_CLASS_ASSIGN` 客户端范围调整为 `BOTH`。V48 基础标识均为 19 位数字，不使用自增列；V1-V48 空 H2 MySQL 兼容库连续迁移成功，当前 76 张主键表均为显式非自增 `BIGINT id`。
+
+V48 未在远程 MySQL、Redis、共享测试、预生产或生产环境执行。历史迁移 `V1-V48` 不再修改；后续数据库变更从 `V49__...sql` 连续新增。
+
+## V49 迁移记录
+
+`V49__add_permission_grant_boundary.sql` 为 `sys_role_permission` 增加非空 `effect` 字段，历史数据默认回填 `ALLOW`，并增加只允许 `ALLOW/DENY` 的检查约束。V49 不新增表、主键或基础数据，不使用自增列；V1-V49 空 H2 MySQL 兼容库连续迁移成功，当前 76 张主键表均为显式非自增 `BIGINT id`。
+
+V49 未在远程 MySQL、Redis、共享测试、预生产或生产环境执行。历史迁移 `V1-V49` 不再修改；后续数据库变更从 `V50__...sql` 连续新增。
+
+## 通用组织数据范围专项迁移说明
+
+本专项仅重构应用层范围模型和 MyBatis 查询，不改变数据库结构或基础数据，因此不创建无意义的 V50 空迁移。`V1-V49` 保持不可变，下一次真实数据库变更仍使用 `V50__...sql`。
+
+## V50 迁移记录
+
+`V50__add_iam_change_audit.sql` 新增不可变身份权限审计表、三组查询索引、`IAM_AUDIT_READ` 权限及系统管理员授权。V1-V50 已在空 H2 MySQL 兼容库连续迁移，77 张主键表均为显式非自增 `BIGINT id`。V50 未在远程 MySQL、Redis、共享测试、预生产或生产执行；下一迁移从 V51 连续新增。
+
+## 统一访问边界专项迁移说明
+
+本专项没有数据库变更，不生成 V51。历史 V1-V50 保持不可变，下一次真实数据库变更仍使用 `V51__...sql`。
+
+## V51 迁移记录
+
+`V51__add_dictionary_management.sql` 为数据字典管理新增 `DICTIONARY_MANAGEMENT`、`DICTIONARY_READ`、`DICTIONARY_MANAGE` 及系统管理员显式允许授权，不新建表。V1-V51 已在空 H2 MySQL 兼容库连续迁移，历史脚本保持不可变；当前未在远程 MySQL、共享测试、预生产或生产执行，下一迁移从 V52 连续新增。
+
+## V52 迁移记录
+
+`V52__add_cache_management.sql` 新增 `CACHE_MANAGEMENT` 功能开关，新增 `CACHE_READ`、`CACHE_MANAGE`、`CACHE_REVIEW` 三个 Web 操作权限；系统管理员获得读取和管理权限，系统审核员获得读取和审核权限。迁移不新建表，8 个基础数据标识均为 19 位雪花数字。V1-V52 已在空 H2 MySQL 兼容库连续迁移，历史脚本保持不可变；未在远程 MySQL、共享测试、预生产或生产执行，下一迁移从 V53 连续新增。
+
+## V53 迁移记录
+
+`V53__add_interface_service_management.sql` 新增 `INTERFACE_SERVICE_MANAGEMENT` 功能开关，新增 `INTERFACE_SERVICE_READ`、`INTERFACE_SERVICE_MANAGE`、`INTERFACE_SERVICE_REVIEW` 三个 Web 操作权限；系统管理员获得读取和管理权限，系统审核员获得读取和审核权限。迁移不新建表，8 个基础数据标识均为 19 位雪花数字。V1-V53 已在空 H2 MySQL 兼容库连续迁移，历史脚本保持不可变；未在远程 MySQL、共享测试、预生产或生产执行，下一迁移从 V54 连续新增。
+
+## V54 迁移记录
+
+`V54__add_attachment_management.sql` 为 `sys_attachment_rule` 增加 `version_no BIGINT NOT NULL DEFAULT 0`，新增 `ATTACHMENT_SERVICE` 功能开关和 `ATTACHMENT_RULE_READ`、`ATTACHMENT_RULE_MANAGE`、`ATTACHMENT_FILE_LEDGER_READ` 三个 Web 操作权限；系统管理员获得三项允许授权。迁移不新建表，7 个新增基础数据标识均为 19 位雪花数字。V1-V54 已在空 H2 MySQL 兼容库连续迁移，历史脚本保持不可变；未在远程 MySQL、共享测试、预生产或生产执行，下一迁移从 V55 连续新增。
+
+## V55 迁移记录
+
+`V55__add_import_export_template_management.sql` 为 `sys_import_export_template` 增加 `version_no BIGINT NOT NULL DEFAULT 0`，新增 `IMPORT_EXPORT_TEMPLATE_MANAGEMENT` 功能开关、`IMPORT_EXPORT_TEMPLATE_READ` 与 `IMPORT_EXPORT_TEMPLATE_MANAGE` 两个 Web 权限及系统管理员允许授权，并新增模板类型、适用模块、模板状态三个字典类型和七个字典项。迁移不新建表，新增基础数据标识均为 19 位数字。V1-V55 已在空 H2 MySQL 兼容库连续验证并迁移，历史脚本保持不可变；未在远程 MySQL、Redis、共享测试、预生产或生产执行，下一迁移从 V56 连续新增。
+
+## V56 迁移记录
+
+`V56__add_import_validation_job.sql` 新增模板字段、导入作业和逐行结果三张表，80 张主键表均为显式非自增 `BIGINT id`；新增 `DATA_IMPORT_VALIDATION` 开关、`IMPORT_JOB_READ`、`IMPORT_JOB_CREATE` 两项 Web 权限、系统管理员允许授权和 `IMPORT_JOB/IMPORT_VALIDATION` 的 `.xlsx` 附件规则。字段唯一约束、作业编码唯一约束、外键和领取/范围查询索引已建立，新增基础数据标识均为 19 位数字。V1-V56 已在空 H2 MySQL 兼容库连续验证并迁移，历史脚本保持不可变；未在远程 MySQL、Redis、共享测试、预生产或生产执行，下一迁移从 V57 连续新增。
+
+## V57 迁移记录
+
+`V57__add_async_export_job.sql` 新增导出作业和不可变状态事件两张表，82 张主键表均为显式非自增 `BIGINT id`；新增 `DATA_EXPORT` 开关、`EXPORT_JOB_READ`、`EXPORT_JOB_CREATE`、`EXPORT_SENSITIVE_SUBMIT`、`EXPORT_SENSITIVE_REVIEW` 四项 Web 权限、三角色最小授权和 `EXPORT_JOB/REPORT_EXPORT` 的 `.xlsx` 附件规则。作业编码、系统任务和结果文件唯一约束，状态、进度检查约束，受限外键及队列、本人、数据集、事件查询索引均已建立。V1-V57 已在空 H2 MySQL 兼容库连续验证并迁移，新增基础数据标识均为 19 位数字，历史 V1-V56 不修改；未在远程 MySQL、Redis、共享测试、预生产或生产执行，下一迁移从 V58 连续新增。
+
+## V58 迁移记录
+
+`V58__add_student_batch_import.sql` 新增学员导入执行和逐行结果两张表，84 张主键表均为显式非自增 `BIGINT id`；新增 `STUDENT_BATCH_IMPORT` 开关、三项 Web 权限、机构管理员最小授权和 `STUDENT_IMPORT/INITIAL_CREDENTIAL` 的 `.enc` 附件规则。唯一约束、状态与计数检查约束、受限外键及队列、本人、校验作业、执行行查询索引均已建立。V1-V58 已在空 H2 MySQL 兼容库连续验证，22 个新增种子标识均为 19 位数字，历史 V1-V57 不修改；未在远程 MySQL、Redis、共享测试、预生产或生产执行，下一迁移从 V59 连续新增。
+
+## V59 迁移记录
+
+`V59__add_teacher_management.sql` 新增教师班级变更日志表，85 张主键表均为显式非自增 `BIGINT id`；新增 `TEACHER_MANAGEMENT` 开关、六项教师管理权限及机构管理员授权，并扩展 IAM 审计事件约束以容纳教师资料变更和密码重置。事件约束采用先删除再按完整枚举重建的前向迁移方式，不修改历史 V1-V58。V1-V59 已在空 H2 MySQL 兼容库连续验证，新增种子标识均为 19 位数字；未在远程 MySQL、Redis、共享测试、预生产或生产执行，下一迁移从 V60 连续新增。
+
+## V60 迁移记录
+
+`V60__complete_organization_teacher_tasks.sql` 不新增业务表，将六项既有任务操作权限调整为 Web 与小程序共用，新增 `LEARNING_TASK_PROGRESS_READ` 及机构管理员、教师最小授权，并增加审核人状态来源联合索引。三个新增基础数据标识均为 19 位数字，无 `AUTO_INCREMENT` 或 `IDENTITY`。V1-V60 已在空 H2 MySQL 兼容库连续验证，历史 V1-V59 不修改；未在远程 MySQL、Redis、共享测试、预生产或生产执行，下一迁移从 V61 连续新增。
+
+## V61 迁移记录
+
+`V61__add_student_exception_report.sql` 新增异常报备主表、不可变动作表和本地消息事件表，并登记 `STUDENT_EXCEPTION_REPORT`、`EXCEPTION_REPORT_CREATE/READ/HANDLE` 及教师和机构管理员最小授权。八个新增种子标识均为 19 位数字，三张表使用显式非自增 `BIGINT id`。V1-V61 已在空 H2 MySQL 兼容库连续验证，历史 V1-V60 不修改；未在远程 MySQL、Redis、共享测试、预生产或生产执行，下一迁移从 V62 连续新增。

@@ -8,9 +8,13 @@
     <view v-if="capabilityLoading" class="loading-state">正在加载</view>
     <view v-else-if="!serviceEnabled" class="disabled-state">服务暂不可用</view>
     <form v-else class="login-form" @submit="submitLogin">
-      <view v-if="studentLoginEnabled && studentQrLoginEnabled" class="login-mode-switch">
-        <button :class="['mode-button', { active: loginMode === 'ACCOUNT' }]" @tap="switchMode('ACCOUNT')">账号登录</button>
-        <button :class="['mode-button', { active: loginMode === 'QR' }]" @tap="switchMode('QR')">扫码登录</button>
+      <view v-if="modeCount > 1" class="login-mode-switch"
+            :style="{ gridTemplateColumns: `repeat(${modeCount}, minmax(0, 1fr))` }">
+        <button v-if="studentLoginEnabled" :class="['mode-button', { active: loginMode === 'ACCOUNT' }]" @tap="switchMode('ACCOUNT')">账号登录</button>
+        <button v-if="studentQrLoginEnabled" :class="['mode-button', { active: loginMode === 'QR' }]" @tap="switchMode('QR')">扫码登录</button>
+        <!-- #ifdef MP-WEIXIN -->
+        <button v-if="studentWechatAuthEnabled" :class="['mode-button', { active: loginMode === 'WECHAT' }]" @tap="switchMode('WECHAT')">微信登录</button>
+        <!-- #endif -->
       </view>
 
       <view v-if="loginMode === 'ACCOUNT'" class="field-group">
@@ -19,7 +23,7 @@
                placeholder="8位学生账号" :disabled="submitting" />
       </view>
 
-      <view v-else class="qr-login-section">
+      <view v-else-if="loginMode === 'QR'" class="qr-login-section">
         <button v-if="!qrContent" class="scan-button" :disabled="submitting" @tap="scanLoginQr">扫描登录二维码</button>
         <view v-else class="scan-success">
           <text>二维码已识别</text>
@@ -27,10 +31,30 @@
         </view>
       </view>
 
-      <view class="field-group">
+      <!-- #ifdef MP-WEIXIN -->
+      <view v-else class="wechat-login-section">
+        <button v-if="!wechatBindingTicket" class="wechat-login-button" :disabled="submitting" @tap="submitLogin">
+          微信授权登录
+        </button>
+        <text v-else-if="!wechatVerificationTicket" class="wechat-binding-hint">
+          首次绑定需验证学生账号、登录码和主监护人手机号
+        </text>
+        <text v-else class="wechat-binding-hint">
+          验证码已发送至 {{ wechatMaskedMobile }}
+        </text>
+      </view>
+      <!-- #endif -->
+
+      <view v-if="loginMode !== 'WECHAT' || (wechatBindingTicket && !wechatVerificationTicket)" class="field-group">
         <text class="field-label">登录码</text>
         <input v-model="loginCode" class="field-input" type="number" maxlength="4" password
                placeholder="4位登录码" :disabled="submitting" />
+      </view>
+
+      <view v-if="loginMode === 'WECHAT' && wechatVerificationTicket" class="field-group">
+        <text class="field-label">主监护人短信验证码</text>
+        <input v-model="wechatSmsCode" class="field-input" type="number" maxlength="6"
+               placeholder="6位短信验证码" :disabled="submitting" />
       </view>
 
       <view v-if="captchaVisible" class="captcha-section">
@@ -48,7 +72,7 @@
       <text v-if="errorMessage" class="error-message">{{ errorMessage }}</text>
       <button class="submit-button" form-type="submit" :loading="submitting"
               :disabled="submitting || locked || (loginMode === 'QR' && !qrContent)">
-        {{ locked ? lockedText : '登录' }}
+        {{ locked ? lockedText : submitButtonText }}
       </button>
     </form>
   </view>
@@ -59,7 +83,15 @@ import { computed, onBeforeUnmount, ref } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { ApiError } from '@/api/http';
 import { getMiniappCapabilities } from '@/api/capability';
-import { issueStudentCaptcha, issueStudentQrCaptcha, loginStudentByCode, loginStudentByQr } from '@/api/auth';
+import {
+  bindStudentWechat,
+  exchangeStudentWechatSession,
+  issueStudentCaptcha,
+  issueStudentQrCaptcha,
+  issueStudentWechatBindingCode,
+  loginStudentByCode,
+  loginStudentByQr
+} from '@/api/auth';
 import { getDeviceName, getOrCreateDeviceId, saveStudentSession } from '@/session/student-session';
 
 const studentAccount = ref('');
@@ -73,17 +105,32 @@ const submitting = ref(false);
 const capabilityLoading = ref(true);
 const studentLoginEnabled = ref(false);
 const studentQrLoginEnabled = ref(false);
-const loginMode = ref<'ACCOUNT' | 'QR'>('ACCOUNT');
+const studentWechatAuthEnabled = ref(false);
+const loginMode = ref<'ACCOUNT' | 'QR' | 'WECHAT'>('ACCOUNT');
 const qrContent = ref('');
 const qrCaptchaRequired = ref(false);
 const errorMessage = ref('');
+const wechatBindingTicket = ref('');
+const wechatVerificationTicket = ref('');
+const wechatMaskedMobile = ref('');
+const wechatSmsCode = ref('');
 const lockedUntil = ref<Date | null>(null);
 const now = ref(Date.now());
 const deviceId = getOrCreateDeviceId();
 let timer: ReturnType<typeof setInterval> | undefined;
 
 const locked = computed(() => Boolean(lockedUntil.value && lockedUntil.value.getTime() > now.value));
-const serviceEnabled = computed(() => studentLoginEnabled.value || studentQrLoginEnabled.value);
+const serviceEnabled = computed(() => studentLoginEnabled.value || studentQrLoginEnabled.value || studentWechatAuthEnabled.value);
+const modeCount = computed(() => Number(studentLoginEnabled.value)
+  + Number(studentQrLoginEnabled.value) + Number(studentWechatAuthEnabled.value));
+const submitButtonText = computed(() => {
+  // #ifdef MP-WEIXIN
+  if (loginMode.value !== 'WECHAT') return '登录';
+  if (!wechatBindingTicket.value) return '微信授权登录';
+  return wechatVerificationTicket.value ? '验证并绑定' : '发送主监护人验证码';
+  // #endif
+  return '登录';
+});
 const lockedText = computed(() => {
   if (!lockedUntil.value) return '暂时锁定';
   const seconds = Math.max(1, Math.ceil((lockedUntil.value.getTime() - now.value) / 1000));
@@ -95,7 +142,11 @@ onLoad(async () => {
     const capabilities = await getMiniappCapabilities();
     studentLoginEnabled.value = capabilities.studentCodeLoginEnabled;
     studentQrLoginEnabled.value = capabilities.studentQrLoginEnabled;
-    loginMode.value = capabilities.studentQrLoginEnabled ? 'QR' : 'ACCOUNT';
+    // #ifdef MP-WEIXIN
+    studentWechatAuthEnabled.value = capabilities.studentWechatAuthEnabled === true;
+    // #endif
+    loginMode.value = studentWechatAuthEnabled.value ? 'WECHAT'
+      : capabilities.studentQrLoginEnabled ? 'QR' : 'ACCOUNT';
   } catch {
     studentLoginEnabled.value = false;
   } finally {
@@ -107,11 +158,16 @@ onBeforeUnmount(() => {
   loginCode.value = '';
   captchaAnswer.value = '';
   qrContent.value = '';
+  resetWechatBinding();
   if (timer) clearInterval(timer);
 });
 
 async function submitLogin(): Promise<void> {
   errorMessage.value = '';
+  if (loginMode.value === 'WECHAT') {
+    await submitWechatLogin();
+    return;
+  }
   if (loginMode.value === 'ACCOUNT' && !/^\d{8}$/.test(studentAccount.value)) {
     errorMessage.value = '账号或登录码格式不正确';
     return;
@@ -165,6 +221,87 @@ async function submitLogin(): Promise<void> {
   }
 }
 
+async function submitWechatLogin(): Promise<void> {
+  if (!studentWechatAuthEnabled.value || submitting.value) return;
+  if (wechatBindingTicket.value && !wechatVerificationTicket.value) {
+    if (!/^\d{8}$/.test(studentAccount.value) || !/^\d{4}$/.test(loginCode.value)) {
+      errorMessage.value = '请输入8位学生账号和4位登录码';
+      return;
+    }
+    if (captchaVisible.value && !captchaAnswer.value.trim()) {
+      errorMessage.value = '请输入图形验证码';
+      return;
+    }
+  }
+  if (wechatVerificationTicket.value && !/^\d{6}$/.test(wechatSmsCode.value)) {
+    errorMessage.value = '请输入6位短信验证码';
+    return;
+  }
+
+  submitting.value = true;
+  try {
+    if (!wechatBindingTicket.value) {
+      const temporaryCode = await getWechatTemporaryCode();
+      const exchange = await exchangeStudentWechatSession({
+        temporaryCode, deviceId, deviceName: getDeviceName()
+      });
+      if (exchange.session) {
+        saveStudentSession(exchange.session, exchange.session.studentAccount);
+        await uni.redirectTo({ url: '/pages/student-home/student-home' });
+        return;
+      }
+      wechatBindingTicket.value = exchange.bindingTicket || '';
+      if (!wechatBindingTicket.value) throw new Error('微信绑定凭证未返回');
+      return;
+    }
+    if (!wechatVerificationTicket.value) {
+      const challenge = await issueStudentWechatBindingCode({
+        bindingTicket: wechatBindingTicket.value,
+        studentAccount: studentAccount.value,
+        loginCode: loginCode.value,
+        deviceId,
+        deviceName: getDeviceName(),
+        captchaChallengeId: captchaChallengeId.value || undefined,
+        captchaAnswer: captchaAnswer.value.trim() || undefined
+      });
+      wechatVerificationTicket.value = challenge.verificationTicket;
+      wechatMaskedMobile.value = challenge.maskedMobile;
+      loginCode.value = '';
+      captchaAnswer.value = '';
+      captchaVisible.value = false;
+      return;
+    }
+    const session = await bindStudentWechat({
+      verificationTicket: wechatVerificationTicket.value,
+      smsCode: wechatSmsCode.value,
+      deviceId,
+      deviceName: getDeviceName()
+    });
+    saveStudentSession(session, session.studentAccount);
+    resetWechatBinding();
+    await uni.redirectTo({ url: '/pages/student-home/student-home' });
+  } catch (error) {
+    await handleLoginError(error);
+  } finally {
+    submitting.value = false;
+  }
+}
+
+function getWechatTemporaryCode(): Promise<string> {
+  return new Promise((resolve, reject) => {
+    // #ifdef MP-WEIXIN
+    uni.login({
+      provider: 'weixin',
+      success: (result) => result.code ? resolve(result.code) : reject(new Error('微信授权未完成')),
+      fail: () => reject(new Error('微信授权未完成'))
+    });
+    // #endif
+    // #ifndef MP-WEIXIN
+    reject(new Error('当前客户端不支持微信授权'));
+    // #endif
+  });
+}
+
 async function handleLoginError(error: unknown): Promise<void> {
   loginCode.value = '';
   captchaAnswer.value = '';
@@ -193,9 +330,35 @@ async function handleLoginError(error: unknown): Promise<void> {
     return;
   }
   if (error.code === 'FEATURE_DISABLED') {
-    if (loginMode.value === 'QR') studentQrLoginEnabled.value = false;
-    else studentLoginEnabled.value = false;
+    if (loginMode.value === 'WECHAT') {
+      studentWechatAuthEnabled.value = false;
+      resetWechatBinding();
+      loginMode.value = studentQrLoginEnabled.value ? 'QR' : 'ACCOUNT';
+    } else if (loginMode.value === 'QR') {
+      studentQrLoginEnabled.value = false;
+      if (studentLoginEnabled.value) loginMode.value = 'ACCOUNT';
+    } else {
+      studentLoginEnabled.value = false;
+      if (studentQrLoginEnabled.value) loginMode.value = 'QR';
+    }
+    clearSensitiveInputs();
     errorMessage.value = '';
+    return;
+  }
+  if (loginMode.value === 'WECHAT') {
+    if (error.code === 'CAPTCHA_REQUIRED') {
+      captchaVisible.value = true;
+      errorMessage.value = '请完成图形验证码';
+      await refreshCaptcha();
+      return;
+    }
+    if (error.code === 'STUDENT_WECHAT_TICKET_INVALID'
+        || error.code === 'STUDENT_WECHAT_BINDING_UNAVAILABLE') {
+      resetWechatBinding();
+      errorMessage.value = error.message || '微信绑定未完成，请使用账号登录';
+      return;
+    }
+    errorMessage.value = error.message || '微信登录未完成，请使用账号登录';
     return;
   }
   if (loginMode.value === 'QR') {
@@ -282,7 +445,7 @@ function scanQrContent(): Promise<string> {
   });
 }
 
-function switchMode(mode: 'ACCOUNT' | 'QR'): void {
+function switchMode(mode: 'ACCOUNT' | 'QR' | 'WECHAT'): void {
   loginMode.value = mode;
   clearSensitiveInputs();
   errorMessage.value = '';
@@ -296,6 +459,14 @@ function clearSensitiveInputs(): void {
   captchaVisible.value = false;
   qrContent.value = '';
   qrCaptchaRequired.value = false;
+  resetWechatBinding();
+}
+
+function resetWechatBinding(): void {
+  wechatBindingTicket.value = '';
+  wechatVerificationTicket.value = '';
+  wechatMaskedMobile.value = '';
+  wechatSmsCode.value = '';
 }
 
 function startLockTimer(): void {
@@ -412,6 +583,11 @@ function startLockTimer(): void {
 .scan-success { width: 100%; display: flex; align-items: center; justify-content: space-between; color: #167c5a; }
 .rescan-button { margin: 0; padding: 0 24rpx; background: transparent; color: #167c5a; font-size: 26rpx; }
 .rescan-button::after { border: 0; }
+
+.wechat-login-section { min-height: 100rpx; display: flex; align-items: center; }
+.wechat-login-button { width: 100%; height: 92rpx; border-radius: 12rpx; background: #07c160; color: #ffffff; font-size: 30rpx; font-weight: 600; }
+.wechat-login-button::after { border: 0; }
+.wechat-binding-hint { color: #40514c; font-size: 27rpx; line-height: 42rpx; }
 
 .field-group {
   display: flex;

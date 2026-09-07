@@ -2,9 +2,7 @@ package com.lingdong.learning.interfaceconfig.domain;
 
 import java.time.LocalDateTime;
 
-/**
- * Registered interface metadata. Credentials, URLs, and request or response payloads are deliberately excluded.
- */
+/** 已登记的接口服务元数据，明确排除凭证、地址及请求响应报文。 */
 public record InterfaceService(
         Long id,
         String serviceName,

@@ -1,6 +1,6 @@
 package com.lingdong.learning.cache.domain;
 
-/** Business-level cache domains exposed by cache management. */
+/** 缓存管理公开的业务缓存域。 */
 public enum CacheDomain {
     PERMISSION,
     DICTIONARY,

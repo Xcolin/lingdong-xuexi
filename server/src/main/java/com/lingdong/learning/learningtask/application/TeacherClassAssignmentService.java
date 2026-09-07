@@ -7,10 +7,11 @@ import com.lingdong.learning.common.web.ResourceNotFoundException;
 import com.lingdong.learning.datascope.application.OrganizationDataScopeService;
 import com.lingdong.learning.feature.application.FeatureAccessService;
 import com.lingdong.learning.learningtask.domain.TeacherClassRelation;
+import com.lingdong.learning.learningtask.domain.TeacherClassChangeEvent;
 import com.lingdong.learning.learningtask.domain.TeacherClassStatus;
 import com.lingdong.learning.learningtask.infrastructure.persistence.TeacherClassMapper;
 import com.lingdong.learning.organization.domain.Organization;
-import com.lingdong.learning.organization.domain.OrganizationStatus;
+import com.lingdong.learning.organization.application.OrganizationOperationalStatusService;
 import com.lingdong.learning.organization.infrastructure.persistence.OrganizationMapper;
 import com.lingdong.learning.user.domain.User;
 import com.lingdong.learning.user.domain.UserStatus;
@@ -25,7 +26,9 @@ import java.util.Objects;
 /** 维护机构授权范围内的教师班级关系。 */
 @Service
 public class TeacherClassAssignmentService {
-    private static final String FEATURE_CODE = "LEARNING_TASK_MANAGEMENT";
+    private static final String LEARNING_TASK_FEATURE = "LEARNING_TASK_MANAGEMENT";
+    private static final String TEACHER_MANAGEMENT_FEATURE = "TEACHER_MANAGEMENT";
+    private static final String CLASS_MANAGEMENT_FEATURE = "CLASS_MANAGEMENT";
     private static final String TEACHER_ROLE = "TEACHER";
     private static final String ORGANIZATION_ADMIN_ROLE = "ORG_ADMIN";
 
@@ -36,6 +39,7 @@ public class TeacherClassAssignmentService {
     private final OrganizationDataScopeService organizationDataScopeService;
     private final FeatureAccessService featureAccessService;
     private final IdGenerator idGenerator;
+    private final TeacherReviewAutoTransferService reviewAutoTransferService;
 
     public TeacherClassAssignmentService(
             TeacherClassMapper teacherClassMapper,
@@ -44,7 +48,8 @@ public class TeacherClassAssignmentService {
             OrganizationMapper organizationMapper,
             OrganizationDataScopeService organizationDataScopeService,
             FeatureAccessService featureAccessService,
-            IdGenerator idGenerator
+            IdGenerator idGenerator,
+            TeacherReviewAutoTransferService reviewAutoTransferService
     ) {
         this.teacherClassMapper = teacherClassMapper;
         this.userMapper = userMapper;
@@ -53,6 +58,7 @@ public class TeacherClassAssignmentService {
         this.organizationDataScopeService = organizationDataScopeService;
         this.featureAccessService = featureAccessService;
         this.idGenerator = idGenerator;
+        this.reviewAutoTransferService = reviewAutoTransferService;
     }
 
     /** 建立或恢复教师班级关系；锁定教师用户行，避免并发首次绑定。 */
@@ -61,7 +67,7 @@ public class TeacherClassAssignmentService {
         Objects.requireNonNull(currentUser, "当前登录用户不能为空");
         Long normalizedTeacherId = requiredId(teacherUserId, "教师用户标识");
         Long normalizedClassId = requiredId(classId, "班级组织标识");
-        featureAccessService.requireEnabled(FEATURE_CODE, null);
+        requireManagementFeatures();
         Organization classOrganization = requireManageableClass(currentUser, normalizedClassId);
 
         User teacher = userMapper.findByIdForUpdate(normalizedTeacherId);
@@ -79,11 +85,16 @@ public class TeacherClassAssignmentService {
 
         TeacherClassRelation existing = teacherClassMapper.findByTeacherAndClass(
                 normalizedTeacherId, normalizedClassId);
+        boolean changed = false;
         if (existing == null) {
-            teacherClassMapper.insert(TeacherClassRelation.active(
-                    idGenerator.nextId(), normalizedTeacherId, normalizedClassId));
+            changed = teacherClassMapper.insert(TeacherClassRelation.active(
+                    idGenerator.nextId(), normalizedTeacherId, normalizedClassId)) == 1;
         } else if (existing.status() != TeacherClassStatus.ACTIVE) {
-            teacherClassMapper.activate(normalizedTeacherId, normalizedClassId);
+            changed = teacherClassMapper.activate(normalizedTeacherId, normalizedClassId) == 1;
+        }
+        if (changed) {
+            recordChange(currentUser.userId(), normalizedTeacherId, normalizedClassId,
+                    TeacherClassChangeEvent.BIND);
         }
         return teacherClassMapper.findByTeacherAndClass(normalizedTeacherId, normalizedClassId);
     }
@@ -94,21 +105,35 @@ public class TeacherClassAssignmentService {
         Objects.requireNonNull(currentUser, "当前登录用户不能为空");
         Long normalizedTeacherId = requiredId(teacherUserId, "教师用户标识");
         Long normalizedClassId = requiredId(classId, "班级组织标识");
-        featureAccessService.requireEnabled(FEATURE_CODE, null);
-        requireManageableClass(currentUser, normalizedClassId);
+        requireManagementFeatures();
+        Organization classOrganization = requireManageableClass(currentUser, normalizedClassId);
+        User teacher = userMapper.findByIdForUpdate(normalizedTeacherId);
+        if (teacher == null
+                || !userRoleMapper.hasRoleCode(normalizedTeacherId, TEACHER_ROLE)
+                || !teacherClassMapper.existsTeacherOrganizationInClassAncestors(
+                normalizedTeacherId, classOrganization.id())) {
+            throw notFound();
+        }
         TeacherClassRelation existing = teacherClassMapper.findByTeacherAndClass(
                 normalizedTeacherId, normalizedClassId);
         if (existing == null) {
             throw notFound();
         }
-        teacherClassMapper.deactivate(normalizedTeacherId, normalizedClassId);
+        if (existing.status() == TeacherClassStatus.ACTIVE) {
+            reviewAutoTransferService.transferForClass(
+                    currentUser, normalizedTeacherId, normalizedClassId);
+            if (teacherClassMapper.deactivate(normalizedTeacherId, normalizedClassId) == 1) {
+                recordChange(currentUser.userId(), normalizedTeacherId, normalizedClassId,
+                        TeacherClassChangeEvent.UNBIND);
+            }
+        }
     }
 
     /** 教师读取本人班级，机构管理员读取其授权范围内的目标教师班级。 */
     public List<TeacherClassRelation> list(AuthenticatedUser currentUser, Long teacherUserId) {
         Objects.requireNonNull(currentUser, "当前登录用户不能为空");
         Long normalizedTeacherId = requiredId(teacherUserId, "教师用户标识");
-        featureAccessService.requireEnabled(FEATURE_CODE, null);
+        featureAccessService.requireEnabled(LEARNING_TASK_FEATURE, null);
         User teacher = userMapper.findById(normalizedTeacherId);
         if (teacher == null || !userRoleMapper.hasRoleCode(normalizedTeacherId, TEACHER_ROLE)) {
             throw notFound();
@@ -128,6 +153,9 @@ public class TeacherClassAssignmentService {
     }
 
     private Organization requireManageableClass(AuthenticatedUser currentUser, Long classId) {
+        if (!currentUser.roleCodes().contains(ORGANIZATION_ADMIN_ROLE)) {
+            throw new SystemOperationAccessDeniedException("仅机构管理员可维护教师班级");
+        }
         Organization organization = organizationMapper.findById(classId);
         if (organization == null || !organizationDataScopeService.canAccess(currentUser.userId(), classId)) {
             throw notFound();
@@ -135,10 +163,27 @@ public class TeacherClassAssignmentService {
         if (!"CLASS".equals(organization.typeCode())) {
             throw new IllegalArgumentException("目标组织不是班级");
         }
-        if (organization.status() != OrganizationStatus.ENABLED) {
+        if (!OrganizationOperationalStatusService.isOperational(organization)) {
             throw new IllegalStateException("目标班级已停用");
         }
         return organization;
+    }
+
+    private void requireManagementFeatures() {
+        featureAccessService.requireEnabled(TEACHER_MANAGEMENT_FEATURE, null);
+        featureAccessService.requireEnabled(CLASS_MANAGEMENT_FEATURE, null);
+    }
+
+    private void recordChange(
+            Long operatorUserId,
+            Long teacherUserId,
+            Long classOrganizationId,
+            TeacherClassChangeEvent eventType
+    ) {
+        if (teacherClassMapper.insertChangeLog(
+                idGenerator.nextId(), teacherUserId, classOrganizationId, eventType, operatorUserId) != 1) {
+            throw new IllegalStateException("教师班级变更日志保存失败");
+        }
     }
 
     private Long requiredId(Long value, String fieldName) {

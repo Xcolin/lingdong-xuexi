@@ -29,11 +29,24 @@ public class SecurityConfiguration {
                         .requestMatchers(
                                 "/api/v1/health",
                                 "/api/v1/auth/sessions/password",
+                                "/api/v1/auth/organization-sessions/password",
                                 "/api/v1/auth/sessions/refresh",
                                 "/api/v1/auth/student-captchas",
                                 "/api/v1/auth/student-sessions/code",
                                 "/api/v1/auth/student-sessions/qr",
                                 "/api/v1/auth/student-qr-captchas",
+                                "/api/v1/auth/student-wechat-sessions",
+                                "/api/v1/auth/student-wechat-binding-codes",
+                                "/api/v1/auth/student-wechat-bindings",
+                                "/api/v1/auth/parent-sms-codes",
+                                "/api/v1/auth/parent-sessions/sms",
+                                "/api/v1/auth/parent-sessions/password",
+                                "/api/v1/auth/parent-wechat-sessions",
+                                "/api/v1/auth/parent-wechat-bindings",
+                                "/api/v1/auth/parent-password-resets",
+                                "/api/v1/parent-relationship-invitations/*/acceptance",
+                                "/api/v1/parent-relationship-invitations/*/rejection",
+                                "/api/v1/public/parent-auth-context",
                                 "/api/v1/public/capabilities"
                         ).permitAll()
                         .requestMatchers("/api/v1/**").authenticated()

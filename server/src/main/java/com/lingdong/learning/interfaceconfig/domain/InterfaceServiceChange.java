@@ -2,7 +2,7 @@ package com.lingdong.learning.interfaceconfig.domain;
 
 import java.time.LocalDateTime;
 
-/** Stores the exact approved proposal so a later edit cannot alter a task's intended effect. */
+/** 保存不可变变更快照，避免任务提交后被后续编辑改变执行含义。 */
 public record InterfaceServiceChange(
         Long id,
         Long taskId,
@@ -40,6 +40,13 @@ public record InterfaceServiceChange(
         return new InterfaceServiceChange(
                 id, taskId, serviceId, InterfaceServiceChangeType.DISABLE, null, null, null, null,
                 null, null, null, InterfaceServiceStatus.DISABLED, null, null
+        );
+    }
+
+    public static InterfaceServiceChange enable(Long id, Long taskId, Long serviceId) {
+        return new InterfaceServiceChange(
+                id, taskId, serviceId, InterfaceServiceChangeType.ENABLE, null, null, null, null,
+                null, null, null, InterfaceServiceStatus.ENABLED, null, null
         );
     }
 

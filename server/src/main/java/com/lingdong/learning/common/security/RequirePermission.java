@@ -9,5 +9,9 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface RequirePermission {
-    String value();
+    /** 单一必需权限，保留已有控制器的简写用法。 */
+    String value() default "";
+
+    /** 至少满足其中一项的权限集合。 */
+    String[] anyOf() default {};
 }

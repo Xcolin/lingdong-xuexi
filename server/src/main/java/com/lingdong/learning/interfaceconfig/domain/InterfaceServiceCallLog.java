@@ -3,7 +3,7 @@ package com.lingdong.learning.interfaceconfig.domain;
 import java.time.LocalDateTime;
 
 /**
- * Privacy-safe call outcome. The model intentionally carries no request body, response body, credential, or location.
+ * 隐私安全的调用结果。模型不保存请求正文、响应正文、凭据或位置信息。
  */
 public record InterfaceServiceCallLog(
         Long id,

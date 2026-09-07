@@ -27,6 +27,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class GrowthReviewQueryServiceTest {
     private static final long PARENT_ID = 1_874_244_142_494_660_001L;
     private static final long OTHER_PARENT_ID = 1_874_244_142_494_660_002L;
+    private static final long SECONDARY_PARENT_ID = 1_874_244_142_494_660_007L;
     private static final long STUDENT_USER_ID = 1_874_244_142_494_660_003L;
     private static final long STUDENT_ID = 1_874_244_142_494_660_004L;
     private static final long REVIEW_ID = 1_874_244_142_494_660_005L;
@@ -38,6 +39,7 @@ class GrowthReviewQueryServiceTest {
     private LocalDate today;
     private AuthenticatedUser parent;
     private AuthenticatedUser otherParent;
+    private AuthenticatedUser secondaryParent;
     private AuthenticatedUser student;
 
     @BeforeEach
@@ -45,13 +47,15 @@ class GrowthReviewQueryServiceTest {
         today = LocalDate.now();
         parent = user(PARENT_ID, AuthClientType.WEB, "PARENT");
         otherParent = user(OTHER_PARENT_ID, AuthClientType.WEB, "PARENT");
+        secondaryParent = user(SECONDARY_PARENT_ID, AuthClientType.WEB, "PARENT");
         student = user(STUDENT_USER_ID, AuthClientType.MINIAPP, "STUDENT");
         jdbcTemplate.update("""
                 insert into sys_user (id, username, display_name, user_type, status)
                 values (?, 'review_parent', '复盘家长', 'PARENT', 'ENABLED'),
                        (?, 'review_other_parent', '其他家长', 'PARENT', 'ENABLED'),
+                       (?, 'review_secondary_parent', '复盘副家长', 'PARENT', 'ENABLED'),
                        (?, 'review_student', '复盘学生账号', 'STUDENT', 'ENABLED')
-                """, PARENT_ID, OTHER_PARENT_ID, STUDENT_USER_ID);
+                """, PARENT_ID, OTHER_PARENT_ID, SECONDARY_PARENT_ID, STUDENT_USER_ID);
         jdbcTemplate.update("""
                 insert into edu_student (id, student_name, student_user_id, status)
                 values (?, '复盘学生', ?, 'ENABLED')
@@ -61,6 +65,11 @@ class GrowthReviewQueryServiceTest {
                     (id, parent_user_id, student_id, relation_role, status, primary_scope_key)
                 values (?, ?, ?, 'PRIMARY_GUARDIAN', 'ACTIVE', 'PRIMARY')
                 """, id(10), PARENT_ID, STUDENT_ID);
+        jdbcTemplate.update("""
+                insert into edu_parent_student
+                    (id, parent_user_id, student_id, relation_role, status, primary_scope_key)
+                values (?, ?, ?, 'SECONDARY_GUARDIAN', 'ACTIVE', 'SECONDARY')
+                """, id(11), SECONDARY_PARENT_ID, STUDENT_ID);
         createReview(REVIEW_ID, SNAPSHOT_ID, today);
     }
 
@@ -80,6 +89,18 @@ class GrowthReviewQueryServiceTest {
                 parent, STUDENT_ID, GrowthReviewPeriodType.DAY, 1, 20).total()).isEqualTo(1);
 
         assertThatThrownBy(() -> service.findChildReview(otherParent, STUDENT_ID, REVIEW_ID))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void secondaryParentReadsReviewButCannotAppendSupplement() {
+        assertThat(service.findChildReview(secondaryParent, STUDENT_ID, REVIEW_ID).reviewId())
+                .isEqualTo(REVIEW_ID);
+
+        assertThatThrownBy(() -> service.addChildSupplement(
+                secondaryParent, STUDENT_ID, REVIEW_ID,
+                new AddGrowthReviewSupplementCommand(
+                        GrowthReviewSupplementType.INSIGHT, "副家长不能补录")))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 

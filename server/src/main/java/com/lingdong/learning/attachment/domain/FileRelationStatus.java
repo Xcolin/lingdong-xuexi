@@ -1,4 +1,4 @@
 package com.lingdong.learning.attachment.domain;
 
-/** Lifecycle state of a file-to-business visibility relation. */
+/** 文件与业务对象可见关系的生命周期状态。 */
 public enum FileRelationStatus { ACTIVE, RELEASED }

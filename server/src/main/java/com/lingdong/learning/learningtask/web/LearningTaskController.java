@@ -5,6 +5,7 @@ import com.lingdong.learning.common.security.RequirePermission;
 import com.lingdong.learning.learningtask.application.LearningTaskBatchPublishService;
 import com.lingdong.learning.learningtask.application.LearningTaskManagementService;
 import com.lingdong.learning.learningtask.application.LearningTaskPublishService;
+import com.lingdong.learning.learningtask.application.ManagedTaskProgressService;
 import com.lingdong.learning.learningtask.application.RecurringTaskManagementService;
 import com.lingdong.learning.learningtask.domain.LearningTaskSourceType;
 import com.lingdong.learning.learningtask.domain.LearningTaskStatus;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -31,17 +33,20 @@ public class LearningTaskController {
     private final LearningTaskPublishService publishService;
     private final LearningTaskBatchPublishService batchPublishService;
     private final RecurringTaskManagementService recurringTaskManagementService;
+    private final ManagedTaskProgressService progressService;
 
     public LearningTaskController(
             LearningTaskManagementService managementService,
             LearningTaskPublishService publishService,
             LearningTaskBatchPublishService batchPublishService,
-            RecurringTaskManagementService recurringTaskManagementService
+            RecurringTaskManagementService recurringTaskManagementService,
+            ManagedTaskProgressService progressService
     ) {
         this.managementService = managementService;
         this.publishService = publishService;
         this.batchPublishService = batchPublishService;
         this.recurringTaskManagementService = recurringTaskManagementService;
+        this.progressService = progressService;
     }
 
     @RequirePermission("LEARNING_TASK_CREATE")
@@ -57,6 +62,17 @@ public class LearningTaskController {
     @RequirePermission("LEARNING_TASK_CREATE")
     @PatchMapping("/{id}")
     public LearningTaskResponse update(
+            @AuthenticationPrincipal AuthenticatedUser currentUser,
+            @PathVariable Long id,
+            @Valid @RequestBody LearningTaskRequest request
+    ) {
+        return LearningTaskResponse.from(managementService.update(currentUser, id, request.toCommand()));
+    }
+
+    /** uni-app 请求层不支持 PATCH，移动端使用同一业务服务的 PUT 契约。 */
+    @RequirePermission("LEARNING_TASK_CREATE")
+    @PutMapping("/{id}")
+    public LearningTaskResponse updateFromMiniapp(
             @AuthenticationPrincipal AuthenticatedUser currentUser,
             @PathVariable Long id,
             @Valid @RequestBody LearningTaskRequest request
@@ -111,5 +127,17 @@ public class LearningTaskController {
             @AuthenticationPrincipal AuthenticatedUser currentUser, @PathVariable Long id
     ) {
         return StopRecurringTaskResponse.from(recurringTaskManagementService.stop(currentUser, id));
+    }
+
+    @RequirePermission("LEARNING_TASK_PROGRESS_READ")
+    @GetMapping("/{id}/progress")
+    public ManagedTaskProgressResponse progress(
+            @AuthenticationPrincipal AuthenticatedUser currentUser,
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int pageSize
+    ) {
+        return ManagedTaskProgressResponse.from(
+                progressService.findPage(currentUser, id, page, pageSize));
     }
 }

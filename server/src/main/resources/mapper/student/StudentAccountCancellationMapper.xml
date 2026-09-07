@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.student.infrastructure.persistence.StudentAccountCancellationMapper">
+
+    <resultMap id="candidateMap"
+               type="com.lingdong.learning.student.infrastructure.persistence.StudentAccountCancellationCandidateRow">
+        <constructor>
+            <idArg column="student_id" javaType="java.lang.Long"/>
+            <arg column="student_name" javaType="java.lang.String"/>
+            <arg column="student_user_id" javaType="java.lang.Long"/>
+            <arg column="student_account" javaType="java.lang.String"/>
+            <arg column="organization_id" javaType="java.lang.Long"/>
+            <arg column="organization_name" javaType="java.lang.String"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="candidateColumns">
+        student.id AS student_id,
+        student.student_name,
+        student_user.id AS student_user_id,
+        student_user.username AS student_account,
+        enrollment_organization.id AS organization_id,
+        enrollment_organization.organization_name
+    </sql>
+
+    <sql id="candidateJoins">
+        FROM edu_student student
+        JOIN sys_user student_user
+          ON student_user.id = student.student_user_id
+         AND student_user.user_type = 'STUDENT'
+         AND student_user.status = 'ENABLED'
+        JOIN sys_user_role student_user_role
+          ON student_user_role.user_id = student_user.id
+        JOIN sys_role student_role
+          ON student_role.id = student_user_role.role_id
+         AND student_role.role_code = 'STUDENT'
+         AND student_role.status = 'ENABLED'
+        JOIN edu_student_organization enrollment
+          ON enrollment.student_id = student.id
+         AND enrollment.relation_type = 'ENROLLMENT'
+         AND enrollment.status = 'INACTIVE'
+         AND enrollment.id = (
+             SELECT latest_enrollment.id
+             FROM edu_student_organization latest_enrollment
+             WHERE latest_enrollment.student_id = student.id
+               AND latest_enrollment.relation_type = 'ENROLLMENT'
+             ORDER BY latest_enrollment.updated_at DESC, latest_enrollment.id DESC
+             LIMIT 1
+         )
+        JOIN sys_organization enrollment_organization
+         ON enrollment_organization.id = enrollment.organization_id
+         AND enrollment_organization.status = 'ENABLED'
+         AND enrollment_organization.effective_status = 'ENABLED'
+        JOIN sys_organization_admin organization_admin
+          ON organization_admin.user_id = #{operatorUserId}
+        JOIN sys_organization managed_organization
+         ON managed_organization.id = organization_admin.organization_id
+         AND managed_organization.status = 'ENABLED'
+         AND managed_organization.effective_status = 'ENABLED'
+        WHERE student.status = 'ENABLED'
+          AND enrollment_organization.organization_path
+              LIKE CONCAT(managed_organization.organization_path, '%')
+          AND NOT EXISTS (
+              SELECT 1 FROM edu_student_organization active_organization
+              WHERE active_organization.student_id = student.id
+                AND active_organization.status = 'ACTIVE'
+          )
+          AND NOT EXISTS (
+              SELECT 1 FROM edu_parent_student active_parent
+              WHERE active_parent.student_id = student.id
+                AND active_parent.status = 'ACTIVE'
+          )
+    </sql>
+
+    <select id="findCandidatesByOrganizationAdministrator" resultMap="candidateMap">
+        SELECT DISTINCT <include refid="candidateColumns"/>
+        <include refid="candidateJoins"/>
+        ORDER BY student.student_name, student.id
+    </select>
+
+    <select id="findAccessibleCandidate" resultMap="candidateMap">
+        SELECT DISTINCT <include refid="candidateColumns"/>
+        <include refid="candidateJoins"/>
+          AND student.id = #{studentId}
+        ORDER BY enrollment_organization.id
+        LIMIT 1
+    </select>
+
+    <select id="findAccessibleLatestInactiveEnrollmentOrganizationId" resultType="long">
+        SELECT candidate.organization_id
+        FROM (
+            SELECT DISTINCT enrollment_organization.id AS organization_id
+            <include refid="candidateJoins"/>
+              AND student.id = #{studentId}
+        ) candidate
+        ORDER BY candidate.organization_id
+        LIMIT 1
+    </select>
+
+    <insert id="insert">
+        INSERT INTO auth_student_account_cancellation (
+            id, student_id, student_user_id, organization_id, operator_user_id,
+            reason, client_type, cancelled_at
+        ) VALUES (
+            #{record.id}, #{record.studentId}, #{record.studentUserId},
+            #{record.organizationId}, #{record.operatorUserId}, #{record.reason},
+            #{record.clientType}, #{record.cancelledAt}
+        )
+    </insert>
+</mapper>

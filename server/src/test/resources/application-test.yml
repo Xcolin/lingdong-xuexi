@@ -14,6 +14,13 @@ mybatis:
   mapper-locations: classpath*:mapper/**/*.xml
 
 lingdong:
+  student-import:
+    scheduling-enabled: false
+    credential-key-version: v1
+    credential-key: c3R1ZGVudC1pbXBvcnQtdGVzdC1rZXktMzItYnl0ZSE=
+  export-job:
+    scheduling-enabled: false
+    source-hmac-secret: export-source-test-secret-with-at-least-32-bytes
   task-overdue:
     scheduling-enabled: false
   task-defer:
@@ -24,10 +31,14 @@ lingdong:
     scheduling-enabled: false
   point-lifecycle:
     scheduling-enabled: false
+  parent-account-finalization:
+    scheduling-enabled: false
   reward-exchange:
     cleanup:
       scheduling-enabled: false
   auth:
+    parent-sms:
+      hmac-secret: parent-sms-test-secret-with-at-least-32-bytes
     student-code:
       active-key-version: v1
       keys:

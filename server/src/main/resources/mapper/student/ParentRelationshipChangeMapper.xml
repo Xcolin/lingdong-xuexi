@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.student.infrastructure.persistence.ParentRelationshipChangeMapper">
+    <resultMap id="changeMap" type="com.lingdong.learning.student.domain.ParentRelationshipChange">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="student_id" javaType="java.lang.Long"/>
+            <arg column="relationship_id" javaType="java.lang.Long"/>
+            <arg column="invitation_id" javaType="java.lang.Long"/>
+            <arg column="operation_type" javaType="com.lingdong.learning.student.domain.ParentRelationshipChangeType"/>
+            <arg column="operator_user_id" javaType="java.lang.Long"/>
+            <arg column="previous_parent_user_id" javaType="java.lang.Long"/>
+            <arg column="new_parent_user_id" javaType="java.lang.Long"/>
+            <arg column="previous_role" javaType="com.lingdong.learning.student.domain.ParentRelationshipRole"/>
+            <arg column="new_role" javaType="com.lingdong.learning.student.domain.ParentRelationshipRole"/>
+            <arg column="occurred_at" javaType="java.time.LocalDateTime"/>
+            <arg column="created_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <insert id="insert">
+        INSERT INTO edu_parent_relationship_change_log (
+            id, student_id, relationship_id, invitation_id, operation_type,
+            operator_user_id, previous_parent_user_id, new_parent_user_id,
+            previous_role, new_role, occurred_at, created_at
+        ) VALUES (
+            #{change.id}, #{change.studentId}, #{change.relationshipId, jdbcType=BIGINT},
+            #{change.invitationId, jdbcType=BIGINT}, #{change.operationType},
+            #{change.operatorUserId}, #{change.previousParentUserId, jdbcType=BIGINT},
+            #{change.newParentUserId, jdbcType=BIGINT},
+            #{change.previousRole, jdbcType=VARCHAR}, #{change.newRole, jdbcType=VARCHAR},
+            #{change.occurredAt}, #{change.createdAt}
+        )
+    </insert>
+
+    <select id="findByStudentId" resultMap="changeMap">
+        SELECT id, student_id, relationship_id, invitation_id, operation_type,
+               operator_user_id, previous_parent_user_id, new_parent_user_id,
+               previous_role, new_role, occurred_at, created_at
+        FROM edu_parent_relationship_change_log
+        WHERE student_id = #{studentId}
+        ORDER BY occurred_at, id
+    </select>
+</mapper>

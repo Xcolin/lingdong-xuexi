@@ -133,6 +133,18 @@
         ORDER BY student_id
     </select>
 
+    <select id="existsTaskAssignedToActiveParent" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM learn_task_assignment assignment
+            JOIN edu_parent_student parent_student
+              ON parent_student.student_id = assignment.student_id
+             AND parent_student.parent_user_id = #{parentUserId}
+             AND parent_student.status = 'ACTIVE'
+            WHERE assignment.task_id = #{taskId}
+        )
+    </select>
+
     <select id="findPage" resultMap="StudentTaskAssignmentRowMap">
         SELECT <include refid="assignmentColumns"/>
         <include refid="assignmentFromAndFilters"/>
@@ -250,4 +262,17 @@
           AND current_status = #{expectedStatus}
           AND version_no = #{expectedVersion}
     </update>
+    <select id="existsTaskVisibleToActiveTeacher" resultType="boolean">
+        SELECT EXISTS(SELECT 1
+        FROM learn_task_assignment assignment
+        JOIN edu_student_organization student_class
+          ON student_class.student_id = assignment.student_id
+         AND student_class.relation_type = 'CLASS'
+         AND student_class.status = 'ACTIVE'
+        JOIN edu_teacher_class teacher_class
+          ON teacher_class.class_organization_id = student_class.organization_id
+         AND teacher_class.status = 'ACTIVE'
+        WHERE assignment.task_id = #{taskId}
+          AND teacher_class.teacher_user_id = #{teacherUserId})
+    </select>
 </mapper>

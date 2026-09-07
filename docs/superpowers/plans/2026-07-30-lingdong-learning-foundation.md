@@ -1,6 +1,6 @@
 # 灵动学习工程基础实施计划
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **执行说明：** 建议使用 `superpowers:subagent-driven-development` 或 `superpowers:executing-plans` 逐项实施，并用复选框（`- [ ]`）记录状态。
 
 **Goal:** 在当前目录建立可启动、可测试、可通过Flyway演进数据库的灵动学习后端基础工程，并为独立Web和小程序应用提供稳定的第一条公共接口。
 

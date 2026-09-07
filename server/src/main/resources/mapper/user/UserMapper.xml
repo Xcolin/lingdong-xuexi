@@ -37,6 +37,13 @@
         WHERE username = #{username}
     </select>
 
+    <select id="findByMobileForUpdate" resultMap="UserResultMap">
+        SELECT id, username, display_name, mobile, password_hash, user_type, status, created_at, updated_at
+        FROM sys_user
+        WHERE mobile = #{mobile}
+        FOR UPDATE
+    </select>
+
     <sql id="directoryFilters">
         <where>
             <if test="query.keyword != null">
@@ -87,10 +94,45 @@
         WHERE id = #{id}
     </update>
 
+    <update id="updateMobileIfExpected">
+        UPDATE sys_user
+        SET username = CASE WHEN username = #{expectedMobile} THEN #{newMobile} ELSE username END,
+            mobile = #{newMobile},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+          AND mobile = #{expectedMobile}
+    </update>
+
     <update id="updateStatus">
         UPDATE sys_user
         SET status = #{status},
             updated_at = CURRENT_TIMESTAMP
         WHERE id = #{id}
+    </update>
+
+    <update id="anonymizeCancelledParent">
+        UPDATE sys_user
+        SET username = #{anonymousUsername},
+            display_name = '已注销用户',
+            mobile = NULL,
+            password_hash = NULL,
+            status = 'CANCELLED',
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+          AND user_type = 'FAMILY'
+          AND status &lt;&gt; 'CANCELLED'
+    </update>
+
+    <update id="anonymizeCancelledStudent">
+        UPDATE sys_user
+        SET username = #{anonymousUsername},
+            display_name = '已注销学生',
+            mobile = NULL,
+            password_hash = NULL,
+            status = 'CANCELLED',
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+          AND user_type = 'STUDENT'
+          AND status = 'ENABLED'
     </update>
 </mapper>

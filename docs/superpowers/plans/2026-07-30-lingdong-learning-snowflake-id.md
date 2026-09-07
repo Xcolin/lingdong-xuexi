@@ -1,6 +1,6 @@
 # Lingdong Learning Snowflake ID Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **执行说明：** 建议使用 `superpowers:subagent-driven-development` 或 `superpowers:executing-plans` 逐项实施，并用复选框（`- [ ]`）记录状态。
 
 **Goal:** Make every current Lingdong Learning table use a 19-digit Snowflake `BIGINT` primary key and make every runtime write allocate that ID in the application layer.
 

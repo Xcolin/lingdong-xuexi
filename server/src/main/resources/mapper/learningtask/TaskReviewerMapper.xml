@@ -28,11 +28,24 @@
               )
               OR (
                   #{sourceType} = 'TEACHER'
-                  AND EXISTS (
-                      SELECT 1 FROM edu_teacher_class teacher_class
-                      WHERE teacher_class.teacher_user_id = candidate.id
-                        AND teacher_class.class_organization_id = #{sourceOrganizationId}
-                        AND teacher_class.status = 'ACTIVE'
+                  AND (
+                      EXISTS (
+                          SELECT 1 FROM edu_teacher_class teacher_class
+                          WHERE teacher_class.teacher_user_id = candidate.id
+                            AND teacher_class.class_organization_id = #{sourceOrganizationId}
+                            AND teacher_class.status = 'ACTIVE'
+                      )
+                      OR EXISTS (
+                          SELECT 1
+                          FROM sys_organization_admin organization_admin
+                          JOIN sys_organization admin_root
+                            ON admin_root.id = organization_admin.organization_id
+                          JOIN sys_organization source_class
+                            ON source_class.id = #{sourceOrganizationId}
+                          WHERE organization_admin.user_id = candidate.id
+                            AND source_class.organization_path
+                                LIKE CONCAT(admin_root.organization_path, '%')
+                      )
                   )
               )
               OR (
@@ -68,6 +81,12 @@
                   )
               )
           )
-        ORDER BY candidate.display_name, candidate.id
+        ORDER BY CASE WHEN EXISTS (
+                     SELECT 1 FROM sys_user_role candidate_role
+                     JOIN sys_role role ON role.id = candidate_role.role_id
+                     WHERE candidate_role.user_id = candidate.id
+                       AND role.role_code = 'TEACHER'
+                 ) THEN 0 ELSE 1 END,
+                 candidate.display_name, candidate.id
     </select>
 </mapper>

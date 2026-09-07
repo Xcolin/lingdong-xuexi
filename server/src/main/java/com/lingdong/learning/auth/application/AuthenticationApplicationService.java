@@ -5,10 +5,14 @@ import com.lingdong.learning.auth.domain.DeviceSessionRecord;
 import com.lingdong.learning.auth.domain.DeviceSessionStatus;
 import com.lingdong.learning.auth.infrastructure.config.AuthenticationProperties;
 import com.lingdong.learning.auth.infrastructure.persistence.DeviceSessionMapper;
+import com.lingdong.learning.auth.infrastructure.persistence.ParentAuthenticationMapper;
 import com.lingdong.learning.auth.infrastructure.security.SessionTokenService;
 import com.lingdong.learning.common.id.IdGenerator;
 import com.lingdong.learning.common.security.SystemOperationAccessDeniedException;
 import com.lingdong.learning.common.web.ResourceNotFoundException;
+import com.lingdong.learning.datascope.infrastructure.persistence.OrganizationAdminMapper;
+import com.lingdong.learning.feature.application.FeatureAccessService;
+import com.lingdong.learning.learningtask.infrastructure.persistence.TeacherClassMapper;
 import com.lingdong.learning.user.domain.User;
 import com.lingdong.learning.user.domain.UserStatus;
 import com.lingdong.learning.user.domain.UserType;
@@ -29,37 +33,61 @@ import java.util.Objects;
 @Service
 public class AuthenticationApplicationService {
     private static final String SYSTEM_ADMIN_ROLE = "SYS_ADMIN";
+    private static final String ORGANIZATION_ADMIN_ROLE = "ORG_ADMIN";
+    private static final String TEACHER_ROLE = "TEACHER";
+    private static final String ACCOUNT_SECURITY_FEATURE = "ACCOUNT_SECURITY_MANAGEMENT";
+    private static final String ORGANIZATION_MINIAPP_AUTH_FEATURE = "ORGANIZATION_MINIAPP_AUTH";
 
     private final UserMapper userMapper;
     private final UserRoleMapper userRoleMapper;
     private final StudentMapper studentMapper;
     private final DeviceSessionMapper sessionMapper;
+    private final DeviceSessionRevocationService sessionRevocationService;
+    private final ParentAuthenticationMapper parentAuthenticationMapper;
+    private final OrganizationAdminMapper organizationAdminMapper;
+    private final TeacherClassMapper teacherClassMapper;
     private final PasswordPolicy passwordPolicy;
     private final PasswordEncoder passwordEncoder;
+    private final String dummyPasswordHash;
     private final SessionTokenService tokenService;
     private final AuthenticationProperties properties;
     private final IdGenerator idGenerator;
+    private final AccountSecurityEventService securityEventService;
+    private final FeatureAccessService featureAccessService;
 
     public AuthenticationApplicationService(
             UserMapper userMapper,
             UserRoleMapper userRoleMapper,
             StudentMapper studentMapper,
             DeviceSessionMapper sessionMapper,
+            DeviceSessionRevocationService sessionRevocationService,
+            ParentAuthenticationMapper parentAuthenticationMapper,
+            OrganizationAdminMapper organizationAdminMapper,
+            TeacherClassMapper teacherClassMapper,
             PasswordPolicy passwordPolicy,
             PasswordEncoder passwordEncoder,
             SessionTokenService tokenService,
             AuthenticationProperties properties,
-            IdGenerator idGenerator
+            IdGenerator idGenerator,
+            AccountSecurityEventService securityEventService,
+            FeatureAccessService featureAccessService
     ) {
         this.userMapper = userMapper;
         this.userRoleMapper = userRoleMapper;
         this.studentMapper = studentMapper;
         this.sessionMapper = sessionMapper;
+        this.sessionRevocationService = sessionRevocationService;
+        this.parentAuthenticationMapper = parentAuthenticationMapper;
+        this.organizationAdminMapper = organizationAdminMapper;
+        this.teacherClassMapper = teacherClassMapper;
         this.passwordPolicy = passwordPolicy;
         this.passwordEncoder = passwordEncoder;
+        this.dummyPasswordHash = passwordEncoder.encode("LingdongDummyPassword1!");
         this.tokenService = tokenService;
         this.properties = properties;
         this.idGenerator = idGenerator;
+        this.securityEventService = securityEventService;
+        this.featureAccessService = featureAccessService;
     }
 
     /** 仅系统管理员可以为现有平台账号设置或重置密码。 */
@@ -77,7 +105,7 @@ public class AuthenticationApplicationService {
         }
     }
 
-    /** 使用平台账号密码建立新的 Web 设备会话。 */
+    /** 使用平台、机构或家长账号密码建立新的 Web 设备会话。 */
     @Transactional
     public AuthenticatedSession loginByPassword(PasswordLoginCommand command) {
         Objects.requireNonNull(command, "密码登录请求不能为空");
@@ -85,10 +113,27 @@ public class AuthenticationApplicationService {
         String deviceId = requiredText(command.deviceId(), "设备标识", 128);
         String deviceName = requiredText(command.deviceName(), "设备名称", 100);
         User user = userMapper.findByUsername(username);
-        if (!isEnabledPlatformUserWithMatchingPassword(user, command.password())) {
+        if (!isEnabledWebUserWithMatchingPassword(user, command.password())) {
             throw authenticationFailed();
         }
         return createSession(user.id(), AuthClientType.WEB, deviceId, deviceName);
+    }
+
+    /** 使用有效机构管理员账号密码建立独立的小程序设备会话。 */
+    @Transactional
+    public AuthenticatedSession loginOrganizationByPassword(OrganizationPasswordLoginCommand command) {
+        Objects.requireNonNull(command, "机构管理员登录请求不能为空");
+        featureAccessService.requireEnabled(ORGANIZATION_MINIAPP_AUTH_FEATURE, null);
+        String username = requiredText(command.username(), "用户账号", 64);
+        String deviceId = requiredText(command.deviceId(), "设备标识", 128);
+        String deviceName = requiredText(command.deviceName(), "设备名称", 100);
+        User user = userMapper.findByUsername(username);
+        boolean passwordMatches = matchesPassword(user, command.password());
+        boolean enabledOperator = isEnabledOrganizationMiniappOperator(user);
+        if (!passwordMatches || !enabledOperator) {
+            throw authenticationFailed();
+        }
+        return createSession(user.id(), AuthClientType.MINIAPP, deviceId, deviceName);
     }
 
     /** 使用刷新凭证轮换两类原始令牌，旧令牌在成功刷新后立即失效。 */
@@ -132,14 +177,25 @@ public class AuthenticationApplicationService {
     /** 当前用户只能撤销自己的指定设备会话。 */
     @Transactional
     public void signOutDevice(Long currentUserId, Long sessionId) {
-        updateOwnedSessionStatus(currentUserId, sessionId, DeviceSessionStatus.REVOKED);
+        featureAccessService.requireEnabled(ACCOUNT_SECURITY_FEATURE, null);
+        LocalDateTime now = LocalDateTime.now();
+        DeviceSessionRecord revoked = updateOwnedSessionStatus(
+                currentUserId, sessionId, DeviceSessionStatus.REVOKED, now);
+        if (revoked != null) {
+            securityEventService.recordDeviceRevoked(currentUserId, revoked, now);
+        }
     }
 
     /** 撤销当前用户的全部活动会话，包括发起操作的会话。 */
     @Transactional
-    public void signOutAllDevices(Long currentUserId) {
+    public void signOutAllDevices(Long currentUserId, Long currentSessionId) {
+        featureAccessService.requireEnabled(ACCOUNT_SECURITY_FEATURE, null);
         requireUser(currentUserId);
-        sessionMapper.revokeAllActiveByUserId(currentUserId, LocalDateTime.now());
+        DeviceSessionRecord operatorSession = requireOwnedSession(currentUserId, currentSessionId);
+        LocalDateTime now = LocalDateTime.now();
+        if (sessionMapper.revokeAllActiveByUserId(currentUserId, now) > 0) {
+            securityEventService.recordAllSessionsRevoked(currentUserId, operatorSession, now);
+        }
     }
 
     /** 账号停用或锁定时撤销全部活动会话，旧令牌不得在恢复账号后复用。 */
@@ -151,12 +207,16 @@ public class AuthenticationApplicationService {
 
     /** 查询当前用户的活动设备，不暴露令牌或令牌摘要。 */
     public List<DeviceSession> listCurrentUserDevices(Long currentUserId) {
+        featureAccessService.requireEnabled(ACCOUNT_SECURITY_FEATURE, null);
         requireUser(currentUserId);
-        return sessionMapper.findActiveByUserId(currentUserId).stream().map(this::toDeviceSession).toList();
+        return sessionMapper.findActiveByUserId(currentUserId, LocalDateTime.now()).stream()
+                .map(this::toDeviceSession)
+                .toList();
     }
 
     AuthenticatedSession createSession(Long userId, AuthClientType clientType, String deviceId, String deviceName) {
         LocalDateTime now = LocalDateTime.now();
+        boolean knownDevice = sessionMapper.existsByUserClientAndDevice(userId, clientType, deviceId);
         String accessToken = tokenService.newToken();
         String refreshToken = tokenService.newToken();
         LocalDateTime accessExpiresAt = now.plus(properties.getAccessTokenTtl());
@@ -169,21 +229,44 @@ public class AuthenticationApplicationService {
         if (sessionMapper.insert(session) != 1) {
             throw new IllegalStateException("设备会话保存失败");
         }
+        if (!knownDevice) {
+            securityEventService.recordNewDevice(
+                    userId, session.id(), clientType, deviceId, deviceName, now);
+        }
         return new AuthenticatedSession(session.id(), accessToken, refreshToken, accessExpiresAt, refreshExpiresAt);
     }
 
-    private void updateOwnedSessionStatus(Long currentUserId, Long sessionId, DeviceSessionStatus targetStatus) {
+    private DeviceSessionRecord updateOwnedSessionStatus(
+            Long currentUserId,
+            Long sessionId,
+            DeviceSessionStatus targetStatus
+    ) {
+        return updateOwnedSessionStatus(currentUserId, sessionId, targetStatus, LocalDateTime.now());
+    }
+
+    private DeviceSessionRecord updateOwnedSessionStatus(
+            Long currentUserId,
+            Long sessionId,
+            DeviceSessionStatus targetStatus,
+            LocalDateTime occurredAt
+    ) {
         if (currentUserId == null) {
             throw authenticationFailed();
         }
-        DeviceSessionRecord session = requireSession(sessionId);
-        if (!currentUserId.equals(session.userId())) {
-            throw new IllegalStateException("无权操作其他用户的设备会话");
-        }
+        DeviceSessionRecord session = requireOwnedSession(currentUserId, sessionId);
         if (session.status() == DeviceSessionStatus.ACTIVE
-                && sessionMapper.updateStatusIfActive(session.id(), targetStatus, LocalDateTime.now()) != 1) {
+                && sessionMapper.updateStatusIfActive(session.id(), targetStatus, occurredAt) != 1) {
             throw new IllegalStateException("设备会话状态更新失败");
         }
+        return session.status() == DeviceSessionStatus.ACTIVE ? session : null;
+    }
+
+    private DeviceSessionRecord requireOwnedSession(Long currentUserId, Long sessionId) {
+        DeviceSessionRecord session = requireSession(sessionId);
+        if (!currentUserId.equals(session.userId())) {
+            throw new ResourceNotFoundException("设备会话不存在");
+        }
+        return session;
     }
 
     private User ensureUsableSession(DeviceSessionRecord session, LocalDateTime now, boolean accessToken) {
@@ -195,7 +278,7 @@ public class AuthenticationApplicationService {
         }
         User user = userMapper.findById(session.userId());
         if (!isUsableForClient(user, session.clientType())) {
-            sessionMapper.updateStatusIfActive(session.id(), DeviceSessionStatus.REVOKED, now);
+            sessionRevocationService.revokeIfActive(session.id(), now);
             throw authenticationFailed();
         }
         return user;
@@ -206,11 +289,22 @@ public class AuthenticationApplicationService {
             return false;
         }
         if (clientType == AuthClientType.WEB) {
-            return user.type() == UserType.PLATFORM;
+            return user.type() == UserType.PLATFORM
+                    || user.type() == UserType.ORGANIZATION
+                    || isEnabledParent(user);
         }
-        if (clientType == AuthClientType.MINIAPP && user.type() == UserType.STUDENT) {
-            Student student = studentMapper.findByStudentUserId(user.id());
-            return student != null && student.status() == StudentStatus.ENABLED;
+        if (clientType == AuthClientType.MINIAPP) {
+            if (user.type() == UserType.ORGANIZATION) {
+                return featureAccessService.isEnabled(ORGANIZATION_MINIAPP_AUTH_FEATURE, null)
+                        && isEnabledOrganizationMiniappOperator(user);
+            }
+            if (user.type() == UserType.FAMILY) {
+                return isEnabledParent(user);
+            }
+            if (user.type() == UserType.STUDENT) {
+                Student student = studentMapper.findByStudentUserId(user.id());
+                return student != null && student.status() == StudentStatus.ENABLED;
+            }
         }
         return false;
     }
@@ -219,16 +313,52 @@ public class AuthenticationApplicationService {
         sessionMapper.updateStatusIfActive(session.id(), DeviceSessionStatus.EXPIRED, now);
     }
 
-    private boolean isEnabledPlatformUserWithMatchingPassword(User user, String password) {
-        if (user == null || user.type() != UserType.PLATFORM || user.status() != UserStatus.ENABLED
-                || user.passwordHash() == null || password == null) {
+    private boolean isEnabledWebUserWithMatchingPassword(User user, String password) {
+        boolean passwordMatches = matchesPassword(user, password);
+        if (user == null || user.status() != UserStatus.ENABLED) {
             return false;
         }
+        boolean allowedType = user.type() == UserType.PLATFORM
+                || user.type() == UserType.ORGANIZATION
+                || isEnabledParent(user);
+        return allowedType && passwordMatches;
+    }
+
+    private boolean isEnabledOrganizationAdministrator(User user) {
+        return user != null
+                && user.status() == UserStatus.ENABLED
+                && user.type() == UserType.ORGANIZATION
+                && userRoleMapper.hasRoleCode(user.id(), ORGANIZATION_ADMIN_ROLE)
+                && organizationAdminMapper.existsEnabledManagedOrganization(user.id());
+    }
+
+    private boolean isEnabledOrganizationMiniappOperator(User user) {
+        if (user == null || user.status() != UserStatus.ENABLED
+                || user.type() != UserType.ORGANIZATION) {
+            return false;
+        }
+        return isEnabledOrganizationAdministrator(user)
+                || userRoleMapper.hasRoleCode(user.id(), TEACHER_ROLE)
+                && teacherClassMapper.existsActiveOperationalClassByTeacher(user.id());
+    }
+
+    private boolean matchesPassword(User user, String password) {
+        String passwordHash = user == null || user.passwordHash() == null
+                ? dummyPasswordHash
+                : user.passwordHash();
+        String candidatePassword = password == null ? "" : password;
         try {
-            return passwordEncoder.matches(password, user.passwordHash());
+            boolean matches = passwordEncoder.matches(candidatePassword, passwordHash);
+            return user != null && user.passwordHash() != null && password != null && matches;
         } catch (IllegalArgumentException exception) {
             return false;
         }
+    }
+
+    private boolean isEnabledParent(User user) {
+        return user.type() == UserType.FAMILY
+                && userRoleMapper.hasRoleCode(user.id(), "PARENT")
+                && parentAuthenticationMapper.findProfileByUserId(user.id()) != null;
     }
 
     private void requireSystemAdmin(Long operatorId) {

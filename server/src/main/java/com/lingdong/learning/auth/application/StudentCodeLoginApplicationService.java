@@ -80,8 +80,24 @@ public class StudentCodeLoginApplicationService {
         featureAccessService.requireEnabled(FEATURE_CODE, null);
         String account = normalize(command.studentAccount());
         User user = account == null ? null : userMapper.findByUsername(account);
-        return authenticate(
+        VerifiedStudentIdentity verified = verify(
                 user, account, command.loginCode(), command.deviceId(), command.deviceName(),
+                command.captchaChallengeId(), command.captchaAnswer(), command.sourceAddress());
+        return authenticationService.createSession(
+                verified.studentUserId(), AuthClientType.MINIAPP, command.deviceId().trim(), command.deviceName().trim());
+    }
+
+    /** 微信首次绑定只校验学生身份和风控状态，不提前建立学生会话。 */
+    @Transactional(noRollbackFor = {
+            StudentAuthenticationFailedException.class,
+            CaptchaRequiredException.class,
+            StudentAccountLockedException.class
+    })
+    public VerifiedStudentIdentity verifyForBinding(StudentCodeLoginCommand command) {
+        Objects.requireNonNull(command, "学生微信绑定校验请求不能为空");
+        String account = normalize(command.studentAccount());
+        User user = account == null ? null : userMapper.findByUsername(account);
+        return verify(user, account, command.loginCode(), command.deviceId(), command.deviceName(),
                 command.captchaChallengeId(), command.captchaAnswer(), command.sourceAddress());
     }
 
@@ -102,11 +118,13 @@ public class StudentCodeLoginApplicationService {
     ) {
         User user = studentUserId == null ? null : userMapper.findById(studentUserId);
         String account = user == null ? null : normalize(user.username());
-        return authenticate(user, account, loginCode, deviceId, deviceName,
+        VerifiedStudentIdentity verified = verify(user, account, loginCode, deviceId, deviceName,
                 captchaChallengeId, captchaAnswer, sourceAddress);
+        return authenticationService.createSession(
+                verified.studentUserId(), AuthClientType.MINIAPP, deviceId.trim(), deviceName.trim());
     }
 
-    private AuthenticatedSession authenticate(
+    private VerifiedStudentIdentity verify(
             User user,
             String account,
             String loginCode,
@@ -180,7 +198,7 @@ public class StudentCodeLoginApplicationService {
         if (credentialMapper.markLoginSuccess(user.id(), now) != 1) {
             throw new IllegalStateException("学生登录成功状态保存失败");
         }
-        return authenticationService.createSession(user.id(), AuthClientType.MINIAPP, deviceId, deviceName);
+        return new VerifiedStudentIdentity(student.id(), user.id(), account);
     }
 
     private void updateFailureState(Long studentUserId, int failureCount, boolean captchaRequired, LocalDateTime lockedUntil) {

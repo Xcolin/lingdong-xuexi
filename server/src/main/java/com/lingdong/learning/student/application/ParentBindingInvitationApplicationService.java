@@ -6,7 +6,7 @@ import com.lingdong.learning.common.security.SystemOperationAccessDeniedExceptio
 import com.lingdong.learning.common.web.ResourceNotFoundException;
 import com.lingdong.learning.datascope.infrastructure.persistence.OrganizationAdminMapper;
 import com.lingdong.learning.organization.domain.Organization;
-import com.lingdong.learning.organization.domain.OrganizationStatus;
+import com.lingdong.learning.organization.application.OrganizationOperationalStatusService;
 import com.lingdong.learning.organization.infrastructure.persistence.OrganizationMapper;
 import com.lingdong.learning.student.domain.ParentBindingInvitation;
 import com.lingdong.learning.student.domain.ParentBindingInvitationStatus;
@@ -84,7 +84,7 @@ public class ParentBindingInvitationApplicationService {
         if (organization == null) {
             throw new ResourceNotFoundException("机构不存在：" + organizationId);
         }
-        if (organization.status() != OrganizationStatus.ENABLED) {
+        if (!OrganizationOperationalStatusService.isOperational(organization)) {
             throw new IllegalStateException("机构已停用，不能创建家长绑定邀请");
         }
         if (!organizationAdminMapper.exists(currentUser.userId(), organizationId)

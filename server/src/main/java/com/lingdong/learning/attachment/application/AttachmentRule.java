@@ -4,8 +4,9 @@ import com.lingdong.learning.attachment.domain.AttachmentRuleStatus;
 
 import java.util.List;
 
-/** Effective rule used by every business module before it registers an attachment. */
+/** 各业务模块在登记附件前统一使用的有效规则。 */
 public record AttachmentRule(
         Long id, String moduleCode, String fileCategory, String ruleName, List<String> allowedExtensions,
-        long maxFileSizeBytes, int maxBatchCount, boolean previewEnabled, AttachmentRuleStatus status
+        long maxFileSizeBytes, int maxBatchCount, boolean previewEnabled, AttachmentRuleStatus status,
+        long versionNo
 ) { }

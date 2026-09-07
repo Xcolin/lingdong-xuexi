@@ -3,7 +3,7 @@ package com.lingdong.learning.cache.application;
 import com.lingdong.learning.cache.domain.CacheDomain;
 import com.lingdong.learning.cache.domain.CacheOperationType;
 
-/** Draft request for a cache action that must be approved by a system auditor. */
+/** 必须由系统审核员审批的高风险缓存操作请求。 */
 public record CreateHighRiskCacheOperationCommand(
         Long submitterId,
         CacheDomain cacheDomain,

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.templateconfig.infrastructure.persistence.ImportExportTemplateFieldMapper">
+    <resultMap id="TemplateFieldMap" type="com.lingdong.learning.templateconfig.domain.ImportExportTemplateFieldRecord">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="template_id" javaType="java.lang.Long"/>
+            <arg column="field_code" javaType="java.lang.String"/>
+            <arg column="column_name" javaType="java.lang.String"/>
+            <arg column="data_type" javaType="com.lingdong.learning.templateconfig.domain.ImportTemplateFieldDataType"/>
+            <arg column="required_flag" javaType="java.lang.Boolean"/>
+            <arg column="max_length" javaType="java.lang.Integer"/>
+            <arg column="dictionary_type_code" javaType="java.lang.String"/>
+            <arg column="sort_order" javaType="java.lang.Integer"/>
+            <arg column="created_at" javaType="java.time.LocalDateTime"/>
+            <arg column="updated_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <insert id="insertBatch">
+        INSERT INTO sys_import_export_template_field
+        (id, template_id, field_code, column_name, data_type, required_flag,
+         max_length, dictionary_type_code, sort_order)
+        VALUES
+        <foreach collection="fields" item="field" separator=",">
+            (#{field.id}, #{field.templateId}, #{field.fieldCode}, #{field.columnName},
+             #{field.dataType}, #{field.required}, #{field.maxLength},
+             #{field.dictionaryTypeCode}, #{field.sortOrder})
+        </foreach>
+    </insert>
+
+    <delete id="deleteByTemplateId">
+        DELETE FROM sys_import_export_template_field WHERE template_id = #{templateId}
+    </delete>
+
+    <select id="findByTemplateId" resultMap="TemplateFieldMap">
+        SELECT id, template_id, field_code, column_name, data_type, required_flag,
+               max_length, dictionary_type_code, sort_order, created_at, updated_at
+        FROM sys_import_export_template_field
+        WHERE template_id = #{templateId}
+        ORDER BY sort_order ASC, id ASC
+    </select>
+</mapper>

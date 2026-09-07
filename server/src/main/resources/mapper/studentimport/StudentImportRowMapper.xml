@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.studentimport.infrastructure.persistence.StudentImportRowMapper">
+    <resultMap id="RowMap" type="com.lingdong.learning.studentimport.domain.StudentImportRowRecord">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="execution_id" javaType="java.lang.Long"/>
+            <arg column="row_number" javaType="java.lang.Integer"/>
+            <arg column="status" javaType="com.lingdong.learning.studentimport.domain.StudentImportRowStatus"/>
+            <arg column="student_id" javaType="java.lang.Long"/>
+            <arg column="student_account" javaType="java.lang.String"/>
+            <arg column="failure_code" javaType="java.lang.String"/>
+            <arg column="failure_message" javaType="java.lang.String"/>
+            <arg column="credential_ciphertext" javaType="[B"/>
+            <arg column="credential_nonce" javaType="[B"/>
+            <arg column="credential_key_version" javaType="java.lang.String"/>
+            <arg column="attempt_count" javaType="java.lang.Integer"/>
+            <arg column="created_at" javaType="java.time.LocalDateTime"/>
+            <arg column="updated_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="columns">
+        id, execution_id, row_number, status, student_id, student_account,
+        failure_code, failure_message, credential_ciphertext, credential_nonce,
+        credential_key_version, attempt_count, created_at, updated_at
+    </sql>
+
+    <insert id="insertBatch">
+        INSERT INTO sys_student_import_row (
+            id, execution_id, row_number, status, student_id, student_account,
+            failure_code, failure_message, credential_ciphertext, credential_nonce,
+            credential_key_version, attempt_count
+        ) VALUES
+        <foreach collection="rows" item="row" separator=",">
+            (#{row.id}, #{row.executionId}, #{row.rowNumber}, #{row.status},
+             #{row.studentId,jdbcType=BIGINT}, #{row.studentAccount,jdbcType=VARCHAR},
+             #{row.failureCode,jdbcType=VARCHAR}, #{row.failureMessage,jdbcType=VARCHAR},
+             #{row.credentialCiphertext,jdbcType=VARBINARY},
+             #{row.credentialNonce,jdbcType=VARBINARY},
+             #{row.credentialKeyVersion,jdbcType=VARCHAR}, #{row.attemptCount})
+        </foreach>
+    </insert>
+
+    <select id="findByExecutionIdAndStatus" resultMap="RowMap">
+        SELECT <include refid="columns"/> FROM sys_student_import_row
+        WHERE execution_id = #{executionId}
+        <if test="status != null">AND status = #{status}</if>
+        ORDER BY row_number LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countByExecutionIdAndStatus" resultType="long">
+        SELECT COUNT(*) FROM sys_student_import_row WHERE execution_id = #{executionId}
+        <if test="status != null">AND status = #{status}</if>
+    </select>
+
+    <update id="markSucceeded">
+        UPDATE sys_student_import_row
+        SET status = 'SUCCEEDED', student_id = #{studentId}, student_account = #{studentAccount},
+            failure_code = NULL, failure_message = NULL,
+            credential_ciphertext = #{credentialCiphertext}, credential_nonce = #{credentialNonce},
+            credential_key_version = #{credentialKeyVersion},
+            attempt_count = attempt_count + 1, updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id} AND status IN ('PENDING', 'FAILED')
+    </update>
+
+    <update id="markFailed">
+        UPDATE sys_student_import_row
+        SET status = 'FAILED', failure_code = #{failureCode}, failure_message = #{failureMessage},
+            student_id = NULL, student_account = NULL, credential_ciphertext = NULL,
+            credential_nonce = NULL, credential_key_version = NULL,
+            attempt_count = attempt_count + 1, updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id} AND status IN ('PENDING', 'FAILED')
+    </update>
+
+    <update id="clearCredentials">
+        UPDATE sys_student_import_row
+        SET credential_ciphertext = NULL, credential_nonce = NULL,
+            credential_key_version = NULL, updated_at = CURRENT_TIMESTAMP
+        WHERE execution_id = #{executionId} AND credential_ciphertext IS NOT NULL
+    </update>
+</mapper>

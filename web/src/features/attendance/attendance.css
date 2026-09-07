@@ -1,0 +1,11 @@
+.attendance-page { min-width: 0; }
+.attendance-filters { gap: 12px 0; }
+.attendance-filters .ant-form-item { margin-bottom: 0; }
+.attendance-filters .ant-input { max-width: 220px; }
+.attendance-history-heading { margin: 0; font-size: 18px; letter-spacing: 0; }
+@media (max-width: 600px) {
+  .attendance-page .page-heading { align-items: flex-start; flex-direction: column; gap: 12px; }
+  .attendance-filters .ant-form-item { width: 100%; margin-inline-end: 0; }
+  .attendance-filters .ant-form-item-control { min-width: 0; }
+  .attendance-filters .ant-input, .attendance-filters .ant-select { width: 100%; max-width: none; }
+}

@@ -19,6 +19,16 @@ public interface LearningTaskAssignmentMapper {
             @Param("scheduledDate") LocalDate scheduledDate
     );
 
+    boolean existsTaskAssignedToActiveParent(
+            @Param("taskId") Long taskId,
+            @Param("parentUserId") Long parentUserId
+    );
+
+    boolean existsTaskVisibleToActiveTeacher(
+            @Param("taskId") Long taskId,
+            @Param("teacherUserId") Long teacherUserId
+    );
+
     List<StudentTaskAssignmentRow> findPage(@Param("query") StudentTaskAssignmentQuery query);
 
     long count(@Param("query") StudentTaskAssignmentQuery query);

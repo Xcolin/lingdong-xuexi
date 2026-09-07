@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.auth.infrastructure.persistence.ParentAuthenticationMapper">
+    <resultMap id="ParentProfileResultMap" type="com.lingdong.learning.auth.application.ParentProfile">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="user_id" javaType="java.lang.Long"/>
+            <arg column="onboarding_status"
+                 javaType="com.lingdong.learning.auth.application.ParentOnboardingStatus"/>
+            <arg column="first_login_at" javaType="java.time.LocalDateTime"/>
+            <arg column="onboarding_completed_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findCurrentAgreementVersion" resultType="string">
+        SELECT config_value
+        FROM sys_config
+        WHERE config_key = 'auth.parent-agreement.current-version'
+          AND status = 'ENABLED'
+    </select>
+
+    <select id="findProfileByUserId" resultMap="ParentProfileResultMap">
+        SELECT id, user_id, onboarding_status, first_login_at, onboarding_completed_at
+        FROM auth_parent_profile
+        WHERE user_id = #{userId}
+    </select>
+
+    <select id="hasAgreementAcceptance" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM auth_user_agreement_acceptance
+            WHERE user_id = #{userId}
+              AND agreement_type = 'PARENT_USER_AGREEMENT'
+              AND agreement_version = #{agreementVersion}
+        )
+    </select>
+
+    <insert id="insertProfile">
+        INSERT INTO auth_parent_profile (
+            id, user_id, onboarding_status, first_login_at, onboarding_completed_at
+        ) VALUES (
+            #{profile.id}, #{profile.userId}, #{profile.onboardingStatus}, #{profile.firstLoginAt},
+            #{profile.onboardingCompletedAt, jdbcType=TIMESTAMP}
+        )
+    </insert>
+
+    <insert id="insertAgreementAcceptance">
+        INSERT INTO auth_user_agreement_acceptance (
+            id, user_id, agreement_type, agreement_version, client_type, source_address_hash, accepted_at
+        ) VALUES (
+            #{acceptance.id}, #{acceptance.userId}, 'PARENT_USER_AGREEMENT', #{acceptance.agreementVersion},
+            #{acceptance.clientType}, #{acceptance.sourceAddressHash, jdbcType=VARCHAR}, #{acceptance.acceptedAt}
+        )
+    </insert>
+
+    <update id="completeOnboarding">
+        UPDATE auth_parent_profile
+        SET onboarding_status = 'COMPLETED',
+            onboarding_completed_at = #{completedAt},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE user_id = #{userId}
+          AND onboarding_status = 'PENDING'
+    </update>
+</mapper>

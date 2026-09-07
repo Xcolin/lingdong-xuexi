@@ -53,6 +53,8 @@ class StudentAuthenticationControllerTest {
         mockMvc.perform(get("/api/v1/public/capabilities").param("client", "MINIAPP"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.studentCodeLoginEnabled").value(true))
+                .andExpect(jsonPath("$.parentRelationshipManagementEnabled").value(false))
+                .andExpect(jsonPath("$.accountSecurityManagementEnabled").value(true))
                 .andExpect(jsonPath("$.learningTaskManagementEnabled").value(true))
                 .andExpect(jsonPath("$.previousDayTaskCopyEnabled").value(false))
                 .andExpect(jsonPath("$.learningTaskTemplateEnabled").value(false))
@@ -64,6 +66,8 @@ class StudentAuthenticationControllerTest {
 
         mockMvc.perform(get("/api/v1/public/capabilities").param("client", "WEB"))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.parentRelationshipManagementEnabled").value(false))
+                .andExpect(jsonPath("$.accountSecurityManagementEnabled").value(true))
                 .andExpect(jsonPath("$.learningTaskManagementEnabled").value(true))
                 .andExpect(jsonPath("$.previousDayTaskCopyEnabled").value(true))
                 .andExpect(jsonPath("$.learningTaskTemplateEnabled").value(true))
@@ -72,6 +76,12 @@ class StudentAuthenticationControllerTest {
                 .andExpect(jsonPath("$.rewardExchangeEnabled").value(true))
                 .andExpect(jsonPath("$.dailyGrowthReviewEnabled").value(true))
                 .andExpect(jsonPath("$.periodicGrowthReportEnabled").value(true));
+
+        featureToggleMapper.updateGlobalStatus(
+                "PARENT_RELATIONSHIP_MANAGEMENT", FeatureStatus.ENABLED);
+        mockMvc.perform(get("/api/v1/public/capabilities").param("client", "WEB"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.parentRelationshipManagementEnabled").value(true));
 
         mockMvc.perform(post("/api/v1/auth/student-captchas")
                         .contentType(MediaType.APPLICATION_JSON)

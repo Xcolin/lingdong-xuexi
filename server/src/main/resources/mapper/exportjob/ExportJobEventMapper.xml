@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.exportjob.infrastructure.persistence.ExportJobEventMapper">
+    <resultMap id="ExportJobEventMap" type="com.lingdong.learning.exportjob.domain.ExportJobEventRecord">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="job_id" javaType="java.lang.Long"/>
+            <arg column="event_type" javaType="com.lingdong.learning.exportjob.domain.ExportJobEventType"/>
+            <arg column="operator_id" javaType="java.lang.Long"/>
+            <arg column="summary" javaType="java.lang.String"/>
+            <arg column="occurred_at" javaType="java.time.LocalDateTime"/>
+            <arg column="created_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <insert id="insert">
+        INSERT INTO sys_export_job_event (
+            id, job_id, event_type, operator_id, summary, occurred_at, created_at
+        ) VALUES (
+            #{event.id}, #{event.jobId}, #{event.eventType},
+            #{event.operatorId,jdbcType=BIGINT}, #{event.summary},
+            #{event.occurredAt}, #{event.createdAt}
+        )
+    </insert>
+
+    <select id="findByJobId" resultMap="ExportJobEventMap">
+        SELECT id, job_id, event_type, operator_id, summary, occurred_at, created_at
+        FROM sys_export_job_event
+        WHERE job_id = #{jobId}
+        ORDER BY occurred_at, id
+    </select>
+</mapper>

@@ -13,9 +13,124 @@
 			}
 		},
 		{
+			"path": "pages/parent-login/parent-login",
+			"style": {
+				"navigationBarTitleText": "家长登录"
+			}
+		},
+		{
+			"path": "pages/parent-onboarding/parent-onboarding",
+			"style": {
+				"navigationBarTitleText": "家长首次引导"
+			}
+		},
+		{
+			"path": "pages/parent-home/parent-home",
+			"style": {
+				"navigationBarTitleText": "家长端"
+			}
+		},
+		{
+			"path": "pages/parent-student-wechat/parent-student-wechat",
+			"style": {
+				"navigationBarTitleText": "学生微信绑定"
+			}
+		},
+		{
+			"path": "pages/organization-login/organization-login",
+			"style": {
+				"navigationBarTitleText": "机构登录"
+			}
+		},
+		{
+			"path": "pages/organization-home/organization-home",
+			"style": {
+				"navigationBarTitleText": "机构工作台"
+			}
+		},
+		{
+			"path": "pages/teacher-home/teacher-home",
+			"style": { "navigationBarTitleText": "教师工作台" }
+		},
+		{
+			"path": "pages/managed-tasks/managed-tasks",
+			"style": {
+				"navigationBarTitleText": "任务管理",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+			"path": "pages/exception-reports/exception-reports",
+			"style": {
+				"navigationBarTitleText": "异常报备",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+			"path": "pages/organization-students/organization-students",
+			"style": {
+				"navigationBarTitleText": "学员关系"
+			}
+		},
+		{
+			"path": "pages/attendance/attendance",
+			"style": {
+				"navigationBarTitleText": "考勤记录",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+			"path": "pages/organization-classes/organization-classes",
+			"style": {
+				"navigationBarTitleText": "班级管理"
+			}
+		},
+		{
+			"path": "pages/organization-teachers/organization-teachers",
+			"style": {
+				"navigationBarTitleText": "教师管理"
+			}
+		},
+		{
+			"path": "pages/organization-parent-mobile-recovery/organization-parent-mobile-recovery",
+			"style": {
+				"navigationBarTitleText": "家长换号核验"
+			}
+		},
+		{
+			"path": "pages/organization-student-cancellation/organization-student-cancellation",
+			"style": {
+				"navigationBarTitleText": "学生账号注销"
+			}
+		},
+		{
+			"path": "pages/parent-relationships/parent-relationships",
+			"style": {
+				"navigationBarTitleText": "家长关系"
+			}
+		},
+		{
+			"path": "pages/parent-relationship-invitation/parent-relationship-invitation",
+			"style": {
+				"navigationBarTitleText": "关系邀请"
+			}
+		},
+		{
 			"path": "pages/student-home/student-home",
 			"style": {
 				"navigationBarTitleText": "灵动学习"
+			}
+		},
+		{
+			"path": "pages/account-security/account-security",
+			"style": {
+				"navigationBarTitleText": "账号安全"
+			}
+		},
+		{
+			"path": "pages/parent-account-lifecycle/parent-account-lifecycle",
+			"style": {
+				"navigationBarTitleText": "账号与手机号"
 			}
 		},
 		{

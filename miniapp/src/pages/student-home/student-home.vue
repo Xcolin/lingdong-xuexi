@@ -9,6 +9,7 @@
     </view>
     <view class="content-band">
       <text class="welcome-title">欢迎回来</text>
+      <button v-if="attendanceEnabled" class="feature-entry" @tap="openAttendance"><text class="feature-entry-title">我的考勤</text></button>
       <button v-if="learningTaskEnabled" class="feature-entry" @tap="openTasks">
         <view>
           <text class="task-entry-title">学习任务</text>
@@ -37,6 +38,13 @@
         </view>
         <text class="feature-entry-arrow">›</text>
       </button>
+      <button v-if="accountSecurityEnabled" class="feature-entry" @tap="openAccountSecurity">
+        <view>
+          <text class="feature-entry-title">账号安全</text>
+          <text class="feature-entry-subtitle">查看设备和登录提醒</text>
+        </view>
+        <text class="feature-entry-arrow">›</text>
+      </button>
     </view>
   </view>
 </template>
@@ -46,6 +54,8 @@ import { ref } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { logoutStudent } from '@/api/auth';
 import { getMiniappCapabilities } from '@/api/capability';
+import { useAttendanceEntry } from '@/composables/use-attendance-entry';
+const { attendanceEnabled, openAttendance } = useAttendanceEntry('student');
 import { clearStudentSession, getStudentSession, type StoredStudentSession } from '@/session/student-session';
 
 const session = ref<StoredStudentSession | null>(null);
@@ -54,6 +64,7 @@ const learningTaskEnabled = ref(false);
 const growthPointEnabled = ref(false);
 const rewardExchangeEnabled = ref(false);
 const dailyGrowthReviewEnabled = ref(false);
+const accountSecurityEnabled = ref(false);
 
 onShow(async () => {
   session.value = getStudentSession();
@@ -67,11 +78,13 @@ onShow(async () => {
     growthPointEnabled.value = capabilities.growthPointQueryEnabled;
     rewardExchangeEnabled.value = capabilities.rewardExchangeEnabled;
     dailyGrowthReviewEnabled.value = capabilities.dailyGrowthReviewEnabled;
+    accountSecurityEnabled.value = capabilities.accountSecurityManagementEnabled;
   } catch {
     learningTaskEnabled.value = false;
     growthPointEnabled.value = false;
     rewardExchangeEnabled.value = false;
     dailyGrowthReviewEnabled.value = false;
+    accountSecurityEnabled.value = false;
   }
 });
 
@@ -89,6 +102,10 @@ function openRewards(): void {
 
 function openGrowthReviews(): void {
   uni.navigateTo({ url: '/pages/growth-reviews/growth-reviews' });
+}
+
+function openAccountSecurity(): void {
+  uni.navigateTo({ url: '/pages/account-security/account-security?identity=student' });
 }
 
 async function logout(): Promise<void> {

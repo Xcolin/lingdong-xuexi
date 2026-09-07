@@ -6,11 +6,12 @@ import com.lingdong.learning.auth.web.StudentQrTicketResponse;
 import com.lingdong.learning.common.security.RequirePermission;
 import com.lingdong.learning.student.application.CreateStudentCommand;
 import com.lingdong.learning.student.application.CreateParentBindingInvitationCommand;
-import com.lingdong.learning.student.application.AssignStudentClassCommand;
 import com.lingdong.learning.student.application.ParentBindingInvitationApplicationService;
 import com.lingdong.learning.student.application.StudentApplicationService;
 import com.lingdong.learning.student.application.StudentCredentialManagementService;
-import com.lingdong.learning.student.application.StudentClassAssignmentService;
+import com.lingdong.learning.student.application.DeactivateStudentOrganizationCommand;
+import com.lingdong.learning.student.application.StudentOrganizationLifecycleService;
+import com.lingdong.learning.student.application.TransferStudentClassCommand;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -24,28 +25,32 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 /** 学生档案的家长、机构管理员和系统管理员共同入口。 */
 @RestController
 @RequestMapping("/api/v1/students")
 public class StudentManagementController {
+    private static final String LEGACY_CLASS_ASSIGNMENT_REASON = "兼容接口配置班级";
+
     private final StudentApplicationService studentApplicationService;
     private final StudentCredentialManagementService studentCredentialManagementService;
     private final ParentBindingInvitationApplicationService parentBindingInvitationApplicationService;
-    private final StudentClassAssignmentService studentClassAssignmentService;
     private final StudentQrTicketApplicationService studentQrTicketApplicationService;
+    private final StudentOrganizationLifecycleService studentOrganizationLifecycleService;
 
     public StudentManagementController(
             StudentApplicationService studentApplicationService,
             StudentCredentialManagementService studentCredentialManagementService,
             ParentBindingInvitationApplicationService parentBindingInvitationApplicationService,
-            StudentClassAssignmentService studentClassAssignmentService,
-            StudentQrTicketApplicationService studentQrTicketApplicationService
+            StudentQrTicketApplicationService studentQrTicketApplicationService,
+            StudentOrganizationLifecycleService studentOrganizationLifecycleService
     ) {
         this.studentApplicationService = studentApplicationService;
         this.studentCredentialManagementService = studentCredentialManagementService;
         this.parentBindingInvitationApplicationService = parentBindingInvitationApplicationService;
-        this.studentClassAssignmentService = studentClassAssignmentService;
         this.studentQrTicketApplicationService = studentQrTicketApplicationService;
+        this.studentOrganizationLifecycleService = studentOrganizationLifecycleService;
     }
 
     @RequirePermission("STUDENT_READ")
@@ -87,8 +92,68 @@ public class StudentManagementController {
             @PathVariable Long studentId,
             @Valid @RequestBody AssignStudentClassRequest request
     ) {
-        return StudentClassAssignmentResponse.from(studentClassAssignmentService.assign(
-                currentUser, studentId, new AssignStudentClassCommand(request.classOrganizationId())));
+        var relationship = studentOrganizationLifecycleService.transferClass(
+                currentUser, studentId,
+                new TransferStudentClassCommand(
+                        request.classOrganizationId(), LEGACY_CLASS_ASSIGNMENT_REASON));
+        return new StudentClassAssignmentResponse(
+                relationship.studentId(), relationship.currentClassOrganizationId(), relationship.status());
+    }
+
+    @RequirePermission("STUDENT_ORGANIZATION_MANAGE")
+    @GetMapping("/organization-relationships")
+    public List<StudentOrganizationRelationshipSummaryResponse> listOrganizationRelationships(
+            @AuthenticationPrincipal AuthenticatedUser currentUser
+    ) {
+        return studentOrganizationLifecycleService.list(currentUser).stream()
+                .map(StudentOrganizationRelationshipSummaryResponse::from)
+                .toList();
+    }
+
+    @RequirePermission("STUDENT_ORGANIZATION_MANAGE")
+    @GetMapping("/organization-relationship-classes")
+    public List<StudentOrganizationClassOptionResponse> listOrganizationRelationshipClasses(
+            @AuthenticationPrincipal AuthenticatedUser currentUser
+    ) {
+        return studentOrganizationLifecycleService.listClassOptions(currentUser).stream()
+                .map(StudentOrganizationClassOptionResponse::from)
+                .toList();
+    }
+
+    @RequirePermission("STUDENT_ORGANIZATION_MANAGE")
+    @GetMapping("/{studentId}/organization-relationships")
+    public StudentOrganizationRelationshipResponse findOrganizationRelationship(
+            @AuthenticationPrincipal AuthenticatedUser currentUser,
+            @PathVariable Long studentId
+    ) {
+        return StudentOrganizationRelationshipResponse.from(
+                studentOrganizationLifecycleService.find(currentUser, studentId));
+    }
+
+    @RequirePermission("STUDENT_ORGANIZATION_MANAGE")
+    @PostMapping("/{studentId}/class-transfers")
+    public StudentOrganizationRelationshipResponse transferClass(
+            @AuthenticationPrincipal AuthenticatedUser currentUser,
+            @PathVariable Long studentId,
+            @Valid @RequestBody TransferStudentClassRequest request
+    ) {
+        return StudentOrganizationRelationshipResponse.from(
+                studentOrganizationLifecycleService.transferClass(currentUser, studentId,
+                        new TransferStudentClassCommand(
+                                request.classOrganizationId(), request.reason())));
+    }
+
+    @RequirePermission("STUDENT_ORGANIZATION_MANAGE")
+    @PostMapping("/{studentId}/organization-deactivations")
+    public StudentOrganizationRelationshipResponse deactivateOrganizationRelationship(
+            @AuthenticationPrincipal AuthenticatedUser currentUser,
+            @PathVariable Long studentId,
+            @Valid @RequestBody DeactivateStudentOrganizationRequest request
+    ) {
+        return StudentOrganizationRelationshipResponse.from(
+                studentOrganizationLifecycleService.deactivate(currentUser, studentId,
+                        new DeactivateStudentOrganizationCommand(
+                                request.organizationId(), request.reason())));
     }
 
     @RequirePermission("STUDENT_CREDENTIAL_INITIALIZE")

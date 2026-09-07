@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.auth.infrastructure.persistence.StudentWechatBindingMapper">
+    <resultMap id="StudentWechatBindingResultMap"
+               type="com.lingdong.learning.auth.application.StudentWechatBinding">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="student_id" javaType="java.lang.Long"/>
+            <arg column="student_user_id" javaType="java.lang.Long"/>
+            <arg column="app_id" javaType="java.lang.String"/>
+            <arg column="open_id" javaType="java.lang.String"/>
+            <arg column="union_id" javaType="java.lang.String"/>
+            <arg column="bound_at" javaType="java.time.LocalDateTime"/>
+            <arg column="last_login_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="bindingColumns">
+        id, student_id, student_user_id, app_id, open_id, union_id, bound_at, last_login_at
+    </sql>
+
+    <select id="findByIdentity" resultMap="StudentWechatBindingResultMap">
+        SELECT <include refid="bindingColumns"/>
+        FROM auth_student_wechat_binding
+        WHERE app_id = #{appId} AND open_id = #{openId}
+    </select>
+
+    <select id="findByStudentId" resultMap="StudentWechatBindingResultMap">
+        SELECT <include refid="bindingColumns"/>
+        FROM auth_student_wechat_binding
+        WHERE student_id = #{studentId}
+    </select>
+
+    <select id="findByStudentIdForUpdate" resultMap="StudentWechatBindingResultMap">
+        SELECT <include refid="bindingColumns"/>
+        FROM auth_student_wechat_binding
+        WHERE student_id = #{studentId}
+        FOR UPDATE
+    </select>
+
+    <select id="findPrimaryStudentsByParentUserId"
+            resultType="com.lingdong.learning.auth.application.StudentWechatBindingRow">
+        SELECT student.id AS student_id,
+               student.student_name,
+               student_user.username AS student_account,
+               binding.id AS binding_id,
+               binding.bound_at
+        FROM edu_parent_student relationship
+        JOIN edu_student student ON student.id = relationship.student_id
+        JOIN sys_user student_user ON student_user.id = student.student_user_id
+        LEFT JOIN auth_student_wechat_binding binding ON binding.student_id = student.id
+        WHERE relationship.parent_user_id = #{parentUserId}
+          AND relationship.relation_role = 'PRIMARY_GUARDIAN'
+          AND relationship.status = 'ACTIVE'
+          AND relationship.primary_scope_key = 'PRIMARY'
+          AND student.status = 'ENABLED'
+          AND student_user.status = 'ENABLED'
+        ORDER BY student.student_name, student.id
+    </select>
+
+    <insert id="insert">
+        INSERT INTO auth_student_wechat_binding (
+            id, student_id, student_user_id, app_id, open_id, union_id, bound_at, last_login_at
+        ) VALUES (
+            #{binding.id}, #{binding.studentId}, #{binding.studentUserId},
+            #{binding.appId}, #{binding.openId}, #{binding.unionId, jdbcType=VARCHAR},
+            #{binding.boundAt}, #{binding.lastLoginAt, jdbcType=TIMESTAMP}
+        )
+    </insert>
+
+    <update id="touchLastLogin">
+        UPDATE auth_student_wechat_binding
+        SET last_login_at = #{lastLoginAt}, updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM auth_student_wechat_binding WHERE id = #{id}
+    </delete>
+
+    <insert id="insertAudit">
+        INSERT INTO auth_student_wechat_binding_audit (
+            id, binding_id, student_id, student_user_id, event_type,
+            operator_user_id, client_type, occurred_at
+        ) VALUES (
+            #{audit.id}, #{audit.bindingId}, #{audit.studentId}, #{audit.studentUserId},
+            #{audit.eventType}, #{audit.operatorUserId}, #{audit.clientType}, #{audit.occurredAt}
+        )
+    </insert>
+</mapper>

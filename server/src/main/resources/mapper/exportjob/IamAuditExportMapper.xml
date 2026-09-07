@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.exportjob.infrastructure.persistence.IamAuditExportMapper">
+    <resultMap id="ExportRowMap"
+               type="com.lingdong.learning.exportjob.infrastructure.persistence.IamAuditExportRow">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="occurred_at" javaType="java.time.LocalDateTime"/>
+            <arg column="event_type" javaType="com.lingdong.learning.iam.audit.application.IamChangeAuditEventType"/>
+            <arg column="target_type" javaType="com.lingdong.learning.iam.audit.application.IamChangeTargetType"/>
+            <arg column="target_id" javaType="java.lang.Long"/>
+            <arg column="target_name" javaType="java.lang.String"/>
+            <arg column="operator_name" javaType="java.lang.String"/>
+            <arg column="before_value" javaType="java.lang.String"/>
+            <arg column="after_value" javaType="java.lang.String"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="filters">
+        <where>
+            <if test="startedAt != null">AND audit.occurred_at &gt;= #{startedAt}</if>
+            <if test="endedAt != null">AND audit.occurred_at &lt;= #{endedAt}</if>
+            <if test="eventType != null">AND audit.event_type = #{eventType}</if>
+        </where>
+    </sql>
+
+    <select id="findUpperBound" resultType="java.lang.Long">
+        SELECT MAX(audit.id)
+        FROM sys_iam_change_audit audit
+        <include refid="filters"/>
+    </select>
+
+    <select id="count" resultType="long">
+        SELECT COUNT(1)
+        FROM sys_iam_change_audit audit
+        <include refid="filters"/>
+        <if test="startedAt == null and endedAt == null and eventType == null">WHERE</if>
+        <if test="startedAt != null or endedAt != null or eventType != null">AND</if>
+        audit.id &lt;= #{upperBound}
+    </select>
+
+    <select id="findAfter" resultMap="ExportRowMap">
+        SELECT audit.id,
+               audit.occurred_at,
+               audit.event_type,
+               audit.target_type,
+               audit.target_id,
+               COALESCE(target_user.display_name, target_role.role_name,
+                        target_permission.permission_name) AS target_name,
+               operator.display_name AS operator_name,
+               audit.before_value,
+               audit.after_value
+        FROM sys_iam_change_audit audit
+        LEFT JOIN sys_user operator ON operator.id = audit.operator_id
+        LEFT JOIN sys_user target_user
+          ON target_user.id = audit.target_id
+         AND audit.target_type IN ('USER', 'USER_ORGANIZATION', 'USER_ROLE',
+                                   'USER_PERMISSION', 'ORGANIZATION_ADMIN')
+        LEFT JOIN sys_role target_role
+          ON target_role.id = audit.target_id
+         AND audit.target_type IN ('ROLE', 'ROLE_PERMISSION', 'ROLE_DATA_SCOPE')
+        LEFT JOIN sys_permission target_permission
+          ON target_permission.id = audit.target_id
+         AND audit.target_type = 'PERMISSION'
+        <include refid="filters"/>
+        <if test="startedAt == null and endedAt == null and eventType == null">WHERE</if>
+        <if test="startedAt != null or endedAt != null or eventType != null">AND</if>
+        audit.id &gt; #{cursor}
+        AND audit.id &lt;= #{upperBound}
+        ORDER BY audit.id ASC
+        LIMIT #{limit}
+    </select>
+</mapper>

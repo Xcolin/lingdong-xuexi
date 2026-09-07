@@ -46,9 +46,10 @@ public class RoleManagementController {
     @RequirePermission("IAM_ROLE_CREATE")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public RoleResponse createRole(@Valid @RequestBody CreateRoleRequest request) {
+    public RoleResponse createRole(@AuthenticationPrincipal AuthenticatedUser currentUser,
+                                   @Valid @RequestBody CreateRoleRequest request) {
         return RoleResponse.from(roleApplicationService.createCustomRole(new CreateCustomRoleCommand(
-                request.code(), request.name(), request.description(), request.dataScope()
+                request.code(), request.name(), request.description(), request.dataScope(), currentUser.userId()
         )));
     }
 

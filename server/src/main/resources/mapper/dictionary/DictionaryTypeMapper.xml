@@ -52,6 +52,12 @@
         ORDER BY sort_order ASC, id ASC
     </select>
 
+    <select id="findAll" resultMap="DictionaryTypeResultMap">
+        SELECT <include refid="DictionaryTypeColumns"/>
+        FROM sys_dictionary_type
+        ORDER BY sort_order ASC, id ASC
+    </select>
+
     <update id="update">
         UPDATE sys_dictionary_type
         SET type_name = #{dictionaryType.name},

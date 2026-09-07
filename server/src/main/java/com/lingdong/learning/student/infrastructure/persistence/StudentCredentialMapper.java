@@ -26,4 +26,6 @@ public interface StudentCredentialMapper {
             @Param("studentUserId") Long studentUserId,
             @Param("succeededAt") java.time.LocalDateTime succeededAt
     );
+
+    int deleteByStudentUserId(@Param("studentUserId") Long studentUserId);
 }

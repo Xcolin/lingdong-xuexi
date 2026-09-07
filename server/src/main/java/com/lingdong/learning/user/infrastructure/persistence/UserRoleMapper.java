@@ -13,6 +13,8 @@ public interface UserRoleMapper {
     boolean hasRoleCode(@Param("userId") Long userId, @Param("roleCode") String roleCode);
     List<String> findEnabledRoleCodesByUserId(@Param("userId") Long userId);
     boolean hasPermissionViaRole(@Param("userId") Long userId, @Param("permissionId") Long permissionId);
+
+    boolean hasAnyEnabledRole(@Param("userId") Long userId);
     boolean exists(
             @Param("userId") Long userId,
             @Param("roleId") Long roleId,

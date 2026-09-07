@@ -1,4 +1,4 @@
--- Registers third-party and outbound interface metadata without storing credentials or payloads.
+-- 登记第三方及对外接口元数据，不存储凭据和业务报文。
 CREATE TABLE sys_interface_service (
     id BIGINT NOT NULL PRIMARY KEY,
     service_name VARCHAR(100) NOT NULL,
@@ -14,7 +14,7 @@ CREATE TABLE sys_interface_service (
     CONSTRAINT fk_sys_interface_service_owner FOREIGN KEY (owner_id) REFERENCES sys_user (id)
 );
 
--- Stores a single high-risk task proposal before the related service mutation takes effect.
+-- 高风险接口变更生效前，仅保存一份待审核任务提案。
 CREATE TABLE sys_interface_service_change (
     id BIGINT NOT NULL PRIMARY KEY,
     task_id BIGINT NOT NULL,
@@ -36,7 +36,7 @@ CREATE TABLE sys_interface_service_change (
     CONSTRAINT fk_sys_interface_service_change_owner FOREIGN KEY (owner_id) REFERENCES sys_user (id)
 );
 
--- Keeps only the minimum call outcome needed for support and auditing.
+-- 仅保留运维支持和审计所需的最小调用结果信息。
 CREATE TABLE sys_interface_call_log (
     id BIGINT NOT NULL PRIMARY KEY,
     service_id BIGINT NOT NULL,

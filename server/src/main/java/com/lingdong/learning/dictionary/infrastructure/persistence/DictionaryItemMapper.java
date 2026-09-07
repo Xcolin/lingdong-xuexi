@@ -4,7 +4,7 @@ import com.lingdong.learning.dictionary.domain.DictionaryItem;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
-/** Persistence boundary for dictionary items and their single-default invariant. */
+/** 数据字典项及单一默认项约束的持久化边界。 */
 @Mapper
 public interface DictionaryItemMapper {
     DictionaryItem findById(@Param("id") Long id);
@@ -16,6 +16,8 @@ public interface DictionaryItemMapper {
     boolean existsByTypeIdAndCode(@Param("typeId") Long typeId, @Param("code") String code);
 
     java.util.List<DictionaryItem> findEnabledByTypeCode(@Param("typeCode") String typeCode);
+
+    java.util.List<DictionaryItem> findAllByTypeId(@Param("typeId") Long typeId);
 
     int clearDefaultByTypeId(@Param("typeId") Long typeId);
 

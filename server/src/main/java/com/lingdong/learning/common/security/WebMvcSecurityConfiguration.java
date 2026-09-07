@@ -8,13 +8,19 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class WebMvcSecurityConfiguration implements WebMvcConfigurer {
     private final PermissionAuthorizationInterceptor permissionAuthorizationInterceptor;
+    private final ParentOnboardingAccessInterceptor parentOnboardingAccessInterceptor;
 
-    public WebMvcSecurityConfiguration(PermissionAuthorizationInterceptor permissionAuthorizationInterceptor) {
+    public WebMvcSecurityConfiguration(
+            PermissionAuthorizationInterceptor permissionAuthorizationInterceptor,
+            ParentOnboardingAccessInterceptor parentOnboardingAccessInterceptor
+    ) {
         this.permissionAuthorizationInterceptor = permissionAuthorizationInterceptor;
+        this.parentOnboardingAccessInterceptor = parentOnboardingAccessInterceptor;
     }
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(parentOnboardingAccessInterceptor).addPathPatterns("/api/v1/**");
         registry.addInterceptor(permissionAuthorizationInterceptor).addPathPatterns("/api/v1/**");
     }
 }

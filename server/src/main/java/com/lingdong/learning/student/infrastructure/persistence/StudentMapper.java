@@ -23,4 +23,6 @@ public interface StudentMapper {
     int insert(@Param("student") Student student);
 
     int bindStudentUserIfAbsent(@Param("studentId") Long studentId, @Param("studentUserId") Long studentUserId);
+
+    int anonymizeCancelledStudent(@Param("studentId") Long studentId);
 }

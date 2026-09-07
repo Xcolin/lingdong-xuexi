@@ -31,4 +31,31 @@
         FROM sys_interface_call_log
         WHERE id = #{id}
     </select>
+
+    <resultMap id="InterfaceServiceCallLogViewResultMap"
+               type="com.lingdong.learning.interfaceconfig.application.InterfaceServiceCallLogView">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="service_id" javaType="java.lang.Long"/>
+            <arg column="service_name" javaType="java.lang.String"/>
+            <arg column="caller_name" javaType="java.lang.String"/>
+            <arg column="result" javaType="com.lingdong.learning.interfaceconfig.domain.InterfaceCallResult"/>
+            <arg column="error_summary" javaType="java.lang.String"/>
+            <arg column="trace_id" javaType="java.lang.String"/>
+            <arg column="occurred_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findRecent" resultMap="InterfaceServiceCallLogViewResultMap">
+        SELECT call_log.id, call_log.service_id, service.service_name, call_log.caller_name,
+               call_log.result, call_log.error_summary, call_log.trace_id, call_log.occurred_at
+        FROM sys_interface_call_log call_log
+        JOIN sys_interface_service service ON service.id = call_log.service_id
+        <where>
+            <if test="serviceId != null">AND call_log.service_id = #{serviceId}</if>
+            <if test="result != null">AND call_log.result = #{result}</if>
+        </where>
+        ORDER BY call_log.occurred_at DESC, call_log.id DESC
+        LIMIT #{limit}
+    </select>
 </mapper>
