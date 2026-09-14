@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.growthpoint.infrastructure.persistence.AnonymousRankPreferenceMapper">
+    <resultMap id="Preference" type="com.lingdong.learning.growthpoint.infrastructure.persistence.AnonymousRankPreferenceMapper$Row">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="parent_user_id" javaType="java.lang.Long"/>
+            <arg column="student_id" javaType="java.lang.Long"/>
+            <arg column="class_organization_id" javaType="java.lang.Long"/>
+            <arg column="enabled_flag" javaType="_boolean"/>
+            <arg column="version_no" javaType="_long"/>
+        </constructor>
+    </resultMap>
+    <select id="find" resultMap="Preference">
+        SELECT id,parent_user_id,student_id,class_organization_id,enabled_flag,version_no
+        FROM growth_rank_preference
+        WHERE parent_user_id=#{parentId} AND student_id=#{studentId} AND class_organization_id=#{classId}
+    </select>
+    <select id="findEnabledByParent" resultMap="Preference">
+        SELECT id,parent_user_id,student_id,class_organization_id,enabled_flag,version_no
+        FROM growth_rank_preference WHERE parent_user_id=#{parentId} AND enabled_flag=TRUE
+        ORDER BY id
+    </select>
+    <select id="findForUpdate" resultMap="Preference" flushCache="true" useCache="false">
+        SELECT id,parent_user_id,student_id,class_organization_id,enabled_flag,version_no
+        FROM growth_rank_preference
+        WHERE parent_user_id=#{parentId} AND student_id=#{studentId} AND class_organization_id=#{classId}
+        FOR UPDATE
+    </select>
+    <insert id="insert">
+        INSERT INTO growth_rank_preference(id,parent_user_id,student_id,class_organization_id,enabled_flag,version_no)
+        VALUES(#{row.id},#{row.parentId},#{row.studentId},#{row.classId},#{row.enabled},#{row.version})
+    </insert>
+    <update id="update">
+        UPDATE growth_rank_preference SET enabled_flag=#{row.enabled},version_no=#{row.version},updated_at=CURRENT_TIMESTAMP
+        WHERE id=#{row.id} AND parent_user_id=#{row.parentId} AND student_id=#{row.studentId}
+          AND class_organization_id=#{row.classId} AND version_no=#{expectedVersion}
+    </update>
+</mapper>

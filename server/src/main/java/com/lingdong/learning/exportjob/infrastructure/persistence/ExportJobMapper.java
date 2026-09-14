@@ -12,6 +12,13 @@ import java.util.List;
 /** 导出作业持久化和带版本条件的状态迁移。 */
 @Mapper
 public interface ExportJobMapper {
+    List<ExportJobRecord> findReviewPageByRequesterAndStudent(
+            @Param("requesterId") Long requesterId, @Param("studentId") Long studentId,
+            @Param("status") ExportJobStatus status, @Param("offset") int offset, @Param("limit") int limit);
+
+    long countReviewsByRequesterAndStudent(@Param("requesterId") Long requesterId,
+            @Param("studentId") Long studentId, @Param("status") ExportJobStatus status);
+
     int insert(@Param("job") ExportJobRecord job);
 
     ExportJobRecord findById(@Param("id") Long id);

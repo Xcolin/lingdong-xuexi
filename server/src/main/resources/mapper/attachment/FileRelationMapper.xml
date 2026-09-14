@@ -49,4 +49,12 @@
     AND file.status='AVAILABLE'
   ORDER BY relation.created_at, relation.id
  </select>
+ <select id="countActiveExportResult" resultType="int">
+  SELECT COUNT(*) FROM sys_file_relation relation JOIN sys_file file ON file.id=relation.file_id
+  WHERE relation.file_id=#{fileId} AND relation.business_id=#{jobId}
+    AND relation.module_code='EXPORT_JOB' AND relation.relation_type='EXPORT_JOB_RESULT'
+    AND relation.visible_scope='BUSINESS_AUTHORIZED' AND relation.status='ACTIVE'
+    AND file.status='AVAILABLE' AND file.module_code='EXPORT_JOB'
+    AND file.file_category='REPORT_EXPORT' AND file.uploader_id=#{requesterId}
+ </select>
 </mapper>

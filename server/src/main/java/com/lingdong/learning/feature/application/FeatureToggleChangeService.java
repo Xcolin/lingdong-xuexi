@@ -45,22 +45,35 @@ public class FeatureToggleChangeService {
         FeatureToggle toggle=toggleMapper.findGlobal(command.featureCode());
         if(toggle==null) throw new IllegalArgumentException("未配置的全局功能："+command.featureCode());
         if(command.targetStatus()==null) throw new IllegalArgumentException("目标功能状态不能为空");
+        requirePublishableTarget(command.featureCode(), command.targetStatus());
+        toggle=toggleMapper.findGlobalForUpdate(command.featureCode());
         SystemTask task=taskService.createDraft(new CreateSystemTaskCommand(command.submitterId(), SystemTaskType.GLOBAL_FEATURE_TOGGLE, command.title(), command.description(), ImpactScope.GLOBAL));
-        FeatureToggleChange change=new FeatureToggleChange(idGenerator.nextId(), task.id(), command.featureCode(), command.targetStatus());
+        FeatureToggleChange change=new FeatureToggleChange(idGenerator.nextId(), task.id(), command.featureCode(), command.targetStatus(), toggle.status(), toggle.versionNo());
         changeMapper.insert(change); return change;
     }
     @Transactional public void submit(Long taskId, Long submitterId) { taskService.submit(taskId, submitterId); }
     @Transactional
     public SystemTask approveAndApply(Long taskId, Long auditorId, String comment) {
-        taskService.approve(taskId, auditorId, comment);
         FeatureToggleChange change = changeMapper.findByTaskId(taskId);
-        if (change == null || toggleMapper.updateGlobalStatus(change.featureCode(), change.targetStatus()) != 1) {
-            throw new IllegalStateException("功能开关变更执行失败");
+        if (change == null) throw new IllegalArgumentException("功能开关变更不存在");
+        requirePublishableTarget(change.featureCode(), change.targetStatus());
+        if(change.beforeStatus()==null || change.baseVersion()==null) throw new FeatureToggleConflictException("历史申请缺少版本快照，请驳回并重新提交");
+        taskService.approve(taskId, auditorId, comment);
+        if (toggleMapper.compareAndSetGlobalStatus(change.featureCode(), change.targetStatus(), change.baseVersion()) != 1) {
+            throw new FeatureToggleConflictException("开关状态已变化，请重新载入并提交");
         }
         if (ORGANIZATION_MINIAPP_AUTH.equals(change.featureCode())
                 && change.targetStatus() == com.lingdong.learning.feature.domain.FeatureStatus.DISABLED) {
             deviceSessionMapper.revokeAllActiveOrganizationMiniappSessions(LocalDateTime.now());
         }
         return taskService.markEffective(taskId);
+    }
+
+    /** 当前发布范围不具备定位启用条件，历史待审申请也不能越过此边界。 */
+    private void requirePublishableTarget(String code, com.lingdong.learning.feature.domain.FeatureStatus target) {
+        if (target == com.lingdong.learning.feature.domain.FeatureStatus.ENABLED
+                && ("GEO_ATTENDANCE".equals(code) || "STUDENT_LOCATION_TRACK".equals(code))) {
+            throw new IllegalArgumentException("当前发布范围内定位能力保持关闭");
+        }
     }
 }

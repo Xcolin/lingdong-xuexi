@@ -1,4 +1,6 @@
-.attendance-page { min-width: 0; }
+.attendance-page { min-width: 0; grid-template-columns: minmax(0, 1fr); }
+.attendance-page .ant-table-wrapper { min-width: 0; }
+.attendance-filters .filter-select { min-width: 160px; }
 .attendance-filters { gap: 12px 0; }
 .attendance-filters .ant-form-item { margin-bottom: 0; }
 .attendance-filters .ant-input { max-width: 220px; }

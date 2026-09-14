@@ -50,7 +50,8 @@ class AttendanceControllerTest {
                 .thenReturn(List.of(new AttendanceService.RosterEntry(1874244142494646689L,"李小明",null)));
         var response=new AttendanceController(service).roster(null,1874244142494646690L,LocalDate.of(2026,9,7)).get(0);
         assertThat(response.studentId()).isEqualTo("1874244142494646689");
-        assertThat(response.studentName()).isEqualTo("李*");
+        // 点名操作必须能识别学生，完整姓名仅由受写权限保护的名单接口返回。
+        assertThat(response.studentName()).isEqualTo("李小明");
         assertThat(response.record()).isNull();
     }
 }

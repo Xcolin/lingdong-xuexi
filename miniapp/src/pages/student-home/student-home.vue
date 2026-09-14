@@ -9,6 +9,7 @@
     </view>
     <view class="content-band">
       <text class="welcome-title">欢迎回来</text>
+      <StudentTodayTasks />
       <button v-if="attendanceEnabled" class="feature-entry" @tap="openAttendance"><text class="feature-entry-title">我的考勤</text></button>
       <button v-if="learningTaskEnabled" class="feature-entry" @tap="openTasks">
         <view>
@@ -51,6 +52,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import StudentTodayTasks from '@/components/StudentTodayTasks.vue';
 import { onShow } from '@dcloudio/uni-app';
 import { logoutStudent } from '@/api/auth';
 import { getMiniappCapabilities } from '@/api/capability';

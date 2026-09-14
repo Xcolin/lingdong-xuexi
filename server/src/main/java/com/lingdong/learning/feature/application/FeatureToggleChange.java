@@ -1,4 +1,9 @@
 package com.lingdong.learning.feature.application;
 import com.lingdong.learning.feature.domain.FeatureStatus;
 /** Links one approved system task to its requested global feature state. */
-public record FeatureToggleChange(Long id, Long taskId, String featureCode, FeatureStatus targetStatus) { }
+public record FeatureToggleChange(Long id, Long taskId, String featureCode, FeatureStatus targetStatus,
+                                  FeatureStatus beforeStatus, Long baseVersion) {
+    public FeatureToggleChange(Long id,Long taskId,String featureCode,FeatureStatus targetStatus) {
+        this(id,taskId,featureCode,targetStatus,null,null);
+    }
+}

@@ -19,25 +19,33 @@ GET /{id} 返回 {record,actions:[{id,actionType,operatorUserId,operatorName,bef
 
 ## 2. 数据库与后端
 
-- [ ] 新建 domain/AttendanceStatus.java、AttendanceRecord.java 与 application/AttendanceEntry.java，验证未来日期、重复学生、状态时间组合、秒精度和版本冲突。
-- [ ] 新建 V62__add_manual_attendance.sql：两张事实/动作表，唯一约束、外键、检查约束、开关和两项权限及六条角色授权。
-- [ ] 新建 infrastructure/persistence/AttendanceMapper.java 与 mapper/attendance/AttendanceMapper.xml：SQL 层范围与分页、名单和不可变历史。
-- [ ] 新建 application/AttendanceService.java、AttendanceAccessService.java；复用权限服务、组织数据范围、雪花 ID、Clock。班级锁序列化同班写入；重复同内容不新增历史；异内容必须匹配版本；全批次事务回滚。
-- [ ] 新建 web/AttendanceController.java 与契约响应；公开能力增加 attendanceManagementEnabled；组织删除引用纳入考勤。
-- [ ] 测试 AttendanceRulesTest、AttendancePersistenceTest、AttendanceControllerTest：规则、真实 SQL 四类身份/自定义角色、越权、批量回滚、版本、幂等、开关与动态权限。执行 mvn -q -DforkCount=0 -Dtest=AttendanceRulesTest,AttendancePersistenceTest,AttendanceControllerTest test，预期全部通过。
+- [x] 新建 domain/AttendanceStatus.java、AttendanceRecord.java 与 application/AttendanceEntry.java，验证未来日期、重复学生、状态时间组合、分钟精度（秒为零）和版本冲突。
+- [x] 新建 V62__add_manual_attendance.sql：两张事实/动作表，唯一约束、外键、检查约束、开关和两项权限及六条角色授权。
+- [x] 新建 infrastructure/persistence/AttendanceMapper.java 与 mapper/attendance/AttendanceMapper.xml：SQL 层范围与分页、名单和不可变历史。
+- [x] 新建 application/AttendanceService.java、AttendanceAccessService.java；复用权限服务、组织数据范围、雪花 ID、Clock。班级锁序列化同班写入；重复同内容不新增历史；异内容必须匹配版本；全批次事务回滚。
+- [x] 新建 web/AttendanceController.java 与契约响应；公开能力增加 attendanceManagementEnabled；组织删除引用纳入考勤。
+- [x] 测试 AttendanceRulesTest、AttendancePersistenceTest、AttendanceControllerTest：规则、真实 SQL 四类身份/自定义角色、越权、批量回滚、版本、幂等、开关与动态权限；定向测试及全量测试通过。
 
 ## 3. Web
 
-- [ ] 新建 web/src/features/attendance/api.ts、AttendancePage.tsx 和测试；修改 App.tsx、capability.ts、DashboardPage.tsx（按现有入口模式）。列表、筛选、点名和详情完整实现；操作依据权限，直达重查开关；雪花 ID 保持字符串。
-- [ ] npm run test -- --run、npm run type-check、npm run build，通过后记录证据。
+- [x] 新建 web/src/features/attendance/api.ts、AttendancePage.tsx 和测试；修改 App.tsx、capability.ts、DashboardPage.tsx（按现有入口模式）。列表、筛选、点名和详情完整实现；操作依据权限，直达重查开关；雪花 ID 保持字符串。
+- [x] npm run test -- --maxWorkers=2、npm run typecheck、npm run build 通过。
 
 ## 4. uni-app
 
-- [ ] 新建 miniapp/src/api/attendance.ts、pages/attendance/attendance.vue；注册独立路由，能力字段与相应角色首页接入；列表、点名、详情与只读身份裁剪。
-- [ ] npm run type-check、npm run build:h5、npm run build:mp-weixin；检查源码和构建无定位 API。
+- [x] 新建 miniapp/src/api/attendance.ts、pages/attendance/attendance.vue；注册独立路由，能力字段与相应角色首页接入；列表、点名、详情与只读身份裁剪。
+- [x] npm run type-check、npm run build:h5、npm run build:mp-weixin 通过；源码和微信构建定位 API 扫描为零。
 
 ## 5. 集成收口
 
-- [ ] 全量后端回归与 Flyway/组织引用计数；审阅设计符合性及权限/并发代码。
-- [ ] 更新受影响的 BRD、设计、README 和总计划；未验证的外部环境、地理考勤与统计不得计为完成。
-- [ ] 浏览器检查桌面与移动布局和操作；git diff --check；记录结果与剩余限制。
+- [x] 全量后端回归与 Flyway/组织引用计数；审阅设计符合性及权限/并发代码。
+- [x] 更新受影响的 BRD、设计、README 和总计划；未验证的外部环境、地理考勤与统计不计为完成。
+- [x] 浏览器检查桌面与移动布局和操作；git diff --check 通过；记录结果与剩余限制。
+
+## 6. 本地完成记录（2026-09-07）
+
+后端 157 套件 580 项、Web 34 文件 140 项全部通过，双端类型检查及 Web/H5/微信构建通过，uni-app 模型 16 项断言通过。Web 1280px/390px 和 uni-app 四种身份 H5 使用合成接口数据验证操作、布局、权限与停用直达；浏览器脚本保存在各前端 scripts/verify-attendance.cjs，截图保存于忽略的 .local-verification/。
+
+审阅中修正了分钟精度、窄屏表格溢出、功能关闭错误分类与点名名单姓名识别，最后一次后端全量回归包含全部修正。点名名单完整姓名仅在写权限及班级范围核验后返回，普通台账仍脱敏。原始素材不修改；人工方案作为已确认调整单列 BRD-3.6-11。
+
+本专项未连接远程 MySQL、Redis、微信、共享测试、预生产或生产；H2 锁行为与 H5 检查不能替代真实 MySQL 并发或微信真机验收。按原路线图增加 20 分，总进度 836/1000（83.6%）；下一专项 V63，不增加请假审批、定位或其他未确认功能。

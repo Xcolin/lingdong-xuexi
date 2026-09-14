@@ -34,7 +34,12 @@ class GrowthReviewQueryServiceTest {
     private static final long SNAPSHOT_ID = 1_874_244_142_494_660_006L;
 
     @Autowired private GrowthReviewQueryService service;
+    @Autowired private GrowthReviewExportPreparationService exportPreparation;
     @Autowired private JdbcTemplate jdbcTemplate;
+    @Autowired private org.mybatis.spring.SqlSessionTemplate sqlSession;
+    @Autowired private com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthReviewMapper reviewMapper;
+    @Autowired private com.lingdong.learning.student.infrastructure.persistence.ParentStudentMapper parentMapper;
+    @Autowired private com.lingdong.learning.permission.application.PermissionDecisionService permissionService;
 
     private LocalDate today;
     private AuthenticatedUser parent;
@@ -51,9 +56,9 @@ class GrowthReviewQueryServiceTest {
         student = user(STUDENT_USER_ID, AuthClientType.MINIAPP, "STUDENT");
         jdbcTemplate.update("""
                 insert into sys_user (id, username, display_name, user_type, status)
-                values (?, 'review_parent', '复盘家长', 'PARENT', 'ENABLED'),
-                       (?, 'review_other_parent', '其他家长', 'PARENT', 'ENABLED'),
-                       (?, 'review_secondary_parent', '复盘副家长', 'PARENT', 'ENABLED'),
+                values (?, 'review_parent', '复盘家长', 'FAMILY', 'ENABLED'),
+                       (?, 'review_other_parent', '其他家长', 'FAMILY', 'ENABLED'),
+                       (?, 'review_secondary_parent', '复盘副家长', 'FAMILY', 'ENABLED'),
                        (?, 'review_student', '复盘学生账号', 'STUDENT', 'ENABLED')
                 """, PARENT_ID, OTHER_PARENT_ID, SECONDARY_PARENT_ID, STUDENT_USER_ID);
         jdbcTemplate.update("""
@@ -146,6 +151,76 @@ class GrowthReviewQueryServiceTest {
                 new AddGrowthReviewSupplementCommand(
                         GrowthReviewSupplementType.INSIGHT, "开关关闭后不可补录")))
                 .isInstanceOf(FeatureDisabledException.class);
+    }
+
+    @Test
+    void preparesCompleteRangeInStableOrderAndKeepsPreparedSupplementsUnchanged() {
+        grantReviewRole(PARENT_ID, id(70));
+        createReview(id(80), id(81), today.minusDays(1));
+        var selection = new GrowthReviewExportSelection(STUDENT_ID, null, GrowthReviewPeriodType.DAY,
+                today.minusDays(1), today);
+        var prepared = exportPreparation.prepare(parent, selection);
+        assertThat(prepared.reports()).extracting(GrowthReviewDetailView::periodStart)
+                .containsExactly(today.minusDays(1), today);
+        assertThatThrownBy(() -> prepared.reports().clear()).isInstanceOf(UnsupportedOperationException.class);
+        service.addChildSupplement(parent, STUDENT_ID, REVIEW_ID,
+                new AddGrowthReviewSupplementCommand(GrowthReviewSupplementType.INSIGHT, "准备之后追加"));
+        assertThat(prepared.reports().get(1).supplements()).isEmpty();
+        assertThat(exportPreparation.prepare(parent, selection).reports().get(1).supplements()).hasSize(1);
+    }
+
+    @Test
+    void preparesSingleReviewForActiveSecondaryParentButRejectsUnrelatedParent() {
+        grantReviewRole(SECONDARY_PARENT_ID, id(71));
+        grantReviewRole(OTHER_PARENT_ID, id(72));
+        var selection = new GrowthReviewExportSelection(STUDENT_ID, REVIEW_ID, null, null, null);
+        assertThat(exportPreparation.prepare(secondaryParent, selection).reports()).hasSize(1);
+        assertThatThrownBy(() -> exportPreparation.prepare(otherParent, selection))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void rejectsMixedSelectionEmptyIntervalAndRevokedPermission() {
+        assertThatThrownBy(() -> new GrowthReviewExportSelection(STUDENT_ID, REVIEW_ID,
+                GrowthReviewPeriodType.DAY, today, today)).isInstanceOf(IllegalArgumentException.class);
+        grantReviewRole(PARENT_ID, id(73));
+        assertThatThrownBy(() -> exportPreparation.prepare(parent, new GrowthReviewExportSelection(
+                STUDENT_ID, null, GrowthReviewPeriodType.DAY, today.minusDays(10), today.minusDays(9))))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("没有");
+        jdbcTemplate.update("delete from sys_user_role where user_id = ?", PARENT_ID);
+        // 直接 JDBC 改授权后模拟下一请求，避免复用当前测试事务的 MyBatis 一级缓存。
+        sqlSession.clearCache();
+        assertThatThrownBy(() -> exportPreparation.prepare(parent,
+                new GrowthReviewExportSelection(STUDENT_ID, REVIEW_ID, null, null, null)))
+                .isInstanceOf(com.lingdong.learning.common.security.SystemOperationAccessDeniedException.class);
+    }
+
+    @Test
+    void rejectsOversizedBatchInsteadOfSilentlyTruncating() {
+        grantReviewRole(PARENT_ID, id(74));
+        createReview(id(80), id(81), today.minusDays(1));
+        var limited = new GrowthReviewExportPreparationService(reviewMapper, service, parentMapper, permissionService, 1);
+        assertThatThrownBy(() -> limited.prepare(parent, new GrowthReviewExportSelection(STUDENT_ID, null,
+                GrowthReviewPeriodType.DAY, today.minusDays(1), today)))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("保护上限");
+    }
+
+    @Test
+    void selectsWholeWeeklyPeriodRatherThanPartialOverlap() {
+        grantReviewRole(PARENT_ID, id(75));
+        jdbcTemplate.update("update growth_review set period_type='WEEK',period_end=? where id=?", today.plusDays(6), REVIEW_ID);
+        assertThatThrownBy(() -> exportPreparation.prepare(parent, new GrowthReviewExportSelection(STUDENT_ID, null,
+                GrowthReviewPeriodType.WEEK, today, today.plusDays(5))))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("没有");
+        assertThat(exportPreparation.prepare(parent, new GrowthReviewExportSelection(STUDENT_ID, null,
+                GrowthReviewPeriodType.WEEK, today, today.plusDays(6))).reports()).hasSize(1);
+    }
+
+    private void grantReviewRole(long userId, long relationId) {
+        jdbcTemplate.update("""
+                insert into sys_user_role(id,user_id,role_id,organization_scope_key)
+                select ?,?,id,'GLOBAL' from sys_role where role_code='PARENT'
+                """, relationId, userId);
     }
 
     private void createReview(long reviewId, long snapshotId, LocalDate reviewDate) {

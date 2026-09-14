@@ -2,15 +2,16 @@
   <view class="page-shell">
     <view class="toolbar">
       <view>
-        <text class="page-title">{{ identity === 'teacher' ? '班级任务' : '机构任务' }}</text>
+        <text class="page-title">{{ reviewMode ? '待审核任务' : identity === 'teacher' ? '班级任务' : '机构任务' }}</text>
         <text class="page-subtitle">{{ contextName }}</text>
       </view>
       <view class="toolbar-actions">
-        <button v-if="canReview" class="review-button" @tap="toggleReviews">{{ reviewMode ? '任务' : '审核' }}</button>
+        <button :disabled="loading || reviewing" v-if="canReview && (!reviewMode || permissionCodes.includes('LEARNING_TASK_READ_MANAGED'))" class="review-button" @tap="toggleReviews">{{ reviewMode ? '任务' : '审核' }}</button>
         <button v-if="canCreate && !reviewMode" class="add-button" @tap="startCreate">新增</button>
       </view>
     </view>
 
+    <button :disabled="loading || reviewing" @tap="initialize">刷新</button>
     <view v-if="loading" class="state-text">正在加载</view>
     <view v-else-if="errorMessage" class="state-text error">{{ errorMessage }}</view>
     <view v-else-if="reviewMode && reviews.length === 0" class="state-text">暂无审核待办</view>
@@ -33,25 +34,29 @@
     </view>
 
     <view v-else class="task-list">
+      <text class="task-meta">共 {{ reviewTotal }} 项待审核任务</text>
       <view v-for="review in reviews" :key="review.assignmentId" class="task-row">
         <view class="task-main">
           <text class="task-title">{{ review.title }}</text>
           <text class="task-meta">{{ review.studentName }} · {{ review.basePoints }}积分</text>
           <text class="checkin-content">{{ review.latestCheckIn.content || '学生已提交图片打卡' }}</text>
+          <button v-for="file in review.latestCheckIn.attachments || []" :key="file.id" :disabled="reviewing" @tap="previewAttachment(file.contentUrl)">查看附件：{{ file.originalName }}</button>
         </view>
         <view v-if="rejectingAssignmentId === review.assignmentId" class="reject-area">
           <textarea v-model="rejectComment" class="field-textarea" maxlength="500" placeholder="请填写中性驳回意见" />
           <view class="task-actions">
             <button class="text-button" @tap="cancelReject">取消</button>
-            <button class="text-button danger" @tap="confirmReject(review.assignmentId)">确认驳回</button>
+            <button class="text-button danger" :disabled="reviewing" @tap="confirmReject(review.assignmentId)">确认驳回</button>
           </view>
         </view>
         <view v-else class="task-actions">
-          <button class="text-button danger" @tap="startReject(review.assignmentId)">驳回</button>
-          <button class="text-button primary" @tap="approveReview(review)">通过</button>
+          <button class="text-button danger" :disabled="reviewing" @tap="startReject(review.assignmentId)">驳回</button>
+          <button class="text-button primary" :disabled="reviewing" @tap="approveReview(review)">通过</button>
         </view>
       </view>
     </view>
+
+    <view v-if="reviewMode && !loading && !errorMessage && reviewTotal > 20" class="toolbar-actions"><button :disabled="reviewing || reviewPage <= 1" @tap="loadReviews(reviewPage - 1)">上一页</button><text>第 {{ reviewPage }} 页</text><button :disabled="reviewing || reviewPage * 20 >= reviewTotal" @tap="loadReviews(reviewPage + 1)">下一页</button></view>
 
     <view v-if="editorVisible" class="editor-band">
       <text class="section-title">{{ editingId ? '编辑任务' : '新增任务' }}</text>
@@ -105,7 +110,9 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue';
-import { onLoad, onPullDownRefresh } from '@dcloudio/uni-app';
+import { onLoad, onShow, onHide, onUnload, onPullDownRefresh } from '@dcloudio/uni-app';
+import { ApiError, apiUrl } from '@/api/http';
+import { requireManagedAccess } from '@/api/managed-review-access';
 import {
   approveManagedTaskReview, createManagedTask, getManagedTask, listManagedOrganizations,
   listManagedTaskProgress, listManagedTaskReviews, listManagedTasks, publishManagedTask,
@@ -113,9 +120,7 @@ import {
   type ManagedLearningTask, type ManagedOrganizationOption, type ManagedTaskProgress,
   type ManagedTaskReview
 } from '@/api/managed-learning-task';
-import { getOrganizationWorkbenchContext } from '@/api/organization-workbench';
-import { getTeacherWorkbenchContext, type TeacherWorkbenchClass } from '@/api/teacher-workbench';
-import { getMiniappCapabilities } from '@/api/capability';
+import type { TeacherWorkbenchClass } from '@/api/teacher-workbench';
 import { getOrganizationSession } from '@/session/organization-session';
 
 type Identity = 'organization' | 'teacher';
@@ -136,6 +141,12 @@ const progressItems = ref<ManagedTaskProgress[]>([]);
 const progressLoading = ref(false);
 const reviews = ref<ManagedTaskReview[]>([]);
 const reviewMode = ref(false);
+const reviewPage = ref(1), reviewTotal = ref(0), reviewing = ref(false);
+let revision = 0;
+function clearVisible() { tasks.value=[]; reviews.value=[]; permissionCodes.value=[]; targets.value=[]; contextName.value=''; editorVisible.value=false; progressTask.value=null; progressItems.value=[]; cancelReject(); }
+function active(n: number, token: string) { return n===revision && getOrganizationSession()?.accessToken===token; }
+function hide() { revision++; clearVisible(); loading.value=false; reviewing.value=false; }
+onHide(hide); onUnload(hide);
 const rejectingAssignmentId = ref<string | null>(null);
 const rejectComment = ref('');
 const difficultyNames = ['简单', '中等', '困难'];
@@ -148,45 +159,40 @@ const targetNames = computed(() => targets.value.map((item) =>
   'className' in item ? `${item.schoolName} · ${item.className}` : item.name));
 const selectedTargetName = computed(() => targetNames.value[targetIndex.value] || '');
 
-onLoad(async (options) => {
+onLoad((options) => {
   identity.value = options?.identity === 'teacher' ? 'teacher' : 'organization';
-  await initialize();
+  reviewMode.value = options?.review === 'true';
 });
-
-onPullDownRefresh(async () => {
-  if (reviewMode.value) await loadReviews(); else await loadTasks();
-  uni.stopPullDownRefresh();
-});
+onShow(initialize);
+onPullDownRefresh(async () => { await initialize(); uni.stopPullDownRefresh(); });
 
 async function initialize(): Promise<void> {
-  const session = getOrganizationSession();
-  if (!session) { await leave(); return; }
-  loading.value = true;
+  if (reviewMode.value) { await loadReviews(1); return; }
+  const token=getOrganizationSession()?.accessToken, n=++revision;
+  clearVisible(); errorMessage.value=''; loading.value=true;
+  if (!token) { loading.value=false; await leave(); return; }
   try {
-    const capabilities = await getMiniappCapabilities();
-    if (!capabilities.organizationMiniappAuthEnabled || !capabilities.learningTaskManagementEnabled) {
-      await leave(); return;
-    }
-    if (identity.value === 'teacher') {
-      const context = await getTeacherWorkbenchContext(session.accessToken);
-      contextName.value = context.displayName;
-      currentUserId.value = context.userId;
-      permissionCodes.value = context.permissionCodes;
-      targets.value = context.classes;
-    } else {
-      const context = await getOrganizationWorkbenchContext(session.accessToken);
-      contextName.value = context.displayName;
-      currentUserId.value = context.userId;
-      permissionCodes.value = context.permissionCodes;
-      targets.value = await listManagedOrganizations(session.accessToken);
-    }
-    if (!permissionCodes.value.includes('LEARNING_TASK_READ_MANAGED')) { await leave(); return; }
-    await loadTasks();
-  } catch {
-    errorMessage.value = '任务加载失败，请稍后重试';
-  } finally {
-    loading.value = false;
-  }
+    const {user,context}=await requireManagedAccess(token,identity.value,'LEARNING_TASK_READ_MANAGED');
+    if (!active(n,token)) return;
+    contextName.value=context.displayName; currentUserId.value=context.userId; permissionCodes.value=user.permissionCodes;
+    const options='classes' in context ? context.classes : await listManagedOrganizations(token);
+    if (!active(n,token)) return;
+    targets.value=options;
+    const result=await listManagedTasks(token);
+    if (active(n,token)) tasks.value=result.items;
+  } catch(error) { if(active(n,token)) { clearVisible(); errorMessage.value=error instanceof Error ? error.message : '任务加载失败，请刷新重试'; } }
+  finally { if(n===revision) loading.value=false; }
+}
+
+async function authorize(permission: string): Promise<string> {
+  const token=getOrganizationSession()?.accessToken, n=revision;
+  if (!token) throw new ApiError(401, {message:'登录状态已失效'});
+  try {
+    const {user}=await requireManagedAccess(token,identity.value,permission);
+    if (!active(n,token)) throw new ApiError(401, {message:'页面或登录状态已变化'});
+    permissionCodes.value=user.permissionCodes;
+    return token;
+  } catch(error) { if(n===revision) { clearVisible(); errorMessage.value='任务功能或权限已变化，请刷新'; } throw error; }
 }
 
 async function loadTasks(): Promise<void> {
@@ -268,40 +274,78 @@ async function openProgress(task: ManagedLearningTask): Promise<void> {
 }
 
 async function toggleReviews(): Promise<void> {
+  if (reviewing.value || loading.value) return;
   reviewMode.value = !reviewMode.value;
-  editorVisible.value = false;
-  progressTask.value = null;
-  if (reviewMode.value) await loadReviews();
+  await initialize();
 }
 
-async function loadReviews(): Promise<void> {
-  const session = getOrganizationSession();
-  if (!session) { await leave(); return; }
-  try { reviews.value = (await listManagedTaskReviews(session.accessToken)).items; }
-  catch { show('审核待办加载失败'); }
+async function loadReviews(target=1): Promise<void> {
+  const token=getOrganizationSession()?.accessToken,n=++revision;
+  clearVisible(); errorMessage.value=''; loading.value=true;
+  if(!token) { loading.value=false; await leave(); return; }
+  try {
+    const {user,context}=await requireManagedAccess(token,identity.value,'TASK_ASSIGNMENT_REVIEW');
+    if(!active(n,token)) return;
+    contextName.value=context.displayName; permissionCodes.value=user.permissionCodes;
+    const result=await listManagedTaskReviews(token,target,20);
+    if(active(n,token)) { reviews.value=result.items; reviewPage.value=result.page; reviewTotal.value=result.total; }
+  } catch(error) { if(active(n,token)) { clearVisible(); errorMessage.value=error instanceof Error ? error.message : '审核待办加载失败，请刷新重试'; } }
+  finally { if(n===revision) loading.value=false; }
 }
 
 async function approveReview(review: ManagedTaskReview): Promise<void> {
+  if(reviewing.value || loading.value) return;
+  reviewing.value=true;
+  const actionRevision=revision;
   const confirmed = await new Promise<boolean>((resolve) => uni.showModal({
     title: '确认审核通过', content: `通过“${review.title}”并发放${review.basePoints}积分。`,
     success: (result) => resolve(result.confirm), fail: () => resolve(false)
   }));
-  if (!confirmed) return;
-  const session = getOrganizationSession();
-  if (!session) { await leave(); return; }
-  try { await approveManagedTaskReview(session.accessToken, review.assignmentId); await loadReviews(); show('审核已通过', 'success'); }
-  catch { show('审核处理失败'); }
+  if(actionRevision!==revision) return;
+  if (!confirmed) { reviewing.value=false; return; }
+  try { const token=await authorize('TASK_ASSIGNMENT_REVIEW'); await approveManagedTaskReview(token, review.assignmentId, review.latestCheckIn.id); if(!active(actionRevision,token)) return; reviewing.value=false; await loadReviews(); show('审核已通过', 'success'); }
+  catch (error) { if(actionRevision===revision) reviewFailure(error); }
+  finally { if(actionRevision===revision) reviewing.value=false; }
 }
 
 function startReject(assignmentId: string): void { rejectingAssignmentId.value = assignmentId; rejectComment.value = ''; }
 function cancelReject(): void { rejectingAssignmentId.value = null; rejectComment.value = ''; }
 async function confirmReject(assignmentId: string): Promise<void> {
+  if(reviewing.value || loading.value) return;
   const comment = rejectComment.value.trim();
   if (!comment) return show('请填写驳回意见');
-  const session = getOrganizationSession();
-  if (!session) { await leave(); return; }
-  try { await rejectManagedTaskReview(session.accessToken, assignmentId, comment); cancelReject(); await loadReviews(); show('已退回学生完善', 'success'); }
-  catch { show('审核处理失败'); }
+  const review = reviews.value.find(item => item.assignmentId === assignmentId);
+  if (!review) return show('审核内容已变化，请刷新');
+  reviewing.value=true; const actionRevision=revision;
+  try { const token=await authorize('TASK_ASSIGNMENT_REVIEW'); await rejectManagedTaskReview(token, assignmentId, comment, review.latestCheckIn.id); if(!active(actionRevision,token)) return; cancelReject(); reviewing.value=false; await loadReviews(); show('已退回学生完善', 'success'); }
+  catch (error) { if(actionRevision===revision) reviewFailure(error); }
+  finally { if(actionRevision===revision) reviewing.value=false; }
+}
+
+async function previewAttachment(url: string): Promise<void> {
+  if(reviewing.value || loading.value) return;
+  const actionRevision=revision; reviewing.value=true;
+  try {
+    const token=await authorize('TASK_ASSIGNMENT_REVIEW');
+    const file=await new Promise<string>((resolve,reject)=>uni.downloadFile({
+      url:apiUrl(url),header:{Authorization:`Bearer ${token}`},
+      success:response=>response.statusCode===200 ? resolve(response.tempFilePath) : reject(new Error('附件读取失败')),
+      fail:()=>reject(new Error('附件读取失败'))
+    }));
+    if(active(actionRevision,token)) await uni.previewImage({urls:[file]});
+  } catch(error) { if(actionRevision===revision) reviewFailure(error); }
+  finally { if(actionRevision===revision) reviewing.value=false; }
+}
+
+function reviewFailure(error: unknown): void {
+  if (error instanceof ApiError && [401, 403, 404, 409].includes(error.statusCode)) {
+    reviews.value = [];
+    cancelReject();
+    errorMessage.value='审核内容或权限已变化，请刷新';
+    show(errorMessage.value);
+    return;
+  }
+  show('审核处理失败，请重试');
 }
 
 function changeTarget(event: { detail: { value: string } }): void { targetIndex.value = Number(event.detail.value); }

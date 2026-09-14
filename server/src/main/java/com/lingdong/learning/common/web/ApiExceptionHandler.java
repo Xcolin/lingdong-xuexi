@@ -45,6 +45,12 @@ public class ApiExceptionHandler {
         return response(HttpStatus.CONFLICT, "STATE_CONFLICT", "当前状态不允许执行此操作", request);
     }
 
+    @ExceptionHandler(com.lingdong.learning.feature.application.FeatureToggleConflictException.class)
+    public ResponseEntity<SecurityErrorResponse> handleFeatureConflict(
+            com.lingdong.learning.feature.application.FeatureToggleConflictException exception,HttpServletRequest request) {
+        return response(HttpStatus.CONFLICT,"FEATURE_TOGGLE_CONFLICT",exception.getMessage(),request);
+    }
+
     @ExceptionHandler(FeatureDisabledException.class)
     public ResponseEntity<SecurityErrorResponse> handleFeatureDisabled(
             FeatureDisabledException exception, HttpServletRequest request

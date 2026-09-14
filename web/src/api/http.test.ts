@@ -4,6 +4,16 @@ import { apiClient, authSessionStore } from './http';
 const SESSION_KEY = 'lingdong-learning.web.session';
 
 describe('HTTP 认证会话', () => {
+  it('下载保留服务端中文文件名且拒绝路径字符', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('pdf', {
+      headers: { 'Content-Disposition': "attachment; filename*=UTF-8''%E5%A4%8D%E7%9B%98.pdf" }
+    })));
+    expect((await apiClient.getDownload('/report')).fileName).toBe('复盘.pdf');
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('pdf', {
+      headers: { 'Content-Disposition': "attachment; filename*=UTF-8''..%2Fsecret.pdf" }
+    })));
+    expect((await apiClient.getDownload('/report')).fileName).toBeUndefined();
+  });
   afterEach(() => {
     sessionStorage.clear();
     vi.unstubAllGlobals();

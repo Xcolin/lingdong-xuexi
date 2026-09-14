@@ -19,8 +19,9 @@ export interface AttendanceDraft {
 export function attendancePermissions(enabled: boolean, user: Pick<AttendanceUser, 'roleCodes' | 'permissionCodes'> | null, identity: AttendanceIdentity) {
   const read = enabled && !!user && !user.roleCodes.includes('SYS_AUDITOR')
     && user.permissionCodes.includes('ATTENDANCE_READ');
+  const organizationIdentity = user?.roleCodes.some((role) => role === 'ORG_ADMIN' || role === 'TEACHER');
   const readonly = identity === 'parent' || identity === 'student'
-    || !!user?.roleCodes.some((role) => role === 'PARENT' || role === 'STUDENT');
+    || (!organizationIdentity && !!user?.roleCodes.some((role) => role === 'PARENT' || role === 'STUDENT'));
   return { read, record: read && !readonly && !!user?.permissionCodes.includes('ATTENDANCE_RECORD') };
 }
 
@@ -36,8 +37,8 @@ export function attendanceStatusName(status: AttendanceStatus | '' | null): stri
 export function createAttendanceDrafts(roster: AttendanceRosterStudent[]): AttendanceDraft[] {
   return roster.map((student) => ({
     studentId: student.studentId, studentName: student.studentName, selected: false,
-    status: student.record?.status || '', checkinTime: student.record?.checkinTime || '',
-    checkoutTime: student.record?.checkoutTime || '', versionNo: student.record?.versionNo ?? null
+    status: student.record?.status || '', checkinTime: student.record?.checkinTime?.slice(0, 5) || '',
+    checkoutTime: student.record?.checkoutTime?.slice(0, 5) || '', versionNo: student.record?.versionNo ?? null
   }));
 }
 

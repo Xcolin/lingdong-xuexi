@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.growthpoint.infrastructure.persistence.AnonymousRankMapper">
+    <resultMap id="ClassOption" type="com.lingdong.learning.growthpoint.infrastructure.persistence.AnonymousRankMapper$ClassOption">
+        <constructor>
+            <idArg column="class_id" javaType="java.lang.String"/>
+            <arg column="class_name" javaType="java.lang.String"/>
+        </constructor>
+    </resultMap>
+    <select id="classes" resultMap="ClassOption">
+        SELECT DISTINCT classroom.id AS class_id, classroom.organization_name AS class_name
+        FROM edu_student_organization membership
+        JOIN edu_student student ON student.id = membership.student_id AND student.status = 'ENABLED'
+        JOIN sys_organization classroom ON classroom.id = membership.organization_id
+        WHERE membership.student_id = #{studentId}
+          AND membership.relation_type = 'CLASS' AND membership.status = 'ACTIVE'
+          AND classroom.organization_type = 'CLASS'
+          AND classroom.status = 'ENABLED' AND classroom.effective_status = 'ENABLED'
+        ORDER BY classroom.organization_name, classroom.id
+    </select>
+    <resultMap id="RankRow" type="com.lingdong.learning.growthpoint.infrastructure.persistence.AnonymousRankMapper$Row">
+        <constructor>
+            <arg column="rank_no" javaType="java.lang.Long"/>
+            <arg column="points" javaType="java.lang.Long"/>
+        </constructor>
+    </resultMap>
+    <!-- 先限制当前班级和积分来源再排名，不将家庭总积分聚合后隐藏身份。 -->
+    <select id="list" resultMap="RankRow">
+        SELECT RANK() OVER (ORDER BY scores.points DESC) AS rank_no, scores.points
+        FROM (
+            SELECT student.id, COALESCE(SUM(ledger.amount), 0) AS points
+            FROM edu_student student
+            LEFT JOIN growth_point_ledger ledger ON ledger.student_id = student.id
+                AND ledger.source_organization_id = #{classId}
+                AND ledger.source_type IN ('TEACHER', 'ORGANIZATION')
+                AND ledger.change_type IN ('TASK_REWARD', 'CORRECTION')
+            WHERE student.status = 'ENABLED'
+              AND EXISTS (
+                  SELECT 1 FROM edu_student_organization membership
+                  JOIN sys_organization classroom ON classroom.id = membership.organization_id
+                  WHERE membership.student_id = student.id
+                    AND membership.organization_id = #{classId}
+                    AND membership.relation_type = 'CLASS' AND membership.status = 'ACTIVE'
+                    AND classroom.organization_type = 'CLASS'
+                    AND classroom.status = 'ENABLED' AND classroom.effective_status = 'ENABLED'
+              )
+            GROUP BY student.id
+        ) scores
+        ORDER BY points DESC
+    </select>
+</mapper>

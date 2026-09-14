@@ -4,6 +4,7 @@ import { ProCard } from '@ant-design/pro-components';
 import { ClipboardCheck, LogOut, MonitorX, RefreshCw } from 'lucide-react';
 import { authApi, type AccountSecurityEvent, type CurrentUser, type DeviceSession } from '../../api/auth';
 import { ParentAccountLifecyclePanel } from './ParentAccountLifecyclePanel';
+import { DashboardTaskReviews } from './DashboardTaskReviews';
 
 interface DashboardPageProps {
   currentUser: CurrentUser;
@@ -12,9 +13,10 @@ interface DashboardPageProps {
   onSessionEnded: () => void;
   attendanceAvailable?: boolean;
   onOpenAttendance?: () => void;
+  learningTaskManagementEnabled?: boolean;
 }
 
-export function DashboardPage({ currentUser, accountSecurityManagementEnabled, parentAccountLifecycleEnabled = false, attendanceAvailable = false, onOpenAttendance, onSessionEnded }: DashboardPageProps) {
+export function DashboardPage({ currentUser, accountSecurityManagementEnabled, parentAccountLifecycleEnabled = false, attendanceAvailable = false, onOpenAttendance, onSessionEnded, learningTaskManagementEnabled = false }: DashboardPageProps) {
   const [devices, setDevices] = useState<DeviceSession[]>([]);
   const [events, setEvents] = useState<AccountSecurityEvent[]>([]);
   const [loading, setLoading] = useState(false);
@@ -89,6 +91,10 @@ export function DashboardPage({ currentUser, accountSecurityManagementEnabled, p
         {attendanceAvailable && <Button icon={<ClipboardCheck size={16} />} onClick={onOpenAttendance}>考勤台账</Button>}
         {accountSecurityManagementEnabled && <Button icon={<RefreshCw size={16} />} onClick={() => void loadSecurityData()}>刷新</Button>}
       </div>
+      {learningTaskManagementEnabled && !currentUser.roleCodes.includes('SYS_AUDITOR')
+        && currentUser.roleCodes.some(role => ['PARENT', 'TEACHER', 'ORG_ADMIN'].includes(role))
+        && currentUser.permissionCodes.includes('TASK_ASSIGNMENT_REVIEW')
+        && <DashboardTaskReviews key={currentUser.userId} userId={currentUser.userId} />}
       {errorMessage && <Alert type="error" showIcon message={errorMessage} />}
       <ProCard className="content-panel" title="当前身份" bordered={false}>
         <div className="identity-grid">

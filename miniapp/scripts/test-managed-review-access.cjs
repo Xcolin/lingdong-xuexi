@@ -1,0 +1,12 @@
+const assert=require('node:assert/strict'), ts=require('typescript'), fs=require('node:fs');
+const moduleValue={exports:{}};
+new Function('exports','module',ts.transpileModule(fs.readFileSync('src/models/managed-review-access.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText)(moduleValue.exports,moduleValue);
+const {managedAccessAllowed}=moduleValue.exports;
+const user={clientType:'MINIAPP',roleCodes:['TEACHER'],permissionCodes:['TASK_ASSIGNMENT_REVIEW']};
+assert.equal(managedAccessAllowed(user,'teacher',true,true,'TASK_ASSIGNMENT_REVIEW'),true);
+assert.equal(managedAccessAllowed(user,'organization',true,true,'TASK_ASSIGNMENT_REVIEW'),false);
+assert.equal(managedAccessAllowed({...user,roleCodes:['ORG_ADMIN']},'organization',true,true,'TASK_ASSIGNMENT_REVIEW'),true);
+for(const bad of [{...user,clientType:'WEB'},{...user,roleCodes:['TEACHER','SYS_AUDITOR']},{...user,permissionCodes:[]}]) assert.equal(managedAccessAllowed(bad,'teacher',true,true,'TASK_ASSIGNMENT_REVIEW'),false);
+assert.equal(managedAccessAllowed(user,'teacher',false,true,'TASK_ASSIGNMENT_REVIEW'),false);
+assert.equal(managedAccessAllowed(user,'teacher',true,false,'TASK_ASSIGNMENT_REVIEW'),false);
+console.log('教师机构审核：客户端、角色、混合审核员优先拒绝、动态权限及两个功能开关通过');

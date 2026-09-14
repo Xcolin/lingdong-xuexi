@@ -12,6 +12,13 @@ import java.util.List;
 /** 成长复盘逻辑记录及不可变快照的写入边界。 */
 @Mapper
 public interface GrowthReviewMapper {
+    /** 只选择完整位于区间内的当前快照，SQL 同时限定亲子关系并限制返回数量。 */
+    List<GrowthReviewSummaryRow> findExportCandidates(
+            @Param("parentUserId") Long parentUserId, @Param("studentId") Long studentId,
+            @Param("periodType") GrowthReviewPeriodType periodType,
+            @Param("dateFrom") LocalDate dateFrom, @Param("dateTo") LocalDate dateTo,
+            @Param("limit") int limit);
+
     GrowthReviewRow findForUpdate(
             @Param("studentId") Long studentId,
             @Param("periodType") GrowthReviewPeriodType periodType,

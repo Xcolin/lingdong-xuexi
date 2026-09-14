@@ -9,8 +9,13 @@
     </view>
     <view class="content-band">
       <text class="welcome-title">家长端</text>
+      <button v-if="familyTaskEnabled" class="relationship-entry" @tap="openFamilyTasks">家庭任务</button>
+      <button v-if="rewardEnabled" class="relationship-entry" @tap="openRewards">家庭奖励与兑换</button>
+      <button v-if="weeklyEnabled" class="relationship-entry" @tap="openWeekly">孩子成长周报</button>
+      <button v-if="rankEnabled" class="relationship-entry" @tap="openRank(false)">班级匿名排行</button>
+      <button v-if="rankWithdrawalEnabled" class="relationship-entry" @tap="openRank(true)">排行查看授权</button>
       <button v-if="attendanceEnabled" class="relationship-entry" @tap="openAttendance">考勤记录</button>
-      <text class="status-text">暂无待办事项</text>
+      <view v-if="reviewEnabled" class="status-text"><text v-if="reviewLoading">正在加载待审核任务…</text><text v-else-if="reviewError">{{ reviewError }}</text><text v-else>{{ reviewTotal === 0 ? '暂无待审核任务' : `待审核任务：${reviewTotal} 项` }}</text><button class="relationship-entry" @tap="openReviews">查看待审核任务</button></view>
       <button v-if="relationshipEnabled" class="relationship-entry" @tap="openRelationships">家长关系</button>
       <button v-if="accountSecurityEnabled" class="relationship-entry" @tap="openAccountSecurity">账号安全</button>
       <button v-if="accountLifecycleEnabled" class="relationship-entry" @tap="openAccountLifecycle">账号与手机号</button>
@@ -21,9 +26,15 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { onShow } from '@dcloudio/uni-app';
+import { onShow, onHide } from '@dcloudio/uni-app';
 import { getParentAuthContext, getParentState, logoutParent } from '@/api/auth';
 import { getMiniappCapabilities } from '@/api/capability';
+import { rankApi } from '@/api/anonymous-rank';
+import { parentReviewApi } from '@/api/parent-task-review';
+import { canReview } from '@/models/parent-task-reviews';
+import { canReadWeekly } from '@/api/parent-weekly-review';
+import { canManageFamily } from '@/models/family-task-draft';
+import { canUseParentRewards } from '@/api/parent-reward';
 import { useAttendanceEntry } from '@/composables/use-attendance-entry';
 const { attendanceEnabled, openAttendance } = useAttendanceEntry('parent');
 import {
@@ -38,17 +49,37 @@ const relationshipEnabled = ref(false);
 const accountSecurityEnabled = ref(false);
 const accountLifecycleEnabled = ref(false);
 const studentWechatAuthEnabled = ref(false);
+const weeklyEnabled = ref(false);
+const familyTaskEnabled = ref(false);
+const rewardEnabled = ref(false);
+function openRewards() { return uni.navigateTo({ url: '/pages/parent-rewards/parent-rewards' }); }
+function openFamilyTasks() { return uni.navigateTo({ url: '/pages/family-tasks/family-tasks' }); }
+function openWeekly() { return uni.navigateTo({ url: '/pages/parent-weekly-reviews/parent-weekly-reviews' }); }
+const reviewEnabled = ref(false), reviewLoading = ref(false), reviewTotal = ref(0), reviewError = ref('');
+let homeRequest = 0;
+function openReviews() { return uni.navigateTo({ url: '/pages/parent-task-reviews/parent-task-reviews' }); }
+onHide(() => { homeRequest++; reviewEnabled.value = false; weeklyEnabled.value = false; familyTaskEnabled.value = false; rewardEnabled.value = false; });
+const rankEnabled = ref(false), rankWithdrawalEnabled = ref(false);
+function openRank(withdraw: boolean) {
+  return uni.navigateTo({ url: `/pages/anonymous-ranks/anonymous-ranks${withdraw ? '?withdraw=true' : ''}` });
+}
 
 onShow(async () => {
+  const request = ++homeRequest; reviewEnabled.value = false; reviewError.value = ''; reviewTotal.value = 0;
+  weeklyEnabled.value = false;
+  familyTaskEnabled.value = false;
+  rewardEnabled.value = false;
+  rankEnabled.value = false; rankWithdrawalEnabled.value = false;
   session.value = getParentSession();
   if (!session.value) {
     await uni.reLaunch({ url: '/pages/index/index' });
     return;
   }
   try {
-    const [context, state, capabilities] = await Promise.all([
-      getParentAuthContext(), getParentState(session.value.accessToken), getMiniappCapabilities()
+    const [context, state, capabilities, user] = await Promise.all([
+      getParentAuthContext(), getParentState(session.value.accessToken), getMiniappCapabilities(), rankApi.me(session.value.accessToken)
     ]);
+    if (request !== homeRequest) return;
     if (!context.enabled) {
       clearParentSession();
       await uni.reLaunch({ url: '/pages/index/index' });
@@ -62,7 +93,21 @@ onShow(async () => {
     accountSecurityEnabled.value = capabilities.accountSecurityManagementEnabled;
     accountLifecycleEnabled.value = capabilities.parentAccountLifecycleEnabled;
     studentWechatAuthEnabled.value = capabilities.studentWechatAuthEnabled === true;
+    rankWithdrawalEnabled.value = user.clientType === 'MINIAPP' && user.roleCodes.includes('PARENT') && !user.roleCodes.includes('SYS_AUDITOR');
+    rankEnabled.value = rankWithdrawalEnabled.value && capabilities.anonymousClassRankEnabled === true
+      && user.permissionCodes.includes('MINIAPP_ANONYMOUS_CLASS_RANK_READ');
+    reviewEnabled.value = canReview(user, capabilities.learningTaskManagementEnabled);
+    weeklyEnabled.value = canReadWeekly(user);
+    familyTaskEnabled.value = capabilities.learningTaskManagementEnabled && canManageFamily(user, 'LEARNING_TASK_READ_MANAGED');
+    rewardEnabled.value = capabilities.rewardExchangeEnabled && canUseParentRewards(user);
+    if (reviewEnabled.value) {
+      reviewLoading.value = true;
+      try { const result = await parentReviewApi.list(session.value.accessToken); if (request === homeRequest) reviewTotal.value = result.total; }
+      catch { if (request === homeRequest) reviewError.value = '待审核任务加载失败，请进入列表重试'; }
+      finally { if (request === homeRequest) reviewLoading.value = false; }
+    }
   } catch {
+    if (request !== homeRequest) return;
     clearParentSession();
     await uni.reLaunch({ url: '/pages/index/index' });
   }

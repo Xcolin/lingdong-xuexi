@@ -221,6 +221,7 @@
           + (SELECT COUNT(*) FROM auth_student_account_cancellation WHERE organization_id = #{id})
           + (SELECT COUNT(*) FROM edu_exception_report WHERE class_organization_id = #{id})
           + (SELECT COUNT(*) FROM attendance_record WHERE class_organization_id = #{id})
+          + (SELECT COUNT(*) FROM growth_rank_preference WHERE class_organization_id = #{id})
           AS reference_count
     </select>
 

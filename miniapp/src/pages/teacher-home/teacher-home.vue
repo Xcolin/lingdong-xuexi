@@ -7,6 +7,12 @@
       </view>
       <button class="logout-button" :disabled="loggingOut" @tap="logout">退出</button>
     </view>
+      <view v-if="reviewEnabled || reviewLoading || reviewError" class="review-summary">
+        <text v-if="reviewLoading">正在加载待审核任务…</text>
+        <template v-else-if="reviewError"><text>{{ reviewError }}</text><button @tap="refreshReviews">重试待审核查询</button></template>
+        <text v-else>{{ reviewTotal === 0 ? '暂无待审核任务' : `待审核任务：${reviewTotal} 项` }}</text>
+        <button v-if="reviewEnabled && !reviewLoading" @tap="openReviews">查看待审核任务</button>
+      </view>
     <view v-if="loading" class="state-text">正在加载</view>
     <template v-else>
       <view class="section-band">
@@ -26,6 +32,8 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import { useManagedReviewSummary } from '@/composables/use-managed-review-summary';
+const { reviewEnabled, reviewLoading, reviewTotal, reviewError, refreshReviews, openReviews } = useManagedReviewSummary('teacher');
 import { onShow } from '@dcloudio/uni-app';
 import { logoutOrganization } from '@/api/auth';
 import { getMiniappCapabilities } from '@/api/capability';
@@ -104,4 +112,5 @@ async function leave(): Promise<void> {
 .class-name { color: #1c2b28; font-size: 28rpx; }
 .workbench-button, .security-button { width: calc(100% - 80rpx); height: 88rpx; margin: 32rpx 40rpx 0; border-radius: 8rpx; background: #167c5a; color: #fff; font-size: 29rpx; }
 .security-button { border: 2rpx solid #167c5a; background: #fff; color: #167c5a; }
+.review-summary { margin: 28rpx 40rpx; padding: 24rpx; background: #fff; border-radius: 12rpx; color: #40514c; font-size: 28rpx; }.review-summary button { margin-top: 20rpx; font-size: 28rpx; }
 </style>

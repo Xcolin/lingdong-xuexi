@@ -14,8 +14,8 @@ export interface ExceptionReportAction { id: string; actionType: string; operato
 export interface ExceptionReportDetails { report: ExceptionReport; actions: ExceptionReportAction[]; }
 export interface ExceptionReportStudentOption { studentId: string; studentName: string; studentAccountMasked: string; }
 
-export function listExceptionReports(token: string): Promise<ExceptionReportPage> {
-  return authenticated(token, '/exception-reports?page=1&pageSize=100');
+export function listExceptionReports(token: string, page=1, pageSize=20, status?:ExceptionReportStatus): Promise<ExceptionReportPage> {
+  return authenticated(token, `/exception-reports?page=${page}&pageSize=${pageSize}${status?`&status=${status}`:''}`);
 }
 export function listExceptionReportStudents(token: string, classId: string): Promise<ExceptionReportStudentOption[]> {
   return authenticated(token, `/exception-reports/student-options?classOrganizationId=${encodeURIComponent(classId)}`);

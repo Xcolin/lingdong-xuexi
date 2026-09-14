@@ -26,11 +26,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @ActiveProfiles("test")
+@Transactional
 class FeatureToggleChangeServiceTest {
     @Autowired private FeatureToggleChangeService featureToggleChangeService;
     @Autowired private FeatureAccessService featureAccessService;
@@ -51,15 +53,15 @@ class FeatureToggleChangeServiceTest {
         User auditor = createUserWithRole("feature_auditor", "开关审核员", "SYS_AUDITOR");
 
         FeatureToggleChange change = featureToggleChangeService.createDraft(new CreateGlobalFeatureToggleChangeCommand(
-                administrator.id(), "GEO_ATTENDANCE", FeatureStatus.ENABLED, "启用地理考勤", "完成合规审核后启用"
+                administrator.id(), "STUDENT_CODE_LOGIN", FeatureStatus.DISABLED, "停用学生登录", "验证审批后生效"
         ));
         assertThat(Long.toString(change.id())).hasSize(19);
         featureToggleChangeService.submit(change.taskId(), administrator.id());
-        assertThat(featureAccessService.isEnabled("GEO_ATTENDANCE", null)).isFalse();
+        assertThat(featureAccessService.isEnabled("STUDENT_CODE_LOGIN", null)).isTrue();
 
-        featureToggleChangeService.approveAndApply(change.taskId(), auditor.id(), "同意启用");
+        featureToggleChangeService.approveAndApply(change.taskId(), auditor.id(), "同意停用");
 
-        assertThat(featureAccessService.isEnabled("GEO_ATTENDANCE", null)).isTrue();
+        assertThat(featureAccessService.isEnabled("STUDENT_CODE_LOGIN", null)).isFalse();
     }
 
     @Test

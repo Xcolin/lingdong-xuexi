@@ -1,0 +1,14 @@
+const assert=require('node:assert/strict');
+const fs=require('node:fs'),ts=require('typescript'),vm=require('node:vm');
+const source=fs.readFileSync('src/api/parent-reward.ts','utf8');
+const moduleResult={exports:{}};
+vm.runInNewContext(ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText,{exports:moduleResult.exports,require:()=>({request:()=>{throw new Error('模型验证不得发请求');}})});
+const {canUseParentRewards,MANAGE_REWARDS,REVIEW_EXCHANGES}=moduleResult.exports;
+const parent={clientType:'MINIAPP',roleCodes:['PARENT'],permissionCodes:[MANAGE_REWARDS]};
+assert.equal(canUseParentRewards(parent),true);
+assert.equal(canUseParentRewards(parent,REVIEW_EXCHANGES),false);
+assert.equal(canUseParentRewards({...parent,clientType:'WEB'}),false);
+assert.equal(canUseParentRewards({...parent,roleCodes:['PARENT','SYS_AUDITOR']}),false);
+assert.equal(canUseParentRewards({...parent,permissionCodes:['REWARD_MANAGE_CHILD']}),false);
+assert.equal(canUseParentRewards({...parent,permissionCodes:[REVIEW_EXCHANGES]}),true);
+console.log('家长奖励：独立客户端权限、操作权限与混合审核员拒绝通过');

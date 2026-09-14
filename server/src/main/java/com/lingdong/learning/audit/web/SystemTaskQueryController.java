@@ -1,0 +1,33 @@
+package com.lingdong.learning.audit.web;
+
+import com.lingdong.learning.audit.application.*;
+import com.lingdong.learning.auth.application.AuthenticatedUser;
+import com.lingdong.learning.common.security.RequirePermission;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+import java.time.LocalDateTime;
+import java.util.List;
+
+/** 系统任务只读入口，响应显式序列化标识且不包含领域私密载荷。 */
+@RestController @RequestMapping("/api/v1/system-tasks")
+public class SystemTaskQueryController {
+    private final SystemTaskQueryService service;
+    public SystemTaskQueryController(SystemTaskQueryService service){this.service=service;}
+    @GetMapping @RequirePermission("SYSTEM_TASK_READ")
+    public Page list(@AuthenticationPrincipal AuthenticatedUser user,
+            @RequestParam(required=false)SystemTaskStatus status,
+            @RequestParam(defaultValue="1")int page,@RequestParam(defaultValue="20")int pageSize){
+        var result=service.findPage(user,status,page,pageSize);
+        return new Page(result.items().stream().map(Response::from).toList(),result.page(),result.pageSize(),result.total());
+    }
+    @GetMapping("/{id}") @RequirePermission("SYSTEM_TASK_READ")
+    public Response detail(@AuthenticationPrincipal AuthenticatedUser user,@PathVariable Long id){return Response.from(service.findDetails(user,id));}
+    public record Page(List<Response> items,int page,int pageSize,long total) { }
+    public record Response(String id,String code,SystemTaskType type,String title,String description,
+            ImpactScope impactScope,SystemTaskStatus status,String submittedBy,LocalDateTime submittedAt,
+            String reviewedBy,LocalDateTime reviewedAt,String reviewComment,LocalDateTime createdAt,LocalDateTime updatedAt){
+        static Response from(SystemTask task){return new Response(task.id().toString(),task.code(),task.type(),task.title(),task.description(),
+                task.impactScope(),task.status(),task.submittedBy().toString(),task.submittedAt(),
+                task.reviewedBy()==null?null:task.reviewedBy().toString(),task.reviewedAt(),task.reviewComment(),task.createdAt(),task.updatedAt());}
+    }
+}

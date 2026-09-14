@@ -1,0 +1,102 @@
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { beforeEach, expect, it, vi } from 'vitest';
+import { authApi, type CurrentUser } from '../../api/auth';
+import { capabilityApi, type ClientCapabilities } from '../../api/capability';
+import { featureManagementApi } from '../../api/feature-management';
+import { FeatureManagementPage } from './FeatureManagementPage';
+import { ApiRequestError } from '../../api/http';
+vi.mock('../../api/auth', () => ({ authApi: { currentUser: vi.fn() } }));
+vi.mock('../../api/capability', () => ({ capabilityApi: { web: vi.fn() } }));
+vi.mock('../../api/feature-management', () => ({ featureManagementApi: { toggles: vi.fn(), changes: vi.fn(), reviewQueue: vi.fn(), submit: vi.fn(), approve: vi.fn(), reject: vi.fn() } }));
+const user: CurrentUser = { userId: '1', sessionId: 's', username: 'admin', displayName: '管理员', clientType: 'WEB', roleCodes: ['SYS_ADMIN'], permissionCodes: ['FEATURE_TOGGLE_READ', 'FEATURE_TOGGLE_MANAGE', 'FEATURE_TOGGLE_REVIEW'] };
+const caps = { client: 'WEB' } as ClientCapabilities;
+const toggle = { id: '9', featureCode: 'LEARNING_TASK', featureName: '学习任务', status: 'DISABLED' as const, versionNo: '9007199254740993', description: '学习功能', enableAllowed: true };
+const change = { id: '8', taskId: '7', featureCode: toggle.featureCode, featureName: toggle.featureName, beforeStatus: 'DISABLED' as const, targetStatus: 'ENABLED' as const, currentStatus: 'DISABLED' as const, baseVersion: '1', currentVersion: '1', taskStatus: 'PENDING_REVIEW' as const, title: '开启学习', description: '申请原因', submittedBy: '2', submittedAt: null, reviewedBy: null, reviewedAt: null, reviewComment: null, createdAt: null, enableAllowed: true };
+beforeEach(() => {
+  vi.resetAllMocks();
+  vi.mocked(authApi.currentUser).mockResolvedValue(user);
+  vi.mocked(capabilityApi.web).mockResolvedValue(caps);
+  vi.mocked(featureManagementApi.toggles).mockResolvedValue([toggle]);
+  vi.mocked(featureManagementApi.changes).mockResolvedValue({ items: [change], total: 41, page: 1, pageSize: 20 });
+  vi.mocked(featureManagementApi.reviewQueue).mockResolvedValue({ items: [change], total: 1, page: 1, pageSize: 20 });
+  vi.mocked(featureManagementApi.submit).mockResolvedValue(change);
+  vi.mocked(featureManagementApi.approve).mockResolvedValue({ ...change, taskStatus: 'EFFECTIVE' });
+});
+it('管理员提交要求说明和二次确认并保留字符串版本', async () => {
+  render(<FeatureManagementPage currentUser={user} />);
+  fireEvent.click(await screen.findByRole('button', { name: '申请启用' }));
+  fireEvent.click(screen.getByRole('button', { name: '下一步' }));
+  expect(await screen.findByText('请填写申请说明')).toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText('申请说明'), { target: { value: '业务需要' } });
+  fireEvent.click(screen.getByRole('button', { name: '下一步' }));
+  expect(featureManagementApi.submit).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button', { name: '确认提交' }));
+  await waitFor(() => expect(featureManagementApi.submit).toHaveBeenCalledWith(expect.objectContaining({ expectedVersion: toggle.versionNo, description: '业务需要', confirmed: true, targetStatus: 'ENABLED' })));
+});
+it('审核员混合角色只审批，成功刷新全局能力', async () => {
+  const auditor = { ...user, roleCodes: ['SYS_ADMIN', 'SYS_AUDITOR'] };
+  vi.mocked(authApi.currentUser).mockResolvedValue(auditor);
+  const callback = vi.fn();
+  render(<FeatureManagementPage currentUser={auditor} onAccessChange={callback} />);
+  fireEvent.click(await screen.findByRole('button', { name: '批准' }));
+  expect(screen.queryByRole('button', { name: '申请启用' })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: '确认批准' }));
+  await waitFor(() => expect(featureManagementApi.approve).toHaveBeenCalledWith('7', { comment: '' }));
+  await waitFor(() => expect(callback.mock.calls.length).toBeGreaterThan(1));
+});
+it('焦点复核撤权清空列表和申请弹窗', async () => {
+  render(<FeatureManagementPage currentUser={user} />);
+  fireEvent.click(await screen.findByRole('button', { name: '申请启用' }));
+  vi.mocked(authApi.currentUser).mockResolvedValue({ ...user, permissionCodes: [] });
+  fireEvent.focus(window);
+  await screen.findByText('当前会话无功能开关读取权限');
+  expect(screen.queryByLabelText('申请说明')).not.toBeInTheDocument();
+  expect(screen.queryByText('开启学习')).not.toBeInTheDocument();
+});
+it('定位功能禁止启用且申请历史使用服务端分页', async () => {
+  vi.mocked(featureManagementApi.toggles).mockResolvedValue([{ ...toggle, featureCode: 'GEO_ATTENDANCE', enableAllowed: false }]);
+  render(<FeatureManagementPage currentUser={user} />);
+  expect(await screen.findByRole('button', { name: '申请启用' })).toBeDisabled();
+  fireEvent.click(screen.getByTitle('2'));
+  await waitFor(() => expect(featureManagementApi.changes).toHaveBeenLastCalledWith({ page: 2, pageSize: 20 }));
+});
+it('未知历史前值禁止批准但允许驳回', async () => {
+  vi.mocked(authApi.currentUser).mockResolvedValue({ ...user, roleCodes: ['SYS_AUDITOR'] });
+  vi.mocked(featureManagementApi.reviewQueue).mockResolvedValue({ items: [{ ...change, beforeStatus: null, baseVersion: null } as unknown as typeof change], total: 1, page: 1, pageSize: 20 });
+  render(<FeatureManagementPage currentUser={user} />);
+  expect(await screen.findByRole('button', { name: '批准' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: '驳回' })).toBeEnabled();
+  expect(screen.getByText('未知')).toBeInTheDocument();
+});
+it('撤权后丢弃在途旧列表响应', async () => {
+  let resolve!: (value: typeof toggle[]) => void;
+  vi.mocked(featureManagementApi.toggles).mockReturnValueOnce(new Promise(done => { resolve = done; }));
+  render(<FeatureManagementPage currentUser={user} />);
+  await waitFor(() => expect(featureManagementApi.toggles).toHaveBeenCalled());
+  vi.mocked(authApi.currentUser).mockResolvedValue({ ...user, permissionCodes: [] });
+  fireEvent.focus(window);
+  await screen.findByText('当前会话无功能开关读取权限');
+  resolve([toggle]);
+  await waitFor(() => expect(screen.queryByRole('button', { name: '申请启用' })).not.toBeInTheDocument());
+});
+it('提交前重新检查管理权限，拒绝已撤权申请', async () => {
+  render(<FeatureManagementPage currentUser={user} />);
+  fireEvent.click(await screen.findByRole('button', { name: '申请启用' }));
+  fireEvent.change(screen.getByLabelText('申请说明'), { target: { value: '原因' } });
+  fireEvent.click(screen.getByRole('button', { name: '下一步' }));
+  vi.mocked(authApi.currentUser).mockResolvedValue({ ...user, permissionCodes: ['FEATURE_TOGGLE_READ'] });
+  fireEvent.click(screen.getByRole('button', { name: '确认提交' }));
+  await screen.findByText('当前会话无功能开关管理权限');
+  expect(featureManagementApi.submit).not.toHaveBeenCalled();
+});
+it('版本冲突刷新状态并提示重新申请', async () => {
+  vi.mocked(featureManagementApi.submit).mockRejectedValueOnce(new ApiRequestError(409, 'FEATURE_TOGGLE_CONFLICT', '版本冲突'));
+  render(<FeatureManagementPage currentUser={user} />);
+  fireEvent.click(await screen.findByRole('button', { name: '申请启用' }));
+  fireEvent.change(screen.getByLabelText('申请说明'), { target: { value: '原因' } });
+  fireEvent.click(screen.getByRole('button', { name: '下一步' }));
+  fireEvent.click(screen.getByRole('button', { name: '确认提交' }));
+  await screen.findByText('开关版本已变化，已刷新当前状态，请重新发起申请。');
+  expect(featureManagementApi.toggles).toHaveBeenCalledTimes(2);
+  expect(screen.queryByRole('button', { name: '确认提交' })).not.toBeInTheDocument();
+});

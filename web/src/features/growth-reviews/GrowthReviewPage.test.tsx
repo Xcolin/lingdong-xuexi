@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App as AntdApp } from 'antd';
 import { GrowthReviewPage } from './GrowthReviewPage';
@@ -72,5 +72,66 @@ describe('家长成长复盘页面', () => {
     await waitFor(() => {
       expect(growthReviewApi.list).toHaveBeenLastCalledWith(review.studentId, 'MONTH', 1, 20);
     });
+  });
+
+  it.each(['WEEK', 'MONTH'] as const)('%s模板切换仅改变呈现，不改变快照或请求', async (periodType) => {
+    const user = userEvent.setup();
+    const detail = await growthReviewApi.detail();
+    growthReviewApi.detail.mockClear();
+    growthReviewApi.detail.mockResolvedValue({ ...detail, periodType });
+    render(<AntdApp><GrowthReviewPage /></AntdApp>);
+    await screen.findByText('今天阅读更专注', {}, { timeout: 5000 });
+    const calls = growthReviewApi.detail.mock.calls.length;
+    const listCalls = growthReviewApi.list.mock.calls.length;
+
+    await user.click(screen.getByText('简洁版'));
+    expect(screen.getByText('33.33%')).toBeInTheDocument();
+    expect(screen.queryByText('任务分类')).not.toBeInTheDocument();
+    expect(screen.queryByText('今天阅读更专注')).not.toBeInTheDocument();
+    expect(screen.queryByText('成长分析')).not.toBeInTheDocument();
+
+    await user.click(screen.getByText('详细版'));
+    expect(screen.getByText('今天阅读更专注')).toBeInTheDocument();
+    expect(screen.getByText('成长分析')).toBeInTheDocument();
+    expect(screen.getByText('暂无已补录的下一步计划')).toBeInTheDocument();
+    expect(growthReviewApi.detail).toHaveBeenCalledTimes(calls);
+    expect(growthReviewApi.list).toHaveBeenCalledTimes(listCalls);
+  });
+
+  it('日报保持完整内容，不提供周月模板控件', async () => {
+    render(<AntdApp><GrowthReviewPage /></AntdApp>);
+    await screen.findByText('今天阅读更专注', {}, { timeout: 5000 });
+    expect(screen.queryByText('简洁版')).not.toBeInTheDocument();
+    expect(screen.getByText('任务分类')).toBeInTheDocument();
+  });
+
+  it('切换周期后旧列表迟到不得覆盖当前报告或触发旧详情', async () => {
+    const user = userEvent.setup();
+    let resolveOld!: (value: unknown) => void;
+    growthReviewApi.list.mockImplementation((_student: string, period: string) => period === 'DAY'
+      ? new Promise(resolve => { resolveOld = resolve; })
+      : Promise.resolve({ items: [review] }));
+    render(<AntdApp><GrowthReviewPage /></AntdApp>);
+    await waitFor(() => expect(growthReviewApi.list).toHaveBeenCalled());
+    await user.click(screen.getByText('月报'));
+    await screen.findByText('今天阅读更专注');
+    const calls = growthReviewApi.detail.mock.calls.length;
+    await act(async () => { resolveOld({ items: [] }); });
+    expect(screen.getByText('今天阅读更专注')).toBeInTheDocument();
+    expect(growthReviewApi.detail).toHaveBeenCalledTimes(calls);
+  });
+
+  it('旧详情迟到不得恢复已切换周期的内容', async () => {
+    const user = userEvent.setup();
+    const oldDetail = await growthReviewApi.detail();
+    let resolveOld!: (value: unknown) => void;
+    growthReviewApi.detail.mockImplementationOnce(() => new Promise(resolve => { resolveOld = resolve; }));
+    render(<AntdApp><GrowthReviewPage /></AntdApp>);
+    await waitFor(() => expect(resolveOld).toBeDefined());
+    growthReviewApi.list.mockResolvedValue({ items: [] });
+    await user.click(screen.getByText('月报'));
+    await waitFor(() => expect(growthReviewApi.list).toHaveBeenLastCalledWith(review.studentId, 'MONTH', 1, 20));
+    await act(async () => { resolveOld(oldDetail); });
+    expect(screen.queryByText('今天阅读更专注')).not.toBeInTheDocument();
   });
 });

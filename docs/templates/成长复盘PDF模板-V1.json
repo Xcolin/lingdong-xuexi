@@ -1,0 +1,5 @@
+{
+  "schemaVersion": 1,
+  "reportType": "GROWTH_REVIEW",
+  "templates": ["SIMPLE", "DETAILED"]
+}

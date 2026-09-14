@@ -177,7 +177,8 @@ public class LearningTaskOptionService {
     }
 
     private void requireRole(AuthenticatedUser currentUser, String roleCode, String message) {
-        if (currentUser == null || !currentUser.roleCodes().contains(roleCode)) {
+        if (currentUser == null || currentUser.roleCodes().contains("SYS_AUDITOR")
+                || !currentUser.roleCodes().contains(roleCode)) {
             throw new SystemOperationAccessDeniedException(message);
         }
     }

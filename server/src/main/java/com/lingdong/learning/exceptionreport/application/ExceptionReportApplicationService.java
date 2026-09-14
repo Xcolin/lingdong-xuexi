@@ -119,7 +119,7 @@ public class ExceptionReportApplicationService {
     @Transactional(readOnly = true)
     public List<ExceptionReportClassOption> findClassOptions(AuthenticatedUser user) {
         featureAccessService.requireEnabled(FEATURE_CODE, null);
-        if (user == null) throw denied();
+        if (user == null || user.roleCodes().contains("SYS_AUDITOR")) throw denied();
         if (user.roleCodes().contains("TEACHER") && !user.roleCodes().contains("ORG_ADMIN")) {
             return mapper.findTeacherClassOptions(user.userId());
         }
@@ -142,7 +142,7 @@ public class ExceptionReportApplicationService {
     private ExceptionReportQuery query(AuthenticatedUser user, Long classId, Long studentId,
             com.lingdong.learning.exceptionreport.domain.ExceptionReportType type,
             ExceptionReportStatus status, int limit, int offset) {
-        if (user == null) throw denied();
+        if (user == null || user.roleCodes().contains("SYS_AUDITOR")) throw denied();
         boolean teacher = user.roleCodes().contains("TEACHER") && !user.roleCodes().contains("ORG_ADMIN");
         if (teacher) return new ExceptionReportQuery(user.userId(), true, false, List.of(), classId, studentId, type, status, limit, offset);
         if (!user.roleCodes().contains("ORG_ADMIN")) throw denied();
@@ -150,7 +150,7 @@ public class ExceptionReportApplicationService {
         if (!scope.allOrganizations() && scope.rootPaths().isEmpty()) throw denied();
         return new ExceptionReportQuery(user.userId(), false, scope.allOrganizations(), scope.rootPaths(), classId, studentId, type, status, limit, offset);
     }
-    private void requireRole(AuthenticatedUser user, String role) { if (user == null || !user.roleCodes().contains(role)) throw denied(); }
+    private void requireRole(AuthenticatedUser user, String role) { if (user == null || user.roleCodes().contains("SYS_AUDITOR") || !user.roleCodes().contains(role)) throw denied(); }
     private SystemOperationAccessDeniedException denied() { return new SystemOperationAccessDeniedException("当前身份不能访问异常报备"); }
     private String requireText(String value, int min, int max, String name) {
         String text = value == null ? "" : value.trim();

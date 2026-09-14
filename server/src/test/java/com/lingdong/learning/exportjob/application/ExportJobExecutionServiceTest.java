@@ -76,6 +76,7 @@ class ExportJobExecutionServiceTest {
     private ExportJobFailureService failureService;
     private ObjectMapper objectMapper;
     private ExportJobExecutionService service;
+    private GrowthReviewPdfArtifactService pdfArtifacts;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -91,6 +92,7 @@ class ExportJobExecutionServiceTest {
         jobMapper = mock(ExportJobMapper.class);
         completionService = mock(ExportJobCompletionService.class);
         failureService = mock(ExportJobFailureService.class);
+        pdfArtifacts = mock(GrowthReviewPdfArtifactService.class);
         objectMapper = JsonMapper.builder().findAndAddModules().build();
         ExportJobProperties properties = new ExportJobProperties();
         properties.setQueryPageSize(2);
@@ -99,7 +101,7 @@ class ExportJobExecutionServiceTest {
         service = new ExportJobExecutionService(
                 accessService, registry, templateMapper, contentService, parser, writer,
                 fileService, managedFileMapper, jobMapper, completionService, failureService,
-                objectMapper, properties);
+                objectMapper, properties, pdfArtifacts);
 
         when(registry.require(ExportJobType.GROWTH_POINT_LEDGER)).thenReturn(adapter);
         when(templateMapper.findById(TEMPLATE_ID)).thenReturn(template());
@@ -150,6 +152,67 @@ class ExportJobExecutionServiceTest {
         verify(fileService).attachToBusiness(any());
         verify(completionService).complete(job, 2L, RESULT_FILE_ID, 1L, 1L);
         verify(failureService, never()).fail(anyLong(), anyLong(), any(), any());
+    }
+
+    @Test
+    void storesPdfThroughUnifiedAttachmentAndCompletesWithoutXlsxParser() throws Exception {
+        var job = pdfJob();
+        when(pdfArtifacts.generate(job)).thenReturn(new GrowthReviewPdfArtifactService.Artifact("复盘.pdf", "application/pdf", new byte[]{1, 2}, 1));
+        when(contentService.store(eq(REQUESTER_ID), eq("EXPORT_JOB"), eq("REPORT_EXPORT"), eq("复盘.pdf"), eq("application/pdf"), any()))
+                .thenReturn(resultFile());
+        assertThat(service.execute(job)).isTrue();
+        verify(completionService).complete(job, 1L, RESULT_FILE_ID, 1L, 1L);
+        verify(fileService).attachToBusiness(any());
+        verify(parser, never()).parse(any(), any(), any());
+        verify(accessService, never()).requireExecution(job);
+        verify(pdfArtifacts, org.mockito.Mockito.times(2)).requireExecution(job);
+    }
+
+    @Test
+    void compensatesPdfWhenPostSavePermissionIsRevoked() throws Exception {
+        var job = pdfJob();
+        when(pdfArtifacts.generate(job)).thenReturn(new GrowthReviewPdfArtifactService.Artifact("复盘.zip", "application/zip", new byte[]{1}, 2));
+        when(contentService.store(eq(REQUESTER_ID), eq("EXPORT_JOB"), eq("REPORT_EXPORT"), eq("复盘.zip"), any(), any())).thenReturn(resultFile());
+        org.mockito.Mockito.doNothing().doThrow(new IllegalStateException("已撤权")).when(pdfArtifacts).requireExecution(job);
+        when(managedFileMapper.markRetired(RESULT_FILE_ID)).thenReturn(1);
+        assertThat(service.execute(job)).isFalse();
+        verify(fileService).releaseBusinessRelation(1874244142494646986L);
+        verify(managedFileMapper).markRetired(RESULT_FILE_ID);
+        verify(contentService).discardContent("attachment/export-result");
+        verify(completionService, never()).complete(any(), anyLong(), any(), anyLong(), anyLong());
+        verify(failureService).fail(JOB_ID, 1L, "EXPORT_GENERATION_FAILED", "导出文件生成失败");
+    }
+
+    @Test
+    void compensatesPdfWhenCompletionFails() throws Exception {
+        var job = pdfJob();
+        when(pdfArtifacts.generate(job)).thenReturn(new GrowthReviewPdfArtifactService.Artifact("复盘.pdf", "application/pdf", new byte[]{1}, 1));
+        when(contentService.store(eq(REQUESTER_ID), eq("EXPORT_JOB"), eq("REPORT_EXPORT"), eq("复盘.pdf"), any(), any())).thenReturn(resultFile());
+        doThrow(new IllegalStateException("终态冲突")).when(completionService).complete(job, 1L, RESULT_FILE_ID, 1L, 1L);
+        when(managedFileMapper.markRetired(RESULT_FILE_ID)).thenReturn(1);
+        assertThat(service.execute(job)).isFalse();
+        verify(fileService).releaseBusinessRelation(1874244142494646986L);
+        verify(contentService).discardContent("attachment/export-result");
+    }
+
+    @Test
+    void refusesPdfBeforeGenerationWhenAccessIsRevoked() throws Exception {
+        var job = pdfJob();
+        doThrow(new IllegalStateException("已停用")).when(pdfArtifacts).requireExecution(job);
+        assertThat(service.execute(job)).isFalse();
+        verify(pdfArtifacts, never()).generate(any());
+        verify(failureService).fail(JOB_ID, 1L, "EXPORT_ACCESS_REVOKED", "当前导出权限或范围已失效");
+    }
+
+    private ExportJobRecord pdfJob() {
+        var job = mock(ExportJobRecord.class);
+        when(job.id()).thenReturn(JOB_ID);
+        when(job.requesterId()).thenReturn(REQUESTER_ID);
+        when(job.studentId()).thenReturn(STUDENT_ID);
+        when(job.status()).thenReturn(ExportJobStatus.EXPORTING);
+        when(job.versionNo()).thenReturn(1L);
+        when(job.exportType()).thenReturn(ExportJobType.GROWTH_REVIEW_PDF);
+        return job;
     }
 
     @Test

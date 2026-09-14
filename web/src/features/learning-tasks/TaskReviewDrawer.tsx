@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Alert, Button, Descriptions, Drawer, Image, Input, Modal, Select, Space, Spin, message } from 'antd';
 import { CircleCheckBig, RotateCcw, UserRoundCheck } from 'lucide-react';
 import { taskReviewApi } from './reviewApi';
+import { ApiRequestError } from '../../api/http';
 import type { ReviewerOption, TaskReview } from './types';
 
 interface TaskReviewDrawerProps {
@@ -26,8 +27,12 @@ export function TaskReviewDrawer({
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [reload, setReload] = useState(0);
 
   useEffect(() => {
+    let active = true;
+    setReview(null);
+    setReviewerOptions([]);
     if (!open || !assignmentId) return;
     setLoading(true);
     setErrorMessage(null);
@@ -38,16 +43,19 @@ export function TaskReviewDrawer({
       taskReviewApi.findById(assignmentId),
       taskReviewApi.listReviewerOptions(assignmentId)
     ]).then(([details, options]) => {
+      if (!active) return;
       setReview(details);
       setReviewerOptions(options);
     }).catch((error: unknown) => {
+      if (!active) return;
       setErrorMessage(toMessage(error));
-    }).finally(() => setLoading(false));
-  }, [open, assignmentId]);
+    }).finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [open, assignmentId, reload]);
 
   function confirmReject(): void {
     const comment = reviewComment.trim();
-    if (!assignmentId || !comment) {
+    if (!assignmentId || !review || !comment) {
       message.warning('请填写驳回意见');
       return;
     }
@@ -58,7 +66,7 @@ export function TaskReviewDrawer({
       cancelText: '取消',
       okButtonProps: { danger: true },
       onOk: () => submitChange(async () => {
-        await taskReviewApi.reject(assignmentId, comment);
+        await taskReviewApi.reject(assignmentId, comment, review.latestCheckIn.id);
         message.success('已驳回本次打卡');
       })
     });
@@ -72,7 +80,7 @@ export function TaskReviewDrawer({
       okText: '确认通过',
       cancelText: '取消',
       onOk: () => submitChange(async () => {
-        const result = await taskReviewApi.approve(assignmentId);
+        const result = await taskReviewApi.approve(assignmentId, review.latestCheckIn.id);
         message.success(`审核通过，已发放 ${result.awardedPoints} 积分`);
       })
     });
@@ -98,6 +106,10 @@ export function TaskReviewDrawer({
       await onChanged();
       onClose();
     } catch (error) {
+      if (error instanceof ApiRequestError && [401, 403, 404, 409].includes(error.status)) {
+        setReview(null);
+        setReviewerOptions([]);
+      }
       setErrorMessage(toMessage(error));
       throw error;
     } finally {
@@ -114,7 +126,8 @@ export function TaskReviewDrawer({
       loading={loading}
       onClose={submitting ? undefined : onClose}
     >
-      {errorMessage && <Alert type="error" showIcon message={errorMessage} />}
+      {errorMessage && <Alert type="error" showIcon message={errorMessage}
+        action={<Button disabled={submitting} onClick={() => setReload(value => value + 1)}>刷新详情</Button>} />}
       {review && (
         <div className="review-drawer-content">
           <Descriptions column={1} size="small" bordered>

@@ -473,6 +473,115 @@ class RewardExchangeControllerTest {
                 Long.class, exchangeId)).isEqualTo(1L);
     }
 
+    @Test
+    void miniappParentManagesRewardsThroughIndependentPermission() throws Exception {
+        Fixture fixture = createFixture();
+        setPointBalance(fixture.student().id(), 100, 100);
+        makeMiniappRewardParent("reward_parent");
+        String token = fixture.parentToken();
+        mockMvc.perform(get("/api/v1/auth/me").header("Authorization", bearer(token)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.clientType").value("MINIAPP"));
+        mockMvc.perform(get("/api/v1/parent-rewards/students").header("Authorization", bearer(token)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$[0].studentId").value(fixture.student().id().toString()));
+        Long id = responseId(mockMvc.perform(post("/api/v1/parent-rewards/students/{id}", fixture.student().id())
+                        .header("Authorization", bearer(token)).contentType(MediaType.APPLICATION_JSON)
+                        .content(rewardBody("小程序家庭奖励", 30, null, LocalDateTime.now().plusDays(2), "ONLINE")))
+                .andExpect(status().isCreated()).andReturn());
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/v1/parent-rewards/{id}", id)
+                        .header("Authorization", bearer(token)).contentType(MediaType.APPLICATION_JSON)
+                        .content(rewardBody("更新家庭奖励", 30, null, LocalDateTime.now().plusDays(2), "ONLINE")))
+                .andExpect(status().isOk());
+        Long exchange = applyExchange(fixture, id);
+        for (String action : List.of("approve", "verify")) {
+            mockMvc.perform(post("/api/v1/parent-reward-exchanges/{id}/" + action, exchange)
+                    .header("Authorization", bearer(token))).andExpect(status().isOk());
+        }
+        assertExchangeStatus(exchange, "VERIFIED");
+        assertPointBalance(fixture.student().id(), 100, 70);
+        mockMvc.perform(post("/api/v1/parent-reward-exchanges/{id}/approve", exchange)
+                .header("Authorization", bearer(token))).andExpect(status().isConflict());
+        Long rejected = applyExchange(fixture, id);
+        mockMvc.perform(post("/api/v1/parent-reward-exchanges/{id}/reject", rejected)
+                        .header("Authorization", bearer(token)).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"rejectReason\":\"请先商量兑现时间\"}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("REJECTED"));
+        assertPointBalance(fixture.student().id(), 100, 70);
+        mockMvc.perform(delete("/api/v1/parent-rewards/{id}", id).header("Authorization", bearer(token)))
+                .andExpect(status().isNoContent());
+        mockMvc.perform(get("/api/v1/rewards/students/{id}", fixture.student().id())
+                .header("Authorization", bearer(token))).andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/v1/parent-rewards/students").header("Authorization", bearer(fixture.otherParentToken())))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void miniappRewardAccessHonorsRelationPermissionFeatureAndAuditor() throws Exception {
+        Fixture fixture = createFixture();
+        Long reward = createReward(fixture, "受控奖励", 10);
+        setPointBalance(fixture.student().id(), 100, 100);
+        Long exchange = applyExchange(fixture, reward);
+        Long parent = jdbcTemplate.queryForObject("SELECT id FROM sys_user WHERE username='reward_parent'", Long.class);
+        Long other = jdbcTemplate.queryForObject("SELECT id FROM sys_user WHERE username='reward_other_parent'", Long.class);
+        jdbcTemplate.update("INSERT INTO edu_parent_student(id,parent_user_id,student_id,relation_role,status,primary_scope_key,bound_at) "
+                + "VALUES(8910000000000000901,?,?,'SECONDARY_GUARDIAN','ACTIVE','SECONDARY',CURRENT_TIMESTAMP)", other, fixture.student().id());
+        makeMiniappRewardParent("reward_parent");
+        makeMiniappRewardParent("reward_other_parent");
+        String token = fixture.parentToken();
+        String secondary = fixture.otherParentToken();
+        mockMvc.perform(get("/api/v1/parent-rewards/students/{id}", fixture.student().id()).header("Authorization", bearer(secondary)))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/parent-reward-exchanges/students/{id}", fixture.student().id()).header("Authorization", bearer(secondary)))
+                .andExpect(status().isOk());
+        mockMvc.perform(delete("/api/v1/parent-rewards/{id}", reward).header("Authorization", bearer(secondary)))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(post("/api/v1/parent-reward-exchanges/{id}/approve", exchange).header("Authorization", bearer(secondary)))
+                .andExpect(status().isNotFound());
+        jdbcTemplate.update("UPDATE sys_permission SET status='DISABLED' WHERE permission_code='MINIAPP_REWARD_MANAGE_CHILD'");
+        sqlSessionTemplate.clearCache();
+        mockMvc.perform(get("/api/v1/parent-rewards/students").header("Authorization", bearer(token))).andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/parent-rewards/students/{id}", fixture.student().id()).header("Authorization", bearer(token)))
+                .andExpect(status().isForbidden());
+        jdbcTemplate.update("UPDATE sys_permission SET status='DISABLED' WHERE permission_code='MINIAPP_REWARD_EXCHANGE_REVIEW_CHILD'");
+        sqlSessionTemplate.clearCache();
+        mockMvc.perform(get("/api/v1/parent-rewards/students").header("Authorization", bearer(token))).andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/v1/parent-reward-exchanges/{id}/approve", exchange).header("Authorization", bearer(token)))
+                .andExpect(status().isForbidden());
+        jdbcTemplate.update("UPDATE sys_permission SET status='ENABLED' WHERE permission_code IN ('MINIAPP_REWARD_MANAGE_CHILD','MINIAPP_REWARD_EXCHANGE_REVIEW_CHILD')");
+        sqlSessionTemplate.clearCache();
+        featureToggleMapper.updateGlobalStatus("REWARD_EXCHANGE", FeatureStatus.DISABLED);
+        mockMvc.perform(get("/api/v1/parent-rewards/students").header("Authorization", bearer(token)))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("FEATURE_DISABLED"));
+        mockMvc.perform(post("/api/v1/parent-reward-exchanges/{id}/approve", exchange).header("Authorization", bearer(token)))
+                .andExpect(status().isConflict());
+        featureToggleMapper.updateGlobalStatus("REWARD_EXCHANGE", FeatureStatus.ENABLED);
+        jdbcTemplate.update("UPDATE edu_parent_student SET status='UNBOUND' WHERE parent_user_id=?", parent);
+        sqlSessionTemplate.clearCache();
+        mockMvc.perform(post("/api/v1/parent-reward-exchanges/{id}/approve", exchange).header("Authorization", bearer(token)))
+                .andExpect(status().isNotFound());
+        jdbcTemplate.update("UPDATE edu_parent_student SET status='ACTIVE' WHERE parent_user_id=?", parent);
+        userAccessApplicationService.assignRole(new AssignRoleToUserCommand(parent, roleMapper.findByCode("SYS_AUDITOR").id(), null));
+        sqlSessionTemplate.clearCache();
+        mockMvc.perform(get("/api/v1/parent-rewards/students").header("Authorization", bearer(token)))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/v1/parent-reward-exchanges/{id}/approve", exchange).header("Authorization", bearer(token)))
+                .andExpect(status().isForbidden());
+        assertExchangeStatus(exchange, "PENDING_APPROVAL");
+        assertPointBalance(fixture.student().id(), 100, 100);
+    }
+
+    /** 仅合成本地家长会话；认证过滤器实际识别 MINIAPP，不代表验证短信登录。 */
+    private void makeMiniappRewardParent(String username) {
+        Long id = jdbcTemplate.queryForObject("SELECT id FROM sys_user WHERE username=?", Long.class, username);
+        jdbcTemplate.update("UPDATE sys_user SET user_type='FAMILY' WHERE id=?", id);
+        jdbcTemplate.update("INSERT INTO auth_parent_profile(id,user_id,onboarding_status,first_login_at,onboarding_completed_at) "
+                + "VALUES(?,?,'COMPLETED',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)", id, id);
+        jdbcTemplate.update("UPDATE auth_device_session SET client_type='MINIAPP' WHERE user_id=?", id);
+        jdbcTemplate.update("INSERT INTO auth_user_agreement_acceptance(id,user_id,agreement_type,agreement_version,client_type,accepted_at) "
+                + "SELECT ?,?,'PARENT_USER_AGREEMENT',config_value,'MINIAPP',CURRENT_TIMESTAMP FROM sys_config "
+                + "WHERE config_key='auth.parent-agreement.current-version' AND status='ENABLED'", id, id);
+        sqlSessionTemplate.clearCache();
+    }
+
     private Fixture createFixture() throws Exception {
         User administrator = createUserWithRole("reward_sys_admin", "奖励测试系统管理员", "SYS_ADMIN");
         User parent = createUserWithRole("reward_parent", "奖励测试家长", "PARENT");

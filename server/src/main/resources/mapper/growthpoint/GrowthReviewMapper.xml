@@ -203,6 +203,22 @@
         LIMIT #{limit} OFFSET #{offset}
     </select>
 
+    <select id="findExportCandidates" resultMap="SummaryMap">
+        SELECT <include refid="CurrentSummaryColumns"/>
+        FROM growth_review review_record
+        INNER JOIN edu_student student ON student.id = review_record.student_id
+        INNER JOIN growth_review_snapshot snapshot ON snapshot.id = review_record.current_snapshot_id
+        WHERE review_record.student_id = #{studentId}
+          AND review_record.period_type = #{periodType}
+          AND review_record.period_start >= #{dateFrom}
+          AND review_record.period_end &lt;= #{dateTo}
+          AND EXISTS (SELECT 1 FROM edu_parent_student relation
+              WHERE relation.student_id = review_record.student_id
+                AND relation.parent_user_id = #{parentUserId} AND relation.status = 'ACTIVE')
+        ORDER BY review_record.period_start, review_record.id
+        LIMIT #{limit}
+    </select>
+
     <select id="countCurrentByStudent" resultType="long">
         SELECT COUNT(*)
         FROM growth_review

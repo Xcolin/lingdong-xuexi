@@ -19,6 +19,7 @@ import com.lingdong.learning.exportjob.application.template.ExportTemplateParser
 import com.lingdong.learning.exportjob.application.template.ExportWorkbookWriter;
 import com.lingdong.learning.exportjob.domain.ExportJobRecord;
 import com.lingdong.learning.exportjob.domain.ExportJobStatus;
+import com.lingdong.learning.exportjob.domain.ExportJobType;
 import com.lingdong.learning.exportjob.infrastructure.config.ExportJobProperties;
 import com.lingdong.learning.exportjob.infrastructure.persistence.ExportJobMapper;
 import com.lingdong.learning.templateconfig.domain.ImportExportTemplateRecord;
@@ -56,6 +57,7 @@ public class ExportJobExecutionService {
     private final ExportJobFailureService failureService;
     private final ObjectMapper objectMapper;
     private final ExportJobProperties properties;
+    private final GrowthReviewPdfArtifactService pdfArtifacts;
 
     public ExportJobExecutionService(
             ExportJobAccessService accessService,
@@ -70,7 +72,8 @@ public class ExportJobExecutionService {
             ExportJobCompletionService completionService,
             ExportJobFailureService failureService,
             ObjectMapper objectMapper,
-            ExportJobProperties properties
+            ExportJobProperties properties,
+            GrowthReviewPdfArtifactService pdfArtifacts
     ) {
         this.accessService = accessService;
         this.adapterRegistry = adapterRegistry;
@@ -85,12 +88,17 @@ public class ExportJobExecutionService {
         this.failureService = failureService;
         this.objectMapper = objectMapper;
         this.properties = properties;
+        this.pdfArtifacts = pdfArtifacts;
     }
 
     public boolean execute(ExportJobRecord job) {
         requireExporting(job);
         try {
-            accessService.requireExecution(job);
+            if (job.exportType() == ExportJobType.GROWTH_REVIEW_PDF) {
+                pdfArtifacts.requireExecution(job);
+            } else {
+                accessService.requireExecution(job);
+            }
         } catch (RuntimeException accessFailure) {
             fail(job.id(), job.versionNo(), "EXPORT_ACCESS_REVOKED",
                     "当前导出权限或范围已失效", accessFailure);
@@ -103,6 +111,17 @@ public class ExportJobExecutionService {
         PageIterator rows = null;
         long expectedVersion = job.versionNo();
         try {
+            if (job.exportType() == ExportJobType.GROWTH_REVIEW_PDF) {
+                var artifact = pdfArtifacts.generate(job);
+                resultFile = contentService.store(job.requesterId(), "EXPORT_JOB", "REPORT_EXPORT",
+                        artifact.fileName(), artifact.contentType(), artifact.content());
+                relation = fileService.attachToBusiness(new AttachFileToBusinessCommand(
+                        resultFile.id(), "EXPORT_JOB", job.id(), "EXPORT_JOB_RESULT", "BUSINESS_AUTHORIZED"));
+                // 文件保存期间可能发生撤权；提交终态前再次检查，失败沿用下方统一补偿。
+                pdfArtifacts.requireExecution(job);
+                completionService.complete(job, expectedVersion, resultFile.id(), artifact.reportCount(), artifact.reportCount());
+                return true;
+            }
             ExportDatasetAdapter adapter = adapterRegistry.require(job.exportType());
             ExportFilterSnapshot filter = read(job.filterSnapshot(), ExportFilterSnapshot.class,
                     "导出筛选快照无法解析");

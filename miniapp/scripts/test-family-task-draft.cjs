@@ -1,0 +1,16 @@
+const assert=require('node:assert/strict'),ts=require('typescript'),fs=require('node:fs');
+const moduleValue={exports:{}};
+new Function('exports','module',ts.transpileModule(fs.readFileSync('src/models/family-task-draft.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText)(moduleValue.exports,moduleValue);
+const {draftInput,canManageFamily}=moduleValue.exports;
+const user={clientType:'MINIAPP',roleCodes:['PARENT'],permissionCodes:['LEARNING_TASK_READ_MANAGED']};
+assert.equal(canManageFamily(user,'LEARNING_TASK_READ_MANAGED'),true);
+assert.equal(canManageFamily({...user,roleCodes:['PARENT','SYS_AUDITOR']},'LEARNING_TASK_READ_MANAGED'),false);
+assert.equal(canManageFamily({...user,clientType:'WEB'},'LEARNING_TASK_READ_MANAGED'),false);
+assert.equal(canManageFamily(user,'LEARNING_TASK_CREATE'),false);
+const draft={title:'编辑任务',difficultyLevel:2,durationMinutes:30,scheduledDate:'2026-09-13',remark:'说明',studentIds:['1874244142494700011','1874244142494700012']};
+const previous={categoryCode:'GENERAL',tagCodes:['READING'],recurrenceEnabled:true,recurrenceEndDate:'2026-09-20'};
+const body=draftInput(draft,previous);
+assert.equal(body.sourceType,'FAMILY');assert.equal(body.categoryCode,'GENERAL');assert.deepEqual(body.tagCodes,['READING']);assert.equal(body.recurrenceEnabled,true);assert.equal(body.recurrenceEndDate,'2026-09-20');
+assert.deepEqual(body.targets,draft.studentIds.map(targetId=>({targetType:'STUDENT',targetId})));
+assert.equal('reviewerUserId' in body,false);assert.equal('sourceOrganizationId' in body,false);
+console.log('家庭任务：客户端与角色、操作权限、编辑保留分类标签重复配置和全部目标通过');

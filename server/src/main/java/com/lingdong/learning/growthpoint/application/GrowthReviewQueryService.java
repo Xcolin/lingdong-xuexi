@@ -16,6 +16,9 @@ import com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthReview
 import com.lingdong.learning.learningtask.application.CurrentStudentAccessService;
 import com.lingdong.learning.student.domain.Student;
 import com.lingdong.learning.student.infrastructure.persistence.ParentStudentMapper;
+import com.lingdong.learning.permission.application.PermissionDecisionService;
+import com.lingdong.learning.permission.domain.PermissionClient;
+import com.lingdong.learning.user.infrastructure.persistence.UserRoleMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +40,8 @@ public class GrowthReviewQueryService {
     private final FeatureAccessService featureAccessService;
     private final IdGenerator idGenerator;
     private final Clock clock;
+    private final PermissionDecisionService permissions;
+    private final UserRoleMapper roles;
 
     public GrowthReviewQueryService(
             GrowthReviewMapper reviewMapper,
@@ -44,7 +49,9 @@ public class GrowthReviewQueryService {
             ParentStudentMapper parentStudentMapper,
             FeatureAccessService featureAccessService,
             IdGenerator idGenerator,
-            Clock clock
+            Clock clock,
+            PermissionDecisionService permissions,
+            UserRoleMapper roles
     ) {
         this.reviewMapper = reviewMapper;
         this.currentStudentAccessService = currentStudentAccessService;
@@ -52,6 +59,48 @@ public class GrowthReviewQueryService {
         this.featureAccessService = featureAccessService;
         this.idGenerator = idGenerator;
         this.clock = clock;
+        this.permissions = permissions;
+        this.roles = roles;
+    }
+
+    public record ChildOption(String studentId, String studentName) { }
+
+    /** 小程序家长历史周报入口不依赖生成或消息订阅开关。 */
+    @Transactional(readOnly = true)
+    public List<ChildOption> findMiniappChildren(AuthenticatedUser currentUser) {
+        requireMiniappParent(currentUser);
+        return parentStudentMapper.findActiveStudentsByParent(currentUser.userId()).stream()
+                .map(row -> new ChildOption(row.studentId().toString(), row.studentName())).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public GrowthReviewPage findMiniappChildWeeklyReviews(
+            AuthenticatedUser currentUser, Long studentId, int page, int pageSize) {
+        requireMiniappReadableChild(currentUser, studentId);
+        return findPage(studentId, GrowthReviewPeriodType.WEEK, page, pageSize);
+    }
+
+    @Transactional(readOnly = true)
+    public GrowthReviewDetailView findMiniappChildWeeklyReview(
+            AuthenticatedUser currentUser, Long studentId, Long reviewId) {
+        requireMiniappReadableChild(currentUser, studentId);
+        return requireDetail(studentId, reviewId, GrowthReviewPeriodType.WEEK);
+    }
+
+    private void requireMiniappReadableChild(AuthenticatedUser currentUser, Long studentId) {
+        requireMiniappParent(currentUser);
+        if (studentId == null || !parentStudentMapper.existsActiveByParentAndStudent(currentUser.userId(), studentId)) {
+            throw notFound();
+        }
+    }
+
+    private void requireMiniappParent(AuthenticatedUser currentUser) {
+        if (currentUser == null || currentUser.userId() == null || currentUser.clientType() != AuthClientType.MINIAPP
+                || !roles.hasRoleCode(currentUser.userId(), "PARENT")
+                || roles.hasRoleCode(currentUser.userId(), "SYS_AUDITOR")
+                || !permissions.isAllowed(currentUser.userId(), PermissionClient.MINIAPP, "MINIAPP_GROWTH_REVIEW_READ_CHILD")) {
+            throw new SystemOperationAccessDeniedException("仅具有授权的小程序活动关系家长可查看孩子周报");
+        }
     }
 
     @Transactional(readOnly = true)
@@ -137,11 +186,15 @@ public class GrowthReviewQueryService {
     }
 
     private GrowthReviewDetailView requireDetail(Long studentId, Long reviewId) {
+        return requireDetail(studentId, reviewId, null);
+    }
+
+    private GrowthReviewDetailView requireDetail(Long studentId, Long reviewId, GrowthReviewPeriodType requiredPeriod) {
         if (reviewId == null || reviewId <= 0) {
             throw notFound();
         }
         GrowthReviewDetailRow row = reviewMapper.findCurrentDetail(studentId, reviewId);
-        if (row == null) {
+        if (row == null || (requiredPeriod != null && row.periodType() != requiredPeriod)) {
             throw notFound();
         }
         List<GrowthReviewCategoryView> categories = reviewMapper.findCategories(row.snapshotId())

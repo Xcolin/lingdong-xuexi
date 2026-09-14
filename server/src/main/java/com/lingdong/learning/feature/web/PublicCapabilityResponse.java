@@ -33,6 +33,9 @@ public record PublicCapabilityResponse(
         boolean studentBatchImportEnabled,
         boolean teacherManagementEnabled,
         boolean studentExceptionReportEnabled,
-        boolean attendanceManagementEnabled
+        boolean attendanceManagementEnabled,
+        boolean growthReviewPdfExportEnabled,
+        boolean growthReviewSubscriptionEnabled,
+        boolean anonymousClassRankEnabled
 ) {
 }

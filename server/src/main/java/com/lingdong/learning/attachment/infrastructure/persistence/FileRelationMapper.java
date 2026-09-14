@@ -10,6 +10,8 @@ import java.util.List;
 
 @Mapper
 public interface FileRelationMapper {
+    int countActiveExportResult(@Param("fileId") Long fileId, @Param("jobId") Long jobId,
+            @Param("requesterId") Long requesterId);
     int insert(@Param("relation") FileRelationRecord relation);
     FileRelationRecord findById(@Param("id") Long id);
     List<AttachmentRelationLedgerView> findLedgerByFileId(@Param("fileId") Long fileId);

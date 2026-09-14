@@ -1,4 +1,5 @@
 import { request } from './http';
+import type { TaskAttachment } from './attachment';
 
 export type ManagedTaskSource = 'ORGANIZATION' | 'TEACHER';
 export type ManagedTaskStatus = 'DRAFT' | 'PUBLISHED';
@@ -54,8 +55,10 @@ export interface ManagedTaskReview {
   sourceType: ManagedTaskSource;
   sourceOrganizationName: string | null;
   latestCheckIn: {
+    id: string;
     content: string | null;
     submittedAt: string;
+    attachments?: TaskAttachment[];
   };
 }
 
@@ -130,27 +133,29 @@ export function listManagedTaskProgress(
 }
 
 export function listManagedTaskReviews(
-  accessToken: string
+  accessToken: string, page = 1, pageSize = 20
 ): Promise<{ items: ManagedTaskReview[]; page: number; pageSize: number; total: number }> {
-  return authenticated(accessToken, '/task-reviews?page=1&pageSize=100');
+  return authenticated(accessToken, `/task-reviews?page=${page}&pageSize=${pageSize}`);
 }
 
 export function approveManagedTaskReview(
   accessToken: string,
-  assignmentId: string
+  assignmentId: string,
+  expectedCheckInId: string
 ): Promise<void> {
   return authenticated(accessToken, `/task-reviews/${encodeURIComponent(assignmentId)}/approve`, {
-    method: 'POST', data: {}
+    method: 'POST', data: { expectedCheckInId }
   });
 }
 
 export function rejectManagedTaskReview(
   accessToken: string,
   assignmentId: string,
-  reviewComment: string
+  reviewComment: string,
+  expectedCheckInId: string
 ): Promise<void> {
   return authenticated(accessToken, `/task-reviews/${encodeURIComponent(assignmentId)}/reject`, {
-    method: 'POST', data: { reviewComment }
+    method: 'POST', data: { reviewComment, expectedCheckInId }
   });
 }
 

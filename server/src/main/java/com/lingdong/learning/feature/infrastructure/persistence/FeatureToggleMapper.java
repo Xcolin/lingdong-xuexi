@@ -5,6 +5,8 @@ import org.apache.ibatis.annotations.Param;
 /** Persistence boundary for feature-toggle resolution. */
 @Mapper public interface FeatureToggleMapper {
     FeatureToggle findGlobal(@Param("code") String code);
+    FeatureToggle findGlobalForUpdate(@Param("code") String code);
+    int compareAndSetGlobalStatus(@Param("code") String code, @Param("status") com.lingdong.learning.feature.domain.FeatureStatus status, @Param("version") Long version);
     FeatureToggle findOrganization(@Param("code") String code, @Param("scopeKey") String scopeKey);
     int insert(@Param("toggle") FeatureToggle toggle);
     int updateGlobalStatus(@Param("code") String code, @Param("status") com.lingdong.learning.feature.domain.FeatureStatus status);

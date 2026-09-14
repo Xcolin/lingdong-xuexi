@@ -75,9 +75,9 @@ export function AttendanceRecordDrawer({ checkAccess, onAccessError, onClose, on
       </Form>
       <Table rowKey="studentId" loading={loading} dataSource={roster} pagination={false} scroll={{ x: 720, y: 480 }} locale={{ emptyText: classId ? '暂无可登记学生' : '请选择班级' }} columns={[
         { title: '学生', dataIndex: 'studentName', width: 110 },
-        { title: '原记录', width: 105, render: (_, row) => row.record ? `${statusLabels[row.record.status]}（v${row.record.versionNo}）` : '未登记' },
+        { title: '原记录', width: 105, render: (_, row) => row.record ? statusLabels[row.record.status] : '未登记' },
         { title: '本次状态', width: 155, render: (_, row) => <Select aria-label={`${row.studentName}的考勤状态`} style={{ width: '100%' }} allowClear placeholder="未选择" disabled={submitting} value={drafts[row.studentId]?.status} options={Object.entries(statusLabels).map(([value, label]) => ({ value, label }))} onChange={(status) => update(row.studentId, { status, ...(['ABSENT', 'LEAVE'].includes(status) ? { checkinTime: '', checkoutTime: '' } : {}) })} /> },
-        ...(['checkinTime', 'checkoutTime'] as const).map((field) => ({ title: field === 'checkinTime' ? '签到时间' : '签退时间', width: 170, key: field, render: (_: unknown, row: AttendanceRosterRow) => <Input type="time" step={1} aria-label={`${row.studentName}的${field === 'checkinTime' ? '签到' : '签退'}时间`} value={drafts[row.studentId]?.[field] ?? ''} disabled={submitting || !drafts[row.studentId]?.status || ['ABSENT', 'LEAVE'].includes(drafts[row.studentId]?.status ?? '')} onChange={(e) => update(row.studentId, { [field]: e.target.value })} /> }))
+        ...(['checkinTime', 'checkoutTime'] as const).map((field) => ({ title: field === 'checkinTime' ? '签到时间' : '签退时间', width: 170, key: field, render: (_: unknown, row: AttendanceRosterRow) => <Input type="time" step={60} aria-label={`${row.studentName}的${field === 'checkinTime' ? '签到' : '签退'}时间`} value={drafts[row.studentId]?.[field] ?? ''} disabled={submitting || !drafts[row.studentId]?.status || ['ABSENT', 'LEAVE'].includes(drafts[row.studentId]?.status ?? '')} onChange={(e) => update(row.studentId, { [field]: e.target.value })} /> }))
       ]} />
     </div>
   </Drawer>;

@@ -1,5 +1,78 @@
 # 灵动学习 API 接口设计
 
+## V73 全局功能开关管理（实施中）
+
+Web 接口前缀 `/api/v1/feature-management`，动态权限 `FEATURE_TOGGLE_READ/MANAGE/REVIEW`。读取要求系统角色；管理员仅查询本人申请并提交，审核员查询已提交历史和审批队列，混合审核员身份不能发起申请。管理本身不依赖某个业务开关，业务停用后仍可走审批恢复。
+
+| 方法与相对路径 | 契约 |
+|---|---|
+| GET `/toggles` | 全局开关数组：id、featureCode、featureName、status、versionNo、description、enableAllowed。 |
+| GET `/changes` | page/pageSize 与可选 taskStatus；返回 items/page/pageSize/total。 |
+| POST `/review-submissions` | featureCode、targetStatus、expectedVersion、title、description、confirmed=true；事务内创建并提交，201 返回变更。 |
+| GET `/review-queue` | 审核员待审分页，page/pageSize。 |
+| POST `/review-queue/{taskId}/approve` | comment；审批并按原版本执行，成功返回变更。 |
+| POST `/review-queue/{taskId}/reject` | comment 必填；驳回但不修改开关。 |
+
+变更响应包含 id/taskId、功能编码和名称、beforeStatus/targetStatus/currentStatus、baseVersion/currentVersion、taskStatus、标题说明、提交人与时间、审批人与时间及意见、创建时间、enableAllowed。ID 与版本为字符串，分页总数为数字。旧申请缺少原状态/版本时返回 null，不伪造历史；批准时拒绝执行。版本冲突返回 409，不能覆盖新决定。定位与轨迹禁止启用，停用机构小程序认证仍撤销对应会话。当前实施及验收状态见 [专项记录](../superpowers/specs/2026-09-14-lingdong-feature-management.md)。
+
+## V63 匿名排行查询接口
+
+前缀 `/api/v1/anonymous-ranks/students/{studentId}/classes/{classId}`，路径使用 19 位标识。GET 前缀本身返回仅含 rank、points 的数组；必须通过当前 WEB 家长身份、独立功能及动态权限、活动亲子关系、当前班级检查，并已开启本人在该孩子/班级的查看偏好。
+
+GET `/preference` 返回本人 enabled、version，无记录为 false/0。PUT `/preference` 请求 enabled、version，开启必须具备读取资格，取消允许关系或功能失效后的本人撤回。同目标状态幂等；真实状态变更要求版本一致，否则 409。功能默认关闭，当前尚无前端入口；不提供其他家长偏好管理、学生身份或学校排行。详见 `../superpowers/specs/2026-09-09-lingdong-rank-query-design.md`。
+
+## V63 周报订阅偏好接口
+
+V67 补充：PUT 取消偏好时，同事务将该订阅的待发任务标记为 CANCELLED；重复取消仍清理残留待发。排程与取消使用相同订阅人行锁。当前仅内部排程，没有公开发送或消息成功接口，不表示微信投递。
+
+GET `/api/v1/growth-review-subscriptions/students/{studentId}` 返回本人 `{studentId, enabled, version}`，无记录为 false/0，学生标识为字符串，不返回姓名或其他家长数据。PUT 同路径请求 `{enabled, version}`，布尔值必填，版本非负；同状态幂等，真实变更递增版本，过期变更返回 409。
+
+开启检查动态订阅/复盘读取权限、活动亲子关系及订阅/周期报告开关。读取和取消仍需启用的 Web 家长身份且非审核员，但不依赖推送开关、亲子关系或开启权限。认证身份决定订阅人，不接受指定他人。本接口只保存偏好，不表示微信授权或消息送达；功能默认关闭，页面和排程尚未接入。
+
+## V63 复盘 PDF 接口（2026-09-08）
+
+公开能力响应新增 `growthReviewPdfExportEnabled`：仅 WEB 且复盘 PDF、数据导出、模板管理、附件服务均启用时为 true；MINIAPP 为 false。该字段不包含用户权限，客户端仍需结合当前身份与权限控制入口，服务端每次请求继续鉴权。
+
+`GET /api/v1/growth-review-export-jobs/options?studentId=...`：创建表单专用模板选项，要求 `EXPORT_JOB_CREATE`，服务端先按所选孩子执行完整生成资格检查，再读取启用的 EXPORT/REPORT 模板并解析受限复盘配置。返回数组 `{id, templateName, version, modes}`，标识为字符串，modes 为 SIMPLE/DETAILED 的有效子集。失效附件或非复盘配置不返回，系统存储故障不伪装为空列表；不暴露附件标识、存储键和模板全文。实际创建仍重新验证，选项查询不锁定模板版本。
+
+历史查询统一要求 `EXPORT_JOB_READ`，服务层复核 Web 家长、当前读取权限、活动亲子关系和原申请人身份：
+
+| 方法与路径 | 请求与响应 |
+|---|---|
+| GET /api/v1/growth-review-export-jobs | 必填 studentId；可选 status、page（默认 1）、pageSize（默认 20，1 至 100）；返回 items/page/pageSize/total，SQL 按本人、学生及 PDF 类型过滤后分页。 |
+| GET /api/v1/growth-review-export-jobs/{id} | 返回统一作业公开字段，所有标识字符串化，无报告全文及存储键。 |
+| GET /api/v1/growth-review-export-jobs/{id}/download | 成功作业且结果附件关联有效时返回 PDF/ZIP 附件；UTF-8 文件名、no-store、nosniff。未成功或文件/关联失效返回 404。 |
+
+关闭新导出、数据导出或模板管理不阻断合法历史读取；关闭统一附件服务仍阻断。解绑、停用账号或撤销读取权限后拒绝访问。历史接口不复用生成依赖检查，详细边界见复盘 PDF 历史设计。
+
+`POST /api/v1/growth-review-export-jobs`：Web 家长创建复盘导出作业，要求 `EXPORT_JOB_CREATE`，应用层继续核验复盘读取、活动亲子关系及生成依赖开关。请求不包含申请人或来源地址。
+
+```json
+{
+  "studentId": "1874244142494650102",
+  "reviewId": "1874244142494650151",
+  "templateId": "1874244142494650105",
+  "mode": "DETAILED",
+  "reason": "导出日报"
+}
+```
+
+以上标识仅为格式示例。区间导出不传 `reviewId`，改传 `periodType`（DAY/WEEK/MONTH）与 ISO 日期 `dateFrom`、`dateTo`；两类选择互斥。标识字段为 19 位字符串，模式必填，原因不能为空且最多 500 字。成功返回 201 和统一作业公开响应，初始状态 `QUEUED`，标识为字符串，不包含报告全文或内部存储信息。后台生成文件，不在创建响应中返回文件。前端模板选择、创建及历史操作尚待接通。
+
+## V62 人工考勤契约
+
+统一前缀 `/api/v1/attendance-records`，鉴权沿用 Bearer；独立功能开关为 `ATTENDANCE_MANAGEMENT`。所有标识按字符串响应，版本号为数字。完整请求、响应字段见 [V62 实施计划第 1 节](../superpowers/plans/2026-09-07-lingdong-manual-attendance.md)。
+
+| 方法及相对路径 | 权限 | 契约 |
+|---|---|---|
+| GET 空路径 | ATTENDANCE_READ | classOrganizationId、studentId、keyword、status、dateFrom/dateTo、page/pageSize；日期成对省略默认近 30 天，返回 items/page/pageSize/total。 |
+| GET /class-options | 查询时 READ，operational=true 时 RECORD | 返回 classOrganizationId/className；查询保留历史班级，点名只返回启用班级。 |
+| GET /roster | ATTENDANCE_RECORD | classOrganizationId、attendanceDate；返回 studentId、完整 studentName、既有 record 或 null，仅有效班级写权限可调用。 |
+| POST /batch | ATTENDANCE_RECORD | classOrganizationId、attendanceDate、items；行字段 studentId/status/checkinTime/checkoutTime/versionNo，首次版本 null，更正为当前版本，返回记录数组。 |
+| GET /{id} | ATTENDANCE_READ | 返回 record 与 actions，动作包含操作人、类型、前后状态与时间及发生时间。 |
+
+台账、详情和批量响应姓名使用首字掩码。签到签退可空，传输 HH:mm:ss，秒必须为 00；所有行共享一次事务。400 表示非法参数，401/403 为认证权限错误，404 为不存在或范围不可访问，409 为版本/并发冲突或 FEATURE_DISABLED；客户端必须按错误码区分功能停用与版本冲突，不对冲突自动重试覆盖。相同内容的合法重试返回现有记录且不新增动作。
+
 **版本**：V1.0（设计基线草案）  
 **状态**：待评审  
 **接口风格**：HTTPS + REST + JSON；OpenAPI 3 作为机器可读契约  
@@ -214,10 +287,10 @@
 | `GET /api/v1/task-reviews` | V23 已实现；当前审核人待审核分页。 |
 | `GET /api/v1/task-reviews/{id}` | V23 已实现；仅当前审核人读取待办详情。 |
 | `GET /api/v1/task-reviews/{id}/reviewer-options` | V23 已实现；返回服务端裁剪的审核候选人。 |
-| `POST /api/v1/task-reviews/{id}/reject` | V23 已实现；驳回意见必填且最长 500 字。 |
+| `POST /api/v1/task-reviews/{id}/reject` | 驳回意见必填且最长 500 字；R04 同时必填当前显示打卡的字符串 `expectedCheckInId`。 |
 | `POST /api/v1/task-reviews/{id}/transfer` | V23 已实现；转交原因必填，目标必须属于候选范围。 |
 | `POST /api/v1/managed-task-assignments/{id}/exempt` | V23 已实现；授权角色按家庭或组织范围设置免执行。 |
-| `POST /api/v1/task-reviews/{id}/approve` | V24 已实现；仅当前审核人可操作，请求体为空，按服务端基础积分完成任务并原子入账。 |
+| `POST /api/v1/task-reviews/{id}/approve` | 仅当前审核人可操作；R04 请求体必填字符串 `expectedCheckInId`，按服务端基础积分完成任务并原子入账。 |
 | `GET /api/v1/managed-task-assignments` | V32 已实现；Web 管理角色分页查询授权范围内可顺延任务。 |
 | `POST /api/v1/managed-task-assignments/{id}/defer` | V32 已实现；按未来 1 至 7 天规则手动顺延。 |
 
@@ -233,7 +306,7 @@
 
 学生执行接口必须使用 `MINIAPP` 会话和 `TASK_ASSIGNMENT_EXECUTE_SELF`，服务端只从会话反查学生档案。所有写操作先锁定本人任务实例；跨学生标识返回 `404`，重复点击或非法状态返回 `409`。响应沿用学生任务详情，并增加 `effectiveStatus`、可空 `activePause` 和可空 `latestCheckIn`，其中所有 19 位标识序列化为字符串。
 
-审核接口必须使用 `WEB` 会话和 `TASK_ASSIGNMENT_REVIEW`。待办与详情只查询 `current_reviewer_id` 等于当前用户且状态为待审核的数据。驳回在同一事务内把最近打卡标为 `REJECTED`、保存意见、将任务退回进行中并写事件；再次打卡生成递增提交序号，不覆盖历史。转交同时更新当前审核人、写入转交历史和审计事件。免执行需要 `TASK_ASSIGNMENT_EXEMPT`，并继续校验家庭主关系、创建教师或机构组织数据范围。
+审核接口使用真实 `WEB` 或 `MINIAPP` 会话及该端当前有效的 `TASK_ASSIGNMENT_REVIEW`（V60 已适用两端）。系统审核员即使兼有家长、教师或机构管理员角色也拒绝业务审核。待办与详情只查询 `current_reviewer_id` 等于当前用户且状态为待审核的数据。通过和驳回都必须提交当前显示打卡的19位字符串 `expectedCheckInId`：缺失或数值类型返回 400，服务端锁后发现与最新打卡不一致返回 409。旧客户端空请求体必须升级后重试。驳回在同一事务内把该打卡标为 `REJECTED`、保存意见、将任务退回进行中并写事件；再次打卡生成递增提交序号，不覆盖历史。转交同时更新当前审核人、写入转交历史和审计事件。免执行需要 `TASK_ASSIGNMENT_EXEMPT`，并继续校验家庭主关系、创建教师或机构组织数据范围。
 
 V24 审核通过请求不接受积分、学生、来源或余额字段。服务端锁定当前审核人的任务实例、最新待审核打卡和学生积分账户，使用任务基础积分完成打卡与任务、增加累计及可用积分、写入唯一任务奖励台账和审核通过事件。成功响应包含 `assignmentId`、`currentStatus=COMPLETED`、`checkInId`、`checkInStatus=APPROVED`、`awardedPoints`、`totalPoints`、`availablePoints`、`ledgerId`；所有标识均为字符串。非当前审核人返回 404，重复或并发旧请求返回 409。
 
@@ -316,6 +389,20 @@ V24 审核通过请求不接受积分、学生、来源或余额字段。服务�
 家长台账响应增加 `correctionOfId`、`correctionLedgerId`、`correctionDeadline` 和 `correctable`。`GROWTH_POINT_CORRECTION` 停用返回 `409 FEATURE_DISABLED`；超时、重复、非本人审核、非家庭奖励或状态已变化返回 `409 STATE_CONFLICT`；跨关系学生和不属于该学生的原台账返回 404。
 
 #### 2.6.3 V27 家庭奖励与兑换契约
+
+V71 小程序家长补充：Web 原接口和权限继续保留。新增独立 `MINIAPP_REWARD_MANAGE_CHILD`、`MINIAPP_REWARD_EXCHANGE_REVIEW_CHILD`，仅实际 MINIAPP 家长会话可访问以下入口；系统审核员混合角色亦拒绝。活动副家长只读，写操作必须为当前活动主家长，全部接口要求奖励功能开启。
+
+| 接口 | 小程序权限与行为 |
+|---|---|
+| `GET /api/v1/parent-rewards/students` | 上述两项权限任一；返回当前活动关系孩子的字符串 studentId、studentName、relationshipRole。 |
+| `GET/POST /api/v1/parent-rewards/students/{studentId}` | 奖励管理权限；分页读取/新增，内容沿用 SaveGrowthRewardRequest。 |
+| `PUT/DELETE /api/v1/parent-rewards/{rewardId}` | 奖励管理权限；编辑或逻辑删除，禁止跨家庭写入。 |
+| `GET /api/v1/parent-reward-exchanges/students/{studentId}` | 兑换处理权限；分页读取原兑换快照及状态。 |
+| `POST /api/v1/parent-reward-exchanges/{exchangeId}/approve` | 兑换处理权限；原批准扣分状态机，重复批准拒绝。 |
+| `POST /api/v1/parent-reward-exchanges/{exchangeId}/reject` | 兑换处理权限；请求体 rejectReason 必填，最长 500 字。 |
+| `POST /api/v1/parent-reward-exchanges/{exchangeId}/verify` | 兑换处理权限；只核销已批准待兑现记录。 |
+
+分页沿用 page/pageSize/items/total；ID 响应为字符串。错误或超时不代表已处理，客户端不得自动重放写请求。此扩展复用原状态机，不修改学生申请端与积分口径。
 
 奖励新增请求包含 `rewardName`、`requiredPoints`、可空 `description`、可空 `validUntil` 和 `online`；更新沿用同一组业务字段。奖励与兑换查询统一接收 `page`、`pageSize`，页码范围为 1 至 1000000、每页 1 至 100，响应固定为 `items`、`page`、`pageSize`、`total`。家长兑换查询可选 `status`，学生奖励与兑换查询不接受学生标识。
 
@@ -745,6 +832,12 @@ V43 不新增对外 REST 接口。最终注销由后端条件调度调用应用�
 | `POST /api/v1/task-reviews/{assignmentId}/reject` | `TASK_ASSIGNMENT_REVIEW` | 复用既有驳回，意见必填。 |
 
 任务创建、查询、发布、审核和进度接口同时要求学习任务开关，并按当前客户端、角色、组织或班级范围失败关闭。全部标识继续按字符串返回，进度中的学生账号只返回脱敏值，不返回内部组织路径、存储字段或范围外对象存在性。
+
+## V72 Web 系统任务只读工作台
+
+`GET /api/v1/system-tasks` 支持 page（1 起）、pageSize（1–100，默认 20）和可选 status，返回 items/page/pageSize/total；`GET /api/v1/system-tasks/{id}` 返回单笔审计详情。两者要求实际 WEB 客户端、SYSTEM_TASK_READ 及实时有效系统角色。管理员仅本人任务；审核员仅已提交且非草稿任务，混合系统角色优先按审核员范围。
+
+查询仅覆盖已实现的组织变更、缓存清除、接口服务变更和敏感导出；各领域开关和权限同时生效，关闭或撤权后总数不包含该领域，详情不可见。响应字段为 id/code/type/title/description/impactScope/status/submittedBy/submittedAt/reviewedBy/reviewedAt/reviewComment/createdAt/updatedAt，ID 字符串，不返回原始配置、导出数据或下载凭据。审批和执行继续走各领域接口，不提供通用批准接口。
 
 ## V61 学生异常报备接口补充
 

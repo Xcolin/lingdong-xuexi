@@ -265,7 +265,9 @@ public class LearningTaskScopeService {
     }
 
     private boolean hasRole(AuthenticatedUser currentUser, String roleCode) {
-        return currentUser != null && currentUser.roleCodes().contains(roleCode);
+        // 审核员仅处理系统审批，兼任业务角色也不能进入任务业务范围。
+        return currentUser != null && !currentUser.roleCodes().contains("SYS_AUDITOR")
+                && currentUser.roleCodes().contains(roleCode);
     }
 
     private ResourceNotFoundException notFound() {

@@ -86,17 +86,25 @@ async function request<T>(
   return response.json() as Promise<T>;
 }
 
-async function requestBlob(path: string, retryAfterRefresh = true): Promise<Blob> {
+export interface DownloadContent { blob: Blob; fileName?: string; }
+
+async function requestDownload(path: string, retryAfterRefresh = true): Promise<DownloadContent> {
   const session = authSessionStore.get();
   const headers = new Headers();
   if (session) headers.set('Authorization', `Bearer ${session.accessToken}`);
   const response = await fetch(`${API_PREFIX}${path}`, { headers });
   if (response.status === 401 && retryAfterRefresh && session) {
     await refreshSession();
-    return requestBlob(path, false);
+    return requestDownload(path, false);
   }
   if (!response.ok) throw await toApiRequestError(response);
-  return response.blob();
+  const disposition = response.headers.get('Content-Disposition') ?? '';
+  const encoded = /filename\*=UTF-8''([^;]+)/i.exec(disposition)?.[1];
+  let fileName = /filename="([^"\r\n]*)"/i.exec(disposition)?.[1];
+  try { if (encoded) fileName = decodeURIComponent(encoded); } catch { fileName = undefined; }
+  // 服务端名称只作为保存文件名使用，不允许路径及控制字符。
+  if (fileName && (/[\\/\x00-\x1f\x7f]/.test(fileName) || fileName === '.' || fileName === '..')) fileName = undefined;
+  return { blob: await response.blob(), fileName };
 }
 
 async function refreshSession(): Promise<AuthSession> {
@@ -162,8 +170,11 @@ export const apiClient = {
   deleteWithResponse<T>(path: string): Promise<T> {
     return request<T>(path, { method: 'DELETE' });
   },
-  getBlob(path: string): Promise<Blob> {
-    return requestBlob(path);
+  async getBlob(path: string): Promise<Blob> {
+    return (await requestDownload(path)).blob;
+  },
+  getDownload(path: string): Promise<DownloadContent> {
+    return requestDownload(path);
   },
   async loginByPassword(input: PasswordLoginInput): Promise<AuthSession> {
     const session = await request<AuthSession>('/auth/sessions/password', {

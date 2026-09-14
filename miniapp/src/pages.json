@@ -6,6 +6,11 @@
 				"navigationBarTitleText": "灵动学习"
 			}
 		},
+		{ "path": "pages/parent-task-reviews/parent-task-reviews", "style": { "navigationBarTitleText": "待审核任务" } },
+		{ "path": "pages/parent-weekly-reviews/parent-weekly-reviews", "style": { "navigationBarTitleText": "孩子成长周报" } },
+		{ "path": "pages/family-tasks/family-tasks", "style": { "navigationBarTitleText": "家庭任务" } },
+		{ "path": "pages/parent-rewards/parent-rewards", "style": { "navigationBarTitleText": "家庭奖励与兑换" } },
+		{ "path": "pages/anonymous-ranks/anonymous-ranks", "style": { "navigationBarTitleText": "班级匿名排行" } },
 		{
 			"path": "pages/student-login/student-login",
 			"style": {

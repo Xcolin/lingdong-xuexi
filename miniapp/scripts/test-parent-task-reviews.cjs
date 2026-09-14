@@ -1,0 +1,16 @@
+const assert = require('node:assert/strict');
+const ts = require('typescript');
+const source = require('node:fs').readFileSync('src/models/parent-task-reviews.ts', 'utf8');
+const out = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
+const model = { exports: {} }; new Function('exports', 'module', out)(model.exports, model);
+const { canReview, requestEpoch } = model.exports;
+const user = { clientType: 'MINIAPP', roleCodes: ['PARENT'], permissionCodes: ['TASK_ASSIGNMENT_REVIEW'] };
+assert.equal(canReview(user, true), true);
+assert.equal(canReview({ ...user, roleCodes: ['PARENT', 'SYS_AUDITOR'] }, true), false);
+assert.equal(canReview(user, false), false);
+assert.equal(canReview({ ...user, permissionCodes: [] }, true), false);
+assert.equal(canReview({ ...user, clientType: 'WEB' }, true), false);
+const epoch = requestEpoch(); const a = epoch.next(); const b = epoch.next();
+assert.equal(epoch.current(a), false); assert.equal(epoch.current(b), true);
+epoch.invalidate(); assert.equal(epoch.current(b), false);
+console.log('家长审核：角色、动态权限、功能和过期响应模型通过');

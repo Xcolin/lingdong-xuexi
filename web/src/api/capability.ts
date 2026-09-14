@@ -26,6 +26,9 @@ export interface ClientCapabilities {
   teacherManagementEnabled?: boolean;
   studentExceptionReportEnabled?: boolean;
   attendanceManagementEnabled?: boolean;
+  growthReviewPdfExportEnabled?: boolean;
+  growthReviewSubscriptionEnabled?: boolean;
+  anonymousClassRankEnabled?: boolean;
   previousDayTaskCopyEnabled: boolean;
   learningTaskTemplateEnabled: boolean;
   growthPointQueryEnabled: boolean;

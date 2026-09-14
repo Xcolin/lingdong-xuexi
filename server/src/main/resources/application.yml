@@ -1,6 +1,4 @@
 spring:
-  config:
-    import: optional:classpath:application-local.yml
   application:
     name: lingdong-learning
   datasource:

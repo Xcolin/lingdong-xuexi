@@ -9,8 +9,11 @@ import { LoginPage } from '../features/auth/LoginPage';
 import { ParentOnboardingPage } from '../features/auth/ParentOnboardingPage';
 import { ParentRelationshipInvitationPage } from '../features/parent-relationships/ParentRelationshipInvitationPage';
 import { canAccessAttendance } from '../features/attendance/rules';
+import { canAccessSystemTasks } from '../features/system-tasks/SystemTaskWorkbench';
 
 const DashboardPage = lazy(async () => ({ default: (await import('../features/dashboard/DashboardPage')).DashboardPage }));
+const SystemTaskWorkbench = lazy(async () => ({ default: (await import('../features/system-tasks/SystemTaskWorkbench')).SystemTaskWorkbench }));
+const FeatureManagementPage = lazy(async () => ({ default: (await import('../features/feature-management/FeatureManagementPage')).FeatureManagementPage }));
 const IamManagementPage = lazy(async () => ({ default: (await import('../features/iam/IamManagementPage')).IamManagementPage }));
 const OrganizationManagementPage = lazy(async () => ({ default: (await import('../features/organizations/OrganizationManagementPage')).OrganizationManagementPage }));
 const UserManagementPage = lazy(async () => ({ default: (await import('../features/users/UserManagementPage')).UserManagementPage }));
@@ -18,6 +21,8 @@ const LearningTaskManagementPage = lazy(async () => ({ default: (await import('.
 const GrowthPointPage = lazy(async () => ({ default: (await import('../features/growth-points/GrowthPointPage')).GrowthPointPage }));
 const RewardManagementPage = lazy(async () => ({ default: (await import('../features/rewards/RewardManagementPage')).RewardManagementPage }));
 const GrowthReviewPage = lazy(async () => ({ default: (await import('../features/growth-reviews/GrowthReviewPage')).GrowthReviewPage }));
+const AnonymousRankPage = lazy(async () => ({ default: (await import('../features/anonymous-ranks/AnonymousRankPage')).AnonymousRankPage }));
+const AnonymousRankWithdrawalPage = lazy(async () => ({ default: (await import('../features/anonymous-ranks/AnonymousRankWithdrawalPage')).AnonymousRankWithdrawalPage }));
 const StudentLoginManagementPage = lazy(async () => ({ default: (await import('../features/student-login/StudentLoginManagementPage')).StudentLoginManagementPage }));
 const ParentRelationshipPage = lazy(async () => ({ default: (await import('../features/parent-relationships/ParentRelationshipPage')).ParentRelationshipPage }));
 const DictionaryManagementPage = lazy(async () => ({ default: (await import('../features/dictionaries/DictionaryManagementPage')).DictionaryManagementPage }));
@@ -84,9 +89,17 @@ function ProtectedManagementApp() {
   }
 
   const learningTasksAvailable = canAccessLearningTasks(currentUser, capabilities);
+  const systemTasksAvailable = canAccessSystemTasks(currentUser, capabilities);
+  const featureManagementAvailable = currentUser.clientType === 'WEB' && capabilities.client === 'WEB'
+    && currentUser.roleCodes.some(role => ['SYS_ADMIN', 'SYS_AUDITOR'].includes(role))
+    && currentUser.permissionCodes.includes('FEATURE_TOGGLE_READ');
   const growthPointsAvailable = canAccessGrowthPoints(currentUser, capabilities);
   const rewardsAvailable = canAccessRewards(currentUser, capabilities);
   const growthReviewsAvailable = canAccessGrowthReviews(currentUser, capabilities);
+  const anonymousRankAvailable = capabilities.anonymousClassRankEnabled === true
+    && currentUser.roleCodes.includes('PARENT') && !currentUser.roleCodes.includes('SYS_AUDITOR')
+    && currentUser.permissionCodes.includes('ANONYMOUS_CLASS_RANK_READ');
+  const rankWithdrawalAvailable = currentUser.roleCodes.includes('PARENT') && !currentUser.roleCodes.includes('SYS_AUDITOR');
   const studentQrLoginAvailable = canAccessStudentQrLogin(currentUser, capabilities);
   const parentRelationshipsAvailable = canAccessParentRelationships(currentUser, capabilities);
   const organizationPageAvailable = canAccessOrganizationPage(currentUser, capabilities);
@@ -100,7 +113,11 @@ function ProtectedManagementApp() {
   const teacherManagementAvailable = canAccessTeacherManagement(currentUser, capabilities);
   const exceptionReportsAvailable = canAccessExceptionReports(currentUser, capabilities);
   const attendanceAvailable = canAccessAttendance(currentUser, capabilities.attendanceManagementEnabled);
-  const selectedKey = location.pathname.startsWith('/attendance-records') ? 'attendance-records'
+  const selectedKey = location.pathname.startsWith('/rank-preferences') ? 'rank-preferences'
+    : location.pathname.startsWith('/system-tasks') ? 'system-tasks'
+    : location.pathname.startsWith('/feature-management') ? 'feature-management'
+    : location.pathname.startsWith('/anonymous-ranks') ? 'anonymous-ranks'
+    : location.pathname.startsWith('/attendance-records') ? 'attendance-records'
     : location.pathname.startsWith('/exception-reports') ? 'exception-reports'
     : location.pathname.startsWith('/export-jobs') ? 'export-jobs'
     : location.pathname.startsWith('/import-jobs') ? 'import-jobs'
@@ -131,6 +148,8 @@ function ProtectedManagementApp() {
           onClick={({ key }) => navigate(key === 'dashboard' ? '/dashboard' : `/${key}`)}
           items={[
             { key: 'dashboard', icon: <LayoutDashboard size={18} />, label: '工作台' },
+            systemTasksAvailable ? { key: 'system-tasks', icon: <ClipboardList size={18} />, label: '系统任务' } : null,
+            featureManagementAvailable ? { key: 'feature-management', icon: <Gauge size={18} />, label: '功能开关' } : null,
             attendanceAvailable
               ? { key: 'attendance-records', icon: <BookOpenCheck size={18} />, label: '考勤台账' }
               : null,
@@ -148,6 +167,12 @@ function ProtectedManagementApp() {
               : null,
             growthReviewsAvailable
               ? { key: 'growth-reviews', icon: <BookOpenCheck size={18} />, label: '成长复盘' }
+              : null,
+            anonymousRankAvailable
+              ? { key: 'anonymous-ranks', icon: <Coins size={18} />, label: '班级匿名排行' }
+              : null,
+            rankWithdrawalAvailable
+              ? { key: 'rank-preferences', icon: <ShieldCheck size={18} />, label: '排行查看授权' }
               : null,
             studentQrLoginAvailable
               ? { key: 'student-login', icon: <QrCode size={18} />, label: '学生登录' }
@@ -198,10 +223,17 @@ function ProtectedManagementApp() {
           <Suspense fallback={<div className="route-loading"><Spin /></div>}>
             <Routes>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/system-tasks" element={systemTasksAvailable
+                ? <SystemTaskWorkbench key={currentUser.userId} currentUser={currentUser} onNavigate={navigate} onAccessChange={updateAttendanceAccess} />
+                : <Navigate to="/dashboard" replace />} />
+              <Route path="/feature-management" element={featureManagementAvailable
+                ? <FeatureManagementPage key={currentUser.userId} currentUser={currentUser} onAccessChange={updateAttendanceAccess} />
+                : <Navigate to="/dashboard" replace />} />
               <Route path="/dashboard" element={(
                 <DashboardPage
                   currentUser={currentUser}
                   accountSecurityManagementEnabled={capabilities.accountSecurityManagementEnabled}
+                  learningTaskManagementEnabled={capabilities.learningTaskManagementEnabled}
                   parentAccountLifecycleEnabled={capabilities.parentAccountLifecycleEnabled}
                   attendanceAvailable={attendanceAvailable}
                   onOpenAttendance={() => navigate('/attendance-records')}
@@ -330,9 +362,24 @@ function ProtectedManagementApp() {
               <Route
                 path="/growth-reviews"
                 element={growthReviewsAvailable
-                  ? <GrowthReviewPage />
+                  ? <GrowthReviewPage subscriptionEnabled={capabilities.growthReviewSubscriptionEnabled === true
+                      && currentUser.roleCodes.includes('PARENT') && !currentUser.roleCodes.includes('SYS_AUDITOR')}
+                    canEnableSubscription={currentUser.permissionCodes.includes('GROWTH_REVIEW_SUBSCRIBE_CHILD')
+                      && currentUser.permissionCodes.includes('GROWTH_REVIEW_READ_CHILD')}
+                    canCreateExport={capabilities.growthReviewPdfExportEnabled === true
+                      && !currentUser.roleCodes.includes('SYS_AUDITOR')
+                      && currentUser.permissionCodes.includes('EXPORT_JOB_CREATE')
+                      && currentUser.permissionCodes.includes('GROWTH_REVIEW_READ_CHILD')}
+                    canReadExportHistory={capabilities.attachmentServiceEnabled === true
+                      && !currentUser.roleCodes.includes('SYS_AUDITOR')
+                      && currentUser.permissionCodes.includes('EXPORT_JOB_READ')
+                      && currentUser.permissionCodes.includes('GROWTH_REVIEW_READ_CHILD')} />
                   : <Navigate to="/dashboard" replace />}
               />
+              <Route path="/anonymous-ranks" element={anonymousRankAvailable
+                ? <AnonymousRankPage /> : <Navigate to="/dashboard" replace />} />
+              <Route path="/rank-preferences" element={rankWithdrawalAvailable
+                ? <AnonymousRankWithdrawalPage /> : <Navigate to="/dashboard" replace />} />
               <Route
                 path="/student-login"
                 element={studentQrLoginAvailable

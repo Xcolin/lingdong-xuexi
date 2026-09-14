@@ -89,8 +89,8 @@
               <view class="field">状态：{{ row.status ? statusName(row.status) : '未选择' }}</view>
             </picker>
             <view v-if="row.status !== 'ABSENT' && row.status !== 'LEAVE'" class="two-columns">
-              <view><text class="meta">签到时间</text><input v-model="row.checkinTime" class="field" :disabled="busy" maxlength="8" placeholder="HH:mm:ss" @input="row.selected = true" /></view>
-              <view><text class="meta">签退时间</text><input v-model="row.checkoutTime" class="field" :disabled="busy" maxlength="8" placeholder="HH:mm:ss" @input="row.selected = true" /></view>
+              <view><text class="meta">签到时间</text><picker mode="time" :value="row.checkinTime" :disabled="busy" @change="row.checkinTime = $event.detail.value; row.selected = true"><view class="field">{{ row.checkinTime || '未填写' }}</view></picker><button v-if="row.checkinTime" class="outline" :disabled="busy" @tap="row.checkinTime = ''; row.selected = true">清除签到</button></view>
+              <view><text class="meta">签退时间</text><picker mode="time" :value="row.checkoutTime" :disabled="busy" @change="row.checkoutTime = $event.detail.value; row.selected = true"><view class="field">{{ row.checkoutTime || '未填写' }}</view></picker><button v-if="row.checkoutTime" class="outline" :disabled="busy" @tap="row.checkoutTime = ''; row.selected = true">清除签退</button></view>
             </view>
           </view>
           <view class="submit-band"><text class="meta">已选择 {{ selectedCount }} 人</text><button class="primary" :loading="submitting" :disabled="busy || selectedCount < 1 || selectedCount > 100" @tap="submit">提交点名（{{ selectedCount }} 人）</button></view>

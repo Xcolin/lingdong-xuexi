@@ -23,6 +23,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class GrowthRewardExchangeServiceSecondaryParentTest {
+    @Test void mixedAuditorCannotReadExchangesEvenAsParent() {
+        var user = new AuthenticatedUser(8910000000000000811L, 1L, "auditor", "审核员",
+                AuthClientType.WEB, List.of("PARENT", "SYS_AUDITOR"));
+        when(parentStudentMapper.existsActiveByParentAndStudent(user.userId(), 8910000000000000812L)).thenReturn(true);
+        assertThatThrownBy(() -> service.findManaged(user, 8910000000000000812L, 1, 20))
+                .isInstanceOf(com.lingdong.learning.common.security.SystemOperationAccessDeniedException.class);
+    }
     private final GrowthRewardExchangeMapper exchangeMapper = mock(GrowthRewardExchangeMapper.class);
     private final ParentStudentMapper parentStudentMapper = mock(ParentStudentMapper.class);
     private final GrowthRewardExchangeService service = new GrowthRewardExchangeService(

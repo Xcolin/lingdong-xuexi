@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ProCard } from '@ant-design/pro-components';
 import {
   App, Button, Empty, Form, Input, List, Modal, Progress, Segmented,
@@ -6,6 +6,9 @@ import {
 } from 'antd';
 import { FilePenLine, RefreshCw } from 'lucide-react';
 import { growthReviewApi } from './api';
+import { GrowthReviewExportHistory } from './GrowthReviewExportHistory';
+import { CreateGrowthReviewExport } from './CreateGrowthReviewExport';
+import { GrowthReviewSubscriptionPanel } from './GrowthReviewSubscriptionPanel';
 import type {
   AddGrowthReviewSupplementInput,
   GrowthReviewDetail,
@@ -27,80 +30,108 @@ const SUPPLEMENT_TYPES: Array<{ label: string; value: GrowthReviewSupplementType
   { label: '下一步计划', value: 'NEXT_PLAN' }
 ];
 
-export function GrowthReviewPage() {
+export function GrowthReviewPage({ canReadExportHistory = false, canCreateExport = false,
+  subscriptionEnabled = false, canEnableSubscription = false }: {
+  canReadExportHistory?: boolean; canCreateExport?: boolean;
+  subscriptionEnabled?: boolean; canEnableSubscription?: boolean;
+}) {
+  const [created, setCreated] = useState<{ studentId: string; version: number }>();
   const { message } = App.useApp();
   const [form] = Form.useForm<AddGrowthReviewSupplementInput>();
   const [students, setStudents] = useState<GrowthReviewStudentOption[]>([]);
   const [studentId, setStudentId] = useState<string>();
   const [periodType, setPeriodType] = useState<GrowthReviewPeriodType>('DAY');
+  const [template, setTemplate] = useState<'SIMPLE' | 'DETAILED'>('DETAILED');
   const [reviews, setReviews] = useState<GrowthReviewSummary[]>([]);
   const [detail, setDetail] = useState<GrowthReviewDetail>();
   const [loading, setLoading] = useState(false);
   const [supplementOpen, setSupplementOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  // 同一页面仅接受最新读取；切换范围和卸载均作废旧响应。
+  const requestVersion = useRef(0);
 
   useEffect(() => {
+    let active = true;
     void growthReviewApi.listStudents()
       .then((items) => {
+        if (!active) return;
         setStudents(items);
         setStudentId((current) => current ?? items[0]?.studentId);
       })
-      .catch((error) => message.error(errorMessage(error)));
+      .catch((error) => { if (active) message.error(errorMessage(error)); });
+    return () => { active = false; };
   }, [message]);
 
   const loadReviews = useCallback(async () => {
+    const version = ++requestVersion.current;
+    setReviews([]);
+    setDetail(undefined);
     if (!studentId) {
       setReviews([]);
       setDetail(undefined);
+      setLoading(false);
       return;
     }
     setLoading(true);
     try {
       const page = await growthReviewApi.list(studentId, periodType, 1, PAGE_SIZE);
+      if (version !== requestVersion.current) return;
       setReviews(page.items);
       const first = page.items[0];
-      setDetail(first ? await growthReviewApi.detail(studentId, first.reviewId) : undefined);
+      const result = first ? await growthReviewApi.detail(studentId, first.reviewId) : undefined;
+      if (version === requestVersion.current) setDetail(result);
     } catch (error) {
+      if (version !== requestVersion.current) return;
       setReviews([]);
       setDetail(undefined);
       message.error(errorMessage(error));
     } finally {
-      setLoading(false);
+      if (version === requestVersion.current) setLoading(false);
     }
   }, [message, periodType, studentId]);
 
   useEffect(() => {
+    setSupplementOpen(false);
+    setSubmitting(false);
+    form.resetFields();
     void loadReviews();
-  }, [loadReviews]);
+    return () => { requestVersion.current++; };
+  }, [form, loadReviews]);
 
   async function selectReview(review: GrowthReviewSummary): Promise<void> {
     if (!studentId || review.reviewId === detail?.reviewId) return;
+    const version = ++requestVersion.current;
     setLoading(true);
     try {
-      setDetail(await growthReviewApi.detail(studentId, review.reviewId));
+      const result = await growthReviewApi.detail(studentId, review.reviewId);
+      if (version === requestVersion.current) setDetail(result);
     } catch (error) {
-      message.error(errorMessage(error));
+      if (version === requestVersion.current) message.error(errorMessage(error));
     } finally {
-      setLoading(false);
+      if (version === requestVersion.current) setLoading(false);
     }
   }
 
   async function submitSupplement(values: AddGrowthReviewSupplementInput): Promise<void> {
     if (!studentId || !detail) return;
+    const version = requestVersion.current;
     setSubmitting(true);
     try {
       await growthReviewApi.supplement(studentId, detail.reviewId, {
         supplementType: values.supplementType,
         content: values.content.trim()
       });
-      setDetail(await growthReviewApi.detail(studentId, detail.reviewId));
+      if (version !== requestVersion.current) return;
+      const result = await growthReviewApi.detail(studentId, detail.reviewId);
+      if (version !== requestVersion.current) return;
+      setDetail(result);
       setSupplementOpen(false);
       form.resetFields();
       message.success('复盘补录已追加');
     } catch (error) {
-      message.error(errorMessage(error));
+      if (version === requestVersion.current) message.error(errorMessage(error));
     } finally {
-      setSubmitting(false);
+      if (version === requestVersion.current) setSubmitting(false);
     }
   }
 
@@ -108,12 +139,20 @@ export function GrowthReviewPage() {
     () => students.find((item) => item.studentId === studentId)?.studentName,
     [studentId, students]
   );
+  // 模板只控制已授权快照的呈现，不改变统计、请求或日报补录规则。
+  const periodicReport = detail?.periodType === 'WEEK' || detail?.periodType === 'MONTH';
+  const showDetails = !periodicReport || template === 'DETAILED';
 
   return (
     <div className="page-stack growth-review-page">
       <header className="page-heading">
         <h1>成长复盘</h1>
         <Space wrap>
+          {canCreateExport && studentId && <CreateGrowthReviewExport key={studentId} studentId={studentId}
+            reviewId={!loading && detail?.studentId === studentId ? detail.reviewId : undefined}
+            onCreated={() => setCreated(value => ({ studentId, version: (value?.version ?? 0) + 1 }))} />}
+          {canReadExportHistory && studentId && <GrowthReviewExportHistory key={`${studentId}-${created?.version ?? 0}`}
+            studentId={studentId} initialOpen={created?.studentId === studentId} />}
           <Select
             aria-label="选择孩子"
             className="growth-review-student-select"
@@ -122,7 +161,7 @@ export function GrowthReviewPage() {
             options={students.map((student) => ({
               label: student.studentName, value: student.studentId
             }))}
-            onChange={setStudentId}
+            onChange={value => { setCreated(undefined); setStudentId(value); }}
           />
           <Tooltip title="刷新复盘">
             <Button
@@ -136,12 +175,22 @@ export function GrowthReviewPage() {
       </header>
 
       <div className="growth-review-toolbar">
+        {subscriptionEnabled && studentId && <GrowthReviewSubscriptionPanel studentId={studentId}
+          canEnable={canEnableSubscription} />}
         <Segmented
           aria-label="复盘周期"
           value={periodType}
           options={PERIOD_OPTIONS}
           onChange={(value) => setPeriodType(value as GrowthReviewPeriodType)}
         />
+        {periodicReport && (
+          <Segmented
+            aria-label="复盘模板"
+            value={template}
+            options={[{ label: '简洁版', value: 'SIMPLE' }, { label: '详细版', value: 'DETAILED' }]}
+            onChange={(value) => setTemplate(value as 'SIMPLE' | 'DETAILED')}
+          />
+        )}
       </div>
 
       {!studentId ? (
@@ -193,11 +242,12 @@ export function GrowthReviewPage() {
                     )}
                   </div>
 
-                  <div className="growth-review-metrics">
+                  <div className={`growth-review-metrics${periodicReport ? ' growth-review-periodic-metrics' : ''}`}>
                     <Statistic title="完成率" value={formatRate(detail.completionRate)} />
                     <Statistic title="累计获取" value={detail.earnedPoints} suffix="分" />
                     <Statistic title="进行中" value={detail.inProgressCount} suffix="项" />
                     <Statistic title="情绪暂停" value={detail.pauseCount} suffix="次" />
+                    {periodicReport && <Statistic title="待优化" value={detail.pendingOptimizationCount} suffix="项" />}
                   </div>
                   <Progress
                     percent={Math.round(detail.completionRate * 100)}
@@ -206,6 +256,19 @@ export function GrowthReviewPage() {
                     trailColor="#e5ece8"
                   />
 
+                  {showDetails && <>
+                  {periodicReport && (
+                    <section className="growth-review-section" aria-label="成长分析">
+                      <h3>成长分析</h3>
+                      <p>本周期共 {detail.taskTotalCount} 项任务，已完成 {detail.completedCount} 项，进行中 {detail.inProgressCount} 项，待优化 {detail.pendingOptimizationCount} 项。</p>
+                      <h3>下一步计划</h3>
+                      {detail.supplements.some((item) => item.supplementType === 'NEXT_PLAN')
+                        ? detail.supplements.filter((item) => item.supplementType === 'NEXT_PLAN').map((item) => (
+                          <p key={item.id}>{item.content}</p>
+                        ))
+                        : <p>暂无已补录的下一步计划</p>}
+                    </section>
+                  )}
                   <div className="growth-review-section">
                     <h3>任务分类</h3>
                     <Table
@@ -254,6 +317,7 @@ export function GrowthReviewPage() {
                       )}
                     />
                   </div>
+                  </>}
                 </>
               ) : <Empty description="请选择成长复盘" />}
             </section>

@@ -73,6 +73,7 @@ class LearningTaskControllerTest {
     @Autowired private TaskOverdueService taskOverdueService;
     @Autowired private TaskDeferService taskDeferService;
     @Autowired private ParentStudentMapper parentStudentMapper;
+    @Autowired private org.apache.ibatis.session.SqlSession sqlSession;
 
     @Test
     void createsEditsPublishesAndReadsFamilyOrganizationAndTeacherTasks() throws Exception {
@@ -584,7 +585,7 @@ class LearningTaskControllerTest {
         mockMvc.perform(post("/api/v1/task-reviews/{assignmentId}/reject", assignmentId)
                         .header("Authorization", "Bearer " + fixture.parentToken())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"reviewComment\":\"摘要需要补充主要人物。\"}"))
+                        .content(reviewBody(assignmentId, "摘要需要补充主要人物。")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.assignmentId").value(assignmentId.toString()))
                 .andExpect(jsonPath("$.currentStatus").value("IN_PROGRESS"))
@@ -624,10 +625,12 @@ class LearningTaskControllerTest {
                 Long.class, assignmentId)).isEqualTo(6L);
 
         mockMvc.perform(post("/api/v1/task-reviews/{assignmentId}/approve", assignmentId)
+                        .contentType(MediaType.APPLICATION_JSON).content(reviewBody(assignmentId, null))
                         .header("Authorization", "Bearer " + fixture.teacherToken()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("RESOURCE_NOT_FOUND"));
         mockMvc.perform(post("/api/v1/task-reviews/{assignmentId}/approve", assignmentId)
+                        .contentType(MediaType.APPLICATION_JSON).content(reviewBody(assignmentId, null))
                         .header("Authorization", "Bearer " + fixture.parentToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.assignmentId").value(assignmentId.toString()))
@@ -638,6 +641,7 @@ class LearningTaskControllerTest {
                 .andExpect(jsonPath("$.availablePoints").value(20))
                 .andExpect(jsonPath("$.ledgerId").isString());
         mockMvc.perform(post("/api/v1/task-reviews/{assignmentId}/approve", assignmentId)
+                        .contentType(MediaType.APPLICATION_JSON).content(reviewBody(assignmentId, null))
                         .header("Authorization", "Bearer " + fixture.parentToken()))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("STATE_CONFLICT"));
@@ -868,6 +872,7 @@ class LearningTaskControllerTest {
                 .andExpect(jsonPath("$.items[1].correctable").value(false));
 
         mockMvc.perform(post("/api/v1/task-reviews/{assignmentId}/approve", assignmentId)
+                        .contentType(MediaType.APPLICATION_JSON).content(reviewBody(assignmentId, null))
                         .header("Authorization", "Bearer " + fixture.parentToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.awardedPoints").value(20))
@@ -1091,6 +1096,219 @@ class LearningTaskControllerTest {
                 "SELECT COUNT(*) FROM learn_task_defer_history "
                         + "WHERE assignment_id = ? AND defer_type = 'AUTO'",
                 Long.class, assignmentId)).isEqualTo(1L);
+    }
+
+    @Test
+    void miniappParentReviewsOwnPendingTasksWithDynamicAccessChecks() throws Exception {
+        Fixture fixture = createFixture();
+        MvcResult created = mockMvc.perform(post("/api/v1/learning-tasks")
+                        .header("Authorization", "Bearer " + fixture.parentToken())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(taskBody("FAMILY", null, "小程序家长审核", 2,
+                                LocalDate.now(ZoneId.of("Asia/Shanghai")).plusDays(1), null,
+                                target("STUDENT", fixture.familyStudent().id()))))
+                .andExpect(status().isCreated()).andReturn();
+        publish(fixture.parentToken(), responseId(created, "id"), 1);
+        String studentToken = studentLoginToken(fixture.familyStudent());
+        MvcResult assignments = mockMvc.perform(get("/api/v1/task-assignments")
+                        .header("Authorization", "Bearer " + studentToken))
+                .andExpect(status().isOk()).andReturn();
+        Long assignmentId = responseId(assignments, "items.0.id");
+        mockMvc.perform(post("/api/v1/task-assignments/{id}/claim", assignmentId)
+                        .header("Authorization", "Bearer " + studentToken)).andExpect(status().isOk());
+        submitReviewCheckIn(studentToken, assignmentId);
+
+        User otherParent = createUserWithRole("mini_review_other", "另一家长", "PARENT", null);
+        setPassword(fixture.systemAdministrator(), otherParent);
+        String otherToken = platformLoginToken("mini_review_other");
+        makeMiniappParentSession(fixture.parent());
+        makeMiniappParentSession(otherParent);
+        String token = fixture.parentToken();
+        mockMvc.perform(get("/api/v1/auth/me").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.clientType").value("MINIAPP"));
+        mockMvc.perform(get("/api/v1/task-reviews?page=1&pageSize=1")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(1))
+                .andExpect(jsonPath("$.items[0].assignmentId").value(assignmentId.toString()));
+        mockMvc.perform(get("/api/v1/task-reviews?page=2&pageSize=1")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(1))
+                .andExpect(jsonPath("$.items").isEmpty());
+        mockMvc.perform(get("/api/v1/task-reviews/{id}", assignmentId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.assignmentId").isString())
+                .andExpect(jsonPath("$.latestCheckIn.content").value("小程序审核契约打卡"));
+        mockMvc.perform(get("/api/v1/task-reviews").header("Authorization", "Bearer " + otherToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(0));
+        mockMvc.perform(get("/api/v1/task-reviews/{id}", assignmentId)
+                        .header("Authorization", "Bearer " + otherToken)).andExpect(status().isNotFound());
+        mockMvc.perform(post("/api/v1/task-reviews/{id}/approve", assignmentId)
+                        .contentType(MediaType.APPLICATION_JSON).content(reviewBody(assignmentId, null))
+                        .header("Authorization", "Bearer " + otherToken)).andExpect(status().isNotFound());
+
+        jdbcTemplate.update("UPDATE sys_permission SET status='DISABLED' WHERE permission_code='TASK_ASSIGNMENT_REVIEW'");
+        sqlSession.clearCache();
+        mockMvc.perform(get("/api/v1/task-reviews").header("Authorization", "Bearer " + token))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/v1/task-reviews/{id}/approve", assignmentId)
+                        .contentType(MediaType.APPLICATION_JSON).content(reviewBody(assignmentId, null))
+                        .header("Authorization", "Bearer " + token)).andExpect(status().isForbidden());
+        jdbcTemplate.update("UPDATE sys_permission SET status='ENABLED' WHERE permission_code='TASK_ASSIGNMENT_REVIEW'");
+        sqlSession.clearCache();
+        featureToggleMapper.updateGlobalStatus("LEARNING_TASK_MANAGEMENT", FeatureStatus.DISABLED);
+        mockMvc.perform(get("/api/v1/task-reviews/{id}", assignmentId)
+                        .header("Authorization", "Bearer " + token)).andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("FEATURE_DISABLED"));
+        mockMvc.perform(post("/api/v1/task-reviews/{id}/approve", assignmentId)
+                        .contentType(MediaType.APPLICATION_JSON).content(reviewBody(assignmentId, null))
+                        .header("Authorization", "Bearer " + token)).andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("FEATURE_DISABLED"));
+        featureToggleMapper.updateGlobalStatus("LEARNING_TASK_MANAGEMENT", FeatureStatus.ENABLED);
+        mockMvc.perform(post("/api/v1/task-reviews/{id}/reject", assignmentId)
+                        .header("Authorization", "Bearer " + token).contentType(MediaType.APPLICATION_JSON)
+                        .content(reviewBody(assignmentId, "请补充摘要")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.checkInStatus").value("REJECTED"));
+        String staleReview = reviewBody(assignmentId, "旧窗口退回意见");
+        submitReviewCheckIn(studentToken, assignmentId);
+        for (String action : new String[]{"approve", "reject"}) {
+            mockMvc.perform(post("/api/v1/task-reviews/{id}/" + action, assignmentId)
+                            .header("Authorization", "Bearer " + token).contentType(MediaType.APPLICATION_JSON)
+                            .content(staleReview))
+                    .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("STATE_CONFLICT"));
+        }
+        assertThat(jdbcTemplate.queryForObject("SELECT current_status FROM learn_task_assignment WHERE id=?",
+                String.class, assignmentId)).isEqualTo("PENDING_REVIEW");
+        mockMvc.perform(post("/api/v1/task-reviews/{id}/approve", assignmentId)
+                        .header("Authorization", "Bearer " + token).contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(post("/api/v1/task-reviews/{id}/reject", assignmentId)
+                        .header("Authorization", "Bearer " + token).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"reviewComment\":\"缺少打卡版本\"}"))
+                .andExpect(status().isBadRequest());
+        for (String action : new String[]{"approve", "reject"}) {
+            for (String invalidId : new String[]{"null", "1874244142494699999", "\"9999999999999999999\"", "\"1\""}) {
+                mockMvc.perform(post("/api/v1/task-reviews/{id}/" + action, assignmentId)
+                                .header("Authorization", "Bearer " + token).contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"expectedCheckInId\":" + invalidId + ",\"reviewComment\":\"参数校验\"}"))
+                        .andExpect(status().isBadRequest());
+            }
+        }
+        mockMvc.perform(post("/api/v1/task-reviews/{id}/approve", assignmentId)
+                        .contentType(MediaType.APPLICATION_JSON).content(reviewBody(assignmentId, null))
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.currentStatus").value("COMPLETED"))
+                .andExpect(jsonPath("$.checkInStatus").value("APPROVED"));
+        mockMvc.perform(get("/api/v1/task-reviews").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(0));
+    }
+
+    @Test
+    void miniappPrimaryParentCreatesEditsAndPublishesWithoutOrganization() throws Exception {
+        Fixture fixture = createFixture();
+        makeMiniappParentSession(fixture.parent());
+        String token = fixture.parentToken();
+        mockMvc.perform(get("/api/v1/auth/me").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.clientType").value("MINIAPP"));
+        mockMvc.perform(get("/api/v1/learning-task-options/students?sourceType=FAMILY")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.id == '" + fixture.familyStudent().id() + "')].relationshipRole")
+                        .value(org.hamcrest.Matchers.hasItem("PRIMARY_GUARDIAN")));
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM edu_student_organization WHERE student_id=?",
+                Integer.class, fixture.familyStudent().id())).isZero();
+        String body = taskBody("FAMILY", null, "移动端家庭任务", 1,
+                LocalDate.now(ZoneId.of("Asia/Shanghai")).plusDays(1), null,
+                target("STUDENT", fixture.familyStudent().id()));
+        Long id = responseId(mockMvc.perform(post("/api/v1/learning-tasks")
+                        .header("Authorization", "Bearer " + token).contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.id").isString()).andReturn(), "id");
+        mockMvc.perform(put("/api/v1/learning-tasks/{id}", id)
+                        .header("Authorization", "Bearer " + token).contentType(MediaType.APPLICATION_JSON)
+                        .content(body.replace("移动端家庭任务", "移动端修改任务")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.title").value("移动端修改任务"));
+        publish(token, id, 1);
+        mockMvc.perform(get("/api/v1/learning-tasks?sourceType=FAMILY")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.items[0].status").value("PUBLISHED"));
+    }
+
+    @Test
+    void miniappFamilyTaskRejectsSecondaryUnlinkedAndRevokedAccess() throws Exception {
+        Fixture fixture = createFixture();
+        User secondary = createUserWithRole("mini_task_secondary", "移动端副家长", "PARENT", null);
+        setPassword(fixture.systemAdministrator(), secondary);
+        String secondaryToken = platformLoginToken("mini_task_secondary");
+        parentStudentMapper.insertSecondary(8910000000000000852L, secondary.id(),
+                fixture.familyStudent().id(), LocalDateTime.now());
+        makeMiniappParentSession(secondary);
+        makeMiniappParentSession(fixture.parent());
+        String token = fixture.parentToken();
+        String body = taskBody("FAMILY", null, "移动端权限任务", 1,
+                LocalDate.now(ZoneId.of("Asia/Shanghai")).plusDays(1), null,
+                target("STUDENT", fixture.familyStudent().id()));
+        mockMvc.perform(post("/api/v1/learning-tasks").header("Authorization", "Bearer " + secondaryToken)
+                        .contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isNotFound());
+        Long id = responseId(mockMvc.perform(post("/api/v1/learning-tasks")
+                        .header("Authorization", "Bearer " + token).contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isCreated()).andReturn(), "id");
+        mockMvc.perform(put("/api/v1/learning-tasks/{id}", id).header("Authorization", "Bearer " + secondaryToken)
+                        .contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isNotFound());
+        mockMvc.perform(post("/api/v1/learning-tasks/{id}/publish", id)
+                        .header("Authorization", "Bearer " + secondaryToken)).andExpect(status().isNotFound());
+        jdbcTemplate.update("UPDATE sys_permission SET status='DISABLED' WHERE permission_code IN "
+                + "('LEARNING_TASK_CREATE','LEARNING_TASK_READ_MANAGED','LEARNING_TASK_PUBLISH')");
+        sqlSession.clearCache();
+        mockMvc.perform(get("/api/v1/learning-tasks").header("Authorization", "Bearer " + token))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(put("/api/v1/learning-tasks/{id}", id).header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/v1/learning-tasks/{id}/publish", id)
+                        .header("Authorization", "Bearer " + token)).andExpect(status().isForbidden());
+        jdbcTemplate.update("UPDATE sys_permission SET status='ENABLED' WHERE permission_code IN "
+                + "('LEARNING_TASK_CREATE','LEARNING_TASK_READ_MANAGED','LEARNING_TASK_PUBLISH')");
+        sqlSession.clearCache();
+        featureToggleMapper.updateGlobalStatus("LEARNING_TASK_MANAGEMENT", FeatureStatus.DISABLED);
+        mockMvc.perform(get("/api/v1/learning-task-options/students?sourceType=FAMILY")
+                        .header("Authorization", "Bearer " + token)).andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("FEATURE_DISABLED"));
+        mockMvc.perform(post("/api/v1/learning-tasks/{id}/publish", id)
+                        .header("Authorization", "Bearer " + token)).andExpect(status().isConflict());
+        featureToggleMapper.updateGlobalStatus("LEARNING_TASK_MANAGEMENT", FeatureStatus.ENABLED);
+        jdbcTemplate.update("UPDATE edu_parent_student SET status='UNBOUND' WHERE parent_user_id=? AND student_id=?",
+                fixture.parent().id(), fixture.familyStudent().id());
+        sqlSession.clearCache();
+        mockMvc.perform(post("/api/v1/learning-tasks/{id}/publish", id)
+                        .header("Authorization", "Bearer " + token)).andExpect(status().isNotFound());
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM learn_task_assignment WHERE task_id=?",
+                Integer.class, id)).isZero();
+    }
+
+    /** 合成本地 H2 家长会话，仍走真实认证过滤器；不代表短信或微信登录验证。 */
+    private void makeMiniappParentSession(User parent) {
+        jdbcTemplate.update("UPDATE sys_user SET user_type='FAMILY' WHERE id=?", parent.id());
+        jdbcTemplate.update("INSERT INTO auth_parent_profile(id,user_id,onboarding_status,first_login_at,onboarding_completed_at) "
+                + "VALUES(?,?,'COMPLETED',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)", parent.id(), parent.id());
+        jdbcTemplate.update("UPDATE auth_device_session SET client_type='MINIAPP' WHERE user_id=?", parent.id());
+        jdbcTemplate.update("INSERT INTO auth_user_agreement_acceptance(id,user_id,agreement_type,agreement_version,client_type,accepted_at) "
+                + "SELECT ?,?,'PARENT_USER_AGREEMENT',config_value,'MINIAPP',CURRENT_TIMESTAMP FROM sys_config "
+                + "WHERE config_key='auth.parent-agreement.current-version' AND status='ENABLED'", parent.id(), parent.id());
+        // 测试事务跨越多个 HTTP 请求，清除 JDBC 夹具变更前的 MyBatis 一级缓存。
+        sqlSession.clearCache();
+    }
+
+    private void submitReviewCheckIn(String studentToken, Long assignmentId) throws Exception {
+        mockMvc.perform(post("/api/v1/task-assignments/{id}/check-ins", assignmentId)
+                        .header("Authorization", "Bearer " + studentToken).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"content\":\"小程序审核契约打卡\"}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.currentStatus").value("PENDING_REVIEW"));
+    }
+
+    private String reviewBody(Long assignmentId, String comment) throws Exception {
+        Long checkInId = jdbcTemplate.queryForObject("SELECT id FROM learn_task_checkin WHERE assignment_id=? "
+                + "ORDER BY submission_no DESC LIMIT 1", Long.class, assignmentId);
+        ObjectNode body = objectMapper.createObjectNode().put("expectedCheckInId", checkInId.toString());
+        if (comment != null) body.put("reviewComment", comment);
+        return objectMapper.writeValueAsString(body);
     }
 
     private Fixture createFixture() throws Exception {

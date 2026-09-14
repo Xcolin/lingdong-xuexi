@@ -61,7 +61,8 @@ public class AttendanceController {
     public List<RosterResponse> roster(@AuthenticationPrincipal AuthenticatedUser user,
             @RequestParam Long classOrganizationId, @RequestParam LocalDate attendanceDate) {
         return service.roster(user, classOrganizationId, attendanceDate).stream()
-                .map(r -> new RosterResponse(r.studentId().toString(), AttendanceResponse.mask(r.studentName()),
+                // 名单已通过写权限和有效班级范围校验，点名必须展示完整姓名以区分同姓学生。
+                .map(r -> new RosterResponse(r.studentId().toString(), r.studentName(),
                         r.record() == null ? null : AttendanceResponse.from(r.record()))).toList();
     }
 

@@ -9,7 +9,9 @@ export function canAccessAttendance(user: CurrentUser, enabled?: boolean): boole
   return enabled === true && !user.roleCodes.includes('SYS_AUDITOR') && user.permissionCodes.includes('ATTENDANCE_READ');
 }
 export function canRecordAttendance(user: CurrentUser): boolean {
-  return !user.roleCodes.some((role) => ['SYS_AUDITOR', 'PARENT', 'STUDENT'].includes(role))
+  const organizationIdentity = user.roleCodes.some((role) => ['ORG_ADMIN', 'TEACHER'].includes(role));
+  return !user.roleCodes.includes('SYS_AUDITOR')
+    && (organizationIdentity || !user.roleCodes.some((role) => ['PARENT', 'STUDENT'].includes(role)))
     && user.permissionCodes.includes('ATTENDANCE_RECORD');
 }
 export function shanghaiToday(): string {

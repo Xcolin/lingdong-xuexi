@@ -17,6 +17,7 @@ export interface MiniappCapabilities {
   teacherManagementEnabled?: boolean;
   studentExceptionReportEnabled?: boolean;
   attendanceManagementEnabled?: boolean;
+  anonymousClassRankEnabled?: boolean;
   attachmentServiceEnabled?: boolean;
   previousDayTaskCopyEnabled: boolean;
   learningTaskTemplateEnabled: boolean;

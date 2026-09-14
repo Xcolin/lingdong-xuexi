@@ -11,3 +11,4 @@ web/web-dev.*.log
 miniapp/npm-install.*.log
 .idea/
 *.iml
+.local-verification/

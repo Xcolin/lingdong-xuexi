@@ -167,7 +167,8 @@ public class LearningTaskManagementService {
     }
 
     private void requireManagementRole(AuthenticatedUser currentUser) {
-        if (currentUser == null || currentUser.roleCodes().stream().noneMatch(
+        if (currentUser == null || currentUser.roleCodes().contains("SYS_AUDITOR")
+                || currentUser.roleCodes().stream().noneMatch(
                 role -> role.equals("PARENT") || role.equals("ORG_ADMIN") || role.equals("TEACHER"))) {
             throw new SystemOperationAccessDeniedException("当前角色不能管理学习任务");
         }

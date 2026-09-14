@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-/** Web 端业务审核待办入口。 */
+/** Web 与小程序业务审核待办入口，按实际会话客户端执行动态授权。 */
 @RestController
 @RequestMapping("/api/v1/task-reviews")
 public class TaskReviewController {
@@ -59,9 +59,10 @@ public class TaskReviewController {
     @PostMapping("/{assignmentId}/approve")
     public ApproveTaskReviewResponse approve(
             @AuthenticationPrincipal AuthenticatedUser currentUser,
-            @PathVariable Long assignmentId
+            @PathVariable Long assignmentId,
+            @Valid @RequestBody ApproveTaskReviewRequest request
     ) {
-        return ApproveTaskReviewResponse.from(reviewService.approve(currentUser, assignmentId));
+        return ApproveTaskReviewResponse.from(reviewService.approve(currentUser, assignmentId, request.checkInId()));
     }
 
     @RequirePermission("TASK_ASSIGNMENT_REVIEW")

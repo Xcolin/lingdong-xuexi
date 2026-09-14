@@ -8,6 +8,18 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class PublicCapabilityControllerTest {
+    @Test void weeklySubscriptionRequiresWebAndBothFeatures() {
+        var features = mock(FeatureAccessService.class);
+        var controller = new PublicCapabilityController(features);
+        assertThat(controller.capabilities("WEB").growthReviewSubscriptionEnabled()).isFalse();
+        when(features.isEnabled("GROWTH_REVIEW_WEEKLY_SUBSCRIPTION", null)).thenReturn(true);
+        assertThat(controller.capabilities("WEB").growthReviewSubscriptionEnabled()).isFalse();
+        when(features.isEnabled("PERIODIC_GROWTH_REPORT", null)).thenReturn(true);
+        assertThat(controller.capabilities("WEB").growthReviewSubscriptionEnabled()).isTrue();
+        assertThat(controller.capabilities("MINIAPP").growthReviewSubscriptionEnabled()).isFalse();
+        when(features.isEnabled("GROWTH_REVIEW_WEEKLY_SUBSCRIPTION", null)).thenReturn(false);
+        assertThat(controller.capabilities("WEB").growthReviewSubscriptionEnabled()).isFalse();
+    }
     @Test
     void exposesTeacherManagementCapabilityToBothIndependentClients() {
         FeatureAccessService featureAccessService = mock(FeatureAccessService.class);

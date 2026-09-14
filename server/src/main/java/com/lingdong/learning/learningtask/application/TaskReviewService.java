@@ -115,6 +115,7 @@ public class TaskReviewService {
     ) {
         requireReviewer(currentUser);
         String comment = normalizeComment(command == null ? null : command.reviewComment());
+        Long expectedCheckInId = requireCheckInId(command.expectedCheckInId());
         TaskReviewStateRow state = reviewMapper.findStateForUpdate(
                 requireId(assignmentId), currentUser.userId());
         if (state == null) {
@@ -127,6 +128,7 @@ public class TaskReviewService {
         if (checkIn == null) {
             throw new IllegalStateException("不存在待审核打卡");
         }
+        requireSameCheckIn(checkIn, expectedCheckInId);
         LocalDateTime now = LocalDateTime.now(clock);
         requireSingleWrite(checkInMapper.reject(checkIn.id(), currentUser.userId(), now, comment));
         requireSingleWrite(assignmentMapper.transitionStatus(
@@ -143,8 +145,9 @@ public class TaskReviewService {
 
     /** 审核通过、任务完成和积分奖励必须在同一事务中提交。 */
     @Transactional
-    public ApproveTaskReviewResult approve(AuthenticatedUser currentUser, Long assignmentId) {
+    public ApproveTaskReviewResult approve(AuthenticatedUser currentUser, Long assignmentId, Long expectedCheckInId) {
         requireReviewer(currentUser);
+        requireCheckInId(expectedCheckInId);
         TaskReviewStateRow state = reviewMapper.findStateForUpdate(
                 requireId(assignmentId), currentUser.userId());
         if (state == null) {
@@ -160,6 +163,8 @@ public class TaskReviewService {
         if (checkIn == null) {
             throw new IllegalStateException("不存在待审核打卡");
         }
+
+        requireSameCheckIn(checkIn, expectedCheckInId);
 
         GrowthPointAccount account = pointAccountMapper.findByStudentIdForUpdate(state.studentId());
         if (account == null) {
@@ -256,7 +261,8 @@ public class TaskReviewService {
 
     private void requireReviewer(AuthenticatedUser currentUser) {
         featureAccessService.requireEnabled(FEATURE_CODE, null);
-        if (currentUser == null || currentUser.roleCodes().stream().noneMatch(REVIEW_ROLES::contains)) {
+        if (currentUser == null || currentUser.roleCodes().contains("SYS_AUDITOR")
+                || currentUser.roleCodes().stream().noneMatch(REVIEW_ROLES::contains)) {
             throw new SystemOperationAccessDeniedException("当前用户不是业务审核角色");
         }
     }
@@ -271,6 +277,20 @@ public class TaskReviewService {
                 row.studentId(), row.studentName(),
                 row.sourceType(), row.sourceOrganizationId(), row.sourceOrganizationName(),
                 row.currentStatus(), row.currentReviewerId(), row.reviewerDisplayName(), checkIn);
+    }
+
+    private Long requireCheckInId(Long value) {
+        if (value == null || value < 1_000_000_000_000_000_000L) {
+            throw new IllegalArgumentException("打卡标识必须为19位正整数");
+        }
+        return value;
+    }
+
+    /** 必须在锁定任务和最新打卡后比较，拒绝旧窗口审核学生重新提交的内容。 */
+    private void requireSameCheckIn(TaskCheckIn checkIn, Long expectedCheckInId) {
+        if (!checkIn.id().equals(expectedCheckInId)) {
+            throw new IllegalStateException("打卡已更新，请刷新后重新审核");
+        }
     }
 
     private Long requireId(Long value) {

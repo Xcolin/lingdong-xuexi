@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthReviewDeliveryMapper">
+    <resultMap id="ReportMap" type="com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthReviewDeliveryMapper$Report">
+        <constructor><arg column="review_id" javaType="java.lang.Long"/><arg column="snapshot_id" javaType="java.lang.Long"/></constructor>
+    </resultMap>
+    <select id="findWeeklyReport" resultMap="ReportMap">
+        SELECT r.id AS review_id, s.id AS snapshot_id FROM growth_review r
+        JOIN growth_review_snapshot s ON s.id=r.current_snapshot_id AND s.review_id=r.id
+        JOIN edu_student student ON student.id=r.student_id AND student.status='ENABLED'
+        WHERE r.student_id=#{studentId} AND r.period_type='WEEK' AND r.period_start=#{start} AND r.period_end=#{end}
+    </select>
+    <select id="findId" resultType="java.lang.Long">
+        SELECT id FROM growth_review_delivery WHERE subscription_id=#{subscriptionId} AND period_start=#{start}
+    </select>
+    <insert id="insert">
+        INSERT INTO growth_review_delivery(id,subscription_id,subscription_version,period_start,review_id,snapshot_id,status,expires_at,created_at,updated_at)
+        VALUES(#{id},#{subscriptionId},#{version},#{start},#{report.reviewId},#{report.snapshotId},'PENDING',#{expires},#{now},#{now})
+    </insert>
+    <update id="reactivate">
+        UPDATE growth_review_delivery SET status='PENDING',subscription_version=#{version},review_id=#{report.reviewId},snapshot_id=#{report.snapshotId},updated_at=#{now}
+        WHERE id=#{id} AND status='CANCELLED' AND expires_at &gt; #{now} AND subscription_version &lt;= #{version}
+    </update>
+    <update id="cancelPending">
+        UPDATE growth_review_delivery SET status='CANCELLED',updated_at=CURRENT_TIMESTAMP WHERE subscription_id=#{subscriptionId} AND status='PENDING'
+    </update>
+    <update id="cancelExpired">
+        UPDATE growth_review_delivery SET status='CANCELLED',updated_at=#{now} WHERE status='PENDING' AND expires_at &lt;= #{now}
+    </update>
+</mapper>

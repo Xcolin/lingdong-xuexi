@@ -19,15 +19,15 @@ export const taskReviewApi = {
   readAttachment(fileId: string): Promise<Blob> {
     return apiClient.getBlob(`/attachments/${encodeURIComponent(fileId)}/content`);
   },
-  approve(assignmentId: string): Promise<ApproveTaskReviewResult> {
-    return apiClient.post<ApproveTaskReviewResult>(`/task-reviews/${assignmentId}/approve`, {});
+  approve(assignmentId: string, expectedCheckInId: string): Promise<ApproveTaskReviewResult> {
+    return apiClient.post<ApproveTaskReviewResult>(`/task-reviews/${assignmentId}/approve`, { expectedCheckInId });
   },
   listReviewerOptions(assignmentId: string): Promise<ReviewerOption[]> {
     return apiClient.get<ReviewerOption[]>(`/task-reviews/${assignmentId}/reviewer-options`);
   },
-  reject(assignmentId: string, reviewComment: string): Promise<TaskReviewActionResult> {
+  reject(assignmentId: string, reviewComment: string, expectedCheckInId: string): Promise<TaskReviewActionResult> {
     return apiClient.post<TaskReviewActionResult>(`/task-reviews/${assignmentId}/reject`, {
-      reviewComment
+      reviewComment, expectedCheckInId
     });
   },
   transfer(

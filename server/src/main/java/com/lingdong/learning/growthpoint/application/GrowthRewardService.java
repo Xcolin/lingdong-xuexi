@@ -151,7 +151,7 @@ public class GrowthRewardService {
 
     private void requireReadableChild(AuthenticatedUser currentUser, Long studentId) {
         featureAccessService.requireEnabled(FEATURE_CODE, null);
-        requireWebParent(currentUser);
+        requireParent(currentUser);
         if (studentId == null || !parentStudentMapper.existsActiveByParentAndStudent(
                 currentUser.userId(), studentId)) {
             throw notFound();
@@ -160,7 +160,7 @@ public class GrowthRewardService {
 
     private void requireWritableChild(AuthenticatedUser currentUser, Long studentId) {
         featureAccessService.requireEnabled(FEATURE_CODE, null);
-        requireWebParent(currentUser);
+        requireParent(currentUser);
         if (studentId == null || !parentStudentMapper.existsActivePrimaryByParentAndStudent(
                 currentUser.userId(), studentId)) {
             throw notFound();
@@ -174,10 +174,20 @@ public class GrowthRewardService {
         return currentStudentAccessService.require(currentUser);
     }
 
-    private void requireWebParent(AuthenticatedUser currentUser) {
-        if (currentUser == null || currentUser.clientType() != AuthClientType.WEB
-                || !currentUser.roleCodes().contains("PARENT")) {
-            throw new SystemOperationAccessDeniedException("仅 Web 端家长可访问家庭奖励");
+    @Transactional(readOnly = true)
+    public List<com.lingdong.learning.student.application.ParentRelationshipStudentView> findParentStudents(
+            AuthenticatedUser currentUser) {
+        featureAccessService.requireEnabled(FEATURE_CODE, null);
+        requireParent(currentUser);
+        return parentStudentMapper.findActiveStudentsByParent(currentUser.userId());
+    }
+
+    private void requireParent(AuthenticatedUser currentUser) {
+        if (currentUser == null || (currentUser.clientType() != AuthClientType.WEB
+                && currentUser.clientType() != AuthClientType.MINIAPP)
+                || !currentUser.roleCodes().contains("PARENT")
+                || currentUser.roleCodes().contains("SYS_AUDITOR")) {
+            throw new SystemOperationAccessDeniedException("仅家长可访问家庭奖励，审核员不能参与业务操作");
         }
     }
 

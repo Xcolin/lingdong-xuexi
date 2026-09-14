@@ -97,7 +97,6 @@ function AttendanceLedger({ currentUser, checkAccess, onAccessError }: {
     <Form form={form} layout="inline" className="directory-filters attendance-filters" onFinish={search}>
       <Form.Item name="classOrganizationId" label="班级"><Select aria-label="筛选班级" allowClear showSearch optionFilterProp="label" className="filter-select" options={classes.map((item) => ({ value: item.classOrganizationId, label: item.className }))} /></Form.Item>
       <Form.Item name="keyword" label="学生关键字"><Input aria-label="学生关键字" allowClear /></Form.Item>
-      <Form.Item name="studentId" label="学生ID"><Input aria-label="学生ID" allowClear /></Form.Item>
       <Form.Item name="status" label="状态"><Select aria-label="筛选状态" allowClear className="filter-select" options={Object.entries(statusLabels).map(([value, label]) => ({ value, label }))} /></Form.Item>
       <Form.Item name="dateFrom" label="开始日期"><Input aria-label="开始日期" type="date" /></Form.Item>
       <Form.Item name="dateTo" label="结束日期"><Input aria-label="结束日期" type="date" /></Form.Item>

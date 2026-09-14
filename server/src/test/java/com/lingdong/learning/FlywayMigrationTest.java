@@ -15,6 +15,18 @@ class FlywayMigrationTest {
     private JdbcTemplate jdbcTemplate;
 
     @Test
+    void seedsDisabledReviewPdfGenerationFeatureThroughV64() {
+        assertThat(jdbcTemplate.queryForObject("""
+                select count(*) from sys_feature_toggle
+                where feature_code = 'GROWTH_REVIEW_PDF_EXPORT' and scope_key = 'GLOBAL'
+                  and status = 'DISABLED' and built_in = 1 and id >= 1000000000000000000
+                """, Integer.class)).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject("""
+                select count(*) from flyway_schema_history where version = '64' and success = true
+                """, Integer.class)).isEqualTo(1);
+    }
+
+    @Test
     void createsSystemConfigurationTableThroughFlyway() {
         Integer count = jdbcTemplate.queryForObject(
                 "select count(*) from information_schema.tables where table_name = 'sys_config'",
@@ -2367,7 +2379,7 @@ class FlywayMigrationTest {
         assertThat(migrationCount).isEqualTo(1);
         assertThat(auditTableCount).isEqualTo(1);
         assertThat(auditIdColumnCount).isEqualTo(1);
-        assertThat(primaryKeyTableCount).isEqualTo(90);
+        assertThat(primaryKeyTableCount).isEqualTo(94);
         assertThat(featureCount).isEqualTo(1);
         assertThat(permissionCount).isEqualTo(6);
         assertThat(organizationAdministratorGrantCount).isEqualTo(6);

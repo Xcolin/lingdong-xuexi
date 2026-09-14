@@ -4,6 +4,8 @@ import com.lingdong.learning.audit.application.SystemTask;
 import com.lingdong.learning.audit.application.SystemTaskStatus;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import java.util.List;
+import com.lingdong.learning.audit.application.SystemTaskType;
 
 /** Persistence boundary for high-risk system task workflow state. */
 @Mapper
@@ -15,4 +17,9 @@ public interface SystemTaskMapper {
     int updateReview(@Param("id") Long id, @Param("status") SystemTaskStatus status,
                      @Param("reviewerId") Long reviewerId, @Param("comment") String comment);
     int markEffective(@Param("id") Long id);
+    List<SystemTask> findVisiblePage(@Param("userId") Long userId, @Param("auditor") boolean auditor,
+            @Param("types") List<SystemTaskType> types, @Param("status") SystemTaskStatus status, @Param("limit") int limit, @Param("offset") int offset);
+    long countVisible(@Param("userId") Long userId, @Param("auditor") boolean auditor,
+            @Param("types") List<SystemTaskType> types, @Param("status") SystemTaskStatus status);
+    SystemTask findVisibleById(@Param("id") Long id, @Param("userId") Long userId, @Param("auditor") boolean auditor, @Param("types") List<SystemTaskType> types);
 }

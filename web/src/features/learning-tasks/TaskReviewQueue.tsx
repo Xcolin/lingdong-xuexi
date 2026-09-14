@@ -27,6 +27,7 @@ export function TaskReviewQueue() {
   async function loadReviews(page: number): Promise<void> {
     setLoading(true);
     setErrorMessage(null);
+    setDirectory({ items: [], page, pageSize: PAGE_SIZE, total: 0 });
     try {
       setDirectory(await taskReviewApi.list(page, PAGE_SIZE));
     } catch (error) {
@@ -51,7 +52,7 @@ export function TaskReviewQueue() {
           rowKey="assignmentId"
           loading={loading}
           dataSource={directory.items}
-          locale={{ emptyText: '暂无审核待办' }}
+          locale={{ emptyText: loading ? '正在加载待审核任务' : errorMessage ? '待审核任务未能加载' : '暂无审核待办' }}
           scroll={{ x: 900 }}
           pagination={{
             current: directory.page,

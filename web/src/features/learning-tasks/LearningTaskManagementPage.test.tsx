@@ -362,7 +362,7 @@ describe('学习任务管理页面', () => {
     await user.click(await screen.findByRole('button', { name: '确认通过' }));
 
     await waitFor(() => {
-      expect(taskReviewApi.approve).toHaveBeenCalledWith('1874244142494647201');
+      expect(taskReviewApi.approve).toHaveBeenCalledWith('1874244142494647201', '1874244142494647301');
       expect(taskReviewApi.list).toHaveBeenCalledTimes(2);
     });
   });
@@ -384,7 +384,7 @@ describe('学习任务管理页面', () => {
 
     await waitFor(() => {
       expect(taskReviewApi.reject).toHaveBeenCalledWith(
-        '1874244142494647201', '需要补充主要人物。'
+        '1874244142494647201', '需要补充主要人物。', '1874244142494647301'
       );
       expect(taskReviewApi.list).toHaveBeenCalledTimes(2);
     });

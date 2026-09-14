@@ -377,7 +377,7 @@ button, input, textarea { font: inherit; }
 .reward-empty { min-height: 320px; display: grid; place-items: center; }
 
 .growth-review-student-select { width: 180px; }
-.growth-review-toolbar { display: flex; justify-content: flex-end; }
+.growth-review-toolbar { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 12px; }
 .growth-review-workspace .ant-pro-card-body { padding: 0; }
 .growth-review-grid { display: grid; grid-template-columns: minmax(260px, 340px) minmax(0, 1fr); min-height: 620px; }
 .growth-review-list { border-right: 1px solid #dce6e0; }
@@ -391,8 +391,10 @@ button, input, textarea { font: inherit; }
 .growth-review-detail-heading > div { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .growth-review-detail-heading h2 { margin: 0; font-size: 18px; line-height: 1.4; letter-spacing: 0; }
 .growth-review-metrics { display: grid; grid-template-columns: repeat(4, minmax(110px, 1fr)); gap: 18px; margin: 24px 0 12px; }
+.growth-review-periodic-metrics { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .growth-review-section { margin-top: 26px; padding-top: 20px; border-top: 1px solid #e2e9e5; }
 .growth-review-section h3 { margin: 0 0 12px; font-size: 15px; line-height: 1.4; letter-spacing: 0; }
+.growth-review-section p { white-space: pre-wrap; overflow-wrap: anywhere; }
 .growth-review-trends { display: grid; gap: 10px; }
 .growth-review-trend-row { display: grid; grid-template-columns: 46px minmax(90px, 1fr) 46px 68px; gap: 10px; align-items: center; font-size: 12px; color: #64756e; }
 .growth-review-trend-row > div { height: 8px; overflow: hidden; background: #e5ece8; border-radius: 4px; }

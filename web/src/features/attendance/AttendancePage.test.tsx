@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, configure, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ConfigProvider } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
@@ -19,6 +19,8 @@ async function choose(label: string, value: string) {
   fireEvent.click(await screen.findByText(value, { selector: '.ant-select-item-option-content' }));
 }
 describe('考勤台账', () => {
+  // 全量运行时多个 Ant Design 页面并行渲染，等待业务完成而非固定 1 秒。
+  configure({ asyncUtilTimeout: 5000 });
   beforeEach(() => {
     vi.resetAllMocks();
     vi.mocked(authApi.currentUser).mockResolvedValue(user);
@@ -44,11 +46,10 @@ describe('考勤台账', () => {
     mount(); await screen.findByText('小明');
     await choose('筛选班级', '历史一班'); await choose('筛选状态', '迟到');
     fireEvent.change(screen.getByLabelText('学生关键字'), { target: { value: ' 小明 ' } });
-    fireEvent.change(screen.getByLabelText('学生ID'), { target: { value: record.studentId } });
     fireEvent.change(screen.getByLabelText('开始日期'), { target: { value: '2026-09-01' } });
     fireEvent.change(screen.getByLabelText('结束日期'), { target: { value: '2026-09-07' } });
     fireEvent.click(screen.getByRole('button', { name: '查询' }));
-    const query = { classOrganizationId: record.classOrganizationId, studentId: record.studentId, keyword: '小明', status: 'LATE', dateFrom: '2026-09-01', dateTo: '2026-09-07', page: 1, pageSize: 20 };
+    const query = { classOrganizationId: record.classOrganizationId, keyword: '小明', status: 'LATE', dateFrom: '2026-09-01', dateTo: '2026-09-07', page: 1, pageSize: 20 };
     await waitFor(() => expect(attendanceApi.list).toHaveBeenLastCalledWith(query));
     fireEvent.click(screen.getByTitle('2'));
     await waitFor(() => expect(attendanceApi.list).toHaveBeenLastCalledWith({ ...query, page: 2 }));

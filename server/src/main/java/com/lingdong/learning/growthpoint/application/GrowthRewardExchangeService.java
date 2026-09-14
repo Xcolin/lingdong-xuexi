@@ -167,7 +167,7 @@ public class GrowthRewardExchangeService {
     private GrowthRewardExchange requireManagedExchange(
             AuthenticatedUser currentUser, Long exchangeId
     ) {
-        requireWebParent(currentUser);
+        requireParent(currentUser);
         Long validatedExchangeId = requireId(exchangeId, "兑换标识不合法");
         GrowthRewardExchange exchange = exchangeMapper.findByIdForUpdate(validatedExchangeId);
         if (exchange == null || !parentStudentMapper.existsActivePrimaryByParentAndStudent(
@@ -179,7 +179,7 @@ public class GrowthRewardExchangeService {
 
     private void requireReadableChild(AuthenticatedUser currentUser, Long studentId) {
         featureAccessService.requireEnabled(FEATURE_CODE, null);
-        requireWebParent(currentUser);
+        requireParent(currentUser);
         if (studentId == null || !parentStudentMapper.existsActiveByParentAndStudent(
                 currentUser.userId(), studentId)) {
             throw notFound();
@@ -201,10 +201,12 @@ public class GrowthRewardExchangeService {
         return currentStudentAccessService.require(currentUser);
     }
 
-    private void requireWebParent(AuthenticatedUser currentUser) {
-        if (currentUser == null || currentUser.clientType() != AuthClientType.WEB
-                || !currentUser.roleCodes().contains("PARENT")) {
-            throw new SystemOperationAccessDeniedException("仅 Web 端家长可访问奖励兑换");
+    private void requireParent(AuthenticatedUser currentUser) {
+        if (currentUser == null || (currentUser.clientType() != AuthClientType.WEB
+                && currentUser.clientType() != AuthClientType.MINIAPP)
+                || !currentUser.roleCodes().contains("PARENT")
+                || currentUser.roleCodes().contains("SYS_AUDITOR")) {
+            throw new SystemOperationAccessDeniedException("仅家长可访问奖励兑换，审核员不能参与业务操作");
         }
     }
 

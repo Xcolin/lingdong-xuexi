@@ -84,6 +84,23 @@
         LIMIT #{limit}
     </select>
 
+    <sql id="reviewHistoryFilters">
+        WHERE requester_id = #{requesterId} AND student_id = #{studentId}
+          AND export_type = 'GROWTH_REVIEW_PDF' AND sensitive_flag = 0 AND system_task_id IS NULL
+        <if test="status != null">AND status = #{status}</if>
+    </sql>
+
+    <select id="findReviewPageByRequesterAndStudent" resultMap="ExportJobMap">
+        SELECT <include refid="columns"/> FROM sys_export_job
+        <include refid="reviewHistoryFilters"/>
+        ORDER BY requested_at DESC, id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countReviewsByRequesterAndStudent" resultType="long">
+        SELECT COUNT(*) FROM sys_export_job <include refid="reviewHistoryFilters"/>
+    </select>
+
     <sql id="requesterFilters">
         WHERE requester_id = #{requesterId}
         <if test="exportType != null">AND export_type = #{exportType}</if>

@@ -26,6 +26,32 @@ public class GrowthReviewController {
         this.queryService = queryService;
     }
 
+    @RequirePermission("MINIAPP_GROWTH_REVIEW_READ_CHILD")
+    @GetMapping("/miniapp/students")
+    public java.util.List<GrowthReviewQueryService.ChildOption> findMiniappChildren(
+            @AuthenticationPrincipal AuthenticatedUser currentUser) {
+        return queryService.findMiniappChildren(currentUser);
+    }
+
+    @RequirePermission("MINIAPP_GROWTH_REVIEW_READ_CHILD")
+    @GetMapping("/miniapp/students/{studentId}")
+    public GrowthReviewPageResponse findMiniappChildWeeklyReviews(
+            @AuthenticationPrincipal AuthenticatedUser currentUser,
+            @PathVariable Long studentId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int pageSize) {
+        return GrowthReviewPageResponse.from(queryService.findMiniappChildWeeklyReviews(currentUser, studentId, page, pageSize));
+    }
+
+    @RequirePermission("MINIAPP_GROWTH_REVIEW_READ_CHILD")
+    @GetMapping("/miniapp/students/{studentId}/{reviewId}")
+    public GrowthReviewDetailResponse findMiniappChildWeeklyReview(
+            @AuthenticationPrincipal AuthenticatedUser currentUser,
+            @PathVariable Long studentId,
+            @PathVariable Long reviewId) {
+        return GrowthReviewDetailResponse.from(queryService.findMiniappChildWeeklyReview(currentUser, studentId, reviewId));
+    }
+
     @RequirePermission("GROWTH_REVIEW_READ_SELF")
     @GetMapping("/me")
     public GrowthReviewPageResponse findMyReviews(

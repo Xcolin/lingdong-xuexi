@@ -63,6 +63,16 @@
           AND template.status = 'ENABLED'
     </select>
 
+    <select id="findAvailableReportExports" resultMap="TemplateMap">
+        SELECT <include refid="TemplateColumns"/>
+        FROM sys_import_export_template template
+        INNER JOIN sys_file file ON file.id = template.file_id
+        WHERE template.template_type = 'EXPORT' AND template.module_code = 'REPORT'
+          AND template.status = 'ENABLED' AND file.status = 'AVAILABLE'
+        ORDER BY template.updated_at DESC, template.id DESC
+        LIMIT 200
+    </select>
+
     <select id="findAll" resultMap="TemplateMap">
         SELECT <include refid="TemplateColumns"/>
         FROM sys_import_export_template template

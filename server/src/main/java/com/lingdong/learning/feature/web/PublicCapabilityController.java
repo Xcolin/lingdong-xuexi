@@ -107,6 +107,15 @@ public class PublicCapabilityController {
                         && featureAccessService.isEnabled(ATTACHMENT_SERVICE, null),
                 featureAccessService.isEnabled(TEACHER_MANAGEMENT, null),
                 featureAccessService.isEnabled(STUDENT_EXCEPTION_REPORT, null),
-                featureAccessService.isEnabled("ATTENDANCE_MANAGEMENT", null));
+                featureAccessService.isEnabled("ATTENDANCE_MANAGEMENT", null),
+                WEB_CLIENT.equals(client)
+                        && featureAccessService.isEnabled("GROWTH_REVIEW_PDF_EXPORT", null)
+                        && featureAccessService.isEnabled(DATA_EXPORT, null)
+                        && featureAccessService.isEnabled(IMPORT_EXPORT_TEMPLATE_MANAGEMENT, null)
+                        && featureAccessService.isEnabled(ATTACHMENT_SERVICE, null),
+                WEB_CLIENT.equals(client)
+                        && featureAccessService.isEnabled("GROWTH_REVIEW_WEEKLY_SUBSCRIPTION", null)
+                        && featureAccessService.isEnabled(PERIODIC_GROWTH_REPORT, null),
+                featureAccessService.isEnabled("ANONYMOUS_CLASS_RANK", null));
     }
 }

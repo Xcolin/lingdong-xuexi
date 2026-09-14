@@ -2,6 +2,7 @@ package com.lingdong.learning.auth.web;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.lingdong.learning.auth.infrastructure.security.StudentLoginCodeGenerator;
 import com.lingdong.learning.feature.domain.FeatureStatus;
 import com.lingdong.learning.feature.infrastructure.persistence.FeatureToggleMapper;
 import com.lingdong.learning.student.application.IssuedStudentCredential;
@@ -15,11 +16,13 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -35,12 +38,15 @@ class StudentAuthenticationControllerTest {
     @Autowired private StudentIdentityProvisioningService provisioningService;
     @Autowired private StudentMapper studentMapper;
     @Autowired private FeatureToggleMapper featureToggleMapper;
+    @MockitoBean private StudentLoginCodeGenerator loginCodeGenerator;
 
     private IssuedStudentCredential issued;
     private String deviceId;
 
     @BeforeEach
     void createStudent() {
+        // 固定为曾被误用作错误登录码的值，防止随机碰撞问题再次被掩盖。
+        when(loginCodeGenerator.generate()).thenReturn("9999");
         featureToggleMapper.updateGlobalStatus("STUDENT_CODE_LOGIN", FeatureStatus.ENABLED);
         issued = provisioningService.issue("学生HTTP登录测试");
         deviceId = "http-device-" + issued.studentUserId();
@@ -107,16 +113,19 @@ class StudentAuthenticationControllerTest {
 
     @Test
     void returnsStudentSpecificErrorsAndRejectsLoginWhenFeatureIsDisabled() throws Exception {
+        // 错误凭据必须与本次发放值不同，同时保持合法的四位格式。
+        String invalidLoginCode = "9999".equals(issued.plainLoginCode()) ? "0000" : "9999";
+        assertThat(invalidLoginCode).isNotEqualTo(issued.plainLoginCode());
         for (int attempt = 1; attempt <= 4; attempt++) {
             mockMvc.perform(post("/api/v1/auth/student-sessions/code")
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(loginBody("9999", null, null)))
+                            .content(loginBody(invalidLoginCode, null, null)))
                     .andExpect(status().isUnauthorized())
                     .andExpect(jsonPath("$.code").value("STUDENT_AUTH_FAILED"));
         }
         mockMvc.perform(post("/api/v1/auth/student-sessions/code")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(loginBody("9999", null, null)))
+                        .content(loginBody(invalidLoginCode, null, null)))
                 .andExpect(status().isPreconditionRequired())
                 .andExpect(jsonPath("$.code").value("CAPTCHA_REQUIRED"));
 
