@@ -16,6 +16,11 @@ public record InterfaceServiceChange(
         String authorizationScopeValue,
         Long ownerId,
         InterfaceServiceStatus targetStatus,
+        InterfaceServiceChangeExecutionStatus executionStatus,
+        String failureReason,
+        InterfaceServiceStatus beforeStatus,
+        InterfaceAuthorizationScope beforeAuthorizationScope,
+        String beforeAuthorizationScopeValue,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
@@ -32,21 +37,24 @@ public record InterfaceServiceChange(
     ) {
         return new InterfaceServiceChange(
                 id, taskId, null, InterfaceServiceChangeType.CREATE, serviceName, direction, purpose, callerName,
-                authorizationScope, authorizationScopeValue, ownerId, InterfaceServiceStatus.ENABLED, null, null
+                authorizationScope, authorizationScopeValue, ownerId, InterfaceServiceStatus.ENABLED,
+                InterfaceServiceChangeExecutionStatus.PENDING, null, null, null, null, null, null
         );
     }
 
     public static InterfaceServiceChange disable(Long id, Long taskId, Long serviceId) {
         return new InterfaceServiceChange(
                 id, taskId, serviceId, InterfaceServiceChangeType.DISABLE, null, null, null, null,
-                null, null, null, InterfaceServiceStatus.DISABLED, null, null
+                null, null, null, InterfaceServiceStatus.DISABLED,
+                InterfaceServiceChangeExecutionStatus.PENDING, null, null, null, null, null, null
         );
     }
 
     public static InterfaceServiceChange enable(Long id, Long taskId, Long serviceId) {
         return new InterfaceServiceChange(
                 id, taskId, serviceId, InterfaceServiceChangeType.ENABLE, null, null, null, null,
-                null, null, null, InterfaceServiceStatus.ENABLED, null, null
+                null, null, null, InterfaceServiceStatus.ENABLED,
+                InterfaceServiceChangeExecutionStatus.PENDING, null, null, null, null, null, null
         );
     }
 
@@ -59,7 +67,16 @@ public record InterfaceServiceChange(
     ) {
         return new InterfaceServiceChange(
                 id, taskId, serviceId, InterfaceServiceChangeType.CHANGE_AUTHORIZATION, null, null, null, null,
-                authorizationScope, authorizationScopeValue, null, null, null, null
+                authorizationScope, authorizationScopeValue, null, null,
+                InterfaceServiceChangeExecutionStatus.PENDING, null, null, null, null, null, null
         );
+    }
+
+    /** 在创建申请时固化来源，不依赖服务后续状态。 */
+    public InterfaceServiceChange withBefore(InterfaceService service) {
+        return new InterfaceServiceChange(id, taskId, serviceId, changeType, service.serviceName(),
+                service.direction(), service.purpose(), service.callerName(), authorizationScope,
+                authorizationScopeValue, service.ownerId(), targetStatus, executionStatus, failureReason,
+                service.status(), service.authorizationScope(), service.authorizationScopeValue(), createdAt, updatedAt);
     }
 }

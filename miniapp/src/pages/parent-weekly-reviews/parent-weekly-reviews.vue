@@ -22,7 +22,7 @@
         <text v-for="row in detail.categories" :key="row.categoryCode">{{ row.categoryCode === 'GENERAL' ? '通用' : row.categoryCode }}：{{ row.taskCount }} 项，完成 {{ row.completedCount }} 项</text>
         <text class="heading">每日趋势</text>
         <text v-if="!detail.dailyTrends.length">暂无每日趋势</text>
-        <text v-for="row in detail.dailyTrends" :key="row.trendDate">{{ row.trendDate }}：完成 {{ row.completedCount }}/{{ row.taskTotalCount }} 项，完成率 {{ rate(row.completionRate) }}，积分 {{ row.earnedPoints }}，暂停 {{ row.pauseCount }} 次</text>
+        <text v-for="row in detail.dailyTrends" :key="row.trendDate">{{ row.trendDate }}：完成 {{ row.completedCount }}/{{ row.taskTotalCount }} 项，完成率 {{ rate(row.completionRate) }}，积分 {{ row.earnedPoints }}，待优化 {{ row.pendingOptimizationCount }} 项，暂停 {{ row.pauseCount }} 次</text>
         <text v-for="row in detail.supplements" :key="row.id" class="supplement">{{ row.supplementedAt }} {{ row.content }}</text>
         <button :disabled="busy" @tap="loadPage(1)">返回周报列表</button>
       </view>

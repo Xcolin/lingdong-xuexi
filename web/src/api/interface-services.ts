@@ -5,6 +5,7 @@ export type InterfacePurpose = 'WECHAT' | 'MAP' | 'SMS' | 'SCHOOL' | 'DATA_SYNC'
 export type InterfaceAuthorizationScope = 'GLOBAL' | 'REGION' | 'SCHOOL' | 'INSTITUTION' | 'SPECIFIED_CALLER';
 export type InterfaceServiceStatus = 'ENABLED' | 'DISABLED';
 export type InterfaceServiceChangeType = 'CREATE' | 'ENABLE' | 'DISABLE' | 'CHANGE_AUTHORIZATION';
+export type InterfaceServiceChangeExecutionStatus = 'PENDING' | 'APPLIED' | 'FAILED';
 export type InterfaceCallResult = 'SUCCEEDED' | 'FAILED';
 export type SystemTaskStatus = 'DRAFT' | 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED' | 'EFFECTIVE' | 'VOIDED';
 
@@ -35,6 +36,8 @@ export interface InterfaceServiceChangeRecord {
   authorizationScopeValue: string | null;
   ownerId: string | null;
   targetStatus: InterfaceServiceStatus | null;
+  executionStatus: InterfaceServiceChangeExecutionStatus;
+  failureReason: string | null;
   taskTitle: string;
   taskDescription: string;
   taskStatus: SystemTaskStatus;

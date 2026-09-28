@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.feature.infrastructure.persistence.FeatureManagementMapper">
+  <resultMap id="Toggle" type="com.lingdong.learning.feature.application.FeatureManagementService$ToggleView">
+    <constructor>
+      <idArg column="id" javaType="java.lang.String"/>
+      <arg column="feature_code" javaType="java.lang.String"/><arg column="feature_name" javaType="java.lang.String"/>
+      <arg column="status" javaType="java.lang.String"/><arg column="version_no" javaType="java.lang.String"/>
+      <arg column="description" javaType="java.lang.String"/><arg column="enable_allowed" javaType="_boolean"/>
+    </constructor>
+  </resultMap>
+  <resultMap id="Change" type="com.lingdong.learning.feature.application.FeatureManagementService$ChangeView">
+    <constructor>
+      <idArg column="id" javaType="java.lang.String"/><arg column="task_id" javaType="java.lang.String"/>
+      <arg column="feature_code" javaType="java.lang.String"/><arg column="feature_name" javaType="java.lang.String"/>
+      <arg column="before_status" javaType="java.lang.String"/><arg column="target_status" javaType="java.lang.String"/>
+      <arg column="current_status" javaType="java.lang.String"/><arg column="base_version" javaType="java.lang.String"/>
+      <arg column="version_no" javaType="java.lang.String"/><arg column="task_status" javaType="java.lang.String"/>
+      <arg column="task_title" javaType="java.lang.String"/><arg column="task_description" javaType="java.lang.String"/>
+      <arg column="submitted_by" javaType="java.lang.String"/><arg column="submitted_at" javaType="java.lang.String"/>
+      <arg column="reviewed_by" javaType="java.lang.String"/><arg column="reviewed_at" javaType="java.lang.String"/>
+      <arg column="review_comment" javaType="java.lang.String"/><arg column="created_at" javaType="java.lang.String"/>
+      <arg column="enable_allowed" javaType="_boolean"/>
+    </constructor>
+  </resultMap>
+  <sql id="EnableAllowed">CASE WHEN f.feature_code IN ('GEO_ATTENDANCE','STUDENT_LOCATION_TRACK') THEN 0 ELSE 1 END AS enable_allowed</sql>
+  <sql id="Join">FROM sys_feature_toggle_change c JOIN sys_system_task t ON t.id=c.task_id
+    JOIN sys_feature_toggle f ON f.feature_code=c.feature_code AND f.scope_key='GLOBAL'</sql>
+  <sql id="Columns">c.id,c.task_id,c.feature_code,c.before_status,c.target_status,c.base_version,f.feature_name,
+    f.status AS current_status,f.version_no,t.status AS task_status,t.task_title,t.task_description,
+    t.submitted_by,t.submitted_at,t.reviewed_by,t.reviewed_at,t.review_comment,c.created_at,<include refid="EnableAllowed"/></sql>
+  <sql id="Scope">WHERE t.task_type='GLOBAL_FEATURE_TOGGLE'
+    <choose><when test="auditor">AND t.status&lt;&gt;'DRAFT' AND t.submitted_at IS NOT NULL</when>
+      <otherwise>AND t.submitted_by=#{userId}</otherwise></choose>
+    <if test="status != null">AND t.status=#{status}</if>
+  </sql>
+  <select id="findToggles" resultMap="Toggle">SELECT f.id,f.feature_code,f.feature_name,f.status,f.version_no,f.description,
+    <include refid="EnableAllowed"/> FROM sys_feature_toggle f WHERE f.scope_key='GLOBAL' ORDER BY f.id</select>
+  <select id="findPage" resultMap="Change">SELECT <include refid="Columns"/> <include refid="Join"/>
+    <include refid="Scope"/> ORDER BY c.created_at DESC,c.id DESC LIMIT #{limit} OFFSET #{offset}</select>
+  <select id="count" resultType="long">SELECT COUNT(*) <include refid="Join"/> <include refid="Scope"/></select>
+  <select id="findByTaskId" resultMap="Change">SELECT <include refid="Columns"/> <include refid="Join"/>
+    WHERE t.id=#{taskId} AND t.task_type='GLOBAL_FEATURE_TOGGLE'</select>
+</mapper>

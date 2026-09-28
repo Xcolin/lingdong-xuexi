@@ -21,6 +21,9 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -32,6 +35,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 @Transactional
 class FeatureManagementControllerTest {
+    private static final String DB = "feature_management_" + java.util.UUID.randomUUID().toString().replace("-", "");
+    @DynamicPropertySource static void database(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", () -> "jdbc:h2:mem:" + DB + ";MODE=MySQL;DB_CLOSE_DELAY=0;DATABASE_TO_LOWER=TRUE");
+    }
     @Autowired private MockMvc mockMvc;
     @Autowired private ObjectMapper objectMapper;
     @Autowired private AuthenticationApplicationService authenticationApplicationService;
@@ -54,6 +61,7 @@ class FeatureManagementControllerTest {
                 .andExpect(jsonPath("$.currentStatus").value("DISABLED"));
     }
     @Test
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     void detectsAbaAndRollsBackApproval() throws Exception {
         String admin=tokenWithRole("ft_aba_admin","SYS_ADMIN"), auditor=tokenWithRole("ft_aba_audit","SYS_AUDITOR");
         String id=submit(admin);
@@ -63,6 +71,8 @@ class FeatureManagementControllerTest {
                 .header("Authorization",bearer(auditor)).contentType(MediaType.APPLICATION_JSON).content("{\"comment\":\"同意\"}"))
                 .andExpect(status().isConflict());
         org.assertj.core.api.Assertions.assertThat(jdbcTemplate.queryForObject("select status from sys_system_task where id=?",String.class,Long.valueOf(id))).isEqualTo("PENDING_REVIEW");
+        jdbcTemplate.update("delete from sys_feature_toggle_change where task_id=?", Long.valueOf(id));
+        jdbcTemplate.update("delete from sys_system_task where id=?", Long.valueOf(id));
     }
     @Test
     void rejectsLegacySnapshotAndAllowsRejection() throws Exception {
@@ -82,6 +92,38 @@ class FeatureManagementControllerTest {
         jdbcTemplate.update("delete from sys_role_permission where permission_id=(select id from sys_permission where permission_code='FEATURE_TOGGLE_READ')");
         mockMvc.perform(get("/api/v1/feature-management/toggles").header("Authorization",bearer(token))).andExpect(status().isForbidden());
     }
+    @Test
+    void restrictsHistoryAndRejectsMixedRoleSubmissionAndSelfReview() throws Exception {
+        String admin=tokenWithRole("ft_scope_admin","SYS_ADMIN"), other=tokenWithRole("ft_scope_other","SYS_ADMIN");
+        String id=submit(admin); submit(other);
+        mockMvc.perform(get("/api/v1/feature-management/changes?pageSize=1").header("Authorization",bearer(admin)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(1)).andExpect(jsonPath("$.items[0].taskId").value(id));
+        mockMvc.perform(post("/api/v1/feature-management/review-queue/{id}/approve",id)
+                .header("Authorization",bearer(admin)).contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isForbidden());
+        Long adminId=jdbcTemplate.queryForObject("select submitted_by from sys_system_task where id=?",Long.class,Long.valueOf(id));
+        userAccessApplicationService.assignRole(new AssignRoleToUserCommand(adminId,roleMapper.findByCode("SYS_AUDITOR").id(),null));
+        mockMvc.perform(post("/api/v1/feature-management/review-submissions").header("Authorization",bearer(admin))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"featureCode\":\"STUDENT_CODE_LOGIN\",\"targetStatus\":\"DISABLED\",\"expectedVersion\":\"0\",\"title\":\"测试\",\"description\":\"测试\",\"confirmed\":true}"))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/v1/feature-management/review-queue/{id}/approve",id)
+                .header("Authorization",bearer(admin)).contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isConflict());
+    }
+    @Test
+    void requiresRejectionReasonAndRejectsCrossDomainTask() throws Exception {
+        String admin=tokenWithRole("ft_reject_admin","SYS_ADMIN"), auditor=tokenWithRole("ft_reject_audit","SYS_AUDITOR");
+        String id=submit(admin);
+        mockMvc.perform(post("/api/v1/feature-management/review-queue/{id}/reject",id)
+                .header("Authorization",bearer(auditor)).contentType(MediaType.APPLICATION_JSON).content("{\"comment\":\" \"}"))
+                .andExpect(status().isBadRequest());
+        jdbcTemplate.update("update sys_system_task set task_type='CACHE_CLEAR' where id=?",Long.valueOf(id));
+        sqlSession.clearCache();
+        mockMvc.perform(post("/api/v1/feature-management/review-queue/{id}/reject",id)
+                .header("Authorization",bearer(auditor)).contentType(MediaType.APPLICATION_JSON).content("{\"comment\":\"驳回\"}"))
+                .andExpect(status().isNotFound());
+    }
+    @Autowired private org.mybatis.spring.SqlSessionTemplate sqlSession;
     private String submit(String token) throws Exception {
         Long version=jdbcTemplate.queryForObject("select version_no from sys_feature_toggle where feature_code='STUDENT_CODE_LOGIN'",Long.class);
         return body(mockMvc.perform(post("/api/v1/feature-management/review-submissions")

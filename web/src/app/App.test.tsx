@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { CurrentUser } from '../api/auth';
 import type { ClientCapabilities } from '../api/capability';
-import { canAccessAttachmentManagement, canAccessCacheManagement, canAccessDictionaryManagement, canAccessExceptionReports, canAccessExportJobs, canAccessGrowthPoints, canAccessGrowthReviews, canAccessImportExportTemplates, canAccessImportJobs, canAccessInterfaceServiceManagement, canAccessLearningTasks, canAccessOrganizationPage, canAccessParentRelationships, canAccessRewards, canAccessStudentQrLogin, canAccessTeacherManagement } from './App';
+import { canExportAttachments, canExportExceptions, canExportRewards, canExportSystemTasks, canExportCache, canExportInterfaceLedger, canAccessAttachmentManagement, canAccessCacheManagement, canAccessDictionaryManagement, canAccessExceptionReports, canAccessExportJobs, canAccessGrowthPoints, canAccessGrowthReviews, canAccessImportExportTemplates, canAccessImportJobs, canAccessInterfaceServiceManagement, canAccessLearningTasks, canAccessOrganizationPage, canAccessParentRelationships, canAccessRewards, canAccessStudentQrLogin, canAccessTeacherManagement } from './App';
 
 const parent: CurrentUser = {
   userId: '1', sessionId: '2', username: 'parent', displayName: '家长',
@@ -9,6 +9,71 @@ const parent: CurrentUser = {
 };
 
 describe('Web 业务入口', () => {
+  it('附件导出遵从自定义动态授权及三项功能开关，不排除审核员', () => {
+    const capabilities = { dataExportEnabled: true, attachmentServiceEnabled: true, importExportTemplateManagementEnabled: true } as ClientCapabilities;
+    const user = { ...parent, roleCodes: ['CUSTOM_OPERATIONS'], permissionCodes: ['ATTACHMENT_FILE_LEDGER_READ', 'ATTACHMENT_FILE_LEDGER_EXPORT'] };
+    for (const roleCodes of [['CUSTOM_OPERATIONS'], ['SYS_AUDITOR'], ['CUSTOM_OPERATIONS', 'SYS_AUDITOR']]) expect(canExportAttachments({ ...user, roleCodes }, capabilities)).toBe(true);
+    for (const key of ['dataExportEnabled', 'attachmentServiceEnabled', 'importExportTemplateManagementEnabled']) expect(canExportAttachments(user, { ...capabilities, [key]: false })).toBe(false);
+    for (const permissionCodes of [['ATTACHMENT_FILE_LEDGER_READ'], ['ATTACHMENT_FILE_LEDGER_EXPORT'], []]) expect(canExportAttachments({ ...user, permissionCodes }, capabilities)).toBe(false);
+    expect(canAccessExportJobs(user, capabilities)).toBe(false);
+    expect(canAccessExportJobs({ ...user, permissionCodes: [...user.permissionCodes, 'EXPORT_JOB_READ'] }, capabilities)).toBe(true);
+  });
+
+  it('异常台账仅教师或机构管理员可导出，混合审核员及任一权限开关缺失均拒绝', () => {
+    const capabilities = { dataExportEnabled: true, attachmentServiceEnabled: true, importExportTemplateManagementEnabled: true, studentExceptionReportEnabled: true } as ClientCapabilities;
+    const user = { ...parent, roleCodes: ['TEACHER'], permissionCodes: ['EXCEPTION_REPORT_READ','EXCEPTION_REPORT_EXPORT'] };
+    for (const roleCodes of [['TEACHER'], ['ORG_ADMIN'], ['TEACHER','ORG_ADMIN']]) expect(canExportExceptions({ ...user, roleCodes }, capabilities)).toBe(true);
+    for (const roleCodes of [['PARENT'], ['SYS_ADMIN'], ['TEACHER','SYS_AUDITOR'], ['ORG_ADMIN','SYS_AUDITOR']]) expect(canExportExceptions({ ...user, roleCodes }, capabilities)).toBe(false);
+    for (const key of ['dataExportEnabled','attachmentServiceEnabled','importExportTemplateManagementEnabled','studentExceptionReportEnabled']) expect(canExportExceptions(user, { ...capabilities, [key]: false })).toBe(false);
+    for (const permissionCodes of [['EXCEPTION_REPORT_READ'], ['EXCEPTION_REPORT_EXPORT']]) expect(canExportExceptions({ ...user, permissionCodes }, capabilities)).toBe(false);
+  });
+  it('奖励报表入口要求家长身份、动态权限和四项功能开关', () => {
+    const user = { ...parent, permissionCodes: ['REWARD_EXCHANGE_REVIEW_CHILD', 'REWARD_EXCHANGE_EXPORT'] };
+    const capabilities = { dataExportEnabled: true, attachmentServiceEnabled: true, importExportTemplateManagementEnabled: true, rewardExchangeEnabled: true } as ClientCapabilities;
+    expect(canExportRewards(user, capabilities)).toBe(true);
+    for (const key of ['dataExportEnabled', 'attachmentServiceEnabled', 'importExportTemplateManagementEnabled', 'rewardExchangeEnabled']) {
+      expect(canExportRewards(user, { ...capabilities, [key]: false })).toBe(false);
+    }
+    for (const roleCodes of [['TEACHER'], ['ORG_ADMIN'], ['PARENT', 'SYS_AUDITOR']]) {
+      expect(canExportRewards({ ...user, roleCodes }, capabilities)).toBe(false);
+    }
+    for (const permissionCodes of [['REWARD_EXCHANGE_EXPORT'], ['REWARD_EXCHANGE_REVIEW_CHILD']]) {
+      expect(canExportRewards({ ...user, permissionCodes }, capabilities)).toBe(false);
+    }
+  });
+  it('系统任务导出允许管理员及审核员，仍受读取导出权限和功能约束', () => {
+    const capabilities = { dataExportEnabled: true, attachmentServiceEnabled: true, importExportTemplateManagementEnabled: true } as ClientCapabilities;
+    for (const roleCodes of [['SYS_ADMIN'], ['SYS_AUDITOR'], ['SYS_ADMIN','SYS_AUDITOR']]) {
+      const user = { ...parent, roleCodes, permissionCodes: ['SYSTEM_TASK_READ','SYSTEM_TASK_EXPORT'] };
+      expect(canExportSystemTasks(user, capabilities)).toBe(true);
+      expect(canExportSystemTasks({ ...user, permissionCodes: ['SYSTEM_TASK_READ'] }, capabilities)).toBe(false);
+      expect(canExportSystemTasks(user, { ...capabilities, attachmentServiceEnabled: false })).toBe(false);
+    }
+    expect(canExportSystemTasks({ ...parent, permissionCodes: ['SYSTEM_TASK_READ','SYSTEM_TASK_EXPORT'] }, capabilities)).toBe(false);
+  });
+
+  it('缓存日志导出同时要求全部功能开关和管理员动态权限', () => {
+    const user = { ...parent, roleCodes: ['SYS_ADMIN'], permissionCodes: ['CACHE_READ', 'CACHE_EXPORT'] };
+    const capabilities = { dataExportEnabled: true, attachmentServiceEnabled: true, cacheManagementEnabled: true, importExportTemplateManagementEnabled: true } as ClientCapabilities;
+    expect(canExportCache(user, capabilities)).toBe(true);
+    for (const key of ['dataExportEnabled', 'attachmentServiceEnabled', 'cacheManagementEnabled', 'importExportTemplateManagementEnabled']) {
+      expect(canExportCache(user, { ...capabilities, [key]: false })).toBe(false);
+    }
+    expect(canExportCache({ ...user, roleCodes: ['SYS_ADMIN', 'SYS_AUDITOR'] }, capabilities)).toBe(false);
+    expect(canExportCache({ ...user, permissionCodes: ['CACHE_READ'] }, capabilities)).toBe(false);
+  });
+
+  it('接口导出同时要求全部功能开关和管理员动态权限', () => {
+    const user = { ...parent, roleCodes: ['SYS_ADMIN'], permissionCodes: ['INTERFACE_SERVICE_READ', 'INTERFACE_SERVICE_EXPORT'] };
+    const capabilities = { dataExportEnabled: true, attachmentServiceEnabled: true, interfaceServiceManagementEnabled: true, importExportTemplateManagementEnabled: true } as ClientCapabilities;
+    expect(canExportInterfaceLedger(user, capabilities)).toBe(true);
+    for (const key of ['dataExportEnabled', 'attachmentServiceEnabled', 'interfaceServiceManagementEnabled', 'importExportTemplateManagementEnabled']) {
+      expect(canExportInterfaceLedger(user, { ...capabilities, [key]: false })).toBe(false);
+    }
+    expect(canExportInterfaceLedger({ ...user, roleCodes: ['SYS_ADMIN', 'SYS_AUDITOR'] }, capabilities)).toBe(false);
+    expect(canExportInterfaceLedger({ ...user, permissionCodes: ['INTERFACE_SERVICE_READ'] }, capabilities)).toBe(false);
+  });
+
   it('异常报备同时要求开关、读取权限和教师或机构管理员角色', () => {
     const capabilities = { studentExceptionReportEnabled: true } as ClientCapabilities;
     const teacher = { ...parent, roleCodes: ['TEACHER'], permissionCodes: ['EXCEPTION_REPORT_READ'] };

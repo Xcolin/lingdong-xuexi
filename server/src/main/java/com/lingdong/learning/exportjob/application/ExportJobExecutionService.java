@@ -137,11 +137,16 @@ public class ExportJobExecutionService {
                     columns.stream().map(ExportColumnSnapshot::code).toList());
             ExportRequestDefinition request = new ExportRequestDefinition(
                     job.requesterId(), scope.studentId(), filter.startedAt(),
-                    filter.endedAt(), filter.eventType());
+                    filter.endedAt(), filter.eventType(), filter.dictionaryTypeCode(), filter.dictionaryStatus(),
+                    filter.templateType(), filter.templateModuleCode(), filter.templateStatus(),
+                    filter.interfaceCallerName(), filter.interfaceStatus(),
+                    filter.interfaceOwnerId() == null ? null : Long.valueOf(filter.interfaceOwnerId()), filter.cacheDomain(), filter.cacheStatus(),
+                    filter.systemTaskType(), filter.systemTaskStatus(), scope.systemTaskAuditor(), scope.systemTaskTypes(), filter.rewardExchangeStatus(), filter.exceptionType(), filter.exceptionStatus(),
+                    scope.exceptionTeacherOnly(), scope.exceptionClassIds(), filter.attachmentModuleCode(), filter.attachmentUploaderId(), filter.attachmentFileCategory());
             long totalRows = adapter.count(request, scope.upperBound());
             rows = new PageIterator(
                     adapter, request, scope.upperBound(), totalRows,
-                    validatedPageSize(), job.id(), expectedVersion);
+                    validatedPageSize(), job, expectedVersion);
             temporaryFile = workbookWriter.write(
                     templateContent.content(), definition, rows, validatedSheetRows(),
                     properties.getTempDirectory());
@@ -156,6 +161,8 @@ public class ExportJobExecutionService {
             relation = fileService.attachToBusiness(new AttachFileToBusinessCommand(
                     resultFile.id(), "EXPORT_JOB", job.id(),
                     "EXPORT_JOB_RESULT", "BUSINESS_AUTHORIZED"));
+            // 文件落盘期间也可能撤权；失败沿用附件关系和内容补偿。
+            accessService.requireExecution(job);
             completionService.complete(
                     job, expectedVersion, resultFile.id(), totalRows, rows.processedRows());
             return true;
@@ -181,7 +188,7 @@ public class ExportJobExecutionService {
     private ImportExportTemplateRecord requireFrozenTemplate(ExportJobRecord job) {
         ImportExportTemplateRecord template = templateMapper.findById(job.templateId());
         if (template == null || template.templateType() != TemplateType.EXPORT
-                || !"REPORT".equals(template.moduleCode())
+                || !job.exportType().templateModule().equals(template.moduleCode())
                 || !job.templateName().equals(template.templateName())
                 || !job.templateVersion().equals(template.version())) {
             throw new IllegalStateException("导出作业固化模板不存在或版本不一致");
@@ -294,6 +301,7 @@ public class ExportJobExecutionService {
         private final long totalRows;
         private final int pageSize;
         private final Long jobId;
+        private final ExportJobRecord job;
         private Iterator<Map<String, Object>> current = List.<Map<String, Object>>of().iterator();
         private long cursor;
         private long processedRows;
@@ -306,7 +314,7 @@ public class ExportJobExecutionService {
                 long upperBound,
                 long totalRows,
                 int pageSize,
-                Long jobId,
+                ExportJobRecord job,
                 long initialVersion
         ) {
             this.adapter = adapter;
@@ -314,7 +322,8 @@ public class ExportJobExecutionService {
             this.upperBound = upperBound;
             this.totalRows = totalRows;
             this.pageSize = pageSize;
-            this.jobId = jobId;
+            this.job = job;
+            this.jobId = job.id();
             this.currentVersion = initialVersion;
         }
 
@@ -335,7 +344,7 @@ public class ExportJobExecutionService {
         }
 
         private void loadNextPage() {
-            accessService.requireFeatures();
+            accessService.requireExecution(job);
             ExportDataPage page = adapter.fetchAfter(request, upperBound, cursor, pageSize);
             if (page.rows().isEmpty() && page.hasMore()) {
                 throw new IllegalStateException("导出适配器返回了无法推进的空分页");

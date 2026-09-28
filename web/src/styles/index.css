@@ -396,8 +396,9 @@ button, input, textarea { font: inherit; }
 .growth-review-section h3 { margin: 0 0 12px; font-size: 15px; line-height: 1.4; letter-spacing: 0; }
 .growth-review-section p { white-space: pre-wrap; overflow-wrap: anywhere; }
 .growth-review-trends { display: grid; gap: 10px; }
-.growth-review-trend-row { display: grid; grid-template-columns: 46px minmax(90px, 1fr) 46px 68px; gap: 10px; align-items: center; font-size: 12px; color: #64756e; }
-.growth-review-trend-row > div { height: 8px; overflow: hidden; background: #e5ece8; border-radius: 4px; }
+.growth-review-trend-row { display: grid; grid-template-columns: 46px minmax(40px, 1fr) auto; gap: 10px; align-items: center; font-size: 12px; color: #64756e; }
+.growth-review-trend-bar { height: 8px; overflow: hidden; background: #e5ece8; border-radius: 4px; }
+.growth-review-trend-metrics { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px 16px; }
 .growth-review-trend-row i { height: 100%; display: block; background: #167c5a; border-radius: 4px; }
 .growth-review-trend-row strong { color: #263730; text-align: right; }
 .growth-review-trend-row small { text-align: right; }

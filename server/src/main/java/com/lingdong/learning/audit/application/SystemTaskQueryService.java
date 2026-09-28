@@ -41,12 +41,22 @@ public class SystemTaskQueryService {
         if(task==null)throw new ResourceNotFoundException("系统任务不存在或不可访问");
         return task;
     }
+    public VisibilityScope resolveScope(long userId) {
+        boolean auditor = requireIdentity(userId);
+        return new VisibilityScope(auditor, visibleTypes(userId, auditor));
+    }
+    public record VisibilityScope(boolean auditor, List<SystemTaskType> types) {
+        public VisibilityScope { types = List.copyOf(types); }
+    }
     private boolean requireAccess(AuthenticatedUser user) {
-        if(user==null||user.clientType()!=AuthClientType.WEB
-                ||!permissions.isAllowed(user.userId(),PermissionClient.WEB,"SYSTEM_TASK_READ"))throw denied();
+        if(user==null||user.clientType()!=AuthClientType.WEB)throw denied();
+        return requireIdentity(user.userId());
+    }
+    private boolean requireIdentity(long userId) {
+        if(!permissions.isAllowed(userId,PermissionClient.WEB,"SYSTEM_TASK_READ"))throw denied();
         // 实时角色优先于会话快照；混合身份按审核员范围处理。
-        if(roles.hasRoleCode(user.userId(),"SYS_AUDITOR"))return true;
-        if(!roles.hasRoleCode(user.userId(),"SYS_ADMIN"))throw denied();
+        if(roles.hasRoleCode(userId,"SYS_AUDITOR"))return true;
+        if(!roles.hasRoleCode(userId,"SYS_ADMIN"))throw denied();
         return false;
     }
     private SystemOperationAccessDeniedException denied(){return new SystemOperationAccessDeniedException("当前身份无系统任务读取权限");}

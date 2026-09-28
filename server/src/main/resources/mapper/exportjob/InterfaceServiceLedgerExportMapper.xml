@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.exportjob.infrastructure.persistence.InterfaceServiceLedgerExportMapper">
+    <resultMap id="RowMap" type="com.lingdong.learning.exportjob.infrastructure.persistence.InterfaceServiceLedgerExportRow">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="service_name" javaType="java.lang.String"/>
+            <arg column="purpose" javaType="java.lang.String"/>
+            <arg column="caller_name" javaType="java.lang.String"/>
+            <arg column="authorization_scope" javaType="java.lang.String"/>
+            <arg column="authorization_scope_value" javaType="java.lang.String"/>
+            <arg column="status" javaType="java.lang.String"/>
+            <arg column="owner_id" javaType="java.lang.Long"/>
+        </constructor>
+    </resultMap>
+    <sql id="source">
+        FROM sys_interface_service t WHERE 1 = 1
+        <if test="request.interfaceCallerName != null">AND LOWER(t.caller_name) LIKE CONCAT('%', LOWER(#{request.interfaceCallerName}), '%')</if>
+        <if test="request.interfaceStatus != null">AND t.status = #{request.interfaceStatus}</if>
+        <if test="request.interfaceOwnerId != null">AND t.owner_id = #{request.interfaceOwnerId}</if>
+        <if test="request.startedAt != null">AND t.updated_at &gt;= #{request.startedAt}</if>
+        <if test="request.endedAt != null">AND t.updated_at &lt;= #{request.endedAt}</if>
+    </sql>
+    <select id="findUpperBound" resultType="java.lang.Long">
+        SELECT MAX(t.id) <include refid="source"/>
+    </select>
+    <select id="count" resultType="long">
+        SELECT COUNT(1) <include refid="source"/> AND t.id &lt;= #{upperBound}
+    </select>
+    <select id="findAfter" resultMap="RowMap">
+        SELECT t.id, t.service_name, t.purpose, t.caller_name, t.authorization_scope, t.authorization_scope_value, t.status, t.owner_id
+        <include refid="source"/>
+        AND t.id &gt; #{cursor} AND t.id &lt;= #{upperBound}
+        ORDER BY t.id LIMIT #{limit}
+    </select>
+</mapper>

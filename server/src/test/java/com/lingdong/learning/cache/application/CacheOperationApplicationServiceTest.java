@@ -126,6 +126,21 @@ class CacheOperationApplicationServiceTest {
         assertThat(cacheOperationMapper.findById(operation.id()).status()).isEqualTo(CacheOperationStatus.FAILED);
     }
 
+    @Test
+    void mixedSystemAuditorCannotExecuteOrSubmitCacheChanges() {
+        User mixed = createUserWithRole("cache_mixed_auditor", "兼任审核员", "SYS_ADMIN");
+        userAccessApplicationService.assignRole(new AssignRoleToUserCommand(
+                mixed.id(), roleMapper.findByCode("SYS_AUDITOR").id(), null));
+
+        assertThatThrownBy(() -> cacheOperationApplicationService.execute(new ExecuteCacheOperationCommand(
+                mixed.id(), CacheDomain.DICTIONARY, CacheOperationType.REFRESH, "不应执行")))
+                .isInstanceOf(com.lingdong.learning.common.security.SystemOperationAccessDeniedException.class);
+        assertThatThrownBy(() -> cacheOperationApplicationService.createAndSubmitHighRisk(
+                new CreateHighRiskCacheOperationCommand(mixed.id(), CacheDomain.ALL, CacheOperationType.CLEAR,
+                        "不应提交", "审核员不能兼任提交人", true)))
+                .isInstanceOf(com.lingdong.learning.common.security.SystemOperationAccessDeniedException.class);
+    }
+
     private DictionaryType createDictionaryTypeWithItem(
             User administrator,
             String typeCode,

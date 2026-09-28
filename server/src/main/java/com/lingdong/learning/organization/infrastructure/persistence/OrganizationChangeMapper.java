@@ -13,6 +13,8 @@ public interface OrganizationChangeMapper {
 
     OrganizationChange findByTaskId(@Param("taskId") Long taskId);
 
+    String findRequestedStatus(@Param("taskId") Long taskId);
+
     List<OrganizationChange> findAll();
 
     boolean existsActiveByOrganizationId(@Param("organizationId") Long organizationId);

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.exportjob.infrastructure.persistence.TemplateLedgerExportMapper">
+    <resultMap id="RowMap" type="com.lingdong.learning.exportjob.infrastructure.persistence.TemplateLedgerExportRow">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="template_name" javaType="java.lang.String"/>
+            <arg column="template_type" javaType="java.lang.String"/>
+            <arg column="module_code" javaType="java.lang.String"/>
+            <arg column="version" javaType="java.lang.String"/>
+            <arg column="status" javaType="java.lang.String"/>
+            <arg column="updated_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+    <sql id="source">
+        FROM sys_import_export_template t WHERE 1 = 1
+        <if test="request.templateType != null">AND t.template_type = #{request.templateType}</if>
+        <if test="request.templateModuleCode != null">AND t.module_code = #{request.templateModuleCode}</if>
+        <if test="request.templateStatus != null">AND t.status = #{request.templateStatus}</if>
+        <if test="request.startedAt != null">AND t.updated_at &gt;= #{request.startedAt}</if>
+        <if test="request.endedAt != null">AND t.updated_at &lt;= #{request.endedAt}</if>
+    </sql>
+    <select id="findUpperBound" resultType="java.lang.Long">
+        SELECT MAX(t.id) <include refid="source"/>
+    </select>
+    <select id="count" resultType="long">
+        SELECT COUNT(1) <include refid="source"/> AND t.id &lt;= #{upperBound}
+    </select>
+    <select id="findAfter" resultMap="RowMap">
+        SELECT t.id, t.template_name, t.template_type, t.module_code, t.version, t.status, t.updated_at
+        <include refid="source"/>
+        AND t.id &gt; #{cursor} AND t.id &lt;= #{upperBound}
+        ORDER BY t.id LIMIT #{limit}
+    </select>
+</mapper>

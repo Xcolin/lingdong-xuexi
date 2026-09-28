@@ -232,6 +232,7 @@ export function CacheManagementPage({ canManage, canReview }: CacheManagementPag
           </Space>
         )}
       </div>
+      <Alert type="info" showIcon message="当前真实操作范围：数据字典支持刷新和清除；全部缓存与用户会话仅支持审批后清除。其他缓存域尚无处理器，不提供执行入口。" />
       {errorMessage && <Alert type="error" showIcon message={errorMessage} action={<Button size="small" onClick={() => activeTab === 'reviews' ? void loadReviews() : void loadOperations()}>重试</Button>} />}
       <Tabs
         activeKey={activeTab}
@@ -259,6 +260,7 @@ export function CacheManagementPage({ canManage, canReview }: CacheManagementPag
 
       <Modal title="提交高风险操作" open={highRiskModalOpen} footer={null} onCancel={() => setHighRiskModalOpen(false)} destroyOnHidden>
         <Alert type="warning" showIcon message="该操作提交后必须由系统审核员审批，批准后立即执行。" />
+        <Alert type="error" showIcon message="真实执行范围：全部已注册缓存；用户会话清除会强制退出所有活动设备会话，包括当前审核会话。" />
         <Form form={highRiskForm} layout="vertical" onFinish={submitHighRisk} className="cache-risk-form">
           <Form.Item label="缓存域" name="cacheDomain" rules={[{ required: true }]}>
             <Select options={[{ value: 'ALL', label: '全部缓存' }, { value: 'USER_SESSION', label: '用户会话' }]} />

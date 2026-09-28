@@ -154,7 +154,8 @@ public class GrowthReviewGenerationService {
     }
 
     private BigDecimal completionRate(GrowthReviewTaskFactRow facts) {
-        int denominator = facts.taskTotalCount() - facts.inProgressCount();
+        // R-001：进行中和免执行均不计分母，事实总数仍原样保留。
+        int denominator = facts.taskTotalCount() - facts.inProgressCount() - facts.exemptedCount();
         if (denominator <= 0) {
             return BigDecimal.ZERO.setScale(4, RoundingMode.UNNECESSARY);
         }

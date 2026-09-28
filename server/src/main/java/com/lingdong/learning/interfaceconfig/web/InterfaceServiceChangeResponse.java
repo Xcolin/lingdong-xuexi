@@ -6,6 +6,7 @@ import com.lingdong.learning.interfaceconfig.domain.InterfaceAuthorizationScope;
 import com.lingdong.learning.interfaceconfig.domain.InterfaceDirection;
 import com.lingdong.learning.interfaceconfig.domain.InterfacePurpose;
 import com.lingdong.learning.interfaceconfig.domain.InterfaceServiceChangeType;
+import com.lingdong.learning.interfaceconfig.domain.InterfaceServiceChangeExecutionStatus;
 import com.lingdong.learning.interfaceconfig.domain.InterfaceServiceStatus;
 
 import java.time.LocalDateTime;
@@ -24,6 +25,8 @@ public record InterfaceServiceChangeResponse(
         String authorizationScopeValue,
         String ownerId,
         InterfaceServiceStatus targetStatus,
+        InterfaceServiceChangeExecutionStatus executionStatus,
+        String failureReason,
         String taskTitle,
         String taskDescription,
         SystemTaskStatus taskStatus,
@@ -39,6 +42,7 @@ public record InterfaceServiceChangeResponse(
                 text(view.changeId()), text(view.taskId()), text(view.serviceId()), view.changeType(),
                 view.serviceName(), view.direction(), view.purpose(), view.callerName(),
                 view.authorizationScope(), view.authorizationScopeValue(), text(view.ownerId()), view.targetStatus(),
+                view.executionStatus(), view.failureReason(),
                 view.taskTitle(), view.taskDescription(), view.taskStatus(), text(view.submittedBy()),
                 view.submittedAt(), text(view.reviewedBy()), view.reviewedAt(), view.reviewComment(), view.createdAt()
         );

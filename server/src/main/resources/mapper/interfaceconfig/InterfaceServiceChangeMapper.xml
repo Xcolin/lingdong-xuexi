@@ -18,6 +18,11 @@
             <arg column="authorization_scope_value" javaType="java.lang.String"/>
             <arg column="owner_id" javaType="java.lang.Long"/>
             <arg column="target_status" javaType="com.lingdong.learning.interfaceconfig.domain.InterfaceServiceStatus"/>
+            <arg column="execution_status" javaType="com.lingdong.learning.interfaceconfig.domain.InterfaceServiceChangeExecutionStatus"/>
+            <arg column="failure_reason" javaType="java.lang.String"/>
+            <arg column="before_status" javaType="com.lingdong.learning.interfaceconfig.domain.InterfaceServiceStatus"/>
+            <arg column="before_authorization_scope" javaType="com.lingdong.learning.interfaceconfig.domain.InterfaceAuthorizationScope"/>
+            <arg column="before_authorization_scope_value" javaType="java.lang.String"/>
             <arg column="created_at" javaType="java.time.LocalDateTime"/>
             <arg column="updated_at" javaType="java.time.LocalDateTime"/>
         </constructor>
@@ -26,22 +31,39 @@
     <insert id="insert">
         INSERT INTO sys_interface_service_change (
             id, task_id, service_id, change_type, service_name, direction, purpose, caller_name,
-            authorization_scope, authorization_scope_value, owner_id, target_status
+            authorization_scope, authorization_scope_value, owner_id, target_status,
+            before_status, before_authorization_scope, before_authorization_scope_value
         ) VALUES (
             #{change.id}, #{change.taskId}, #{change.serviceId, jdbcType=BIGINT}, #{change.changeType},
             #{change.serviceName, jdbcType=VARCHAR}, #{change.direction, jdbcType=VARCHAR},
             #{change.purpose, jdbcType=VARCHAR}, #{change.callerName, jdbcType=VARCHAR},
             #{change.authorizationScope, jdbcType=VARCHAR}, #{change.authorizationScopeValue, jdbcType=VARCHAR},
-            #{change.ownerId, jdbcType=BIGINT}, #{change.targetStatus, jdbcType=VARCHAR}
+            #{change.ownerId, jdbcType=BIGINT}, #{change.targetStatus, jdbcType=VARCHAR},
+            #{change.beforeStatus, jdbcType=VARCHAR}, #{change.beforeAuthorizationScope, jdbcType=VARCHAR},
+            #{change.beforeAuthorizationScopeValue, jdbcType=VARCHAR}
         )
     </insert>
 
     <select id="findByTaskId" resultMap="InterfaceServiceChangeResultMap">
         SELECT id, task_id, service_id, change_type, service_name, direction, purpose, caller_name,
-               authorization_scope, authorization_scope_value, owner_id, target_status, created_at, updated_at
+               authorization_scope, authorization_scope_value, owner_id, target_status,
+               execution_status, failure_reason, before_status, before_authorization_scope,
+               before_authorization_scope_value, created_at, updated_at
         FROM sys_interface_service_change
         WHERE task_id = #{taskId}
     </select>
+
+    <update id="markApplied">
+        UPDATE sys_interface_service_change
+        SET execution_status = 'APPLIED', failure_reason = NULL, updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id} AND execution_status = 'PENDING'
+    </update>
+
+    <update id="markFailed">
+        UPDATE sys_interface_service_change
+        SET execution_status = 'FAILED', failure_reason = #{failureReason}, updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id} AND execution_status = 'PENDING'
+    </update>
 
     <resultMap id="InterfaceServiceChangeViewResultMap"
                type="com.lingdong.learning.interfaceconfig.application.InterfaceServiceChangeView">
@@ -58,6 +80,8 @@
             <arg column="authorization_scope_value" javaType="java.lang.String"/>
             <arg column="owner_id" javaType="java.lang.Long"/>
             <arg column="target_status" javaType="com.lingdong.learning.interfaceconfig.domain.InterfaceServiceStatus"/>
+            <arg column="execution_status" javaType="com.lingdong.learning.interfaceconfig.domain.InterfaceServiceChangeExecutionStatus"/>
+            <arg column="failure_reason" javaType="java.lang.String"/>
             <arg column="task_title" javaType="java.lang.String"/>
             <arg column="task_description" javaType="java.lang.String"/>
             <arg column="task_status" javaType="com.lingdong.learning.audit.application.SystemTaskStatus"/>
@@ -77,6 +101,7 @@
                change_record.direction,
                change_record.purpose, change_record.caller_name, change_record.authorization_scope,
                change_record.authorization_scope_value, change_record.owner_id, change_record.target_status,
+               change_record.execution_status, change_record.failure_reason,
                task.task_title, task.task_description, task.status AS task_status,
                task.submitted_by, task.submitted_at, task.reviewed_by, task.reviewed_at, task.review_comment,
                change_record.created_at AS change_created_at

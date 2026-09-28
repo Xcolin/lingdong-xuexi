@@ -71,17 +71,17 @@ CREATE INDEX idx_sys_import_job_organization_created
 CREATE TABLE sys_import_job_row_result (
     id BIGINT NOT NULL PRIMARY KEY,
     job_id BIGINT NOT NULL,
-    row_number INT NOT NULL,
+    `row_number` INT NOT NULL,
     status VARCHAR(16) NOT NULL,
     error_summary VARCHAR(1000),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT uk_sys_import_job_row UNIQUE (job_id, row_number),
+    CONSTRAINT uk_sys_import_job_row UNIQUE (job_id, `row_number`),
     CONSTRAINT fk_sys_import_job_row_job
         FOREIGN KEY (job_id) REFERENCES sys_import_job (id)
 );
 
 CREATE INDEX idx_sys_import_job_row_status
-    ON sys_import_job_row_result (job_id, status, row_number);
+    ON sys_import_job_row_result (job_id, status, `row_number`);
 
 INSERT INTO sys_feature_toggle (
     id, feature_code, feature_name, scope_type, scope_key, status, built_in,

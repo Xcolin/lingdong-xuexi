@@ -106,6 +106,20 @@ class SystemTaskQueryControllerTest {
         mvc.perform(get("/api/v1/system-tasks/{id}",task.id()).header("Authorization",admin.token())).andExpect(status().isNotFound());
     }
 
+    @Test void detailsIncludePersistedPayloadButListDoesNot() throws Exception {
+        var admin=account("task_payload_admin", "SYS_ADMIN");
+        var task=task(admin,"会话清除");
+        jdbc.update("INSERT INTO sys_cache_operation_log (id,operation_code,task_id,cache_domain,operation_type,status,impact_description,requested_by) VALUES (?,?,?,?,?,?,?,?)",
+                1900000000000099001L,"payload-test",task.id(),"USER_SESSION","CLEAR","PENDING","强制退出所有活动会话",admin.user().id());
+        mvc.perform(get("/api/v1/system-tasks/{id}",task.id()).header("Authorization",admin.token()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.payload.fields[0].label").value("缓存范围"))
+                .andExpect(jsonPath("$.payload.fields[0].value").value("USER_SESSION"))
+                .andExpect(jsonPath("$.payload.executionStatus").value("PENDING"));
+        mvc.perform(get("/api/v1/system-tasks").header("Authorization",admin.token()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.items[0].payload").doesNotExist());
+    }
+
     private SystemTask task(Account account,String title) {
         return tasks.createDraft(new CreateSystemTaskCommand(account.user().id(),SystemTaskType.CACHE_CLEAR,title,"合成任务说明",ImpactScope.GLOBAL));
     }

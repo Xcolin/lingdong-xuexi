@@ -16,5 +16,116 @@ public record CreateExportJobCommand(
         IamChangeAuditEventType eventType,
         List<String> selectedColumns,
         String reason,
-        String requestSource
-) { }
+        String requestSource,
+        String dictionaryTypeCode,
+        String dictionaryStatus,
+        String templateType,
+        String templateModuleCode,
+        String templateStatus,
+        String interfaceCallerName,
+        String interfaceStatus,
+        String interfaceOwnerId,
+        String cacheDomain,
+        String cacheStatus,
+        String systemTaskType, String systemTaskStatus,
+        String rewardExchangeStatus,
+        String exceptionClassId, String exceptionType, String exceptionStatus,
+        String attachmentModuleCode, String attachmentUploaderId, String attachmentFileCategory
+) {
+    public CreateExportJobCommand(Long requesterId,
+        ExportJobType exportType,
+        Long studentId,
+        LocalDateTime startedAt,
+        LocalDateTime endedAt,
+        IamChangeAuditEventType eventType,
+        List<String> selectedColumns,
+        String reason,
+        String requestSource,
+        String dictionaryTypeCode,
+        String dictionaryStatus,
+        String templateType,
+        String templateModuleCode,
+        String templateStatus,
+        String interfaceCallerName,
+        String interfaceStatus,
+        String interfaceOwnerId,
+        String cacheDomain,
+        String cacheStatus,
+        String systemTaskType, String systemTaskStatus,
+        String rewardExchangeStatus,
+        String exceptionClassId, String exceptionType, String exceptionStatus) {
+        this(requesterId, exportType, studentId, startedAt, endedAt, eventType, selectedColumns, reason, requestSource, dictionaryTypeCode, dictionaryStatus, templateType, templateModuleCode, templateStatus, interfaceCallerName, interfaceStatus, interfaceOwnerId, cacheDomain, cacheStatus, systemTaskType, systemTaskStatus, rewardExchangeStatus, exceptionClassId, exceptionType, exceptionStatus, null, null, null);
+    }
+
+    public CreateExportJobCommand(Long requesterId,
+        ExportJobType exportType,
+        Long studentId,
+        LocalDateTime startedAt,
+        LocalDateTime endedAt,
+        IamChangeAuditEventType eventType,
+        List<String> selectedColumns,
+        String reason,
+        String requestSource,
+        String dictionaryTypeCode,
+        String dictionaryStatus,
+        String templateType,
+        String templateModuleCode,
+        String templateStatus,
+        String interfaceCallerName,
+        String interfaceStatus,
+        String interfaceOwnerId,
+        String cacheDomain,
+        String cacheStatus,
+        String systemTaskType, String systemTaskStatus,
+        String rewardExchangeStatus) {
+        this(requesterId, exportType, studentId, startedAt, endedAt, eventType, selectedColumns, reason, requestSource, dictionaryTypeCode, dictionaryStatus, templateType, templateModuleCode, templateStatus, interfaceCallerName, interfaceStatus, interfaceOwnerId, cacheDomain, cacheStatus, systemTaskType, systemTaskStatus, rewardExchangeStatus, null, null, null);
+    }
+
+    public CreateExportJobCommand(Long requesterId,
+        ExportJobType exportType,
+        Long studentId,
+        LocalDateTime startedAt,
+        LocalDateTime endedAt,
+        IamChangeAuditEventType eventType,
+        List<String> selectedColumns,
+        String reason,
+        String requestSource,
+        String dictionaryTypeCode,
+        String dictionaryStatus,
+        String templateType,
+        String templateModuleCode,
+        String templateStatus,
+        String interfaceCallerName,
+        String interfaceStatus,
+        String interfaceOwnerId,
+        String cacheDomain,
+        String cacheStatus,
+        String systemTaskType, String systemTaskStatus) {
+        this(requesterId, exportType, studentId, startedAt, endedAt, eventType, selectedColumns, reason, requestSource, dictionaryTypeCode, dictionaryStatus, templateType, templateModuleCode, templateStatus, interfaceCallerName, interfaceStatus, interfaceOwnerId, cacheDomain, cacheStatus, systemTaskType, systemTaskStatus, null);
+    }
+    public CreateExportJobCommand(Long requesterId, ExportJobType exportType, Long studentId, LocalDateTime startedAt, LocalDateTime endedAt, IamChangeAuditEventType eventType, List<String> selectedColumns, String reason, String requestSource, String dictionaryTypeCode, String dictionaryStatus, String templateType, String templateModuleCode, String templateStatus, String interfaceCallerName, String interfaceStatus, String interfaceOwnerId, String cacheDomain, String cacheStatus) {
+        this(requesterId, exportType, studentId, startedAt, endedAt, eventType, selectedColumns, reason, requestSource, dictionaryTypeCode, dictionaryStatus, templateType, templateModuleCode, templateStatus, interfaceCallerName, interfaceStatus, interfaceOwnerId, cacheDomain, cacheStatus, null, null);
+    }
+
+    public CreateExportJobCommand(Long requesterId, ExportJobType exportType, Long studentId, LocalDateTime startedAt, LocalDateTime endedAt, IamChangeAuditEventType eventType, List<String> selectedColumns, String reason, String requestSource, String dictionaryTypeCode, String dictionaryStatus, String templateType, String templateModuleCode, String templateStatus, String interfaceCallerName, String interfaceStatus, String interfaceOwnerId) {
+        this(requesterId, exportType, studentId, startedAt, endedAt, eventType, selectedColumns, reason, requestSource, dictionaryTypeCode, dictionaryStatus, templateType, templateModuleCode, templateStatus, interfaceCallerName, interfaceStatus, interfaceOwnerId, null, null);
+    }
+
+    public CreateExportJobCommand(Long requesterId, ExportJobType exportType, Long studentId, LocalDateTime startedAt, LocalDateTime endedAt, IamChangeAuditEventType eventType, List<String> selectedColumns, String reason, String requestSource, String dictionaryTypeCode, String dictionaryStatus, String templateType, String templateModuleCode, String templateStatus) {
+        this(requesterId, exportType, studentId, startedAt, endedAt, eventType, selectedColumns, reason, requestSource, dictionaryTypeCode, dictionaryStatus, templateType, templateModuleCode, templateStatus, null, null, null);
+    }
+
+    public CreateExportJobCommand(Long requesterId, ExportJobType exportType, Long studentId,
+            LocalDateTime startedAt, LocalDateTime endedAt, IamChangeAuditEventType eventType,
+            List<String> selectedColumns, String reason, String requestSource,
+            String dictionaryTypeCode, String dictionaryStatus) {
+        this(requesterId, exportType, studentId, startedAt, endedAt, eventType,
+                selectedColumns, reason, requestSource, dictionaryTypeCode, dictionaryStatus, null, null, null);
+    }
+    public CreateExportJobCommand(Long requesterId, ExportJobType exportType, Long studentId,
+            LocalDateTime startedAt, LocalDateTime endedAt, IamChangeAuditEventType eventType,
+            List<String> selectedColumns, String reason, String requestSource) {
+        this(requesterId, exportType, studentId, startedAt, endedAt, eventType,
+                selectedColumns, reason, requestSource, null, null);
+    }
+}

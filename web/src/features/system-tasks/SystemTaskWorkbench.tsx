@@ -87,6 +87,17 @@ export function SystemTaskWorkbench({ currentUser, onNavigate, onAccessChange }:
         ['申请说明', detail.description], ['影响范围', scopes[detail.impactScope||'']||detail.impactScope], ['申请人 ID', detail.submittedBy], ['提交时间', detail.submittedAt],
         ['审核人 ID', detail.reviewedBy], ['审核时间', detail.reviewedAt], ['审核意见', detail.reviewComment], ['创建时间', detail.createdAt], ['更新时间', detail.updatedAt]
       ].map(([label, value]) => ({ key: label!, label, children: value || '—' }))} />
+        {detail.payload && <>
+          <Descriptions title="业务载荷" column={1} items={detail.payload.fields.map(field => ({ key: field.label, label: field.label, children: field.value ?? '未记录' }))} />
+          {detail.payload.notice && <Alert type="info" message={detail.payload.notice} />}
+          {detail.payload.differences.length > 0 && <Table rowKey="label" size="small" pagination={false} dataSource={detail.payload.differences} columns={[
+            { title: '变更字段', dataIndex: 'label' },
+            { title: '申请前', dataIndex: 'before', render: value => value ?? '未记录' },
+            { title: '申请目标', dataIndex: 'after', render: value => value ?? '未设置' }
+          ]} />}
+          {detail.payload.executionStatus && <Descriptions column={1} items={[{ key: 'execution', label: '执行状态', children: ({ PENDING: '待执行', APPLIED: '已执行', SUCCEEDED: '已成功', FAILED: '执行失败', REJECTED: '已驳回' } as Record<string,string>)[detail.payload.executionStatus] ?? detail.payload.executionStatus }]} />}
+          {detail.payload.failureReason && <Alert type="error" message={detail.payload.failureReason} />}
+        </>}
         {destination ? <Button type="primary" onClick={() => onNavigate(destination)}>前往领域处理页</Button> : <Alert type="info" message="该任务当前不可在此页执行；无可用的领域处理入口。" />}
       </>}
     </Modal>}

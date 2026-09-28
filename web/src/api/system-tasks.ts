@@ -2,6 +2,13 @@ import { apiClient } from './http';
 
 export type SystemTaskStatus = 'DRAFT' | 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED' | 'EFFECTIVE' | 'VOIDED';
 export interface SystemTask {
+  payload?: {
+    fields: { label: string; value: string | null }[];
+    differences: { label: string; before: string | null; after: string | null }[];
+    executionStatus: string | null;
+    failureReason: string | null;
+    notice: string | null;
+  };
   id: string;
   code: string;
   type: string;

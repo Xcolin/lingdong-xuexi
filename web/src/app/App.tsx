@@ -310,8 +310,25 @@ function ProtectedManagementApp() {
                 path="/export-jobs"
                 element={exportJobsAvailable
                   ? <ExportJobManagementPage
+                      accessRevision={JSON.stringify([currentUser.userId, currentUser.roleCodes, currentUser.permissionCodes, capabilities])}
                       canRead={currentUser.permissionCodes.includes('EXPORT_JOB_READ')}
                       canCreateOrdinary={currentUser.permissionCodes.includes('EXPORT_JOB_CREATE')}
+                      canExportDictionary={capabilities.dictionaryManagementEnabled === true
+                        && currentUser.roleCodes.includes('SYS_ADMIN')
+                        && !currentUser.roleCodes.includes('SYS_AUDITOR')
+                        && currentUser.permissionCodes.includes('DICTIONARY_READ')
+                        && currentUser.permissionCodes.includes('DICTIONARY_EXPORT')}
+                      canExportTemplate={capabilities.importExportTemplateManagementEnabled === true
+                        && currentUser.roleCodes.includes('SYS_ADMIN')
+                        && !currentUser.roleCodes.includes('SYS_AUDITOR')
+                        && currentUser.permissionCodes.includes('IMPORT_EXPORT_TEMPLATE_READ')
+                        && currentUser.permissionCodes.includes('IMPORT_EXPORT_TEMPLATE_EXPORT')}
+                      canExportInterface={canExportInterfaceLedger(currentUser, capabilities)}
+                      canExportCache={canExportCache(currentUser, capabilities)}
+                      canExportSystemTasks={canExportSystemTasks(currentUser, capabilities)}
+                      canExportRewards={canExportRewards(currentUser, capabilities)}
+                      canExportAttachments={canExportAttachments(currentUser, capabilities)}
+                      canExportExceptions={canExportExceptions(currentUser, capabilities)}
                       canSubmitSensitive={currentUser.permissionCodes.includes('EXPORT_SENSITIVE_SUBMIT')}
                       canReview={currentUser.permissionCodes.includes('EXPORT_SENSITIVE_REVIEW')}
                     />
@@ -520,6 +537,17 @@ export function canAccessExportJobs(
       ['EXPORT_JOB_READ', 'EXPORT_SENSITIVE_REVIEW'].includes(permission));
 }
 
+export function canExportInterfaceLedger(currentUser: CurrentUser, capabilities: ClientCapabilities): boolean {
+  return capabilities.dataExportEnabled === true
+    && capabilities.attachmentServiceEnabled === true
+    && capabilities.interfaceServiceManagementEnabled === true
+    && capabilities.importExportTemplateManagementEnabled === true
+    && currentUser.roleCodes.includes('SYS_ADMIN')
+    && !currentUser.roleCodes.includes('SYS_AUDITOR')
+    && currentUser.permissionCodes.includes('INTERFACE_SERVICE_READ')
+    && currentUser.permissionCodes.includes('INTERFACE_SERVICE_EXPORT');
+}
+
 export function canAccessTeacherManagement(
   currentUser: CurrentUser,
   capabilities: ClientCapabilities
@@ -536,4 +564,42 @@ export function canAccessExceptionReports(
   return capabilities.studentExceptionReportEnabled === true
     && currentUser.permissionCodes.includes('EXCEPTION_REPORT_READ')
     && currentUser.roleCodes.some((role) => ['TEACHER', 'ORG_ADMIN'].includes(role));
+}
+
+export function canExportCache(currentUser: CurrentUser, capabilities: ClientCapabilities): boolean {
+  return capabilities.dataExportEnabled === true && capabilities.attachmentServiceEnabled === true
+    && capabilities.importExportTemplateManagementEnabled === true && capabilities.cacheManagementEnabled === true
+    && currentUser.roleCodes.includes('SYS_ADMIN') && !currentUser.roleCodes.includes('SYS_AUDITOR')
+    && currentUser.permissionCodes.includes('CACHE_READ') && currentUser.permissionCodes.includes('CACHE_EXPORT');
+}
+
+export function canExportSystemTasks(currentUser: CurrentUser, capabilities: ClientCapabilities): boolean {
+  return capabilities.dataExportEnabled === true && capabilities.attachmentServiceEnabled === true
+    && capabilities.importExportTemplateManagementEnabled === true
+    && currentUser.roleCodes.some(role => role === 'SYS_ADMIN' || role === 'SYS_AUDITOR')
+    && currentUser.permissionCodes.includes('SYSTEM_TASK_READ') && currentUser.permissionCodes.includes('SYSTEM_TASK_EXPORT');
+}
+
+export function canExportRewards(currentUser: CurrentUser, capabilities: ClientCapabilities): boolean {
+  return capabilities.dataExportEnabled === true && capabilities.attachmentServiceEnabled === true
+    && capabilities.importExportTemplateManagementEnabled === true && capabilities.rewardExchangeEnabled === true
+    && currentUser.roleCodes.includes('PARENT') && !currentUser.roleCodes.includes('SYS_AUDITOR')
+    && currentUser.permissionCodes.includes('REWARD_EXCHANGE_REVIEW_CHILD')
+    && currentUser.permissionCodes.includes('REWARD_EXCHANGE_EXPORT');
+}
+
+export function canExportExceptions(currentUser: CurrentUser, capabilities: ClientCapabilities): boolean {
+  return capabilities.dataExportEnabled === true && capabilities.attachmentServiceEnabled === true
+    && capabilities.importExportTemplateManagementEnabled === true && capabilities.studentExceptionReportEnabled === true
+    && currentUser.roleCodes.some(role => role === 'TEACHER' || role === 'ORG_ADMIN')
+    && !currentUser.roleCodes.includes('SYS_AUDITOR')
+    && currentUser.permissionCodes.includes('EXCEPTION_REPORT_READ')
+    && currentUser.permissionCodes.includes('EXCEPTION_REPORT_EXPORT');
+}
+
+export function canExportAttachments(currentUser: CurrentUser, capabilities: ClientCapabilities): boolean {
+  return capabilities.dataExportEnabled === true && capabilities.attachmentServiceEnabled === true
+    && capabilities.importExportTemplateManagementEnabled === true
+    && currentUser.permissionCodes.includes('ATTACHMENT_FILE_LEDGER_READ')
+    && currentUser.permissionCodes.includes('ATTACHMENT_FILE_LEDGER_EXPORT');
 }

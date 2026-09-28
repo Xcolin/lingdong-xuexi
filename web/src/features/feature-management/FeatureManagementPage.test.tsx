@@ -45,13 +45,15 @@ it('审核员混合角色只审批，成功刷新全局能力', async () => {
   await waitFor(() => expect(callback.mock.calls.length).toBeGreaterThan(1));
 });
 it('焦点复核撤权清空列表和申请弹窗', async () => {
-  render(<FeatureManagementPage currentUser={user} />);
+  const callback = vi.fn();
+  render(<FeatureManagementPage currentUser={user} onAccessChange={callback} />);
   fireEvent.click(await screen.findByRole('button', { name: '申请启用' }));
   vi.mocked(authApi.currentUser).mockResolvedValue({ ...user, permissionCodes: [] });
   fireEvent.focus(window);
   await screen.findByText('当前会话无功能开关读取权限');
   expect(screen.queryByLabelText('申请说明')).not.toBeInTheDocument();
   expect(screen.queryByText('开启学习')).not.toBeInTheDocument();
+  expect(callback).toHaveBeenLastCalledWith(expect.objectContaining({ permissionCodes: [] }), caps);
 });
 it('定位功能禁止启用且申请历史使用服务端分页', async () => {
   vi.mocked(featureManagementApi.toggles).mockResolvedValue([{ ...toggle, featureCode: 'GEO_ATTENDANCE', enableAllowed: false }]);
@@ -99,4 +101,22 @@ it('版本冲突刷新状态并提示重新申请', async () => {
   await screen.findByText('开关版本已变化，已刷新当前状态，请重新发起申请。');
   expect(featureManagementApi.toggles).toHaveBeenCalledTimes(2);
   expect(screen.queryByRole('button', { name: '确认提交' })).not.toBeInTheDocument();
+});
+it('审批在途时焦点查询先返回旧值，审批完成后仍重新验证并刷新', async () => {
+  const auditor = { ...user, roleCodes: ['SYS_AUDITOR'] };
+  vi.mocked(authApi.currentUser).mockResolvedValue(auditor);
+  let complete!: (value: typeof change) => void;
+  vi.mocked(featureManagementApi.approve).mockReturnValueOnce(new Promise(resolve => { complete = resolve; }));
+  render(<FeatureManagementPage currentUser={auditor} />);
+  fireEvent.click(await screen.findByRole('button', { name: '批准' }));
+  fireEvent.click(screen.getByRole('button', { name: '确认批准' }));
+  await waitFor(() => expect(featureManagementApi.approve).toHaveBeenCalled());
+  fireEvent.focus(window);
+  await waitFor(() => expect(featureManagementApi.toggles).toHaveBeenCalledTimes(2));
+  await screen.findByRole('button', { name: '批准' });
+  fireEvent.click(screen.getAllByTitle('2')[0]);
+  await waitFor(() => expect(featureManagementApi.changes).toHaveBeenLastCalledWith({ page: 2, pageSize: 20 }));
+  complete(change);
+  await waitFor(() => expect(featureManagementApi.toggles).toHaveBeenCalledTimes(3));
+  expect(featureManagementApi.changes).toHaveBeenLastCalledWith({ page: 2, pageSize: 20 });
 });

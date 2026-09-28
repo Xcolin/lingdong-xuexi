@@ -15,6 +15,66 @@ class FlywayMigrationTest {
     private JdbcTemplate jdbcTemplate;
 
     @Test
+    void addsTemplateLedgerLeastPrivilegeAndModuleThroughV77() {
+        assertThat(jdbcTemplate.queryForObject(
+                "select count(*) from flyway_schema_history where version = '77' and success = true",
+                Integer.class)).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForList("""
+                select r.role_code from sys_role_permission rp
+                join sys_role r on r.id = rp.role_id join sys_permission p on p.id = rp.permission_id
+                where p.permission_code = 'IMPORT_EXPORT_TEMPLATE_EXPORT' and p.client_type = 'WEB'
+                  and p.status = 'ENABLED' and rp.effect = 'ALLOW'
+                  and p.id >= 1000000000000000000 and rp.id >= 1000000000000000000
+                """, String.class)).containsExactly("SYS_ADMIN");
+        assertThat(jdbcTemplate.queryForObject("""
+                select count(*) from sys_dictionary_item i join sys_dictionary_type t on t.id = i.type_id
+                where t.type_code = 'IMPORT_EXPORT_TEMPLATE_MODULE' and i.item_code = 'TEMPLATE_REPORT'
+                  and i.status = 'ENABLED' and i.is_default = 0 and i.id >= 1000000000000000000
+                """, Integer.class)).isEqualTo(1);
+    }
+
+    @Test
+    void addsInterfaceLedgerLeastPrivilegeAndModuleThroughV78() {
+        assertThat(jdbcTemplate.queryForObject(
+                "select count(*) from flyway_schema_history where version = '78' and success = true",
+                Integer.class)).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForList("""
+                select r.role_code from sys_role_permission rp
+                join sys_role r on r.id = rp.role_id join sys_permission p on p.id = rp.permission_id
+                where p.permission_code = 'INTERFACE_SERVICE_EXPORT' and p.client_type = 'WEB'
+                  and p.status = 'ENABLED' and rp.effect = 'ALLOW'
+                  and p.id >= 1000000000000000000 and rp.id >= 1000000000000000000
+                """, String.class)).containsExactly("SYS_ADMIN");
+        assertThat(jdbcTemplate.queryForObject("""
+                select count(*) from sys_dictionary_item i join sys_dictionary_type t on t.id = i.type_id
+                where t.type_code = 'IMPORT_EXPORT_TEMPLATE_MODULE' and i.item_code = 'INTERFACE_REPORT'
+                  and i.status = 'ENABLED' and i.is_default = 0 and i.id >= 1000000000000000000
+                """, Integer.class)).isEqualTo(1);
+    }
+
+    @Test
+    void addsDictionaryExportPermissionAndTemplateModuleThroughV76() {
+        assertThat(jdbcTemplate.queryForObject("""
+                select count(*) from flyway_schema_history where version = '76' and success = true
+                """, Integer.class)).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForList("""
+                select role.role_code from sys_role_permission grant_row
+                join sys_role role on role.id = grant_row.role_id
+                join sys_permission permission on permission.id = grant_row.permission_id
+                where permission.permission_code = 'DICTIONARY_EXPORT' and permission.client_type = 'WEB'
+                  and permission.status = 'ENABLED' and grant_row.effect = 'ALLOW'
+                  and grant_row.id >= 1000000000000000000 and permission.id >= 1000000000000000000
+                """, String.class)).containsExactly("SYS_ADMIN");
+        assertThat(jdbcTemplate.queryForObject("""
+                select count(*) from sys_dictionary_item item
+                join sys_dictionary_type type on type.id = item.type_id
+                where type.type_code = 'IMPORT_EXPORT_TEMPLATE_MODULE'
+                  and item.item_code = 'DICTIONARY_REPORT' and item.status = 'ENABLED'
+                  and item.is_default = 0 and item.id >= 1000000000000000000
+                """, Integer.class)).isEqualTo(1);
+    }
+
+    @Test
     void seedsDisabledReviewPdfGenerationFeatureThroughV64() {
         assertThat(jdbcTemplate.queryForObject("""
                 select count(*) from sys_feature_toggle
@@ -2044,8 +2104,9 @@ class FlywayMigrationTest {
                 select count(*)
                 from sys_dictionary_item item
                 join sys_dictionary_type type on type.id = item.type_id
-                where type.type_code in ('IMPORT_EXPORT_TEMPLATE_TYPE', 'IMPORT_EXPORT_TEMPLATE_MODULE',
-                    'IMPORT_EXPORT_TEMPLATE_STATUS')
+                where ((type.type_code = 'IMPORT_EXPORT_TEMPLATE_TYPE' and item.item_code in ('IMPORT', 'EXPORT'))
+                    or (type.type_code = 'IMPORT_EXPORT_TEMPLATE_MODULE' and item.item_code in ('STUDENT', 'LEARNING_TASK', 'REPORT'))
+                    or (type.type_code = 'IMPORT_EXPORT_TEMPLATE_STATUS' and item.item_code in ('ENABLED', 'DISABLED')))
                   and item.id >= 1000000000000000000
                 """, Integer.class);
 
@@ -2181,7 +2242,8 @@ class FlywayMigrationTest {
                     or (role.role_code = 'SYS_ADMIN'
                         and permission.permission_code in ('EXPORT_JOB_READ', 'EXPORT_SENSITIVE_SUBMIT'))
                     or (role.role_code = 'SYS_AUDITOR'
-                        and permission.permission_code = 'EXPORT_SENSITIVE_REVIEW'))
+                        and permission.permission_code in ('EXPORT_SENSITIVE_REVIEW', 'EXPORT_JOB_READ'))
+                    or (role.role_code in ('TEACHER','ORG_ADMIN') and permission.permission_code = 'EXPORT_JOB_READ'))
                   and role_permission.id >= 1000000000000000000
                 """, Integer.class);
         Integer unexpectedGrantCount = jdbcTemplate.queryForObject("""
@@ -2189,7 +2251,7 @@ class FlywayMigrationTest {
                 from sys_role_permission role_permission
                 join sys_role role on role.id = role_permission.role_id
                 join sys_permission permission on permission.id = role_permission.permission_id
-                where role.role_code in ('SYS_ADMIN', 'SYS_AUDITOR', 'PARENT')
+                where role.role_code in ('SYS_ADMIN', 'SYS_AUDITOR', 'PARENT', 'TEACHER', 'ORG_ADMIN')
                   and permission.permission_code in ('EXPORT_JOB_READ', 'EXPORT_JOB_CREATE',
                       'EXPORT_SENSITIVE_SUBMIT', 'EXPORT_SENSITIVE_REVIEW')
                   and role_permission.effect = 'ALLOW'
@@ -2198,7 +2260,8 @@ class FlywayMigrationTest {
                         or (role.role_code = 'SYS_ADMIN'
                             and permission.permission_code in ('EXPORT_JOB_READ', 'EXPORT_SENSITIVE_SUBMIT'))
                         or (role.role_code = 'SYS_AUDITOR'
-                            and permission.permission_code = 'EXPORT_SENSITIVE_REVIEW'))
+                            and permission.permission_code in ('EXPORT_SENSITIVE_REVIEW', 'EXPORT_JOB_READ'))
+                    or (role.role_code in ('TEACHER','ORG_ADMIN') and permission.permission_code = 'EXPORT_JOB_READ'))
                 """, Integer.class);
         Integer attachmentRuleCount = jdbcTemplate.queryForObject("""
                 select count(*) from sys_attachment_rule rule
@@ -2226,7 +2289,8 @@ class FlywayMigrationTest {
         assertThat(primaryKeyTableCount).isGreaterThanOrEqualTo(82);
         assertThat(featureCount).isEqualTo(1);
         assertThat(permissionCount).isEqualTo(4);
-        assertThat(expectedGrantCount).isEqualTo(5);
+        // V80/V82 补充审核员及教师/机构管理员本人作业读取，不增加其他导出权限。
+        assertThat(expectedGrantCount).isEqualTo(8);
         assertThat(unexpectedGrantCount).isZero();
         assertThat(attachmentRuleCount).isEqualTo(1);
         assertThat(requiredIndexCount).isEqualTo(4);

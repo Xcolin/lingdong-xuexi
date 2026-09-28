@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.exportjob.infrastructure.persistence.RewardExchangeExportMapper">
+    <resultMap id="Row" type="com.lingdong.learning.exportjob.infrastructure.persistence.RewardExchangeExportRow">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="reward_name_snapshot" javaType="java.lang.String"/>
+            <arg column="required_points_snapshot" javaType="java.lang.Long"/>
+            <arg column="requested_at" javaType="java.time.LocalDateTime"/>
+            <arg column="status" javaType="com.lingdong.learning.growthpoint.domain.GrowthRewardExchangeStatus"/>
+            <arg column="reviewed_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+    <sql id="filters">
+        WHERE student_id = #{request.studentId}
+        <if test="request.startedAt != null">AND requested_at &gt;= #{request.startedAt}</if>
+        <if test="request.endedAt != null">AND requested_at &lt;= #{request.endedAt}</if>
+        <if test="request.rewardExchangeStatus != null">AND status = #{request.rewardExchangeStatus}</if>
+    </sql>
+    <select id="findUpperBound" resultType="java.lang.Long">
+        SELECT MAX(id) FROM growth_reward_exchange <include refid="filters"/>
+    </select>
+    <select id="count" resultType="long">
+        SELECT COUNT(*) FROM growth_reward_exchange <include refid="filters"/> AND id &lt;= #{upperBound}
+    </select>
+    <select id="findAfter" resultMap="Row">
+        SELECT id, reward_name_snapshot, required_points_snapshot, requested_at, status, reviewed_at
+        FROM growth_reward_exchange <include refid="filters"/>
+        AND id &gt; #{cursor} AND id &lt;= #{upperBound} ORDER BY id ASC LIMIT #{limit}
+    </select>
+</mapper>

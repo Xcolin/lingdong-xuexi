@@ -11,7 +11,7 @@ export interface WeeklySummary {
 export interface WeeklyDetail extends WeeklySummary {
   dataCutoffAt: string;
   categories: { categoryCode: string; taskCount: number; completedCount: number }[];
-  dailyTrends: { trendDate: string; taskTotalCount: number; completedCount: number; completionRate: number; earnedPoints: number; pauseCount: number }[];
+  dailyTrends: { trendDate: string; taskTotalCount: number; completedCount: number; pendingOptimizationCount: number; completionRate: number; earnedPoints: number; pauseCount: number }[];
   supplements: { id: string; content: string; supplementedAt: string }[];
 }
 const base = '/growth-reviews/miniapp/students';

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.exportjob.infrastructure.persistence.CacheOperationLogExportMapper">
+    <resultMap id="RowMap" type="com.lingdong.learning.exportjob.infrastructure.persistence.CacheOperationLogExportRow">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="cache_domain" javaType="java.lang.String"/>
+            <arg column="operation_type" javaType="java.lang.String"/>
+            <arg column="status" javaType="java.lang.String"/>
+            <arg column="executed_by" javaType="java.lang.Long"/>
+            <arg column="created_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+    <sql id="source">
+        FROM sys_cache_operation_log t WHERE 1 = 1
+        <if test="request.cacheDomain != null">AND t.cache_domain = #{request.cacheDomain}</if>
+        <if test="request.cacheStatus != null">AND t.status = #{request.cacheStatus}</if>
+        <if test="request.startedAt != null">AND t.created_at &gt;= #{request.startedAt}</if>
+        <if test="request.endedAt != null">AND t.created_at &lt;= #{request.endedAt}</if>
+    </sql>
+    <select id="findUpperBound" resultType="java.lang.Long">
+        SELECT MAX(t.id) <include refid="source"/>
+    </select>
+    <select id="count" resultType="long">
+        SELECT COUNT(1) <include refid="source"/> AND t.id &lt;= #{upperBound}
+    </select>
+    <select id="findAfter" resultMap="RowMap">
+        SELECT t.id, t.cache_domain, t.operation_type, t.status, t.executed_by, t.created_at
+        <include refid="source"/>
+        AND t.id &gt; #{cursor} AND t.id &lt;= #{upperBound}
+        ORDER BY t.id LIMIT #{limit}
+    </select>
+</mapper>

@@ -1,5 +1,66 @@
 # 灵动学习 API 接口设计
 
+## R06 附件管理台账
+
+沿用 `/api/v1/export-jobs`，类型 `ATTACHMENT_LEDGER`、模板模块 `ATTACHMENT_LEDGER_REPORT`。筛选为可选 `attachmentModuleCode`、`attachmentUploaderId`（19 位字符串）、`attachmentFileCategory` 与创建时间 `startedAt/endedAt`。默认七列安全元数据，禁止存储键、摘要、路径、关系明细和源内容链接。
+
+沿 V54 动态 `ATTACHMENT_FILE_LEDGER_READ`，另需 `ATTACHMENT_FILE_LEDGER_EXPORT`，读取本人导出作业另需 `EXPORT_JOB_READ`；导出、模板和附件开关均启用。允许显式授权的自定义运维角色，不将元数据权用于放行源文件访问。具体实施与验收见 [附件台账导出](../superpowers/specs/2026-09-28-lingdong-attachment-ledger-export.md)。
+
+## R06 异常报备台账
+
+原导出接口新增 `EXCEPTION_REPORT_LEDGER`，独立默认模板模块 `EXCEPTION_REPORT_EXPORT`。筛选 `exceptionClassId` 使用字符串雪花标识，`exceptionType`、`exceptionStatus` 使用既有枚举，时间按 reported_at；禁止携带学生或其他报表筛选。选项 `exceptionClasses` 仅返回当前有效授权班级。
+
+仅教师/机构管理员且不含审核员；要求 `EXCEPTION_REPORT_READ`、`EXCEPTION_REPORT_EXPORT` 和异常报备及原导出开关。教师仅本人报备且当前仍绑定班级；机构管理员仅授权有效班级。创建固化所选班级集合与教师限制身份，执行与旧文件访问复核其仍有效。只输出五列脱敏事实，不输出异常正文和处理意见。具体范围及验收状态见 [异常报备台账](../superpowers/specs/2026-09-27-lingdong-exception-report-export.md)。
+
+## R06 奖励兑换报表
+
+Web 原导出接口增加 `REWARD_EXCHANGE_LEDGER`，独立默认模板模块 `REWARD_EXCHANGE_REPORT`。必须指定字符串 `studentId`，可选原兑换状态 `rewardExchangeStatus` 及申请时间闭区间，禁止混用其他数据集筛选。选项仅返回活动主家长学生；无学生时仍校验导出身份、权限和开关。
+
+动态 PARENT 且非 SYS_AUDITOR，要求 `REWARD_EXCHANGE_EXPORT`、`REWARD_EXCHANGE_REVIEW_CHILD`、奖励兑换及原导出/模板/附件开关；每个学生还必须满足活动主家长关系。作业读取仍要求 `EXPORT_JOB_READ`，创建、每页、终态、详情和下载均复核。五列取申请时奖励名称和积分快照、申请时间、审批状态、核销状态，不返回家庭奖励描述或驳回意见。实施和验证状态见 [奖励兑换报表](../superpowers/specs/2026-09-27-lingdong-reward-exchange-export.md)。
+
+## R06 系统任务审批台账
+
+沿用 Web `/api/v1/export-jobs`，类型 `SYSTEM_TASK_LEDGER`，独立模板模块 `SYSTEM_TASK_REPORT`。可选 `systemTaskType`、`systemTaskStatus` 及创建时间闭区间；禁止与学生或其他数据集筛选混用。选项接口的 `systemTaskTypes` 仅返回当前可见领域类型，前端不自行扩大候选集合。固定六列为任务类型、发起人标识、审批人标识、状态、创建时间、审批意见；标识输出字符串，不包含业务载荷。
+
+要求 `SYSTEM_TASK_EXPORT`、`SYSTEM_TASK_READ` 及导出、模板、附件开关；读取本人作业还需 `EXPORT_JOB_READ`。V80 为管理员和审核员授予台账导出权限，并为审核员补本人作业读取权限，不增加审批权。管理员仅本人任务；审核员和混合身份仅已提交、非草稿且当前领域可见的任务。复用原系统任务范围决策及 SQL 范围片段，创建时固化身份和领域集合；执行每页、成功终态、详情和下载重新复核，原范围失效则拒绝旧文件。实现及验证状态见 [系统任务台账](../superpowers/specs/2026-09-26-lingdong-system-task-export.md)。
+
+## R06 接口服务台账
+
+原 Web `/api/v1/export-jobs` 新增 `INTERFACE_SERVICE_LEDGER`，独立默认模板模块 `INTERFACE_REPORT`。可选 `interfaceCallerName`（输入最长 100 字符，查询前去空白，大小写不敏感包含匹配）、`interfaceStatus=ENABLED/DISABLED`、`interfaceOwnerId`（19 位合法 Long 范围字符串），以及更新时间闭区间。JSON 数字形式的责任人标识拒绝接收，内部 SQL 使用 Long 精确比较，工作簿仍输出字符串。
+
+仅 SYS_ADMIN 且非 SYS_AUDITOR，要求 INTERFACE_SERVICE_READ、INTERFACE_SERVICE_EXPORT，以及导出、附件、模板、接口服务开关。创建、每页执行、成功终态、详情和下载均复核。固定六列及验证证据见 [接口服务台账](../superpowers/specs/2026-09-22-lingdong-interface-ledger-export.md)。本地 V78 已验证，远程仍为 V77，不混同部署完成。
+
+## R06 缓存操作日志
+
+沿用原导出接口新增 `CACHE_OPERATION_LOG`、独立默认模板模块 `CACHE_REPORT`，可选 `cacheDomain`、`cacheStatus` 及申请时间闭区间。原有导出类型禁止携带缓存筛选；缓存类型禁止混用学生、权限事件、字典、模板和接口服务筛选。要求 CACHE_READ、CACHE_EXPORT 与缓存管理及原导出相关开关，仅系统管理员且非审核员可访问。该接口只导出审计事实，不执行缓存处理器；字段口径及本地验收证据见 [缓存日志导出](../superpowers/specs/2026-09-26-lingdong-cache-log-export.md)。
+
+## R06 导入导出模板台账
+
+原 Web `/api/v1/export-jobs` 增加 `TEMPLATE_LEDGER`，支持可选 `templateType`（IMPORT/EXPORT）、`templateModuleCode`、`templateStatus`（ENABLED/DISABLED），以及更新时间闭区间。仅返回名称、类型、适用模块、版本、状态、更新时间，不含附件内容或内部标识。独立默认模板模块 `TEMPLATE_REPORT`，配置详见 [模板台账导出](../superpowers/specs/2026-09-20-lingdong-template-ledger-export.md)。
+
+要求原导出、模板、附件功能开启，系统管理员且非审核员，具有 `IMPORT_EXPORT_TEMPLATE_READ/IMPORT_EXPORT_TEMPLATE_EXPORT`；查询本人作业仍要求 `EXPORT_JOB_READ`。创建、执行、下载复核当前权限。模板筛选不得传给其他数据集，本类型禁止传学生、权限事件和字典筛选。
+
+
+## R06 数据字典台账导出
+
+沿用 Web `/api/v1/export-jobs` 创建、选项、本人列表、详情和下载接口，增加 `exportType=DICTIONARY_LEDGER`。创建请求支持可选 `dictionaryTypeCode`（类型编码精确匹配，去空白并转大写）、`dictionaryStatus=ENABLED/DISABLED` 和 `startedAt/endedAt`（字典项更新时间闭区间）。禁止传学生或权限事件类型；其他数据集禁止使用字典筛选。作业标识仍为字符串。
+
+仅非审核员的系统管理员可创建、执行、读取及下载；除原导出、模板、附件开关外，还要求 `DICTIONARY_MANAGEMENT`、`DICTIONARY_READ`、`DICTIONARY_EXPORT`，查询接口另要求 `EXPORT_JOB_READ`。权限或功能收回后，已生成文件也不能下载。独立默认模板模块为 `DICTIONARY_REPORT`；固定列为 `TYPE_CODE/TYPE_NAME/ITEM_CODE/ITEM_NAME/SORT_ORDER/STATUS/UPDATED_AT`。不选状态时保留停用类型下的字典项和停用项。复用异步执行、受控附件和失败补偿，不返回内部字典主键。
+
+配置及验证说明见 [数据字典台账导出](../superpowers/specs/2026-09-20-lingdong-dictionary-export.md)。
+
+## R07 系统任务业务详情
+
+`GET /api/v1/system-tasks/{id}` 保留已有任务、申请人及审批字段，新增 `payload`：`fields[{label,value}]`、`differences[{label,before,after}]`、`executionStatus`、`failureReason`、`notice`。字段值和标识均为字符串，未知历史值为 null；组织移动及功能开关使用持久化申请快照展示差异，接口服务未保存的变更前值明确标注未记录，不以现状伪造历史。缓存、组织、接口服务与导出返回既有执行结果。敏感导出仅显示原有公开元数据，不开放原始过滤/权限范围快照、结果内容、文件标识或存储信息。
+
+详情先通过原系统任务的本人/审核员范围、领域动态权限及功能开关校验，再读取对应领域快照；列表不附带业务载荷。V75 起接口服务启停、授权变更申请同步固化原服务状态、原授权范围和值，以及服务元数据；旧申请不回填。组织停用/删除的原状态来自既有 REQUEST 审计，组织移动来自申请的原父节点快照。
+
+敏感导出的申请参数通过白名单投影展示：筛选开始时间、结束时间、事件类型、导出列编码和表头、姓名脱敏策略及版本。仅从创建时快照取值，不读取当前模板替换历史；不返回原始 JSON、未知键、内部范围快照、源摘要或附件引用。缺失或格式异常时以 notice 明确提示，不能把缺失解释成无限制导出。
+
+## V74 接口服务变更执行审计
+
+`GET /api/v1/interface-services/changes` 与 `GET /api/v1/interface-services/review-queue` 的变更记录新增 `executionStatus` 和 `failureReason`。状态为 `PENDING/APPLIED/FAILED`；失败原因使用固定脱敏摘要，不返回数据库、接口地址或凭据细节。审核通过后，实际变更、执行状态和系统任务生效在同一事务提交；执行失败时业务变更回滚，系统任务保留 `APPROVED`，变更记录持久化为 `FAILED`，不得伪装成已生效。
+
 ## V73 全局功能开关管理（实施中）
 
 Web 接口前缀 `/api/v1/feature-management`，动态权限 `FEATURE_TOGGLE_READ/MANAGE/REVIEW`。读取要求系统角色；管理员仅查询本人申请并提交，审核员查询已提交历史和审批队列，混合审核员身份不能发起申请。管理本身不依赖某个业务开关，业务停用后仍可走审批恢复。

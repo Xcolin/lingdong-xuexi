@@ -317,6 +317,7 @@ export function InterfaceServiceManagementPage({ canManage, canReview }: Interfa
         <h1>接口服务管理</h1>
         {canManage && <Button type="primary" icon={<Plus size={16} />} onClick={openRegistration}>登记接口服务</Button>}
       </div>
+      <Alert type="info" showIcon message="此处仅登记服务元数据和调用结果，不保存接口地址或凭据，也不会直接调用任意 URL。" description="真实调用由各业务适配器按外置配置控制超时和异常。" />
       {errorMessage && <Alert type="error" showIcon message={errorMessage} action={<Button size="small" onClick={() => void reloadActiveTab()}>重试</Button>} />}
       <Tabs activeKey={activeTab} onChange={setActiveTab} items={[
         { key: 'services', label: '服务登记', children: servicePanel },
@@ -393,6 +394,8 @@ function ChangeTable({ items, loading }: { items: InterfaceServiceChangeRecord[]
           { title: '变更类型', dataIndex: 'changeType', key: 'changeType', width: 130, render: changeTypeLabel },
           { title: '服务', dataIndex: 'serviceName', key: 'serviceName', width: 170, render: (value) => value ?? '-' },
           { title: '任务状态', dataIndex: 'taskStatus', key: 'taskStatus', width: 110, render: (value) => <TaskStatusTag status={value} /> },
+          { title: '执行状态', dataIndex: 'executionStatus', key: 'executionStatus', width: 110, render: executionStatusTag },
+          { title: '失败原因', dataIndex: 'failureReason', key: 'failureReason', width: 200, ellipsis: true, render: (value) => value ?? '-' },
           { title: '任务说明', dataIndex: 'taskDescription', key: 'taskDescription', ellipsis: true },
           { title: '审核意见', dataIndex: 'reviewComment', key: 'reviewComment', width: 180, ellipsis: true, render: (value) => value ?? '-' },
           { title: '提交时间', dataIndex: 'submittedAt', key: 'submittedAt', width: 170, render: formatTime },
@@ -414,6 +417,12 @@ function ServiceStatusTag({ status }: { status: InterfaceServiceStatus }) {
 function TaskStatusTag({ status }: { status: SystemTaskStatus }) {
   const labels: Record<SystemTaskStatus, string> = { DRAFT: '草稿', PENDING_REVIEW: '待审核', APPROVED: '已通过', REJECTED: '已驳回', EFFECTIVE: '已生效', VOIDED: '已作废' };
   const colors: Record<SystemTaskStatus, string> = { DRAFT: 'default', PENDING_REVIEW: 'processing', APPROVED: 'warning', REJECTED: 'error', EFFECTIVE: 'success', VOIDED: 'default' };
+  return <Tag color={colors[status]}>{labels[status]}</Tag>;
+}
+
+function executionStatusTag(status: InterfaceServiceChangeRecord['executionStatus']) {
+  const labels = { PENDING: '待执行', APPLIED: '已执行', FAILED: '执行失败' };
+  const colors = { PENDING: 'default', APPLIED: 'success', FAILED: 'error' };
   return <Tag color={colors[status]}>{labels[status]}</Tag>;
 }
 

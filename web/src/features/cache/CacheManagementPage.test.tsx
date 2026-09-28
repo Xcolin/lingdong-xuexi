@@ -117,6 +117,7 @@ describe('缓存管理页面', () => {
 
     await user.click(screen.getByRole('button', { name: '提交高风险操作' }));
     const dialog = screen.getByRole('dialog', { name: '提交高风险操作' });
+    expect(within(dialog).getByText('真实执行范围：全部已注册缓存；用户会话清除会强制退出所有活动设备会话，包括当前审核会话。')).toBeInTheDocument();
     await user.type(within(dialog).getByLabelText('任务标题'), '全量清除缓存');
     await user.type(within(dialog).getByLabelText('影响说明'), '发布后全量清理');
     await user.click(within(dialog).getByLabelText('我已确认该操作需要系统审核员审批'));

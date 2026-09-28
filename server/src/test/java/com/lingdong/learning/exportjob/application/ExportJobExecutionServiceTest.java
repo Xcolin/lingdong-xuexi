@@ -143,8 +143,7 @@ class ExportJobExecutionServiceTest {
 
         assertThat(service.execute(job)).isTrue();
 
-        verify(accessService).requireExecution(job);
-        verify(accessService).requireFeatures();
+        verify(accessService, org.mockito.Mockito.times(3)).requireExecution(job);
         verify(adapter).fetchAfter(any(), eq(1874244142494646999L), eq(0L), eq(2));
         verify(jobMapper).updateProgress(JOB_ID, 1L, 1L, 1L);
         verify(contentService).store(eq(REQUESTER_ID), eq("EXPORT_JOB"), eq("REPORT_EXPORT"),
@@ -152,6 +151,86 @@ class ExportJobExecutionServiceTest {
         verify(fileService).attachToBusiness(any());
         verify(completionService).complete(job, 2L, RESULT_FILE_ID, 1L, 1L);
         verify(failureService, never()).fail(anyLong(), anyLong(), any(), any());
+    }
+
+    @Test
+    void templateRevocationBeforeNextPageStopsReading() throws Exception {
+        var job = templateJob();
+        org.mockito.Mockito.doNothing().doThrow(new IllegalStateException("已撤权"))
+                .when(accessService).requireExecution(job);
+        assertThat(service.execute(job)).isFalse();
+        verify(adapter, never()).fetchAfter(any(), anyLong(), anyLong(), org.mockito.ArgumentMatchers.anyInt());
+        verify(contentService, never()).store(any(), any(), any(), any(), any(), any());
+        verify(completionService, never()).complete(any(), anyLong(), any(), anyLong(), anyLong());
+    }
+
+    @Test
+    void templateRevocationAfterAttachmentSaveCompensatesInsteadOfSucceeding() throws Exception {
+        var job = templateJob();
+        when(contentService.store(eq(REQUESTER_ID), eq("EXPORT_JOB"), eq("REPORT_EXPORT"), any(), any(), any()))
+                .thenAnswer(invocation -> {
+                    doThrow(new IllegalStateException("已撤权")).when(accessService).requireExecution(job);
+                    return resultFile();
+                });
+        when(managedFileMapper.markRetired(RESULT_FILE_ID)).thenReturn(1);
+        assertThat(service.execute(job)).isFalse();
+        verify(fileService).releaseBusinessRelation(1874244142494646986L);
+        verify(managedFileMapper).markRetired(RESULT_FILE_ID);
+        verify(contentService).discardContent("attachment/export-result");
+        verify(completionService, never()).complete(any(), anyLong(), any(), anyLong(), anyLong());
+    }
+
+    private ExportJobRecord templateJob() throws Exception {
+        var job = mock(ExportJobRecord.class, org.mockito.AdditionalAnswers.delegatesTo(job(false, null)));
+        org.mockito.Mockito.doReturn(ExportJobType.TEMPLATE_LEDGER).when(job).exportType();
+        org.mockito.Mockito.doReturn(null).when(job).studentId();
+        org.mockito.Mockito.doReturn(objectMapper.writeValueAsString(new ExportScopeSnapshot(null, 1874244142494646999L)))
+                .when(job).scopeSnapshot();
+        var metadata = mock(ImportExportTemplateRecord.class, org.mockito.AdditionalAnswers.delegatesTo(template()));
+        org.mockito.Mockito.doReturn("TEMPLATE_REPORT").when(metadata).moduleCode();
+        when(templateMapper.findById(TEMPLATE_ID)).thenReturn(metadata);
+        when(registry.require(ExportJobType.TEMPLATE_LEDGER)).thenReturn(adapter);
+        return job;
+    }
+
+    @Test
+    void interfaceRevocationBeforeNextPageStopsReading() throws Exception {
+        var job = interfaceJob();
+        org.mockito.Mockito.doNothing().doThrow(new IllegalStateException("已撤权"))
+                .when(accessService).requireExecution(job);
+        assertThat(service.execute(job)).isFalse();
+        verify(adapter, never()).fetchAfter(any(), anyLong(), anyLong(), org.mockito.ArgumentMatchers.anyInt());
+        verify(contentService, never()).store(any(), any(), any(), any(), any(), any());
+        verify(completionService, never()).complete(any(), anyLong(), any(), anyLong(), anyLong());
+    }
+
+    @Test
+    void interfaceRevocationAfterAttachmentSaveCompensatesInsteadOfSucceeding() throws Exception {
+        var job = interfaceJob();
+        when(contentService.store(eq(REQUESTER_ID), eq("EXPORT_JOB"), eq("REPORT_EXPORT"), any(), any(), any()))
+                .thenAnswer(invocation -> {
+                    doThrow(new IllegalStateException("已撤权")).when(accessService).requireExecution(job);
+                    return resultFile();
+                });
+        when(managedFileMapper.markRetired(RESULT_FILE_ID)).thenReturn(1);
+        assertThat(service.execute(job)).isFalse();
+        verify(fileService).releaseBusinessRelation(1874244142494646986L);
+        verify(managedFileMapper).markRetired(RESULT_FILE_ID);
+        verify(contentService).discardContent("attachment/export-result");
+        verify(completionService, never()).complete(any(), anyLong(), any(), anyLong(), anyLong());
+    }
+
+    private ExportJobRecord interfaceJob() throws Exception {
+        var job = mock(ExportJobRecord.class, org.mockito.AdditionalAnswers.delegatesTo(job(false, null)));
+        org.mockito.Mockito.doReturn(ExportJobType.INTERFACE_SERVICE_LEDGER).when(job).exportType();
+        org.mockito.Mockito.doReturn(null).when(job).studentId();
+        org.mockito.Mockito.doReturn(objectMapper.writeValueAsString(new ExportScopeSnapshot(null, 1874244142494646999L)))
+                .when(job).scopeSnapshot();
+        var metadata = mock(ImportExportTemplateRecord.class, org.mockito.AdditionalAnswers.delegatesTo(template()));
+        org.mockito.Mockito.doReturn("INTERFACE_REPORT").when(metadata).moduleCode();
+        when(templateMapper.findById(TEMPLATE_ID)).thenReturn(metadata);
+        when(registry.require(ExportJobType.INTERFACE_SERVICE_LEDGER)).thenReturn(adapter);
+        return job;
     }
 
     @Test
@@ -298,5 +377,193 @@ class ExportJobExecutionServiceTest {
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 3L, REQUESTER_ID, "EXPORT_JOB", "REPORT_EXPORT", "0".repeat(64),
                 FileStatus.AVAILABLE);
+    }
+    @Test
+    void cacheRevocationBeforeNextPageStopsReading() throws Exception {
+        var job = cacheJob();
+        org.mockito.Mockito.doNothing().doThrow(new IllegalStateException("已撤权"))
+                .when(accessService).requireExecution(job);
+        assertThat(service.execute(job)).isFalse();
+        verify(adapter, never()).fetchAfter(any(), anyLong(), anyLong(), org.mockito.ArgumentMatchers.anyInt());
+        verify(contentService, never()).store(any(), any(), any(), any(), any(), any());
+        verify(completionService, never()).complete(any(), anyLong(), any(), anyLong(), anyLong());
+    }
+
+    @Test
+    void cacheRevocationAfterAttachmentSaveCompensatesInsteadOfSucceeding() throws Exception {
+        var job = cacheJob();
+        when(contentService.store(eq(REQUESTER_ID), eq("EXPORT_JOB"), eq("REPORT_EXPORT"), any(), any(), any()))
+                .thenAnswer(invocation -> {
+                    doThrow(new IllegalStateException("已撤权")).when(accessService).requireExecution(job);
+                    return resultFile();
+                });
+        when(managedFileMapper.markRetired(RESULT_FILE_ID)).thenReturn(1);
+        assertThat(service.execute(job)).isFalse();
+        verify(fileService).releaseBusinessRelation(1874244142494646986L);
+        verify(managedFileMapper).markRetired(RESULT_FILE_ID);
+        verify(contentService).discardContent("attachment/export-result");
+        verify(completionService, never()).complete(any(), anyLong(), any(), anyLong(), anyLong());
+    }
+
+    @Test
+    void systemTaskRevocationBeforePageStopsReading() throws Exception {
+        var job=taskLedgerJob();
+        org.mockito.Mockito.doNothing().doThrow(new IllegalStateException("领域已撤权"))
+                .when(accessService).requireExecution(job);
+        assertThat(service.execute(job)).isFalse();
+        verify(adapter,never()).fetchAfter(any(),anyLong(),anyLong(),org.mockito.ArgumentMatchers.anyInt());
+        verify(completionService,never()).complete(any(),anyLong(),any(),anyLong(),anyLong());
+    }
+
+    @Test
+    void rewardRelationshipRevocationBeforePageStopsReading() throws Exception {
+        var job=rewardLedgerJob();
+        org.mockito.Mockito.doNothing().doThrow(new IllegalStateException("主家长关系已撤销"))
+                .when(accessService).requireExecution(job);
+        assertThat(service.execute(job)).isFalse();
+        verify(adapter,never()).fetchAfter(any(),anyLong(),anyLong(),org.mockito.ArgumentMatchers.anyInt());
+        verify(completionService,never()).complete(any(),anyLong(),any(),anyLong(),anyLong());
+    }
+
+    @Test
+    void rewardRevocationAfterSaveCompensatesFamilyFile() throws Exception {
+        var job=rewardLedgerJob();
+        when(contentService.store(eq(REQUESTER_ID),eq("EXPORT_JOB"),eq("REPORT_EXPORT"),any(),any(),any()))
+                .thenAnswer(invocation->{
+                    doThrow(new IllegalStateException("主家长关系已撤销")).when(accessService).requireExecution(job);
+                    return resultFile();
+                });
+        when(managedFileMapper.markRetired(RESULT_FILE_ID)).thenReturn(1);
+        assertThat(service.execute(job)).isFalse();
+        verify(fileService).releaseBusinessRelation(1874244142494646986L);
+        verify(managedFileMapper).markRetired(RESULT_FILE_ID);
+        verify(contentService).discardContent("attachment/export-result");
+        verify(completionService,never()).complete(any(),anyLong(),any(),anyLong(),anyLong());
+    }
+
+    @Test
+    void exceptionClassRevocationBeforePageStopsReading() throws Exception {
+        var job=exceptionLedgerJob();
+        org.mockito.Mockito.doNothing().doThrow(new IllegalStateException("班级授权已撤销"))
+                .when(accessService).requireExecution(job);
+        assertThat(service.execute(job)).isFalse();
+        verify(adapter,never()).fetchAfter(any(),anyLong(),anyLong(),org.mockito.ArgumentMatchers.anyInt());
+        verify(completionService,never()).complete(any(),anyLong(),any(),anyLong(),anyLong());
+    }
+
+    @Test
+    void exceptionRevocationAfterSaveCompensatesFile() throws Exception {
+        var job=exceptionLedgerJob();
+        when(contentService.store(eq(REQUESTER_ID),eq("EXPORT_JOB"),eq("REPORT_EXPORT"),any(),any(),any()))
+                .thenAnswer(invocation->{
+                    doThrow(new IllegalStateException("班级授权已撤销")).when(accessService).requireExecution(job);
+                    return resultFile();
+                });
+        when(managedFileMapper.markRetired(RESULT_FILE_ID)).thenReturn(1);
+        assertThat(service.execute(job)).isFalse();
+        verify(fileService).releaseBusinessRelation(1874244142494646986L);
+        verify(managedFileMapper).markRetired(RESULT_FILE_ID);
+        verify(contentService).discardContent("attachment/export-result");
+        verify(completionService,never()).complete(any(),anyLong(),any(),anyLong(),anyLong());
+    }
+
+    @Test
+    void attachmentPermissionRevocationBeforePageStopsReading() throws Exception {
+        var job=attachmentLedgerJob();
+        org.mockito.Mockito.doNothing().doThrow(new IllegalStateException("附件元数据权限已撤销"))
+                .when(accessService).requireExecution(job);
+        assertThat(service.execute(job)).isFalse();
+        verify(adapter,never()).fetchAfter(any(),anyLong(),anyLong(),org.mockito.ArgumentMatchers.anyInt());
+        verify(completionService,never()).complete(any(),anyLong(),any(),anyLong(),anyLong());
+    }
+
+    @Test
+    void attachmentRevocationAfterSaveCompensatesFile() throws Exception {
+        var job=attachmentLedgerJob();
+        when(contentService.store(eq(REQUESTER_ID),eq("EXPORT_JOB"),eq("REPORT_EXPORT"),any(),any(),any()))
+                .thenAnswer(invocation->{
+                    doThrow(new IllegalStateException("附件元数据权限已撤销")).when(accessService).requireExecution(job);
+                    return resultFile();
+                });
+        when(managedFileMapper.markRetired(RESULT_FILE_ID)).thenReturn(1);
+        assertThat(service.execute(job)).isFalse();
+        verify(fileService).releaseBusinessRelation(1874244142494646986L);
+        verify(managedFileMapper).markRetired(RESULT_FILE_ID);
+        verify(contentService).discardContent("attachment/export-result");
+        verify(completionService,never()).complete(any(),anyLong(),any(),anyLong(),anyLong());
+    }
+
+    private ExportJobRecord attachmentLedgerJob() throws Exception {
+        var job = cacheJob();
+        org.mockito.Mockito.doReturn(ExportJobType.ATTACHMENT_LEDGER).when(job).exportType();
+        var metadata = mock(ImportExportTemplateRecord.class, org.mockito.AdditionalAnswers.delegatesTo(template()));
+        org.mockito.Mockito.doReturn("ATTACHMENT_LEDGER_REPORT").when(metadata).moduleCode();
+        when(templateMapper.findById(TEMPLATE_ID)).thenReturn(metadata);
+        when(registry.require(ExportJobType.ATTACHMENT_LEDGER)).thenReturn(adapter);
+        return job;
+    }
+
+    private ExportJobRecord exceptionLedgerJob() throws Exception {
+        var job = cacheJob();
+        org.mockito.Mockito.doReturn(ExportJobType.EXCEPTION_REPORT_LEDGER).when(job).exportType();
+        org.mockito.Mockito.doReturn(objectMapper.writeValueAsString(new ExportScopeSnapshot(
+                null, 1874244142494646999L, null, null, true, List.of(1874244142494646998L))))
+                .when(job).scopeSnapshot();
+        var metadata = mock(ImportExportTemplateRecord.class, org.mockito.AdditionalAnswers.delegatesTo(template()));
+        org.mockito.Mockito.doReturn("EXCEPTION_REPORT_EXPORT").when(metadata).moduleCode();
+        when(templateMapper.findById(TEMPLATE_ID)).thenReturn(metadata);
+        when(registry.require(ExportJobType.EXCEPTION_REPORT_LEDGER)).thenReturn(adapter);
+        return job;
+    }
+
+    private ExportJobRecord rewardLedgerJob() {
+        var job=mock(ExportJobRecord.class,org.mockito.AdditionalAnswers.delegatesTo(job(false,null)));
+        org.mockito.Mockito.doReturn(ExportJobType.REWARD_EXCHANGE_LEDGER).when(job).exportType();
+        var metadata=mock(ImportExportTemplateRecord.class,org.mockito.AdditionalAnswers.delegatesTo(template()));
+        org.mockito.Mockito.doReturn("REWARD_EXCHANGE_REPORT").when(metadata).moduleCode();
+        when(templateMapper.findById(TEMPLATE_ID)).thenReturn(metadata);
+        when(registry.require(ExportJobType.REWARD_EXCHANGE_LEDGER)).thenReturn(adapter);
+        return job;
+    }
+
+    @Test
+    void systemTaskRevocationAfterSaveCompensatesFileAndRejectsSuccess() throws Exception {
+        var job=taskLedgerJob();
+        when(contentService.store(eq(REQUESTER_ID),eq("EXPORT_JOB"),eq("REPORT_EXPORT"),any(),any(),any()))
+                .thenAnswer(invocation->{
+                    doThrow(new IllegalStateException("角色已变化")).when(accessService).requireExecution(job);
+                    return resultFile();
+                });
+        when(managedFileMapper.markRetired(RESULT_FILE_ID)).thenReturn(1);
+        assertThat(service.execute(job)).isFalse();
+        verify(fileService).releaseBusinessRelation(1874244142494646986L);
+        verify(managedFileMapper).markRetired(RESULT_FILE_ID);
+        verify(contentService).discardContent("attachment/export-result");
+        verify(completionService,never()).complete(any(),anyLong(),any(),anyLong(),anyLong());
+    }
+
+    private ExportJobRecord taskLedgerJob() throws Exception {
+        var job=cacheJob();
+        org.mockito.Mockito.doReturn(ExportJobType.SYSTEM_TASK_LEDGER).when(job).exportType();
+        org.mockito.Mockito.doReturn(objectMapper.writeValueAsString(new ExportScopeSnapshot(null,1874244142494646999L,
+                false,List.of(com.lingdong.learning.audit.application.SystemTaskType.CACHE_CLEAR)))).when(job).scopeSnapshot();
+        var metadata=mock(ImportExportTemplateRecord.class,org.mockito.AdditionalAnswers.delegatesTo(template()));
+        org.mockito.Mockito.doReturn("SYSTEM_TASK_REPORT").when(metadata).moduleCode();
+        when(templateMapper.findById(TEMPLATE_ID)).thenReturn(metadata);
+        when(registry.require(ExportJobType.SYSTEM_TASK_LEDGER)).thenReturn(adapter);
+        return job;
+    }
+
+    private ExportJobRecord cacheJob() throws Exception {
+        var job = mock(ExportJobRecord.class, org.mockito.AdditionalAnswers.delegatesTo(job(false, null)));
+        org.mockito.Mockito.doReturn(ExportJobType.CACHE_OPERATION_LOG).when(job).exportType();
+        org.mockito.Mockito.doReturn(null).when(job).studentId();
+        org.mockito.Mockito.doReturn(objectMapper.writeValueAsString(new ExportScopeSnapshot(null, 1874244142494646999L)))
+                .when(job).scopeSnapshot();
+        var metadata = mock(ImportExportTemplateRecord.class, org.mockito.AdditionalAnswers.delegatesTo(template()));
+        org.mockito.Mockito.doReturn("CACHE_REPORT").when(metadata).moduleCode();
+        when(templateMapper.findById(TEMPLATE_ID)).thenReturn(metadata);
+        when(registry.require(ExportJobType.CACHE_OPERATION_LOG)).thenReturn(adapter);
+        return job;
     }
 }

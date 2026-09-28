@@ -62,7 +62,7 @@ CREATE INDEX idx_sys_student_import_credential_expiry
 CREATE TABLE sys_student_import_row (
     id BIGINT NOT NULL PRIMARY KEY,
     execution_id BIGINT NOT NULL,
-    row_number INT NOT NULL,
+    `row_number` INT NOT NULL,
     status VARCHAR(16) NOT NULL,
     student_id BIGINT,
     student_account VARCHAR(8),
@@ -74,7 +74,7 @@ CREATE TABLE sys_student_import_row (
     attempt_count INT NOT NULL DEFAULT 0,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT uk_sys_student_import_row UNIQUE (execution_id, row_number),
+    CONSTRAINT uk_sys_student_import_row UNIQUE (execution_id, `row_number`),
     CONSTRAINT ck_sys_student_import_row_status
         CHECK (status IN ('PENDING', 'SUCCEEDED', 'FAILED')),
     CONSTRAINT ck_sys_student_import_attempt_count CHECK (attempt_count >= 0),
@@ -85,7 +85,7 @@ CREATE TABLE sys_student_import_row (
 );
 
 CREATE INDEX idx_sys_student_import_row_status
-    ON sys_student_import_row (execution_id, status, row_number);
+    ON sys_student_import_row (execution_id, status, `row_number`);
 
 INSERT INTO sys_feature_toggle (
     id, feature_code, feature_name, scope_type, scope_key, status, built_in,

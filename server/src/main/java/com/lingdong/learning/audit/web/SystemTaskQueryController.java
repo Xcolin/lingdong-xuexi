@@ -12,7 +12,8 @@ import java.util.List;
 @RestController @RequestMapping("/api/v1/system-tasks")
 public class SystemTaskQueryController {
     private final SystemTaskQueryService service;
-    public SystemTaskQueryController(SystemTaskQueryService service){this.service=service;}
+    private final SystemTaskPayloadReader payloads;
+    public SystemTaskQueryController(SystemTaskQueryService service, SystemTaskPayloadReader payloads){this.service=service;this.payloads=payloads;}
     @GetMapping @RequirePermission("SYSTEM_TASK_READ")
     public Page list(@AuthenticationPrincipal AuthenticatedUser user,
             @RequestParam(required=false)SystemTaskStatus status,
@@ -21,7 +22,11 @@ public class SystemTaskQueryController {
         return new Page(result.items().stream().map(Response::from).toList(),result.page(),result.pageSize(),result.total());
     }
     @GetMapping("/{id}") @RequirePermission("SYSTEM_TASK_READ")
-    public Response detail(@AuthenticationPrincipal AuthenticatedUser user,@PathVariable Long id){return Response.from(service.findDetails(user,id));}
+    public Detail detail(@AuthenticationPrincipal AuthenticatedUser user,@PathVariable Long id){
+        var task=service.findDetails(user,id);
+        return new Detail(Response.from(task),payloads.read(task));
+    }
+    public record Detail(@com.fasterxml.jackson.annotation.JsonUnwrapped Response task, SystemTaskPayloadReader.Payload payload) { }
     public record Page(List<Response> items,int page,int pageSize,long total) { }
     public record Response(String id,String code,SystemTaskType type,String title,String description,
             ImpactScope impactScope,SystemTaskStatus status,String submittedBy,LocalDateTime submittedAt,

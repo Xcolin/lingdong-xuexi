@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.exportjob.infrastructure.persistence.ExceptionReportExportMapper">
+    <resultMap id="Row" type="com.lingdong.learning.exportjob.infrastructure.persistence.ExceptionReportExportRow">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="student_name" javaType="java.lang.String"/>
+            <arg column="exception_type" javaType="java.lang.String"/>
+            <arg column="reporter_name" javaType="java.lang.String"/>
+            <arg column="status" javaType="java.lang.String"/>
+            <arg column="reported_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+    <sql id="source">
+        FROM edu_exception_report report
+        JOIN edu_student student ON student.id = report.student_id
+        JOIN sys_user reporter ON reporter.id = report.reporter_user_id
+    </sql>
+    <sql id="filters">
+        WHERE
+        <choose>
+            <when test="request.exceptionClassIds != null and !request.exceptionClassIds.isEmpty()">
+                report.class_organization_id IN
+                <foreach collection="request.exceptionClassIds" item="classId" open="(" close=")" separator=",">#{classId}</foreach>
+            </when>
+            <otherwise>1 = 0</otherwise>
+        </choose>
+        <if test="request.exceptionTeacherOnly">AND report.reporter_user_id = #{request.requesterId}</if>
+        <if test="request.startedAt != null">AND report.reported_at &gt;= #{request.startedAt}</if>
+        <if test="request.endedAt != null">AND report.reported_at &lt;= #{request.endedAt}</if>
+        <if test="request.exceptionType != null">AND report.exception_type = #{request.exceptionType}</if>
+        <if test="request.exceptionStatus != null">AND report.status = #{request.exceptionStatus}</if>
+    </sql>
+    <select id="findUpperBound" resultType="java.lang.Long">
+        SELECT MAX(report.id) <include refid="source"/> <include refid="filters"/>
+    </select>
+    <select id="count" resultType="long">
+        SELECT COUNT(*) <include refid="source"/> <include refid="filters"/> AND report.id &lt;= #{upperBound}
+    </select>
+    <select id="findAfter" resultMap="Row">
+        SELECT report.id, student.student_name, report.exception_type, reporter.display_name AS reporter_name, report.status, report.reported_at
+        <include refid="source"/> <include refid="filters"/>
+        AND report.id &gt; #{cursor} AND report.id &lt;= #{upperBound} ORDER BY report.id ASC LIMIT #{limit}
+    </select>
+</mapper>

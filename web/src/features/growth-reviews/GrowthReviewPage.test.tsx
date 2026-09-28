@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App as AntdApp } from 'antd';
 import { GrowthReviewPage } from './GrowthReviewPage';
@@ -72,6 +72,29 @@ describe('家长成长复盘页面', () => {
     await waitFor(() => {
       expect(growthReviewApi.list).toHaveBeenLastCalledWith(review.studentId, 'MONTH', 1, 20);
     });
+  });
+
+  it.each([
+    { completionRate: 0.3333, earnedPoints: 25, pendingOptimizationCount: 2, pauseCount: 3, rate: '33.33%', points: '+25' },
+    { completionRate: 0, earnedPoints: 0, pendingOptimizationCount: 0, pauseCount: 0, rate: '0.00%', points: '0' },
+    { completionRate: 0.5, earnedPoints: -8, pendingOptimizationCount: 1, pauseCount: 2, rate: '50.00%', points: '-8' }
+  ])('每日趋势独立展示四项快照指标：$rate / $points 分', async (metrics) => {
+    const detail = await growthReviewApi.detail();
+    growthReviewApi.detail.mockResolvedValue({
+      ...detail,
+      dailyTrends: [{ ...detail.dailyTrends[0], ...metrics }]
+    });
+    render(<AntdApp><GrowthReviewPage /></AntdApp>);
+    await screen.findByText('今天阅读更专注', {}, { timeout: 5000 });
+
+    const trend = within(screen.getByRole('heading', { name: '每日趋势' }).parentElement!);
+    expect(trend.getByText(`完成率 ${metrics.rate}`)).toBeInTheDocument();
+    expect(trend.getByText(`积分 ${metrics.points} 分`)).toBeInTheDocument();
+    expect(trend.getByText(`待优化 ${metrics.pendingOptimizationCount} 项`)).toBeInTheDocument();
+    expect(trend.getByText(`暂停 ${metrics.pauseCount} 次`)).toBeInTheDocument();
+    expect(trend.getByText('已完成 1 / 总任务 4')).toBeInTheDocument();
+    expect(trend.queryByText(/\+\-/)).not.toBeInTheDocument();
+    expect(trend.queryByText(/综合分/)).not.toBeInTheDocument();
   });
 
   it.each(['WEEK', 'MONTH'] as const)('%s模板切换仅改变呈现，不改变快照或请求', async (periodType) => {

@@ -1,5 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
+import { message, Modal } from 'antd';
 import userEvent from '@testing-library/user-event';
 import { TaskTemplateLibraryModal } from './TaskTemplateLibraryModal';
 
@@ -29,6 +30,11 @@ const personalTemplates = [
 ];
 
 describe('个人任务模板库', () => {
+  afterEach(async () => {
+    // 静态消息在组件树之外；测试环境销毁前结束通知计时器和确认弹窗。
+    await act(async () => { message.destroy(); Modal.destroyAll(); });
+    await waitFor(() => expect(document.querySelector('.ant-message-notice')).not.toBeInTheDocument());
+  });
   beforeEach(() => {
     taskTemplateApi.list.mockResolvedValue(personalTemplates);
     taskTemplateApi.create.mockResolvedValue(personalTemplates[0]);

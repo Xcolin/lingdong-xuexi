@@ -103,7 +103,7 @@ class GrowthReviewGenerationServiceTest {
         assertThat(first.reviewId().toString()).hasSize(19);
         assertThat(first.snapshotId().toString()).hasSize(19);
         assertSnapshot(first.snapshotId(), 4, 1, 1, 1, 1,
-                new BigDecimal("0.3333"), 15L, 1);
+                new BigDecimal("0.5000"), 15L, 1);
         assertThat(jdbcTemplate.queryForObject(
                 "select count(*) from growth_review_category_stat where snapshot_id = ?",
                 Integer.class, first.snapshotId())).isEqualTo(2);
@@ -136,10 +136,49 @@ class GrowthReviewGenerationServiceTest {
         assertThat(backfilled.created()).isTrue();
         assertThat(backfilled.contentVersion()).isEqualTo(2);
         assertSnapshot(backfilled.snapshotId(), 4, 1, 1, 1, 1,
-                new BigDecimal("0.3333"), 25L, 1);
+                new BigDecimal("0.5000"), 25L, 1);
         assertThat(jdbcTemplate.queryForObject(
                 "select earned_points from growth_review_snapshot where id = ?",
                 Long.class, first.snapshotId())).isEqualTo(15L);
+    }
+
+    @Test
+    void excludesExemptTasksFromPeriodicRateAndDailyTrend() {
+        for (var type : new GrowthReviewPeriodType[]{GrowthReviewPeriodType.WEEK, GrowthReviewPeriodType.MONTH}) {
+            LocalDate start = type == GrowthReviewPeriodType.WEEK ? LocalDate.of(2026, 8, 3) : REVIEW_DATE.withDayOfMonth(1);
+            LocalDate end = type == GrowthReviewPeriodType.WEEK ? LocalDate.of(2026, 8, 9) : REVIEW_DATE.withDayOfMonth(31);
+            var result = service.generate(STUDENT_ID, type, start, end,
+                    GrowthReviewGenerationSource.AUTO, end.plusDays(1).atStartOfDay());
+            assertSnapshot(result.snapshotId(), 4, 1, 1, 1, 1, new BigDecimal("0.5000"), 15L, 1);
+            assertThat(jdbcTemplate.queryForObject(
+                    "select completion_rate from growth_review_daily_trend where snapshot_id=? and trend_date=?",
+                    BigDecimal.class, result.snapshotId(), REVIEW_DATE)).isEqualByComparingTo("0.5000");
+        }
+    }
+
+    @Test
+    void onlyExemptAndInProgressTasksHaveZeroDenominator() {
+        jdbcTemplate.update("update learn_task_assignment set current_status='EXEMPT' where student_id=? and current_status<>'IN_PROGRESS'", STUDENT_ID);
+        var result = service.generate(STUDENT_ID, GrowthReviewPeriodType.DAY, REVIEW_DATE, REVIEW_DATE,
+                GrowthReviewGenerationSource.AUTO, REVIEW_DATE.atTime(21, 0));
+        assertSnapshot(result.snapshotId(), 4, 0, 1, 0, 3, BigDecimal.ZERO, 15L, 1);
+    }
+
+    @Test
+    void recalculationCreatesNewVersionAndPreservesLegacyRate() {
+        var legacy = service.generate(STUDENT_ID, GrowthReviewPeriodType.DAY, REVIEW_DATE, REVIEW_DATE,
+                GrowthReviewGenerationSource.AUTO, REVIEW_DATE.atTime(21, 0));
+        // 模拟升级前已存的旧口径快照；重算只能生成新版本。
+        jdbcTemplate.update("update growth_review_snapshot set completion_rate=0.3333,fact_fingerprint=? where id=?",
+                "0".repeat(64), legacy.snapshotId());
+        var current = service.generate(STUDENT_ID, GrowthReviewPeriodType.DAY, REVIEW_DATE, REVIEW_DATE,
+                GrowthReviewGenerationSource.BACKFILL, REVIEW_DATE.atTime(22, 0));
+        assertThat(current.contentVersion()).isEqualTo(2);
+        assertSnapshot(current.snapshotId(), 4, 1, 1, 1, 1, new BigDecimal("0.5000"), 15L, 1);
+        assertThat(jdbcTemplate.queryForObject("select completion_rate from growth_review_snapshot where id=?",
+                BigDecimal.class, legacy.snapshotId())).isEqualByComparingTo("0.3333");
+        assertThat(service.generate(STUDENT_ID, GrowthReviewPeriodType.DAY, REVIEW_DATE, REVIEW_DATE,
+                GrowthReviewGenerationSource.BACKFILL, REVIEW_DATE.atTime(23, 0)).created()).isFalse();
     }
 
     private void createTask(int offset, int basePoints, String category, String status) {

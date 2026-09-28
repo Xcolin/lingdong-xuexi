@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.exportjob.infrastructure.persistence.SystemTaskLedgerExportMapper">
+    <resultMap id="RowMap" type="com.lingdong.learning.exportjob.infrastructure.persistence.SystemTaskLedgerExportRow">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="task_type" javaType="java.lang.String"/>
+            <arg column="submitted_by" javaType="java.lang.Long"/>
+            <arg column="reviewed_by" javaType="java.lang.Long"/>
+            <arg column="status" javaType="java.lang.String"/>
+            <arg column="created_at" javaType="java.time.LocalDateTime"/>
+            <arg column="review_comment" javaType="java.lang.String"/>
+        </constructor>
+    </resultMap>
+    <sql id="source">
+        FROM sys_system_task t WHERE
+        <choose>
+            <when test="request.systemTaskAuditor != null and request.systemTaskTypes != null and !request.systemTaskTypes.isEmpty()">
+                <bind name="auditor" value="request.systemTaskAuditor"/>
+                <bind name="userId" value="request.requesterId"/>
+                <bind name="types" value="request.systemTaskTypes"/>
+                <include refid="com.lingdong.learning.audit.infrastructure.persistence.SystemTaskMapper.visibleScope"/>
+            </when>
+            <otherwise>1 = 0</otherwise>
+        </choose>
+        <if test="request.systemTaskType != null">AND t.task_type = #{request.systemTaskType}</if>
+        <if test="request.systemTaskStatus != null">AND t.status = #{request.systemTaskStatus}</if>
+        <if test="request.startedAt != null">AND t.created_at &gt;= #{request.startedAt}</if>
+        <if test="request.endedAt != null">AND t.created_at &lt;= #{request.endedAt}</if>
+    </sql>
+    <select id="findUpperBound" resultType="java.lang.Long">SELECT MAX(t.id) <include refid="source"/></select>
+    <select id="count" resultType="long">SELECT COUNT(*) <include refid="source"/> AND t.id &lt;= #{upperBound}</select>
+    <select id="findAfter" resultMap="RowMap">
+        SELECT t.id,t.task_type,t.submitted_by,t.reviewed_by,t.status,t.created_at,t.review_comment
+        <include refid="source"/> AND t.id &gt; #{cursor} AND t.id &lt;= #{upperBound}
+        ORDER BY t.id LIMIT #{limit}
+    </select>
+</mapper>

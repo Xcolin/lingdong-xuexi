@@ -38,7 +38,33 @@ public class ExportJobOptionService {
         accessService.requireFeatures();
         ExportDatasetAdapter adapter = registry.require(type);
         List<GrowthPointStudentOptionRow> students;
-        if (adapter.sensitive()) {
+        List<String> systemTaskTypes = List.of();
+        List<com.lingdong.learning.exceptionreport.application.ExceptionReportClassOption> exceptionClasses = List.of();
+        if (type == ExportJobType.ATTACHMENT_LEDGER) {
+            accessService.requireAttachmentLedgerExport(userId);
+            students = List.of();
+        } else if (type == ExportJobType.EXCEPTION_REPORT_LEDGER) {
+            exceptionClasses = accessService.requireExceptionReportExport(userId).classes();
+            students = List.of();
+        } else if (type == ExportJobType.REWARD_EXCHANGE_LEDGER) {
+            accessService.requireRewardExchangeExport(userId);
+            students = growthPointMapper.findPrimaryStudentsByParentUserId(userId);
+        } else if (type == ExportJobType.SYSTEM_TASK_LEDGER) {
+            systemTaskTypes = accessService.requireSystemTaskExport(userId).types().stream().map(Enum::name).toList();
+            students = List.of();
+        } else if (type == ExportJobType.CACHE_OPERATION_LOG) {
+            accessService.requireCacheExport(userId);
+            students = List.of();
+        } else if (type == ExportJobType.INTERFACE_SERVICE_LEDGER) {
+            accessService.requireInterfaceExport(userId);
+            students = List.of();
+        } else if (type == ExportJobType.TEMPLATE_LEDGER) {
+            accessService.requireTemplateExport(userId);
+            students = List.of();
+        } else if (type == ExportJobType.DICTIONARY_LEDGER) {
+            accessService.requireDictionaryExport(userId);
+            students = List.of();
+        } else if (adapter.sensitive()) {
             accessService.requireSensitiveSubmit(userId);
             students = List.of();
         } else {
@@ -49,11 +75,11 @@ public class ExportJobOptionService {
                 accessService.requireListRead(userId);
             }
         }
-        var template = templateMapper.findCurrentDefault("REPORT", TemplateType.EXPORT);
+        var template = templateMapper.findCurrentDefault(type.templateModule(), TemplateType.EXPORT);
         if (template == null) {
             throw new IllegalStateException("导出模板未配置");
         }
         return new ExportJobOptions(type, template.templateName(), template.version(),
-                adapter.columns(), students, adapter.sensitive());
+                adapter.columns(), students, adapter.sensitive(), systemTaskTypes, exceptionClasses);
     }
 }

@@ -1,11 +1,13 @@
 import { apiClient } from './http';
 
-export type ExportJobType = 'GROWTH_POINT_LEDGER' | 'IAM_CHANGE_AUDIT';
+export type ExportJobType = 'GROWTH_POINT_LEDGER' | 'IAM_CHANGE_AUDIT' | 'DICTIONARY_LEDGER' | 'TEMPLATE_LEDGER' | 'INTERFACE_SERVICE_LEDGER' | 'CACHE_OPERATION_LOG' | 'SYSTEM_TASK_LEDGER' | 'REWARD_EXCHANGE_LEDGER' | 'EXCEPTION_REPORT_LEDGER' | 'ATTACHMENT_LEDGER';
 export type ExportJobStatus = 'PENDING_REVIEW' | 'QUEUED' | 'EXPORTING' | 'SUCCEEDED' | 'FAILED' | 'REJECTED';
 
 export interface ExportColumn { code: string; header: string; defaultSelected?: boolean; }
 export interface ExportStudentOption { id: string; name: string; }
 export interface ExportJobOptions {
+  exceptionClasses?: { id: string; name: string }[];
+  systemTaskTypes?: string[];
   exportType: ExportJobType;
   templateName: string;
   templateVersion: string;
@@ -47,6 +49,25 @@ export interface ExportJobReview {
 }
 export interface ExportJobReviewPage { items: ExportJobReview[]; page: number; pageSize: number; total: number; }
 export interface CreateExportJobInput {
+  attachmentModuleCode?: string;
+  attachmentUploaderId?: string;
+  attachmentFileCategory?: string;
+  exceptionClassId?: string;
+  exceptionType?: 'ATTENDANCE' | 'LEARNING_STATUS' | 'MENTAL_STATE';
+  exceptionStatus?: 'SUBMITTED' | 'HANDLED';
+  rewardExchangeStatus?: 'PENDING_APPROVAL' | 'PENDING_VERIFICATION' | 'REJECTED' | 'AUTO_REJECTED' | 'EXPIRED' | 'VERIFIED';
+  systemTaskType?: string;
+  systemTaskStatus?: string;
+  cacheDomain?: string;
+  cacheStatus?: 'PENDING' | 'SUCCEEDED' | 'FAILED' | 'REJECTED';
+  interfaceCallerName?: string;
+  interfaceStatus?: 'ENABLED' | 'DISABLED';
+  interfaceOwnerId?: string;
+  templateType?: 'IMPORT' | 'EXPORT';
+  templateModuleCode?: string;
+  templateStatus?: 'ENABLED' | 'DISABLED';
+  dictionaryTypeCode?: string;
+  dictionaryStatus?: 'ENABLED' | 'DISABLED';
   exportType: ExportJobType;
   studentId?: string;
   startedAt?: string;

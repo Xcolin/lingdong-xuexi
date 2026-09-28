@@ -68,6 +68,11 @@ class InterfaceServiceApplicationServiceTest {
         assertThat(service).isNotNull();
         assertThat(Long.toString(service.id())).hasSize(19);
         assertThat(service.status()).isEqualTo(InterfaceServiceStatus.ENABLED);
+        assertThat(jdbcTemplate.queryForObject(
+                "select execution_status from sys_interface_service_change where task_id = ?",
+                String.class,
+                change.taskId()
+        )).isEqualTo("APPLIED");
     }
 
     @Test
@@ -86,10 +91,16 @@ class InterfaceServiceApplicationServiceTest {
 
         assertThat(interfaceServiceMapper.findById(service.id()).authorizationScope())
                 .isEqualTo(InterfaceAuthorizationScope.GLOBAL);
+        assertThat(jdbcTemplate.queryForObject(
+                "select before_authorization_scope from sys_interface_service_change where task_id = ?",
+                String.class, scopeChange.taskId())).isEqualTo("GLOBAL");
         interfaceServiceApplicationService.submit(scopeChange.taskId(), administrator.id());
         interfaceServiceApplicationService.approveAndApply(scopeChange.taskId(), auditor.id(), "同意范围调整");
         assertThat(interfaceServiceMapper.findById(service.id()).authorizationScope())
                 .isEqualTo(InterfaceAuthorizationScope.SCHOOL);
+        assertThat(jdbcTemplate.queryForObject(
+                "select before_authorization_scope from sys_interface_service_change where task_id = ?",
+                String.class, scopeChange.taskId())).isEqualTo("GLOBAL");
 
         InterfaceServiceChange disableChange = interfaceServiceApplicationService.createDisableDraft(
                 new CreateInterfaceServiceDisableCommand(
@@ -142,6 +153,20 @@ class InterfaceServiceApplicationServiceTest {
                 )
         )).isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("系统管理员");
+    }
+
+    @Test
+    void mixedSystemAuditorCannotSubmitInterfaceServiceChanges() {
+        User mixed = createUserWithRole("interface_mixed_auditor", "兼任接口审核员", "SYS_ADMIN");
+        userAccessApplicationService.assignRole(new AssignRoleToUserCommand(
+                mixed.id(), roleMapper.findByCode("SYS_AUDITOR").id(), null));
+        User owner = createUser("interface_mixed_owner", "接口责任人");
+
+        assertThatThrownBy(() -> interfaceServiceApplicationService.createAndSubmitRegistration(
+                new CreateInterfaceServiceChangeCommand(mixed.id(), "不应登记的接口", InterfaceDirection.OUTBOUND,
+                        InterfacePurpose.SMS, "blocked-adapter", InterfaceAuthorizationScope.GLOBAL, null,
+                        owner.id(), "不应提交", "审核员不能兼任发起人")))
+                .isInstanceOf(com.lingdong.learning.common.security.SystemOperationAccessDeniedException.class);
     }
 
     @Test
@@ -208,6 +233,16 @@ class InterfaceServiceApplicationServiceTest {
                 .hasMessageContaining("执行失败");
 
         assertThat(systemTaskMapper.findById(disableChange.taskId()).status()).isEqualTo(SystemTaskStatus.APPROVED);
+        assertThat(jdbcTemplate.queryForObject(
+                "select execution_status from sys_interface_service_change where task_id = ?",
+                String.class,
+                disableChange.taskId()
+        )).isEqualTo("FAILED");
+        assertThat(jdbcTemplate.queryForObject(
+                "select failure_reason from sys_interface_service_change where task_id = ?",
+                String.class,
+                disableChange.taskId()
+        )).isEqualTo("接口服务变更执行失败");
     }
 
     private InterfaceService createEnabledService(User administrator, User auditor, User owner, String serviceName, String callerName) {

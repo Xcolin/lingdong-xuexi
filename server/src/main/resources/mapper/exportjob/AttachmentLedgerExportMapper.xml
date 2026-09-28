@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.exportjob.infrastructure.persistence.AttachmentLedgerExportMapper">
+    <resultMap id="Row" type="com.lingdong.learning.exportjob.infrastructure.persistence.AttachmentLedgerExportRow">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="original_name" javaType="java.lang.String"/>
+            <arg column="module_code" javaType="java.lang.String"/>
+            <arg column="uploader_name" javaType="java.lang.String"/>
+            <arg column="created_at" javaType="java.time.LocalDateTime"/>
+            <arg column="file_category" javaType="java.lang.String"/>
+            <arg column="size_bytes" javaType="java.lang.Long"/>
+            <arg column="status" javaType="java.lang.String"/>
+        </constructor>
+    </resultMap>
+    <sql id="source">FROM sys_file file JOIN sys_user uploader ON uploader.id = file.uploader_id</sql>
+    <sql id="filters">
+        WHERE 1 = 1
+        <if test="request.attachmentModuleCode != null">AND file.module_code = #{request.attachmentModuleCode}</if>
+        <if test="request.attachmentUploaderId != null">AND file.uploader_id = #{request.attachmentUploaderId}</if>
+        <if test="request.attachmentFileCategory != null">AND file.file_category = #{request.attachmentFileCategory}</if>
+        <if test="request.startedAt != null">AND file.created_at &gt;= #{request.startedAt}</if>
+        <if test="request.endedAt != null">AND file.created_at &lt;= #{request.endedAt}</if>
+    </sql>
+    <select id="findUpperBound" resultType="java.lang.Long">SELECT MAX(file.id) <include refid="source"/> <include refid="filters"/></select>
+    <select id="count" resultType="long">SELECT COUNT(*) <include refid="source"/> <include refid="filters"/> AND file.id &lt;= #{upperBound}</select>
+    <select id="findAfter" resultMap="Row">
+        SELECT file.id, file.original_name, file.module_code, uploader.display_name AS uploader_name,
+               file.created_at, file.file_category, file.size_bytes, file.status
+        <include refid="source"/> <include refid="filters"/>
+        AND file.id &gt; #{cursor} AND file.id &lt;= #{upperBound} ORDER BY file.id ASC LIMIT #{limit}
+    </select>
+</mapper>

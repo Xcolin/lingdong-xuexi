@@ -23,11 +23,11 @@
 
     <select id="aggregateTasks" resultMap="TaskFactMap">
         SELECT COUNT(*) AS task_total_count,
-               SUM(CASE WHEN current_status = 'COMPLETED' THEN 1 ELSE 0 END) AS completed_count,
-               SUM(CASE WHEN current_status = 'IN_PROGRESS' THEN 1 ELSE 0 END) AS in_progress_count,
-               SUM(CASE WHEN current_status = 'NEEDS_IMPROVEMENT' THEN 1 ELSE 0 END)
+               COALESCE(SUM(CASE WHEN current_status = 'COMPLETED' THEN 1 ELSE 0 END), 0) AS completed_count,
+               COALESCE(SUM(CASE WHEN current_status = 'IN_PROGRESS' THEN 1 ELSE 0 END), 0) AS in_progress_count,
+               COALESCE(SUM(CASE WHEN current_status = 'NEEDS_IMPROVEMENT' THEN 1 ELSE 0 END), 0)
                    AS pending_optimization_count,
-               SUM(CASE WHEN current_status = 'EXEMPT' THEN 1 ELSE 0 END) AS exempted_count
+               COALESCE(SUM(CASE WHEN current_status = 'EXEMPT' THEN 1 ELSE 0 END), 0) AS exempted_count
         FROM learn_task_assignment
         WHERE student_id = #{studentId}
           AND scheduled_date BETWEEN #{startDate} AND #{endDate}

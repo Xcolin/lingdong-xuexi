@@ -13,6 +13,10 @@ public interface InterfaceServiceChangeMapper {
 
     InterfaceServiceChange findByTaskId(@Param("taskId") Long taskId);
 
+    int markApplied(@Param("id") Long id);
+
+    int markFailed(@Param("id") Long id, @Param("failureReason") String failureReason);
+
     List<com.lingdong.learning.interfaceconfig.application.InterfaceServiceChangeView> findRecent(
             @Param("pendingOnly") boolean pendingOnly,
             @Param("limit") int limit

@@ -102,7 +102,7 @@ public class InterfaceServiceApplicationService {
         }
 
         SystemTask task = createTask(command.submitterId(), command.taskTitle(), command.taskDescription());
-        InterfaceServiceChange change = InterfaceServiceChange.disable(idGenerator.nextId(), task.id(), service.id());
+        InterfaceServiceChange change = InterfaceServiceChange.disable(idGenerator.nextId(), task.id(), service.id()).withBefore(service);
         insertChange(change);
         return change;
     }
@@ -119,7 +119,7 @@ public class InterfaceServiceApplicationService {
         }
 
         SystemTask task = createTask(command.submitterId(), command.taskTitle(), command.taskDescription());
-        InterfaceServiceChange change = InterfaceServiceChange.enable(idGenerator.nextId(), task.id(), service.id());
+        InterfaceServiceChange change = InterfaceServiceChange.enable(idGenerator.nextId(), task.id(), service.id()).withBefore(service);
         insertChange(change);
         return change;
     }
@@ -136,7 +136,7 @@ public class InterfaceServiceApplicationService {
         SystemTask task = createTask(command.submitterId(), command.taskTitle(), command.taskDescription());
         InterfaceServiceChange change = InterfaceServiceChange.changeAuthorization(
                 idGenerator.nextId(), task.id(), service.id(), scope.type(), scope.value()
-        );
+        ).withBefore(service);
         insertChange(change);
         return change;
     }
@@ -185,11 +185,23 @@ public class InterfaceServiceApplicationService {
         requirePermission(auditorId, "INTERFACE_SERVICE_REVIEW");
         InterfaceServiceChange change = requireChange(taskId);
         taskService.approve(taskId, auditorId, comment);
-        SystemTask effectiveTask = transactionTemplate.execute(status -> {
-            apply(change);
-            return taskService.markEffective(taskId);
-        });
-        return Objects.requireNonNull(effectiveTask, "接口服务变更生效失败");
+        try {
+            SystemTask effectiveTask = transactionTemplate.execute(status -> {
+                apply(change);
+                if (changeMapper.markApplied(change.id()) != 1) {
+                    throw new IllegalStateException("接口服务变更执行状态更新失败");
+                }
+                return taskService.markEffective(taskId);
+            });
+            return Objects.requireNonNull(effectiveTask, "接口服务变更生效失败");
+        } catch (RuntimeException exception) {
+            transactionTemplate.executeWithoutResult(status -> {
+                if (changeMapper.markFailed(change.id(), "接口服务变更执行失败") != 1) {
+                    throw new IllegalStateException("接口服务变更失败状态更新失败", exception);
+                }
+            });
+            throw exception;
+        }
     }
 
     /** 驳回变更任务，保留变更快照但不修改生效服务。 */
@@ -322,8 +334,9 @@ public class InterfaceServiceApplicationService {
     }
 
     private void requireSystemAdmin(Long userId) {
-        if (userId == null || !userRoleMapper.hasRoleCode(userId, SYSTEM_ADMIN_ROLE)) {
-            throw new IllegalStateException("仅系统管理员可发起接口服务变更");
+        if (userId == null || userRoleMapper.hasRoleCode(userId, "SYS_AUDITOR")
+                || !userRoleMapper.hasRoleCode(userId, SYSTEM_ADMIN_ROLE)) {
+            throw new SystemOperationAccessDeniedException("仅非审核员的系统管理员可发起接口服务变更");
         }
     }
 

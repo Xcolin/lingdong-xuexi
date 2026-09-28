@@ -21,14 +21,14 @@
     </resultMap>
 
     <sql id="columns">
-        id, execution_id, row_number, status, student_id, student_account,
+        id, execution_id, `row_number`, status, student_id, student_account,
         failure_code, failure_message, credential_ciphertext, credential_nonce,
         credential_key_version, attempt_count, created_at, updated_at
     </sql>
 
     <insert id="insertBatch">
         INSERT INTO sys_student_import_row (
-            id, execution_id, row_number, status, student_id, student_account,
+            id, execution_id, `row_number`, status, student_id, student_account,
             failure_code, failure_message, credential_ciphertext, credential_nonce,
             credential_key_version, attempt_count
         ) VALUES
@@ -46,7 +46,7 @@
         SELECT <include refid="columns"/> FROM sys_student_import_row
         WHERE execution_id = #{executionId}
         <if test="status != null">AND status = #{status}</if>
-        ORDER BY row_number LIMIT #{limit} OFFSET #{offset}
+        ORDER BY `row_number` LIMIT #{limit} OFFSET #{offset}
     </select>
 
     <select id="countByExecutionIdAndStatus" resultType="long">

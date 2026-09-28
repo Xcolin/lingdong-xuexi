@@ -63,7 +63,15 @@ public class ExportJobQueryService {
     public ExportJobDetailView findDetail(Long userId, Long jobId) {
         ExportJobRecord job = requireOwnerReadable(userId, jobId);
         List<ExportColumnSnapshot> columns = readColumns(job.columnSnapshot());
-        String scopeSummary = job.studentId() == null
+        String scopeSummary = job.exportType() == ExportJobType.ATTACHMENT_LEDGER ? "附件管理台账"
+                : job.exportType() == ExportJobType.EXCEPTION_REPORT_LEDGER ? "异常报备台账"
+                : job.exportType() == ExportJobType.SYSTEM_TASK_LEDGER ? "系统任务审批台账"
+                : job.exportType() == ExportJobType.REWARD_EXCHANGE_LEDGER ? "奖励兑换报表（对象标识：" + job.studentId() + "）"
+                : job.exportType() == ExportJobType.CACHE_OPERATION_LOG ? "缓存操作日志"
+                : job.exportType() == ExportJobType.INTERFACE_SERVICE_LEDGER ? "接口服务台账"
+                : job.exportType() == ExportJobType.TEMPLATE_LEDGER ? "导入导出模板台账"
+                : job.exportType() == ExportJobType.DICTIONARY_LEDGER
+                ? "数据字典台账" : job.studentId() == null
                 ? "全局权限变更日志" : "学生积分明细（对象标识：" + job.studentId() + "）";
         return new ExportJobDetailView(
                 ExportJobView.from(job), columns, scopeSummary,

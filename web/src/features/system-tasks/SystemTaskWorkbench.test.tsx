@@ -11,6 +11,20 @@ const user: CurrentUser = { userId: '1900000000000000001', sessionId: 's', usern
 const caps = { client: 'WEB', cacheManagementEnabled: true } as ClientCapabilities;
 const item = { id: '1900000000000000002', code: 'T1', type: 'CACHE_CLEAR', title: '清理缓存申请', description: '变更说明', impactScope: 'ALL', status: 'PENDING_REVIEW' as const, submittedBy: '1900000000000000003', submittedAt: null, reviewedBy: null, reviewedAt: null, reviewComment: null, createdAt: null, updatedAt: null };
 describe('系统任务工作台', () => {
+  it('详情展示业务字段、前后差异及执行结果', async () => {
+    vi.mocked(systemTasksApi.detail).mockResolvedValue({ ...item, payload: {
+      fields: [{ label: '功能编码', value: 'TEST_FEATURE' }],
+      differences: [{ label: '开关状态', before: 'DISABLED', after: 'ENABLED' }],
+      executionStatus: 'FAILED', failureReason: '执行未成功', notice: null
+    } } as typeof item);
+    render(<SystemTaskWorkbench currentUser={user} onNavigate={vi.fn()} />);
+    await screen.findByText('清理缓存申请');
+    fireEvent.click(screen.getByRole('button', { name: '查看详情' }));
+    expect(await screen.findByText('TEST_FEATURE')).toBeInTheDocument();
+    expect(screen.getByText('DISABLED')).toBeInTheDocument();
+    expect(screen.getByText('ENABLED')).toBeInTheDocument();
+    expect(screen.getByText('执行未成功')).toBeInTheDocument();
+  });
   it('全局开关仅为具备领域读取和审批权限的审核员提供处理入口', () => {
     const task = { ...item, type: 'GLOBAL_FEATURE_TOGGLE' };
     const reviewer = { ...user, permissionCodes: ['SYSTEM_TASK_READ', 'FEATURE_TOGGLE_READ', 'FEATURE_TOGGLE_REVIEW'] };

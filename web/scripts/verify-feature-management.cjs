@@ -50,7 +50,8 @@ const assert = require('node:assert/strict');
     assert.equal(approvals, 1); assert.equal(toggle.status, 'ENABLED');
     await page.screenshot({ path: '../.local-verification/feature-management-web.png', fullPage: true, animations: 'disabled' });
     allowed = false; await page.evaluate(() => window.dispatchEvent(new Event('focus')));
-    await page.getByText('当前会话无功能开关读取权限', { exact: true }).waitFor();
+    await page.waitForURL('**/dashboard');
+    assert.equal(await page.getByRole('menuitem', { name: '功能开关', exact: true }).count(), 0);
     assert.equal(await page.getByText('验证申请审批完整闭环', { exact: true }).count(), 0);
     console.log('功能开关 Web：申请确认、字符串版本、审批生效、定位禁启、焦点撤权清空通过');
   } finally { await browser.close(); }

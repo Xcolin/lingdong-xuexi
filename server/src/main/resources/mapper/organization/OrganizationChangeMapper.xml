@@ -76,4 +76,9 @@
         SET execution_status = 'FAILED', failure_reason = #{failureReason}, updated_at = CURRENT_TIMESTAMP
         WHERE id = #{id} AND execution_status = 'PENDING'
     </update>
+    <select id="findRequestedStatus" resultType="string">
+        SELECT before_status FROM sys_organization_change_audit
+        WHERE task_id = #{taskId} AND event_type = 'REQUEST'
+        ORDER BY occurred_at, id LIMIT 1
+    </select>
 </mapper>

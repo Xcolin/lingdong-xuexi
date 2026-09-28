@@ -92,13 +92,88 @@ public class ExportJobApplicationService {
         requireKnownSensitivity(command.exportType(), adapter);
         requireCreateAccess(command, adapter);
 
-        ImportExportTemplateRecord template = requireDefaultTemplate();
+        String dictionaryType = optionalCode(command.dictionaryTypeCode(), 64);
+        String dictionaryStatus = optionalCode(command.dictionaryStatus(), 16);
+        if (dictionaryStatus != null && !List.of("ENABLED", "DISABLED").contains(dictionaryStatus)) {
+            throw new IllegalArgumentException("字典项状态必须为 ENABLED 或 DISABLED");
+        }
+        String templateType = optionalCode(command.templateType(), 16);
+        String templateModule = optionalCode(command.templateModuleCode(), 64);
+        String templateStatus = optionalCode(command.templateStatus(), 16);
+        if (templateType != null && !List.of("IMPORT", "EXPORT").contains(templateType)) {
+            throw new IllegalArgumentException("模板类型必须为 IMPORT 或 EXPORT");
+        }
+        if (templateStatus != null && !List.of("ENABLED", "DISABLED").contains(templateStatus)) {
+            throw new IllegalArgumentException("模板状态必须为 ENABLED 或 DISABLED");
+        }
+        String interfaceCaller = command.interfaceCallerName() == null || command.interfaceCallerName().isBlank()
+                ? null : required(command.interfaceCallerName(), "调用方", 100);
+        String interfaceStatus = optionalCode(command.interfaceStatus(), 16);
+        if (interfaceStatus != null && !List.of("ENABLED", "DISABLED").contains(interfaceStatus)) {
+            throw new IllegalArgumentException("接口服务状态必须为 ENABLED 或 DISABLED");
+        }
+        String interfaceOwner = command.interfaceOwnerId();
+        if (interfaceOwner != null) {
+            if (!interfaceOwner.matches("[1-9][0-9]{18}")) {
+                throw new IllegalArgumentException("接口责任人必须为19位字符串雪花标识");
+            }
+            try { Long.parseLong(interfaceOwner); }
+            catch (NumberFormatException exception) {
+                throw new IllegalArgumentException("接口责任人雪花标识超出范围");
+            }
+        }
+        String cacheDomain = optionalCode(command.cacheDomain(), 32);
+        String cacheStatus = optionalCode(command.cacheStatus(), 16);
+        if (cacheDomain != null) com.lingdong.learning.cache.domain.CacheDomain.valueOf(cacheDomain);
+        if (cacheStatus != null) com.lingdong.learning.cache.domain.CacheOperationStatus.valueOf(cacheStatus);
+        String systemTaskType = optionalCode(command.systemTaskType(), 64);
+        String systemTaskStatus = optionalCode(command.systemTaskStatus(), 32);
+        if (systemTaskType != null) SystemTaskType.valueOf(systemTaskType);
+        if (systemTaskStatus != null) com.lingdong.learning.audit.application.SystemTaskStatus.valueOf(systemTaskStatus);
+        String rewardExchangeStatus = optionalCode(command.rewardExchangeStatus(), 32);
+        if (rewardExchangeStatus != null) com.lingdong.learning.growthpoint.domain.GrowthRewardExchangeStatus.valueOf(rewardExchangeStatus);
+        String attachmentModule = optionalCode(command.attachmentModuleCode(), 64);
+        String attachmentCategory = optionalCode(command.attachmentFileCategory(), 64);
+        String attachmentUploader = command.attachmentUploaderId();
+        if (attachmentUploader != null && attachmentUploader.isBlank()) attachmentUploader = null;
+        if (attachmentUploader != null) {
+            if (!attachmentUploader.matches("[1-9][0-9]{18}")) throw new IllegalArgumentException("上传人必须为19位字符串雪花标识");
+            try { Long.parseLong(attachmentUploader); }
+            catch (NumberFormatException exception) { throw new IllegalArgumentException("上传人雪花标识超出范围"); }
+        }
+        String exceptionType = optionalCode(command.exceptionType(), 32);
+        String exceptionStatus = optionalCode(command.exceptionStatus(), 32);
+        if (exceptionType != null) com.lingdong.learning.exceptionreport.domain.ExceptionReportType.valueOf(exceptionType);
+        if (exceptionStatus != null) com.lingdong.learning.exceptionreport.domain.ExceptionReportStatus.valueOf(exceptionStatus);
+        String exceptionClassId = command.exceptionClassId();
+        Long selectedClassId = null;
+        if (exceptionClassId != null) {
+            if (!exceptionClassId.matches("[1-9][0-9]{18}")) throw new IllegalArgumentException("异常班级必须为19位字符串雪花标识");
+            try { selectedClassId = Long.valueOf(exceptionClassId); }
+            catch (NumberFormatException ex) { throw new IllegalArgumentException("异常班级雪花标识超出范围"); }
+        }
+        var exceptionScope = command.exportType() == ExportJobType.EXCEPTION_REPORT_LEDGER
+                ? accessService.requireExceptionReportExport(command.requesterId()) : null;
+        List<Long> exceptionClassIds = exceptionScope == null ? null : exceptionScope.classIds();
+        if (selectedClassId != null) {
+            if (exceptionClassIds == null || !exceptionClassIds.contains(selectedClassId))
+                throw new com.lingdong.learning.common.security.SystemOperationAccessDeniedException("当前账号无权导出该班级异常报备");
+            exceptionClassIds = List.of(selectedClassId);
+        }
+        var taskScope = command.exportType() == ExportJobType.SYSTEM_TASK_LEDGER
+                ? accessService.requireSystemTaskExport(command.requesterId()) : null;
+        ImportExportTemplateRecord template = requireDefaultTemplate(command.exportType());
         AttachmentContentView templateContent = contentService.read(template.fileId());
         ExportTemplateDefinition definition = templateParser.parse(
                 templateContent.content(), adapter.columns(), command.selectedColumns());
         ExportRequestDefinition request = new ExportRequestDefinition(
                 command.requesterId(), command.studentId(), command.startedAt(),
-                command.endedAt(), command.eventType());
+                command.endedAt(), command.eventType(), dictionaryType, dictionaryStatus,
+                templateType, templateModule, templateStatus, interfaceCaller, interfaceStatus,
+                interfaceOwner == null ? null : Long.valueOf(interfaceOwner), cacheDomain, cacheStatus,
+                systemTaskType, systemTaskStatus, taskScope == null ? null : taskScope.auditor(),
+                taskScope == null ? null : taskScope.types(), rewardExchangeStatus, exceptionType, exceptionStatus,
+                exceptionScope == null ? null : exceptionScope.teacherOnly(), exceptionClassIds, attachmentModule, attachmentUploader, attachmentCategory);
         long upperBound = adapter.captureUpperBound(request);
         LocalDateTime now = LocalDateTime.now(clock);
         long jobId = idGenerator.nextId();
@@ -109,10 +184,13 @@ public class ExportJobApplicationService {
                 jobId, "EXP-" + jobId, command.exportType(), template.id(),
                 template.templateName(), template.version(), command.requesterId(),
                 command.studentId(), systemTaskId,
-                json(new ExportFilterSnapshot(command.startedAt(), command.endedAt(), command.eventType())),
+                json(new ExportFilterSnapshot(command.startedAt(), command.endedAt(), command.eventType(),
+                        dictionaryType, dictionaryStatus, templateType, templateModule, templateStatus,
+                        interfaceCaller, interfaceStatus, interfaceOwner, cacheDomain, cacheStatus, systemTaskType, systemTaskStatus, rewardExchangeStatus, exceptionClassId, exceptionType, exceptionStatus, attachmentModule, attachmentUploader, attachmentCategory)),
                 json(definition.columns().stream()
                         .map(column -> new ExportColumnSnapshot(column.code(), column.header())).toList()),
-                json(new ExportScopeSnapshot(command.studentId(), upperBound)),
+                json(new ExportScopeSnapshot(command.studentId(), upperBound, taskScope == null ? null : taskScope.auditor(),
+                        taskScope == null ? null : taskScope.types(), exceptionScope == null ? null : exceptionScope.teacherOnly(), exceptionClassIds)),
                 json(new ExportMaskPolicySnapshot("FAMILY_NAME_STAR", 1)),
                 reason, adapter.sensitive(), status, 0L, null, 0L, 0L, null, null,
                 sourceHasher.hash(command.requestSource()), now, null,
@@ -130,12 +208,91 @@ public class ExportJobApplicationService {
     }
 
     private void requireCreateAccess(CreateExportJobCommand command, ExportDatasetAdapter adapter) {
+        if (command.exportType() != ExportJobType.ATTACHMENT_LEDGER
+                && (command.attachmentModuleCode() != null || command.attachmentUploaderId() != null || command.attachmentFileCategory() != null)) {
+            throw new IllegalArgumentException("当前导出类型不支持附件筛选");
+        }
+
+        if (command.exportType() != ExportJobType.EXCEPTION_REPORT_LEDGER
+                && (command.exceptionClassId() != null || command.exceptionType() != null || command.exceptionStatus() != null)) {
+            throw new IllegalArgumentException("当前导出类型不支持异常报备筛选");
+        }
+        if (command.exportType() != ExportJobType.REWARD_EXCHANGE_LEDGER && command.rewardExchangeStatus() != null) {
+            throw new IllegalArgumentException("当前导出类型不支持奖励兑换筛选");
+        }
+        if (command.exportType() != ExportJobType.SYSTEM_TASK_LEDGER
+                && (command.systemTaskType() != null || command.systemTaskStatus() != null)) {
+            throw new IllegalArgumentException("当前导出类型不支持系统任务筛选");
+        }
+        if (command.exportType() != ExportJobType.CACHE_OPERATION_LOG && (command.cacheDomain() != null || command.cacheStatus() != null)) {
+            throw new IllegalArgumentException("当前导出类型不支持缓存筛选");
+        }
+        if (command.exportType() != ExportJobType.INTERFACE_SERVICE_LEDGER
+                && (command.interfaceCallerName() != null || command.interfaceStatus() != null || command.interfaceOwnerId() != null)) {
+            throw new IllegalArgumentException("当前导出类型不支持接口服务筛选");
+        }
+        if (command.exportType() != ExportJobType.TEMPLATE_LEDGER
+                && (command.templateType() != null || command.templateModuleCode() != null || command.templateStatus() != null)) {
+            throw new IllegalArgumentException("当前导出类型不支持模板筛选");
+        }
+        if (command.exportType() == ExportJobType.DICTIONARY_LEDGER) {
+            if (command.studentId() != null || command.eventType() != null) {
+                throw new IllegalArgumentException("字典台账不能指定学生或权限事件类型");
+            }
+            accessService.requireDictionaryExport(command.requesterId());
+            return;
+        }
+        if (command.dictionaryTypeCode() != null || command.dictionaryStatus() != null) {
+            throw new IllegalArgumentException("当前导出类型不支持字典筛选");
+        }
+        if (command.exportType() == ExportJobType.ATTACHMENT_LEDGER) {
+            if (command.studentId() != null || command.eventType() != null) throw new IllegalArgumentException("附件台账不能指定学生或权限事件");
+            accessService.requireAttachmentLedgerExport(command.requesterId());
+            return;
+        }
+        if (command.exportType() == ExportJobType.EXCEPTION_REPORT_LEDGER) {
+            if (command.studentId() != null || command.eventType() != null) throw new IllegalArgumentException("异常报备台账不能指定学生或权限事件");
+            accessService.requireExceptionReportExport(command.requesterId());
+            return;
+        }
+        if (command.exportType() == ExportJobType.SYSTEM_TASK_LEDGER) {
+            if (command.studentId() != null || command.eventType() != null) throw new IllegalArgumentException("系统任务台账不能指定学生或权限事件");
+            accessService.requireSystemTaskExport(command.requesterId());
+            return;
+        }
+        if (command.exportType() == ExportJobType.CACHE_OPERATION_LOG) {
+            if (command.studentId() != null || command.eventType() != null) throw new IllegalArgumentException("缓存日志不能指定学生或权限事件");
+            accessService.requireCacheExport(command.requesterId());
+            return;
+        }
+        if (command.exportType() == ExportJobType.INTERFACE_SERVICE_LEDGER) {
+            if (command.studentId() != null || command.eventType() != null) {
+                throw new IllegalArgumentException("接口台账不能指定学生或权限事件类型");
+            }
+            accessService.requireInterfaceExport(command.requesterId());
+            return;
+        }
+        if (command.exportType() == ExportJobType.TEMPLATE_LEDGER) {
+            if (command.studentId() != null || command.eventType() != null) {
+                throw new IllegalArgumentException("模板台账不能指定学生或权限事件类型");
+            }
+            accessService.requireTemplateExport(command.requesterId());
+            return;
+        }
+        if (command.exportType() == ExportJobType.REWARD_EXCHANGE_LEDGER) {
+            if (command.studentId() == null || command.eventType() != null) throw new IllegalArgumentException("奖励兑换导出必须指定学生且不能指定权限事件");
+            accessService.requireRewardExchangeExport(command.requesterId(), command.studentId());
+            return;
+        }
         if (adapter.sensitive()) {
             if (command.studentId() != null) {
                 throw new IllegalArgumentException("权限日志导出不能指定学生");
             }
             accessService.requireSensitiveSubmit(command.requesterId());
         } else {
+            if (command.studentId() == null) {
+                throw new IllegalArgumentException("积分明细导出必须指定学生");
+            }
             if (command.eventType() != null) {
                 throw new IllegalArgumentException("积分明细导出不能指定权限事件类型");
             }
@@ -150,15 +307,15 @@ public class ExportJobApplicationService {
         }
     }
 
-    private ImportExportTemplateRecord requireDefaultTemplate() {
-        ImportExportTemplateRecord template = templateMapper.findCurrentDefault("REPORT", TemplateType.EXPORT);
+    private ImportExportTemplateRecord requireDefaultTemplate(ExportJobType type) {
+        ImportExportTemplateRecord template = templateMapper.findCurrentDefault(type.templateModule(), TemplateType.EXPORT);
         if (template == null) {
             throw new IllegalStateException("导出模板未配置");
         }
         if (template.status() != ImportExportTemplateStatus.ENABLED
                 || !Boolean.TRUE.equals(template.defaultTemplate())
                 || template.templateType() != TemplateType.EXPORT
-                || !"REPORT".equals(template.moduleCode())) {
+                || !type.templateModule().equals(template.moduleCode())) {
             throw new IllegalStateException("默认导出模板不可用");
         }
         return template;
@@ -187,6 +344,15 @@ public class ExportJobApplicationService {
         String normalized = value.trim();
         if (normalized.length() > maxLength) {
             throw new IllegalArgumentException(field + "长度不能超过" + maxLength + "个字符");
+        }
+        return normalized;
+    }
+
+    private String optionalCode(String value, int maxLength) {
+        if (value == null || value.isBlank()) return null;
+        String normalized = value.trim().toUpperCase(java.util.Locale.ROOT);
+        if (normalized.length() > maxLength || !normalized.matches("[A-Z0-9_]+")) {
+            throw new IllegalArgumentException("字典筛选编码格式不合法");
         }
         return normalized;
     }

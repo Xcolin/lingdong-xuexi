@@ -220,7 +220,7 @@ export function GrowthReviewPage({ canReadExportHistory = false, canCreateExport
                   },
                   {
                     title: '积分', dataIndex: 'earnedPoints', key: 'earnedPoints', width: 78,
-                    render: (value: number) => <strong className="point-positive">+{value}</strong>
+                    render: (value: number) => <strong className={value > 0 ? 'point-positive' : undefined}>{formatPoints(value)}</strong>
                   }
                 ]}
               />
@@ -291,9 +291,15 @@ export function GrowthReviewPage({ canReadExportHistory = false, canCreateExport
                       {detail.dailyTrends.map((trend) => (
                         <div className="growth-review-trend-row" key={trend.trendDate}>
                           <span>{trend.trendDate.slice(5)}</span>
-                          <div><i style={{ width: `${Math.max(2, trend.completionRate * 100)}%` }} /></div>
-                          <strong>{trend.completedCount}/{trend.taskTotalCount}</strong>
-                          <small>+{trend.earnedPoints} 分</small>
+                          <div className="growth-review-trend-bar" aria-hidden="true"><i style={{ width: `${trend.completionRate * 100}%` }} /></div>
+                          <small>已完成 {trend.completedCount} / 总任务 {trend.taskTotalCount}</small>
+                          <div className="growth-review-trend-metrics">
+                            {/* 完成率沿用服务端快照，不能通过完成数/总数重新推算历史值。 */}
+                            <strong>完成率 {formatRate(trend.completionRate)}</strong>
+                            <span>积分 {formatPoints(trend.earnedPoints)} 分</span>
+                            <span>待优化 {trend.pendingOptimizationCount} 项</span>
+                            <span>暂停 {trend.pauseCount} 次</span>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -364,6 +370,10 @@ function periodLabel(review: Pick<GrowthReviewSummary, 'periodType' | 'periodSta
 
 function formatRate(rate: number): string {
   return `${(rate * 100).toFixed(2)}%`;
+}
+
+function formatPoints(points: number): string {
+  return points > 0 ? `+${points}` : String(points);
 }
 
 function supplementLabel(type: GrowthReviewSupplementType): string {

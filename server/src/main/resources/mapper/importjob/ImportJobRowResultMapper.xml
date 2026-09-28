@@ -14,7 +14,7 @@
 
     <insert id="insertBatch">
         INSERT INTO sys_import_job_row_result
-        (id, job_id, row_number, status, error_summary)
+        (id, job_id, `row_number`, status, error_summary)
         VALUES
         <foreach collection="rows" item="row" separator=",">
             (#{row.id}, #{row.jobId}, #{row.rowNumber}, #{row.status}, #{row.errorSummary})
@@ -22,13 +22,13 @@
     </insert>
 
     <select id="findByJobId" resultMap="ImportJobRowMap">
-        SELECT id, job_id, row_number, status, error_summary, created_at
+        SELECT id, job_id, `row_number`, status, error_summary, created_at
         FROM sys_import_job_row_result
         WHERE job_id = #{jobId}
         <if test="invalidOnly">
             AND status = 'INVALID'
         </if>
-        ORDER BY row_number ASC
+        ORDER BY `row_number` ASC
         LIMIT #{limit} OFFSET #{offset}
     </select>
 

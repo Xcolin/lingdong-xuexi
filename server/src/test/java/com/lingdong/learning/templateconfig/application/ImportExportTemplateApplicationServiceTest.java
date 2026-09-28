@@ -147,7 +147,7 @@ class ImportExportTemplateApplicationServiceTest {
         assertThat(options.templateTypes()).extracting(ImportExportTemplateOption::code)
                 .containsExactly("IMPORT", "EXPORT");
         assertThat(options.modules()).extracting(ImportExportTemplateOption::code)
-                .containsExactly("STUDENT", "LEARNING_TASK", "REPORT");
+                .containsExactly("STUDENT", "LEARNING_TASK", "REPORT", "DICTIONARY_REPORT", "TEMPLATE_REPORT", "INTERFACE_REPORT", "CACHE_REPORT", "SYSTEM_TASK_REPORT", "REWARD_EXCHANGE_REPORT", "EXCEPTION_REPORT_EXPORT", "ATTACHMENT_LEDGER_REPORT");
         assertThat(templateApplicationService.listTemplates(new ImportExportTemplateQuery(
                 administrator.id(), "学员", TemplateType.IMPORT, "student", ImportExportTemplateStatus.ENABLED
         ))).extracting(ImportExportTemplate::id).containsExactly(created.id());

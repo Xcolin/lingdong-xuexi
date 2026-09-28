@@ -108,6 +108,134 @@ class ExportJobAccessServiceTest {
                 .isInstanceOf(SystemOperationAccessDeniedException.class);
     }
 
+    @Test
+    void dictionaryExportRechecksRevokedPermissionAndFeatureAtEveryAccessPoint() {
+        allow("DICTIONARY_READ");
+        allow("DICTIONARY_EXPORT");
+        allow("EXPORT_JOB_READ");
+        when(userRoleMapper.hasRoleCode(USER_ID, "SYS_ADMIN")).thenReturn(true);
+        var export = job(ExportJobType.DICTIONARY_LEDGER, USER_ID, null,
+                ExportJobStatus.SUCCEEDED, 1874244142494646913L);
+        assertThatCode(() -> service.requireDictionaryExport(USER_ID)).doesNotThrowAnyException();
+        assertThatCode(() -> service.requireExecution(export)).doesNotThrowAnyException();
+        assertThatCode(() -> service.requireOwnerDownload(USER_ID, export)).doesNotThrowAnyException();
+
+        when(permissionDecisionService.isAllowed(USER_ID, PermissionClient.WEB, "DICTIONARY_EXPORT")).thenReturn(false);
+        assertThatThrownBy(() -> service.requireDictionaryExport(USER_ID)).isInstanceOf(SystemOperationAccessDeniedException.class);
+        assertThatThrownBy(() -> service.requireExecution(export)).isInstanceOf(SystemOperationAccessDeniedException.class);
+        assertThatThrownBy(() -> service.requireOwnerDownload(USER_ID, export)).isInstanceOf(SystemOperationAccessDeniedException.class);
+
+        allow("DICTIONARY_EXPORT");
+        org.mockito.Mockito.doThrow(new com.lingdong.learning.feature.application.FeatureDisabledException("DICTIONARY_MANAGEMENT"))
+                .when(featureAccessService).requireEnabled("DICTIONARY_MANAGEMENT", null);
+        assertThatThrownBy(() -> service.requireDictionaryExport(USER_ID)).isInstanceOf(com.lingdong.learning.feature.application.FeatureDisabledException.class);
+        assertThatThrownBy(() -> service.requireExecution(export)).isInstanceOf(com.lingdong.learning.feature.application.FeatureDisabledException.class);
+        assertThatThrownBy(() -> service.requireOwnerDownload(USER_ID, export)).isInstanceOf(com.lingdong.learning.feature.application.FeatureDisabledException.class);
+    }
+
+    @Test
+    void templateExportRechecksReadAndExportPermissionsAndFeature() {
+        allow("IMPORT_EXPORT_TEMPLATE_READ");
+        allow("IMPORT_EXPORT_TEMPLATE_EXPORT");
+        allow("EXPORT_JOB_READ");
+        when(userRoleMapper.hasRoleCode(USER_ID, "SYS_ADMIN")).thenReturn(true);
+        var export = job(ExportJobType.TEMPLATE_LEDGER, USER_ID, null,
+                ExportJobStatus.SUCCEEDED, 1874244142494646913L);
+        assertThatCode(() -> service.requireTemplateExport(USER_ID)).doesNotThrowAnyException();
+        assertThatCode(() -> service.requireExecution(export)).doesNotThrowAnyException();
+        assertThatCode(() -> service.requireOwnerDownload(USER_ID, export)).doesNotThrowAnyException();
+        for (String permission : List.of("IMPORT_EXPORT_TEMPLATE_READ", "IMPORT_EXPORT_TEMPLATE_EXPORT")) {
+            when(permissionDecisionService.isAllowed(USER_ID, PermissionClient.WEB, permission)).thenReturn(false);
+            assertThatThrownBy(() -> service.requireTemplateExport(USER_ID)).isInstanceOf(SystemOperationAccessDeniedException.class);
+            assertThatThrownBy(() -> service.requireExecution(export)).isInstanceOf(SystemOperationAccessDeniedException.class);
+            assertThatThrownBy(() -> service.requireOwnerDownload(USER_ID, export)).isInstanceOf(SystemOperationAccessDeniedException.class);
+            allow(permission);
+        }
+        org.mockito.Mockito.doThrow(new com.lingdong.learning.feature.application.FeatureDisabledException("IMPORT_EXPORT_TEMPLATE_MANAGEMENT"))
+                .when(featureAccessService).requireEnabled("IMPORT_EXPORT_TEMPLATE_MANAGEMENT", null);
+        assertThatThrownBy(() -> service.requireTemplateExport(USER_ID)).isInstanceOf(com.lingdong.learning.feature.application.FeatureDisabledException.class);
+        assertThatThrownBy(() -> service.requireExecution(export)).isInstanceOf(com.lingdong.learning.feature.application.FeatureDisabledException.class);
+        assertThatThrownBy(() -> service.requireOwnerDownload(USER_ID, export)).isInstanceOf(com.lingdong.learning.feature.application.FeatureDisabledException.class);
+    }
+
+    @Test
+    void interfaceExportRechecksReadAndExportPermissionsAndFeature() {
+        allow("INTERFACE_SERVICE_READ");
+        allow("INTERFACE_SERVICE_EXPORT");
+        allow("EXPORT_JOB_READ");
+        when(userRoleMapper.hasRoleCode(USER_ID, "SYS_ADMIN")).thenReturn(true);
+        var export = job(ExportJobType.INTERFACE_SERVICE_LEDGER, USER_ID, null,
+                ExportJobStatus.SUCCEEDED, 1874244142494646913L);
+        assertThatCode(() -> service.requireInterfaceExport(USER_ID)).doesNotThrowAnyException();
+        assertThatCode(() -> service.requireExecution(export)).doesNotThrowAnyException();
+        assertThatCode(() -> service.requireOwnerDownload(USER_ID, export)).doesNotThrowAnyException();
+        for (String permission : List.of("INTERFACE_SERVICE_READ", "INTERFACE_SERVICE_EXPORT")) {
+            when(permissionDecisionService.isAllowed(USER_ID, PermissionClient.WEB, permission)).thenReturn(false);
+            assertThatThrownBy(() -> service.requireInterfaceExport(USER_ID)).isInstanceOf(SystemOperationAccessDeniedException.class);
+            assertThatThrownBy(() -> service.requireExecution(export)).isInstanceOf(SystemOperationAccessDeniedException.class);
+            assertThatThrownBy(() -> service.requireOwnerDownload(USER_ID, export)).isInstanceOf(SystemOperationAccessDeniedException.class);
+            allow(permission);
+        }
+        org.mockito.Mockito.doThrow(new com.lingdong.learning.feature.application.FeatureDisabledException("INTERFACE_SERVICE_MANAGEMENT"))
+                .when(featureAccessService).requireEnabled("INTERFACE_SERVICE_MANAGEMENT", null);
+        assertThatThrownBy(() -> service.requireInterfaceExport(USER_ID)).isInstanceOf(com.lingdong.learning.feature.application.FeatureDisabledException.class);
+        assertThatThrownBy(() -> service.requireExecution(export)).isInstanceOf(com.lingdong.learning.feature.application.FeatureDisabledException.class);
+        assertThatThrownBy(() -> service.requireOwnerDownload(USER_ID, export)).isInstanceOf(com.lingdong.learning.feature.application.FeatureDisabledException.class);
+    }
+
+    @Test
+    void cacheExportRechecksReadAndExportPermissionsAndFeature() {
+        allow("CACHE_READ");
+        allow("CACHE_EXPORT");
+        allow("EXPORT_JOB_READ");
+        when(userRoleMapper.hasRoleCode(USER_ID, "SYS_ADMIN")).thenReturn(true);
+        var export = job(ExportJobType.CACHE_OPERATION_LOG, USER_ID, null,
+                ExportJobStatus.SUCCEEDED, 1874244142494646913L);
+        assertThatCode(() -> service.requireCacheExport(USER_ID)).doesNotThrowAnyException();
+        assertThatCode(() -> service.requireExecution(export)).doesNotThrowAnyException();
+        assertThatCode(() -> service.requireOwnerDownload(USER_ID, export)).doesNotThrowAnyException();
+        for (String permission : List.of("CACHE_READ", "CACHE_EXPORT")) {
+            when(permissionDecisionService.isAllowed(USER_ID, PermissionClient.WEB, permission)).thenReturn(false);
+            assertThatThrownBy(() -> service.requireCacheExport(USER_ID)).isInstanceOf(SystemOperationAccessDeniedException.class);
+            assertThatThrownBy(() -> service.requireExecution(export)).isInstanceOf(SystemOperationAccessDeniedException.class);
+            assertThatThrownBy(() -> service.requireOwnerDownload(USER_ID, export)).isInstanceOf(SystemOperationAccessDeniedException.class);
+            allow(permission);
+        }
+        org.mockito.Mockito.doThrow(new com.lingdong.learning.feature.application.FeatureDisabledException("CACHE_MANAGEMENT"))
+                .when(featureAccessService).requireEnabled("CACHE_MANAGEMENT", null);
+        assertThatThrownBy(() -> service.requireCacheExport(USER_ID)).isInstanceOf(com.lingdong.learning.feature.application.FeatureDisabledException.class);
+        assertThatThrownBy(() -> service.requireExecution(export)).isInstanceOf(com.lingdong.learning.feature.application.FeatureDisabledException.class);
+        assertThatThrownBy(() -> service.requireOwnerDownload(USER_ID, export)).isInstanceOf(com.lingdong.learning.feature.application.FeatureDisabledException.class);
+    }
+
+    @Test
+    void taskSnapshotRejectsNarrowingRoleChangesAndMissingScopeButAllowsAdditionalDomains() throws Exception {
+        var query=mock(com.lingdong.learning.audit.application.SystemTaskQueryService.class);
+        var json=new com.fasterxml.jackson.databind.ObjectMapper();
+        service=new ExportJobAccessService(featureAccessService,permissionDecisionService,userRoleMapper,
+                userMapper,growthPointQueryMapper,query,json);
+        allow("SYSTEM_TASK_EXPORT");allow("EXPORT_JOB_READ");
+        var cache=com.lingdong.learning.audit.application.SystemTaskType.CACHE_CLEAR;
+        var organization=com.lingdong.learning.audit.application.SystemTaskType.ORGANIZATION_MOVE;
+        var frozen=new ExportScopeSnapshot(null,100L,false,List.of(cache));
+        var export=mock(ExportJobRecord.class,org.mockito.AdditionalAnswers.delegatesTo(
+                job(ExportJobType.SYSTEM_TASK_LEDGER,USER_ID,null,ExportJobStatus.SUCCEEDED,1874244142494646913L)));
+        org.mockito.Mockito.doReturn(json.writeValueAsString(frozen)).when(export).scopeSnapshot();
+        when(query.resolveScope(USER_ID)).thenReturn(new com.lingdong.learning.audit.application.SystemTaskQueryService.VisibilityScope(false,List.of(cache,organization)));
+        assertThatCode(()->service.requireExecution(export)).doesNotThrowAnyException();
+        assertThatCode(()->service.requireOwnerDownload(USER_ID,export)).doesNotThrowAnyException();
+        when(query.resolveScope(USER_ID)).thenReturn(new com.lingdong.learning.audit.application.SystemTaskQueryService.VisibilityScope(false,List.of(organization)));
+        assertThatThrownBy(()->service.requireExecution(export)).isInstanceOf(SystemOperationAccessDeniedException.class);
+        assertThatThrownBy(()->service.requireOwnerDownload(USER_ID,export)).isInstanceOf(SystemOperationAccessDeniedException.class);
+        when(query.resolveScope(USER_ID)).thenReturn(new com.lingdong.learning.audit.application.SystemTaskQueryService.VisibilityScope(true,List.of(cache)));
+        assertThatThrownBy(()->service.requireExecution(export)).isInstanceOf(SystemOperationAccessDeniedException.class);
+        when(query.resolveScope(USER_ID)).thenReturn(new com.lingdong.learning.audit.application.SystemTaskQueryService.VisibilityScope(false,List.of(cache)));
+        org.mockito.Mockito.doReturn("{\"studentId\":null,\"upperBound\":100}").when(export).scopeSnapshot();
+        assertThatThrownBy(()->service.requireOwnerRead(USER_ID,export)).isInstanceOf(SystemOperationAccessDeniedException.class);
+        org.assertj.core.api.Assertions.assertThat(json.readValue("{\"studentId\":null,\"upperBound\":100}",ExportScopeSnapshot.class))
+                .isEqualTo(new ExportScopeSnapshot(null,100));
+    }
+
     private void allow(String code) {
         when(permissionDecisionService.isAllowed(USER_ID, PermissionClient.WEB, code)).thenReturn(true);
     }

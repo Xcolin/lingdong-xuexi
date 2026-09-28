@@ -215,6 +215,7 @@ class OrganizationChangeApplicationServiceTest {
         assertThat(effective.status()).isEqualTo(SystemTaskStatus.EFFECTIVE);
         assertThat(applied.executionStatus()).isEqualTo(OrganizationChangeExecutionStatus.APPLIED);
         assertThat(storedRegion.status()).isEqualTo(OrganizationStatus.DISABLED);
+        assertThat(organizationChangeMapper.findRequestedStatus(change.taskId())).isEqualTo("ENABLED");
         assertThat(storedRegion.effectiveStatus().name()).isEqualTo("DISABLED");
         assertThat(storedSchool.status()).isEqualTo(OrganizationStatus.ENABLED);
         assertThat(storedSchool.effectiveStatus().name()).isEqualTo("DISABLED");

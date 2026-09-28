@@ -2,7 +2,7 @@ import { apiClient } from './http';
 import type { SystemTaskStatus } from './system-tasks';
 export type FeatureStatus = 'ENABLED' | 'DISABLED';
 export interface GlobalFeatureToggle { id: string; featureCode: string; featureName: string; status: FeatureStatus; versionNo: string; description: string | null; enableAllowed: boolean }
-export interface FeatureToggleChange { id: string; taskId: string; featureCode: string; featureName: string; beforeStatus: FeatureStatus; targetStatus: FeatureStatus; currentStatus: FeatureStatus; baseVersion: string; currentVersion: string; taskStatus: SystemTaskStatus; title: string; description: string | null; submittedBy: string | null; submittedAt: string | null; reviewedBy: string | null; reviewedAt: string | null; reviewComment: string | null; createdAt: string | null; enableAllowed: boolean }
+export interface FeatureToggleChange { id: string; taskId: string; featureCode: string; featureName: string; beforeStatus: FeatureStatus | null; targetStatus: FeatureStatus; currentStatus: FeatureStatus; baseVersion: string | null; currentVersion: string; taskStatus: SystemTaskStatus; title: string; description: string | null; submittedBy: string | null; submittedAt: string | null; reviewedBy: string | null; reviewedAt: string | null; reviewComment: string | null; createdAt: string | null; enableAllowed: boolean }
 export interface FeatureChangePage { items: FeatureToggleChange[]; page: number; pageSize: number; total: number }
 export interface FeatureSubmission { featureCode: string; targetStatus: FeatureStatus; expectedVersion: string; title: string; description: string; confirmed: boolean }
 const prefix = '/feature-management';
