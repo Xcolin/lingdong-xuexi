@@ -1,4 +1,4 @@
-# 灵动学习 V43 家长账号最终注销与匿名化实施计划
+# 灵动伴随 V43 家长账号最终注销与匿名化实施计划
 
 > **执行说明：** 必须使用 `superpowers:subagent-driven-development` 或 `superpowers:executing-plans` 按任务执行；使用复选框跟踪状态。
 

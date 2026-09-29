@@ -1,4 +1,4 @@
-# 灵动学习 V56 通用导入校验作业实施计划
+# 灵动伴随 V56 通用导入校验作业实施计划
 
 > **执行要求：** 使用 `superpowers:subagent-driven-development`（推荐）或 `superpowers:executing-plans` 按任务逐项实施，并使用复选框（`- [ ]`）跟踪进度。
 

@@ -43,7 +43,7 @@ class MysqlMigration {
             var properties=new Properties();properties.setProperty("user",user);properties.setProperty("password",password);
             properties.setProperty("connectTimeout","10000");properties.setProperty("socketTimeout","30000");
             var flyway=Flyway.configure().dataSource(url,user,password)
-                .locations("filesystem:lingdong-xuexi-server/src/main/resources/db/migration")
+                .locations("filesystem:lingdong-bansui-server/src/main/resources/db/migration")
                 .loggers("org.flywaydb.core.internal.logging.javautil.JavaUtilLogCreator").cleanDisabled(true).load();
             if(mode.equals("validate")){
                 stage="validate";

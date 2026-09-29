@@ -1,4 +1,4 @@
-﻿# 数据库备份/恢复维护入口（任务 6.3 正式交付物）。
+# 数据库备份/恢复维护入口（任务 6.3 正式交付物）。
 # 封装 tools/mysql-maintenance 下的 MysqlRecovery（加密备份/隔离恢复/一致性核对）
 # 与 MysqlMigration（Flyway 只读校验）。凭据从外置配置文件读取且不打印；
 # 备份密钥为随机 32 字节，经 Windows 当前用户 DPAPI 保护存放于 -KeyFile，不写入任何脚本。
@@ -16,7 +16,7 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
-if (-not $Config) { $Config = Join-Path $root 'lingdong-xuexi-server\src\main\resources\application-local.yml' }
+if (-not $Config) { $Config = Join-Path $root 'lingdong-bansui-server\src\main\resources\application-local.yml' }
 if (-not (Test-Path $Config)) { throw "外置配置不存在：$Config" }
 if (-not $KeyFile) { $KeyFile = Join-Path $root '.local-verification\mysql-backup-key.dpapi' }
 if (-not $BackupDir) { $BackupDir = Join-Path $root ('.local-verification\mysql-backup-' + (Get-Date -Format yyyyMMdd-HHmmss)) }
@@ -25,7 +25,7 @@ if ($Mode -eq 'restore' -or $Mode -eq 'validate') {
 }
 
 # 1) 构建最小 classpath（MySQL 驱动、snakeyaml、flyway-core、flyway-mysql）
-$server = Join-Path $root 'lingdong-xuexi-server'
+$server = Join-Path $root 'lingdong-bansui-server'
 $classpathFile = Join-Path $env:TEMP 'lingdong-maintenance-classpath.txt'
 Push-Location $server
 try {

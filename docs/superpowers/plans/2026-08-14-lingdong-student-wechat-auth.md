@@ -1,4 +1,4 @@
-# 灵动学习学生微信授权登录实施计划
+# 灵动伴随学生微信授权登录实施计划
 
 > **智能执行说明：** 按任务逐项实施本计划，建议使用 `superpowers:subagent-driven-development`，也可使用 `superpowers:executing-plans`；步骤统一使用复选框（`- [x]`）跟踪。
 

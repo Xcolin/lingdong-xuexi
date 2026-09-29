@@ -1,4 +1,4 @@
-# 灵动学习数据字典核心实施计划
+# 灵动伴随数据字典核心实施计划
 
 > **执行说明：** 建议使用 `superpowers:subagent-driven-development` 或 `superpowers:executing-plans` 逐项实施，并用复选框（`- [x]`）记录状态。
 

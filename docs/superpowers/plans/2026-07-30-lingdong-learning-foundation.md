@@ -1,8 +1,8 @@
-# 灵动学习工程基础实施计划
+# 灵动伴随工程基础实施计划
 
 > **执行说明：** 建议使用 `superpowers:subagent-driven-development` 或 `superpowers:executing-plans` 逐项实施，并用复选框（`- [ ]`）记录状态。
 
-**Goal:** 在当前目录建立可启动、可测试、可通过Flyway演进数据库的灵动学习后端基础工程，并为独立Web和小程序应用提供稳定的第一条公共接口。
+**Goal:** 在当前目录建立可启动、可测试、可通过Flyway演进数据库的灵动伴随后端基础工程，并为独立Web和小程序应用提供稳定的第一条公共接口。
 
 **Architecture:** 后端采用Spring Boot模块化单体，所有业务模块未来位于同一应用中但按领域包隔离。数据库结构和基础数据只通过Flyway迁移；微信凭证只位于被Git忽略的本地配置，后端读取且不向客户端返回。
 
@@ -238,7 +238,7 @@ Expected: PASS，健康接口和Flyway迁移测试均通过。
 
 **Files:**
 - Modify: `README.md`
-- Modify: `灵动学习-业务需求说明书-V1.0.md`
+- Modify: `灵动伴随-业务需求说明书-V1.0.md`
 
 - [x] **Step 1: 在README列出独立应用目录约定**
 

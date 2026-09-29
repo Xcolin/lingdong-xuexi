@@ -1,12 +1,12 @@
-﻿# 一键 CI 门禁（R09-6.1）：后端全量测试与打包、Flyway 迁移校验、发布产物检查、
+# 一键 CI 门禁（R09-6.1）：后端全量测试与打包、Flyway 迁移校验、发布产物检查、
 # 敏感信息扫描、Web 类型检查/测试/构建、小程序类型检查与双目标构建。
 # 任一步骤失败立即中断并以非零退出码结束；不连接外部数据库/Redis，不发送真实短信或微信消息。
 param([switch]$SkipBackend, [switch]$SkipFrontend)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
-$server = Join-Path $root 'lingdong-xuexi-server'
-$web = Join-Path $root 'lingdong-xuexi-web'
-$miniapp = Join-Path $root 'lingdong-xuexi-miniapp'
+$server = Join-Path $root 'lingdong-bansui-server'
+$web = Join-Path $root 'lingdong-bansui-web'
+$miniapp = Join-Path $root 'lingdong-bansui-miniapp'
 $logDir = Join-Path $root '.local-verification'
 New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 
@@ -20,13 +20,19 @@ function Invoke-Step([string]$Name, [scriptblock]$Action) {
 function Test-NoRealSecrets {
     # 敏感信息扫描：源码与配置中不得出现真实私钥、云厂商 AccessKey 或非占位密钥赋值。
     # 占位符（${ENV:}、空串、含 test/placeholder/example 的样例值）不视为泄露。
+    # 2026-09-29 加强：覆盖 YAML 的 `password: ${ENV:明文默认值}` 与 `password: 明文` 两种形式
+    # （此前仅匹配引号赋值，导致主配置内置真实凭据默认值漏网）。
     $patterns = @(
         '-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----',
         'AKID[0-9A-Za-z]{10,}',
-        '(?i)(app-?secret|access-?key-?secret|api-?key)\s*[=:]\s*["''][^"''$\r\n]{16,}["'']'
+        '(?i)(app-?secret|access-?key-?secret|api-?key)\s*[=:]\s*["''][^"''$\r\n]{16,}["'']',
+        '(?im)^\s*[\w\-.]*(password|secret|token)[\w\-.]*\s*:\s*\$\{[A-Za-z0-9_]+:\s*([^}\s]{8,})\s*\}',
+        '(?im)^\s*[\w\-.]*(password|app-?secret)[\w\-.]*\s*:\s*(["''])[A-Za-z0-9@#\-_!*]{8,}\2',
+        '(?im)^\s*[\w\-.]*(password|app-?secret)[\w\-.]*\s*:\s*[A-Za-z0-9@#\-_!*]{8,}\s*$'
     )
     $targets = Get-ChildItem $server\src, $web\src, (Join-Path $miniapp 'src') -Recurse -File -ErrorAction SilentlyContinue |
-        Where-Object { $_.Extension -match '^\.(java|ts|tsx|vue|yml|yaml|xml|properties|json|ps1)$' }
+        Where-Object { $_.Extension -match '^\.(java|ts|tsx|vue|yml|yaml|xml|properties|json|ps1)$' } |
+        Where-Object { $_.Name -notlike 'application-local.*' }  # 本地凭据文件：.gitignore 排除、不进 JAR，不属于仓库泄露面
     $hits = @()
     foreach ($file in $targets) {
         $text = Get-Content $file.FullName -Raw -ErrorAction SilentlyContinue
@@ -35,7 +41,7 @@ function Test-NoRealSecrets {
             foreach ($match in [regex]::Matches($text, $pattern)) {
                 $value = $match.Value
                 if ($value -match '(?i)test|placeholder|example|sample|dummy') { continue }
-                $hits += "$($file.FullName): $value"
+                $hits += "$($file.FullName): [值已脱敏，模式 $pattern 命中]"
             }
         }
     }

@@ -1,6 +1,6 @@
 param([switch]$ArtifactOnly)
 $ErrorActionPreference = 'Stop'
-$server = Join-Path $PSScriptRoot '../lingdong-xuexi-server'
+$server = Join-Path $PSScriptRoot '../lingdong-bansui-server'
 if (-not $ArtifactOnly) {
     $version = (& mvn --version 2>&1 | Out-String)
     if ($LASTEXITCODE -ne 0 -or $version -notmatch 'Apache Maven 4\.\d+\.\d+(?:\s|\()') {

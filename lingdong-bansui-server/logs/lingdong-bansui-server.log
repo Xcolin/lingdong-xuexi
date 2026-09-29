@@ -1,0 +1,438 @@
+2026-09-29 23:33:11.480 INFO  [main] c.l.learning.HealthControllerTest - Starting HealthControllerTest using Java 17.0.20 with PID 293028 (started by Administrator in E:\apps\lingdong-xuexi-code\lingdong-bansui-server)
+2026-09-29 23:33:11.482 INFO  [main] c.l.learning.HealthControllerTest - The following 1 profile is active: "test"
+2026-09-29 23:33:15.736 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-09-29 23:33:15.742 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-09-29 23:33:15.881 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 99 ms. Found 0 Redis repository interfaces.
+2026-09-29 23:33:17.299 INFO  [main] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2026-09-29 23:33:17.543 INFO  [main] com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection conn0: url=jdbc:h2:mem:lingdong_learning user=SA
+2026-09-29 23:33:17.546 INFO  [main] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2026-09-29 23:33:17.618 INFO  [main] org.flywaydb.core.FlywayExecutor - Database: jdbc:h2:mem:lingdong_learning (H2 2.3)
+2026-09-29 23:33:17.636 WARN  [main] o.f.c.i.database.base.Database - Flyway upgrade recommended: H2 2.3.232 is newer than this version of Flyway and support has not been tested. The latest supported version of H2 is 2.2.224.
+2026-09-29 23:33:17.781 INFO  [main] o.f.c.i.s.JdbcTableSchemaHistory - Schema history table "public"."flyway_schema_history" does not exist yet
+2026-09-29 23:33:17.787 INFO  [main] o.f.core.internal.command.DbValidate - Successfully validated 86 migrations (execution time 00:00.125s)
+2026-09-29 23:33:17.806 INFO  [main] o.f.c.i.s.JdbcTableSchemaHistory - Creating Schema History table "public"."flyway_schema_history" ...
+2026-09-29 23:33:17.880 INFO  [main] o.f.core.internal.command.DbMigrate - Current version of schema "public": << Empty Schema >>
+2026-09-29 23:33:17.897 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "1 - create system config"
+2026-09-29 23:33:17.944 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "2 - create iam rbac tables"
+2026-09-29 23:33:18.003 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "3 - create organization types"
+2026-09-29 23:33:18.036 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "4 - create user organization relations"
+2026-09-29 23:33:18.051 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "5 - create system task audit"
+2026-09-29 23:33:18.068 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "6 - create feature toggles"
+2026-09-29 23:33:18.081 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "7 - create feature toggle changes"
+2026-09-29 23:33:18.094 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "8 - create user permissions"
+2026-09-29 23:33:18.105 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "9 - create role data scopes"
+2026-09-29 23:33:18.121 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "10 - create dictionary tables"
+2026-09-29 23:33:18.135 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "11 - create cache operation log"
+2026-09-29 23:33:18.153 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "12 - create interface service tables"
+2026-09-29 23:33:18.170 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "13 - create attachment core tables"
+2026-09-29 23:33:18.187 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "14 - create import export template table"
+2026-09-29 23:33:18.198 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "15 - create auth device session"
+2026-09-29 23:33:18.206 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "16 - seed iam management permissions"
+2026-09-29 23:33:18.217 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "17 - seed organization management permissions"
+2026-09-29 23:33:18.225 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "18 - seed user directory permissions"
+2026-09-29 23:33:18.235 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "19 - create student relationship foundation"
+2026-09-29 23:33:18.253 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "20 - create parent binding invitation"
+2026-09-29 23:33:18.275 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "21 - create student code login"
+2026-09-29 23:33:18.292 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "22 - create learning task foundation"
+2026-09-29 23:33:18.322 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "23 - create task execution foundation"
+2026-09-29 23:33:18.387 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "24 - create growth point account and ledger"
+2026-09-29 23:33:18.414 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "25 - seed growth point query access"
+2026-09-29 23:33:18.420 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "26 - add growth point correction"
+2026-09-29 23:33:18.436 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "27 - add reward exchange"
+2026-09-29 23:33:18.485 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "28 - add growth review"
+2026-09-29 23:33:18.515 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "29 - add point lifecycle"
+2026-09-29 23:33:18.631 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "30 - add recurring task"
+2026-09-29 23:33:18.663 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "31 - add task checkin attachment"
+2026-09-29 23:33:18.688 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "32 - add task overdue defer"
+2026-09-29 23:33:18.770 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "33 - add previous day task copy"
+2026-09-29 23:33:18.794 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "34 - add learning task template"
+2026-09-29 23:33:18.810 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "35 - add student qr login"
+2026-09-29 23:33:18.819 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "36 - add parent phone auth"
+2026-09-29 23:33:18.834 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "37 - add parent wechat auth"
+2026-09-29 23:33:18.843 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "38 - add parent relationship lifecycle"
+2026-09-29 23:33:18.861 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "39 - add account security event"
+2026-09-29 23:33:18.870 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "40 - add organization miniapp auth"
+2026-09-29 23:33:18.877 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "41 - add student organization lifecycle"
+2026-09-29 23:33:18.887 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "42 - add parent account lifecycle"
+2026-09-29 23:33:18.900 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "43 - finalize parent account cancellation"
+2026-09-29 23:33:18.919 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "44 - add parent mobile manual recovery"
+2026-09-29 23:33:18.936 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "45 - add student account cancellation"
+2026-09-29 23:33:18.949 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "46 - add student wechat auth"
+2026-09-29 23:33:18.964 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "47 - add organization node lifecycle"
+2026-09-29 23:33:19.014 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "48 - add class management"
+2026-09-29 23:33:19.026 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "49 - add permission grant boundary"
+2026-09-29 23:33:19.038 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "50 - add iam change audit"
+2026-09-29 23:33:19.045 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "51 - add dictionary management"
+2026-09-29 23:33:19.050 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "52 - add cache management"
+2026-09-29 23:33:19.062 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "53 - add interface service management"
+2026-09-29 23:33:19.068 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "54 - add attachment management"
+2026-09-29 23:33:19.083 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "55 - add import export template management"
+2026-09-29 23:33:19.099 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "56 - add import validation job"
+2026-09-29 23:33:19.118 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "57 - add async export job"
+2026-09-29 23:33:19.140 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "58 - add student batch import"
+2026-09-29 23:33:19.154 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "59 - add teacher management"
+2026-09-29 23:33:19.168 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "60 - complete organization teacher tasks"
+2026-09-29 23:33:19.180 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "61 - add student exception report"
+2026-09-29 23:33:19.198 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "62 - add manual attendance"
+2026-09-29 23:33:19.209 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "63 - add export job payload"
+2026-09-29 23:33:19.215 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "64 - add growth review pdf feature"
+2026-09-29 23:33:19.220 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "65 - add growth review pdf job type"
+2026-09-29 23:33:19.231 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "66 - add growth review subscription"
+2026-09-29 23:33:19.237 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "67 - add growth review delivery queue"
+2026-09-29 23:33:19.248 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "68 - add anonymous rank preference"
+2026-09-29 23:33:19.257 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "69 - add miniapp anonymous rank permission"
+2026-09-29 23:33:19.264 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "70 - add miniapp parent weekly review permission"
+2026-09-29 23:33:19.269 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "71 - add miniapp parent reward permissions"
+2026-09-29 23:33:19.275 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "72 - add web system task read permission"
+2026-09-29 23:33:19.283 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "73 - add feature toggle management"
+2026-09-29 23:33:19.298 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "74 - add interface change execution audit"
+2026-09-29 23:33:19.309 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "75 - add interface change before snapshot"
+2026-09-29 23:33:19.321 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "76 - add dictionary ledger export"
+2026-09-29 23:33:19.333 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "77 - add template ledger export"
+2026-09-29 23:33:19.340 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "78 - add interface service ledger export"
+2026-09-29 23:33:19.349 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "79 - add cache operation log export"
+2026-09-29 23:33:19.355 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "80 - add system task ledger export"
+2026-09-29 23:33:19.366 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "81 - add reward exchange ledger export"
+2026-09-29 23:33:19.373 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "82 - add exception report ledger export"
+2026-09-29 23:33:19.382 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "83 - add attachment ledger export"
+2026-09-29 23:33:19.388 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "84 - add student task report export"
+2026-09-29 23:33:19.400 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "85 - add organization task statistics export"
+2026-09-29 23:33:19.408 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "86 - add attendance ledger export"
+2026-09-29 23:33:19.419 INFO  [main] o.f.core.internal.command.DbMigrate - Successfully applied 86 migrations to schema "public", now at version v86 (execution time 00:00.905s)
+2026-09-29 23:33:26.812 INFO  [main] o.s.b.t.m.w.SpringBootMockServletContext - Initializing Spring TestDispatcherServlet ''
+2026-09-29 23:33:26.813 INFO  [main] o.s.t.w.s.TestDispatcherServlet - Initializing Servlet ''
+2026-09-29 23:33:26.815 INFO  [main] o.s.t.w.s.TestDispatcherServlet - Completed initialization in 2 ms
+2026-09-29 23:33:26.879 INFO  [main] c.l.learning.HealthControllerTest - Started HealthControllerTest in 16.662 seconds (process running for 31.361)
+2026-09-29 23:33:26.883 WARN  [main] o.s.c.events.SpringDocAppInitializer - SpringDoc /api/v1/openapi endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=false'
+2026-09-29 23:33:27.926 INFO  [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2026-09-29 23:33:27.929 INFO  [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
+2026-09-29 23:34:01.206 INFO  [main] c.l.l.LingdongLearningApplication - Starting LingdongLearningApplication v0.0.1-SNAPSHOT using Java 17.0.20 with PID 293544 (E:\apps\lingdong-xuexi-code\lingdong-bansui-server\target\lingdong-bansui-server-0.0.1-SNAPSHOT.jar started by Administrator in E:\apps\lingdong-xuexi-code\lingdong-bansui-server)
+2026-09-29 23:34:01.210 INFO  [main] c.l.l.LingdongLearningApplication - The following 1 profile is active: "local"
+2026-09-29 23:34:03.520 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-09-29 23:34:03.528 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-09-29 23:34:03.595 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 34 ms. Found 0 Redis repository interfaces.
+2026-09-29 23:34:12.877 INFO  [main] o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
+2026-09-29 23:34:12.897 INFO  [main] o.a.catalina.core.StandardService - Starting service [Tomcat]
+2026-09-29 23:34:12.897 INFO  [main] o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.40]
+2026-09-29 23:34:12.954 INFO  [main] o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-09-29 23:34:12.955 INFO  [main] o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 11654 ms
+2026-09-29 23:34:13.382 INFO  [main] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2026-09-29 23:34:22.907 INFO  [main] com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@471a9e8c
+2026-09-29 23:34:22.913 INFO  [main] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2026-09-29 23:34:23.148 INFO  [main] org.flywaydb.core.FlywayExecutor - Database: jdbc:mysql://8.156.80.3:3306/lingdong_learning?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai (MySQL 8.0)
+2026-09-29 23:34:23.545 INFO  [main] o.f.core.internal.command.DbValidate - Successfully validated 86 migrations (execution time 00:00.208s)
+2026-09-29 23:34:23.775 INFO  [main] o.f.core.internal.command.DbMigrate - Current version of schema `lingdong_learning`: 86
+2026-09-29 23:34:23.796 INFO  [main] o.f.core.internal.command.DbMigrate - Schema `lingdong_learning` is up to date. No migration necessary.
+2026-09-29 23:34:27.815 WARN  [main] o.s.b.w.s.c.AnnotationConfigServletWebServerApplicationContext - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'studentCodeLoginApplicationService' defined in URL [jar:nested:/E:/apps/lingdong-xuexi-code/lingdong-bansui-server/target/lingdong-bansui-server-0.0.1-SNAPSHOT.jar/!BOOT-INF/classes/!/com/lingdong/learning/auth/application/StudentCodeLoginApplicationService.class]: Unsatisfied dependency expressed through constructor parameter 3: Error creating bean with name 'studentLoginCodeHasher' defined in URL [jar:nested:/E:/apps/lingdong-xuexi-code/lingdong-bansui-server/target/lingdong-bansui-server-0.0.1-SNAPSHOT.jar/!BOOT-INF/classes/!/com/lingdong/learning/auth/infrastructure/security/StudentLoginCodeHasher.class]: Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'lingdong.auth.student-code-com.lingdong.learning.auth.infrastructure.config.StudentLoginCodeProperties': 学生登录码密钥至少32字节：v1
+2026-09-29 23:34:27.844 INFO  [main] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2026-09-29 23:34:32.227 INFO  [main] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
+2026-09-29 23:34:32.232 INFO  [main] o.a.catalina.core.StandardService - Stopping service [Tomcat]
+2026-09-29 23:34:32.253 INFO  [main] o.s.b.a.l.ConditionEvaluationReportLogger - 
+
+Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+2026-09-29 23:34:32.282 ERROR [main] o.s.boot.SpringApplication - Application run failed
+org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'studentCodeLoginApplicationService' defined in URL [jar:nested:/E:/apps/lingdong-xuexi-code/lingdong-bansui-server/target/lingdong-bansui-server-0.0.1-SNAPSHOT.jar/!BOOT-INF/classes/!/com/lingdong/learning/auth/application/StudentCodeLoginApplicationService.class]: Unsatisfied dependency expressed through constructor parameter 3: Error creating bean with name 'studentLoginCodeHasher' defined in URL [jar:nested:/E:/apps/lingdong-xuexi-code/lingdong-bansui-server/target/lingdong-bansui-server-0.0.1-SNAPSHOT.jar/!BOOT-INF/classes/!/com/lingdong/learning/auth/infrastructure/security/StudentLoginCodeHasher.class]: Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'lingdong.auth.student-code-com.lingdong.learning.auth.infrastructure.config.StudentLoginCodeProperties': 学生登录码密钥至少32字节：v1
+	at org.springframework.beans.factory.support.ConstructorResolver.createArgumentArray(ConstructorResolver.java:804)
+	at org.springframework.beans.factory.support.ConstructorResolver.autowireConstructor(ConstructorResolver.java:240)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.autowireConstructor(AbstractAutowireCapableBeanFactory.java:1387)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(AbstractAutowireCapableBeanFactory.java:1224)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:569)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:529)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:339)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:371)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:337)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:202)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.instantiateSingleton(DefaultListableBeanFactory.java:1221)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingleton(DefaultListableBeanFactory.java:1187)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingletons(DefaultListableBeanFactory.java:1122)
+	at org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization(AbstractApplicationContext.java:987)
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:627)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:146)
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:753)
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:439)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:318)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1362)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1351)
+	at com.lingdong.learning.LingdongLearningApplication.main(LingdongLearningApplication.java:12)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+	at org.springframework.boot.loader.launch.Launcher.launch(Launcher.java:102)
+	at org.springframework.boot.loader.launch.Launcher.launch(Launcher.java:64)
+	at org.springframework.boot.loader.launch.JarLauncher.main(JarLauncher.java:40)
+Caused by: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'studentLoginCodeHasher' defined in URL [jar:nested:/E:/apps/lingdong-xuexi-code/lingdong-bansui-server/target/lingdong-bansui-server-0.0.1-SNAPSHOT.jar/!BOOT-INF/classes/!/com/lingdong/learning/auth/infrastructure/security/StudentLoginCodeHasher.class]: Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'lingdong.auth.student-code-com.lingdong.learning.auth.infrastructure.config.StudentLoginCodeProperties': 学生登录码密钥至少32字节：v1
+	at org.springframework.beans.factory.support.ConstructorResolver.createArgumentArray(ConstructorResolver.java:804)
+	at org.springframework.beans.factory.support.ConstructorResolver.autowireConstructor(ConstructorResolver.java:240)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.autowireConstructor(AbstractAutowireCapableBeanFactory.java:1387)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(AbstractAutowireCapableBeanFactory.java:1224)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:569)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:529)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:339)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:371)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:337)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:202)
+	at org.springframework.beans.factory.config.DependencyDescriptor.resolveCandidate(DependencyDescriptor.java:254)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.doResolveDependency(DefaultListableBeanFactory.java:1739)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveDependency(DefaultListableBeanFactory.java:1627)
+	at org.springframework.beans.factory.support.ConstructorResolver.resolveAutowiredArgument(ConstructorResolver.java:913)
+	at org.springframework.beans.factory.support.ConstructorResolver.createArgumentArray(ConstructorResolver.java:791)
+	... 28 common frames omitted
+Caused by: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'lingdong.auth.student-code-com.lingdong.learning.auth.infrastructure.config.StudentLoginCodeProperties': 学生登录码密钥至少32字节：v1
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean(AbstractAutowireCapableBeanFactory.java:1818)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:607)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:529)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:339)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:371)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:337)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:202)
+	at org.springframework.beans.factory.config.DependencyDescriptor.resolveCandidate(DependencyDescriptor.java:254)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.doResolveDependency(DefaultListableBeanFactory.java:1739)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveDependency(DefaultListableBeanFactory.java:1627)
+	at org.springframework.beans.factory.support.ConstructorResolver.resolveAutowiredArgument(ConstructorResolver.java:913)
+	at org.springframework.beans.factory.support.ConstructorResolver.createArgumentArray(ConstructorResolver.java:791)
+	... 42 common frames omitted
+Caused by: java.lang.IllegalStateException: 学生登录码密钥至少32字节：v1
+	at com.lingdong.learning.auth.infrastructure.config.StudentLoginCodeProperties.decodeAndValidate(StudentLoginCodeProperties.java:59)
+	at com.lingdong.learning.auth.infrastructure.config.StudentLoginCodeProperties.lambda$afterPropertiesSet$0(StudentLoginCodeProperties.java:48)
+	at java.base/java.util.LinkedHashMap.forEach(LinkedHashMap.java:721)
+	at com.lingdong.learning.auth.infrastructure.config.StudentLoginCodeProperties.afterPropertiesSet(StudentLoginCodeProperties.java:48)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.invokeInitMethods(AbstractAutowireCapableBeanFactory.java:1865)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean(AbstractAutowireCapableBeanFactory.java:1814)
+	... 53 common frames omitted
+2026-09-29 23:35:48.965 INFO  [main] c.l.l.LingdongLearningApplication - Starting LingdongLearningApplication v0.0.1-SNAPSHOT using Java 17.0.13 with PID 291000 (E:\apps\lingdong-xuexi-code\lingdong-bansui-server\target\lingdong-bansui-server-0.0.1-SNAPSHOT.jar started by Administrator in E:\apps\lingdong-xuexi-code\lingdong-bansui-server)
+2026-09-29 23:35:48.969 INFO  [main] c.l.l.LingdongLearningApplication - The following 1 profile is active: "local"
+2026-09-29 23:35:51.218 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-09-29 23:35:51.223 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-09-29 23:35:51.286 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 34 ms. Found 0 Redis repository interfaces.
+2026-09-29 23:36:00.549 INFO  [main] o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
+2026-09-29 23:36:00.566 INFO  [main] o.a.catalina.core.StandardService - Starting service [Tomcat]
+2026-09-29 23:36:00.567 INFO  [main] o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.40]
+2026-09-29 23:36:00.619 INFO  [main] o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-09-29 23:36:00.620 INFO  [main] o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 11553 ms
+2026-09-29 23:36:01.179 INFO  [main] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2026-09-29 23:36:10.662 INFO  [main] com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@44587c44
+2026-09-29 23:36:10.666 INFO  [main] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2026-09-29 23:36:10.812 INFO  [main] org.flywaydb.core.FlywayExecutor - Database: jdbc:mysql://8.156.80.3:3306/lingdong_learning?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai (MySQL 8.0)
+2026-09-29 23:36:11.179 INFO  [main] o.f.core.internal.command.DbValidate - Successfully validated 86 migrations (execution time 00:00.174s)
+2026-09-29 23:36:11.412 INFO  [main] o.f.core.internal.command.DbMigrate - Current version of schema `lingdong_learning`: 86
+2026-09-29 23:36:11.433 INFO  [main] o.f.core.internal.command.DbMigrate - Schema `lingdong_learning` is up to date. No migration necessary.
+2026-09-29 23:36:17.358 INFO  [main] o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port 8080 (http) with context path '/'
+2026-09-29 23:36:17.399 INFO  [main] c.l.l.LingdongLearningApplication - Started LingdongLearningApplication in 29.469 seconds (process running for 30.246)
+2026-09-29 23:36:17.403 WARN  [main] o.s.c.events.SpringDocAppInitializer - SpringDoc /api/v1/openapi endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=false'
+2026-09-29 23:36:20.946 INFO  [http-nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-09-29 23:36:20.947 INFO  [http-nio-8080-exec-1] o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-09-29 23:36:20.948 INFO  [http-nio-8080-exec-1] o.s.web.servlet.DispatcherServlet - Completed initialization in 1 ms
+2026-09-29 23:36:51.409 ERROR [http-nio-8080-exec-6] c.l.l.common.web.ApiExceptionHandler - 未预期异常 traceId=828d09cb-a8eb-40f8-ad8b-313de78ec2ad path=/favicon.ico
+org.springframework.web.servlet.resource.NoResourceFoundException: No static resource favicon.ico.
+	at org.springframework.web.servlet.resource.ResourceHttpRequestHandler.handleRequest(ResourceHttpRequestHandler.java:585)
+	at org.springframework.web.servlet.mvc.HttpRequestHandlerAdapter.handle(HttpRequestHandlerAdapter.java:52)
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089)
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979)
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:903)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:564)
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:195)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:110)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:108)
+	at org.springframework.security.web.FilterChainProxy.lambda$doFilterInternal$3(FilterChainProxy.java:231)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:365)
+	at org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:101)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126)
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:131)
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:85)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.authentication.AnonymousAuthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:100)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareRequestFilter.java:179)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.savedrequest.RequestCacheAwareFilter.doFilter(RequestCacheAwareFilter.java:63)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at com.lingdong.learning.common.security.SessionAuthenticationFilter.doFilterInternal(SessionAuthenticationFilter.java:40)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:107)
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:93)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.header.HeaderWriterFilter.doHeadersAfter(HeaderWriterFilter.java:90)
+	at org.springframework.security.web.header.HeaderWriterFilter.doFilterInternal(HeaderWriterFilter.java:75)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:82)
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:69)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIntegrationFilter.java:62)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.session.DisableEncodeUrlFilter.doFilterInternal(DisableEncodeUrlFilter.java:42)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:233)
+	at org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:191)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113)
+	at org.springframework.web.servlet.handler.HandlerMappingIntrospector.lambda$createCacheFilter$3(HandlerMappingIntrospector.java:243)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113)
+	at org.springframework.web.filter.CompositeFilter.doFilter(CompositeFilter.java:74)
+	at org.springframework.security.config.annotation.web.configuration.WebMvcSecurityConfiguration$CompositeFilterChainProxy.doFilter(WebMvcSecurityConfiguration.java:238)
+	at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:362)
+	at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:278)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167)
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90)
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:483)
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:116)
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93)
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74)
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:344)
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:398)
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63)
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:903)
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1740)
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1189)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:658)
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63)
+	at java.base/java.lang.Thread.run(Thread.java:840)
+2026-09-29 23:36:51.417 ERROR [http-nio-8080-exec-6] LINGDONG_ALERT - [ALERT] exceptionType=NoResourceFoundException, path=/favicon.ico, traceId=828d09cb-a8eb-40f8-ad8b-313de78ec2ad
+2026-09-29 23:43:55.317 INFO  [main] c.l.l.LingdongLearningApplication - Starting LingdongLearningApplication v0.0.1-SNAPSHOT using Java 17.0.13 with PID 300344 (E:\apps\lingdong-xuexi-code\lingdong-bansui-server\target\lingdong-bansui-server-0.0.1-SNAPSHOT.jar started by Administrator in E:\apps\lingdong-xuexi-code\lingdong-bansui-server)
+2026-09-29 23:43:55.324 INFO  [main] c.l.l.LingdongLearningApplication - The following 1 profile is active: "local"
+2026-09-29 23:43:57.828 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-09-29 23:43:57.835 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-09-29 23:43:57.926 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 48 ms. Found 0 Redis repository interfaces.
+2026-09-29 23:44:07.546 INFO  [main] o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
+2026-09-29 23:44:07.576 INFO  [main] o.a.catalina.core.StandardService - Starting service [Tomcat]
+2026-09-29 23:44:07.577 INFO  [main] o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.40]
+2026-09-29 23:44:07.654 INFO  [main] o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-09-29 23:44:07.656 INFO  [main] o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 12237 ms
+2026-09-29 23:44:08.200 INFO  [main] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2026-09-29 23:44:17.804 INFO  [main] com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@48751d8a
+2026-09-29 23:44:17.807 INFO  [main] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2026-09-29 23:44:18.048 INFO  [main] org.flywaydb.core.FlywayExecutor - Database: jdbc:mysql://8.156.80.3:3306/lingdong_learning?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai (MySQL 8.0)
+2026-09-29 23:44:18.417 INFO  [main] o.f.core.internal.command.DbValidate - Successfully validated 86 migrations (execution time 00:00.170s)
+2026-09-29 23:44:18.640 INFO  [main] o.f.core.internal.command.DbMigrate - Current version of schema `lingdong_learning`: 86
+2026-09-29 23:44:18.660 INFO  [main] o.f.core.internal.command.DbMigrate - Schema `lingdong_learning` is up to date. No migration necessary.
+2026-09-29 23:44:25.905 INFO  [main] o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port 8080 (http) with context path '/'
+2026-09-29 23:44:25.953 INFO  [main] c.l.l.LingdongLearningApplication - Started LingdongLearningApplication in 31.821 seconds (process running for 32.664)
+2026-09-29 23:44:25.962 WARN  [main] o.s.c.events.SpringDocAppInitializer - SpringDoc /api/v1/openapi endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=false'
+2026-09-29 23:44:28.665 INFO  [http-nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-09-29 23:44:28.665 INFO  [http-nio-8080-exec-1] o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-09-29 23:44:28.667 INFO  [http-nio-8080-exec-1] o.s.web.servlet.DispatcherServlet - Completed initialization in 1 ms
+2026-09-29 23:45:07.300 ERROR [http-nio-8080-exec-8] c.l.l.common.web.ApiExceptionHandler - 未预期异常 traceId=5926e5a3-8c97-4658-b9dd-42a9466b18ca path=/favicon.ico
+org.springframework.web.servlet.resource.NoResourceFoundException: No static resource favicon.ico.
+	at org.springframework.web.servlet.resource.ResourceHttpRequestHandler.handleRequest(ResourceHttpRequestHandler.java:585)
+	at org.springframework.web.servlet.mvc.HttpRequestHandlerAdapter.handle(HttpRequestHandlerAdapter.java:52)
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089)
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979)
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:903)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:564)
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:195)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:110)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:108)
+	at org.springframework.security.web.FilterChainProxy.lambda$doFilterInternal$3(FilterChainProxy.java:231)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:365)
+	at org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:101)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126)
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:131)
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:85)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.authentication.AnonymousAuthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:100)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareRequestFilter.java:179)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.savedrequest.RequestCacheAwareFilter.doFilter(RequestCacheAwareFilter.java:63)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at com.lingdong.learning.common.security.SessionAuthenticationFilter.doFilterInternal(SessionAuthenticationFilter.java:40)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:107)
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:93)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.header.HeaderWriterFilter.doHeadersAfter(HeaderWriterFilter.java:90)
+	at org.springframework.security.web.header.HeaderWriterFilter.doFilterInternal(HeaderWriterFilter.java:75)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:82)
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:69)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIntegrationFilter.java:62)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.session.DisableEncodeUrlFilter.doFilterInternal(DisableEncodeUrlFilter.java:42)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:233)
+	at org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:191)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113)
+	at org.springframework.web.servlet.handler.HandlerMappingIntrospector.lambda$createCacheFilter$3(HandlerMappingIntrospector.java:243)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113)
+	at org.springframework.web.filter.CompositeFilter.doFilter(CompositeFilter.java:74)
+	at org.springframework.security.config.annotation.web.configuration.WebMvcSecurityConfiguration$CompositeFilterChainProxy.doFilter(WebMvcSecurityConfiguration.java:238)
+	at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:362)
+	at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:278)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167)
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90)
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:483)
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:116)
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93)
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74)
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:344)
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:398)
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63)
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:903)
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1740)
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1189)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:658)
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63)
+	at java.base/java.lang.Thread.run(Thread.java:840)
+2026-09-29 23:45:07.306 ERROR [http-nio-8080-exec-8] LINGDONG_ALERT - [ALERT] exceptionType=NoResourceFoundException, path=/favicon.ico, traceId=5926e5a3-8c97-4658-b9dd-42a9466b18ca

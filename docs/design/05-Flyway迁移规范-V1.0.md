@@ -1,4 +1,4 @@
-# 灵动学习 Flyway 数据库迁移规范
+# 灵动伴随 Flyway 数据库迁移规范
 
 最新增量为 V77 导入导出模板台账导出，后续编号 V78；不得修改已执行迁移。V77 增加导出类型及范围约束、IMPORT_EXPORT_TEMPLATE_EXPORT Web 权限和仅系统管理员默认授权、TEMPLATE_REPORT 模板模块选项；三个种子均为 19 位，不新增业务表。V1-V77 已在本地 H2 MySQL 兼容模式连续迁移，未执行远程库迁移。V76 字典台账及 V74/V75 接口变更快照保留，下文各版本说明保留为历史记录。
 
@@ -26,7 +26,7 @@
 
 ## 2. 当前目录与命名
 
-当前迁移目录：`lingdong-xuexi-server/src/main/resources/db/migration/`  
+当前迁移目录：`lingdong-bansui-server/src/main/resources/db/migration/`  
 当前已执行命名：`V<正整数>__<英文下划线描述>.sql`
 
 | 项目 | 规定 |

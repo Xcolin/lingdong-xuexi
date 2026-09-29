@@ -1,4 +1,4 @@
-# 灵动学习 V57 通用异步导出作业实施计划
+# 灵动伴随 V57 通用异步导出作业实施计划
 
 > **供代理执行：** 必须使用 `superpowers:executing-plans` 或 `superpowers:subagent-driven-development`，严格按复选框顺序实施并逐项更新状态。
 

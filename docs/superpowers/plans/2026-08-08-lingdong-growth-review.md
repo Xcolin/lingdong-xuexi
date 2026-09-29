@@ -1,4 +1,4 @@
-# 灵动学习 V28 成长复盘实施计划
+# 灵动伴随 V28 成长复盘实施计划
 
 > **供代理执行：** 必须使用 `superpowers:subagent-driven-development` 或 `superpowers:executing-plans` 按任务逐项实施，所有步骤使用复选框跟踪。
 

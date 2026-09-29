@@ -1,4 +1,4 @@
-# 灵动学习接口服务管理闭环实施计划
+# 灵动伴随接口服务管理闭环实施计划
 
 > **执行要求：** 使用 superpowers:executing-plans 和 superpowers:test-driven-development 逐项实施，所有步骤用复选框记录。
 
