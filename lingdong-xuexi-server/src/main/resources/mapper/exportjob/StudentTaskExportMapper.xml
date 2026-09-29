@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.exportjob.infrastructure.persistence.StudentTaskExportMapper">
+ <sql id="visibleFrom">
+ FROM learn_task_assignment a JOIN learn_task t ON t.id=a.task_id
+ JOIN edu_student s ON s.id=a.student_id
+ WHERE
+ <choose>
+  <when test="scope.role == 'PARENT'">
+   EXISTS(SELECT 1 FROM edu_parent_student ps WHERE ps.student_id=a.student_id AND ps.parent_user_id=#{scope.userId} AND ps.status='ACTIVE')
+   AND (t.status='PUBLISHED' OR (t.source_type='FAMILY' AND t.creator_user_id=#{scope.userId}))
+  </when>
+  <when test="scope.role == 'TEACHER'">
+   ((t.source_type='TEACHER' AND t.creator_user_id=#{scope.userId}) OR (t.source_type='ORGANIZATION' AND t.status='PUBLISHED'))
+   AND a.source_type IN ('TEACHER','ORGANIZATION')
+   AND EXISTS(SELECT 1 FROM edu_student_organization sc JOIN edu_teacher_class tc ON tc.class_organization_id=sc.organization_id
+    AND tc.teacher_user_id=#{scope.userId} AND tc.status='ACTIVE'
+    WHERE sc.student_id=a.student_id AND sc.relation_type='CLASS' AND sc.status='ACTIVE')
+  </when>
+  <when test="scope.role == 'ORG_ADMIN'">
+   t.source_type='ORGANIZATION' AND a.source_type='ORGANIZATION'
+   AND EXISTS(SELECT 1 FROM sys_organization org WHERE org.id=t.source_organization_id
+    <if test="!scope.allOrganizations">
+     AND <choose><when test="scope.rootPaths != null and !scope.rootPaths.isEmpty()">
+      <foreach collection="scope.rootPaths" item="root" open="(" close=")" separator=" OR ">org.organization_path LIKE CONCAT(#{root},'%')</foreach>
+     </when><otherwise>1=0</otherwise></choose>
+    </if>)
+  </when>
+  <otherwise>1=0</otherwise>
+ </choose>
+ </sql>
+ <select id="findStudents" resultType="com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthPointStudentOptionRow">
+  SELECT DISTINCT s.id AS student_id,s.student_name <include refid="visibleFrom"/> ORDER BY s.student_name,s.id
+ </select>
+ <select id="findVisibleIds" resultType="long">
+  SELECT a.id <include refid="visibleFrom"/>
+  <if test="studentId != null">AND a.student_id=#{studentId}</if>
+  <if test="source != null">AND a.source_type=#{source}</if>
+  <if test="status != null">AND a.current_status=#{status}</if>
+  <if test="start != null">AND a.scheduled_date &gt;= #{start}</if>
+  <if test="end != null">AND a.scheduled_date &lt;= #{end}</if>
+  ORDER BY a.id LIMIT #{limit}
+ </select>
+ <select id="countVisibleIds" resultType="long">
+  SELECT COUNT(*) <include refid="visibleFrom"/> AND
+  <choose><when test="ids != null and !ids.isEmpty()">a.id IN <foreach collection="ids" item="id" open="(" close=")" separator=",">#{id}</foreach></when><otherwise>1=0</otherwise></choose>
+ </select>
+ <sql id="frozenFilter">
+  a.id &lt;= #{upperBound} AND
+  <choose><when test="request.studentTaskAssignmentIds != null and !request.studentTaskAssignmentIds.isEmpty()">a.id IN
+   <foreach collection="request.studentTaskAssignmentIds" item="id" open="(" close=")" separator=",">#{id}</foreach>
+  </when><otherwise>1=0</otherwise></choose>
+ </sql>
+ <select id="count" resultType="long">SELECT COUNT(*) FROM learn_task_assignment a WHERE <include refid="frozenFilter"/></select>
+ <select id="findAfter" resultType="com.lingdong.learning.exportjob.infrastructure.persistence.StudentTaskExportRow">
+  SELECT a.id,s.student_name,t.title,a.source_type,a.current_status AS status,
+   (SELECT COALESCE(SUM(l.amount),0) FROM growth_point_ledger l WHERE l.source_assignment_id=a.id AND l.change_type IN ('TASK_REWARD','CORRECTION')) AS points,
+   c.status AS review_status
+  FROM learn_task_assignment a JOIN learn_task t ON t.id=a.task_id JOIN edu_student s ON s.id=a.student_id
+  LEFT JOIN learn_task_checkin c ON c.assignment_id=a.id AND c.submission_no=(SELECT MAX(latest.submission_no) FROM learn_task_checkin latest WHERE latest.assignment_id=a.id)
+  WHERE <include refid="frozenFilter"/> AND a.id &gt; #{cursor}
+  ORDER BY a.id LIMIT #{limit}
+ </select>
+</mapper>

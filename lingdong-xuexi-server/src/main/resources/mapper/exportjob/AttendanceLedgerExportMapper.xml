@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.exportjob.infrastructure.persistence.AttendanceLedgerExportMapper">
+    <resultMap id="Row" type="com.lingdong.learning.exportjob.infrastructure.persistence.AttendanceLedgerExportRow">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="student_name" javaType="java.lang.String"/>
+            <arg column="class_name" javaType="java.lang.String"/>
+            <arg column="attendance_date" javaType="java.time.LocalDate"/>
+            <arg column="status" javaType="java.lang.String"/>
+            <arg column="checkin_time" javaType="java.time.LocalTime"/>
+            <arg column="checkout_time" javaType="java.time.LocalTime"/>
+        </constructor>
+    </resultMap>
+    <sql id="source">
+        FROM attendance_record r JOIN edu_student s ON s.id = r.student_id
+        JOIN sys_organization c ON c.id = r.class_organization_id
+    </sql>
+    <!-- 有效班级范围沿用考勤台账口径（docs/design/09 第 2.6 节）；空集合与空路径均强制零行。 -->
+    <sql id="classRange">
+        <choose>
+            <when test="scope.mode == 'TEACHER'">
+                EXISTS (SELECT 1 FROM edu_teacher_class tc WHERE tc.teacher_user_id = #{scope.userId}
+                    AND tc.class_organization_id = c.id AND tc.status = 'ACTIVE')
+            </when>
+            <when test="scope.mode == 'ORGANIZATION' and scope.allOrganizations">1 = 1</when>
+            <when test="scope.mode == 'ORGANIZATION' and scope.rootPaths.size() > 0">
+                (<foreach collection="scope.rootPaths" item="path" separator=" OR ">
+                    LEFT(c.organization_path, CHAR_LENGTH(#{path})) = #{path}
+                </foreach>)
+            </when>
+            <otherwise>1 = 0</otherwise>
+        </choose>
+    </sql>
+    <select id="findClassOptions" resultType="com.lingdong.learning.exceptionreport.application.ExceptionReportClassOption">
+        SELECT c.id AS classOrganizationId, c.organization_name AS className
+        FROM sys_organization c WHERE c.organization_type = 'CLASS'
+        AND c.status = 'ENABLED' AND c.effective_status = 'ENABLED'
+        AND <include refid="classRange"/>
+        ORDER BY c.organization_path, c.sort_order, c.id
+    </select>
+    <select id="findVisibleClassIds" resultType="long">
+        SELECT c.id FROM sys_organization c WHERE c.organization_type = 'CLASS'
+        AND c.status = 'ENABLED' AND c.effective_status = 'ENABLED'
+        AND <include refid="classRange"/>
+        ORDER BY c.id LIMIT #{limit}
+    </select>
+    <!-- 家庭身份范围：活动亲子关系（不要求主家长）或学生本人账号。 -->
+    <select id="findFamilyStudents" resultType="com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthPointStudentOptionRow">
+        SELECT s.id AS studentId, s.student_name AS studentName
+        FROM edu_student s
+        WHERE s.status = 'ENABLED'
+        AND (EXISTS (SELECT 1 FROM edu_parent_student ps WHERE ps.parent_user_id = #{userId}
+                AND ps.student_id = s.id AND ps.status = 'ACTIVE')
+            OR s.student_user_id = #{userId})
+        ORDER BY s.id
+    </select>
+    <!-- 冻结的班级集合是唯一事实来源；日期映射业务考勤日期而非创建时间。 -->
+    <sql id="filters">
+        WHERE
+        <choose>
+            <when test="request.studentId != null">r.student_id = #{request.studentId}</when>
+            <when test="request.attClassIds != null and !request.attClassIds.isEmpty()">
+                r.class_organization_id IN
+                <foreach collection="request.attClassIds" item="classId" open="(" close=")" separator=",">#{classId}</foreach>
+            </when>
+            <otherwise>1 = 0</otherwise>
+        </choose>
+        <if test="request.startedAt != null">AND r.attendance_date &gt;= CAST(#{request.startedAt} AS DATE)</if>
+        <if test="request.endedAt != null">AND r.attendance_date &lt;= CAST(#{request.endedAt} AS DATE)</if>
+    </sql>
+    <select id="findUpperBound" resultType="java.lang.Long">
+        SELECT MAX(r.id) <include refid="source"/> <include refid="filters"/>
+    </select>
+    <select id="count" resultType="long">
+        SELECT COUNT(*) <include refid="source"/> <include refid="filters"/> AND r.id &lt;= #{upperBound}
+    </select>
+    <select id="findAfter" resultMap="Row">
+        SELECT r.id, s.student_name, c.organization_name AS class_name, r.attendance_date, r.status, r.checkin_time, r.checkout_time
+        <include refid="source"/> <include refid="filters"/>
+        AND r.id &gt; #{cursor} AND r.id &lt;= #{upperBound} ORDER BY r.id ASC LIMIT #{limit}
+    </select>
+</mapper>

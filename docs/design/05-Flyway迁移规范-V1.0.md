@@ -26,7 +26,7 @@
 
 ## 2. 当前目录与命名
 
-当前迁移目录：`server/src/main/resources/db/migration/`  
+当前迁移目录：`lingdong-xuexi-server/src/main/resources/db/migration/`  
 当前已执行命名：`V<正整数>__<英文下划线描述>.sql`
 
 | 项目 | 规定 |

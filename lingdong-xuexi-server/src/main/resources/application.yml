@@ -1,0 +1,129 @@
+spring:
+  application:
+    name: lingdong-learning
+  datasource:
+    url: ${DB_URL:jdbc:mysql://8.156.80.3:3306/lingdong_learning?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:Colinzs@aly520}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  cache:
+    type: redis
+    cache-names: dictionary-items
+    redis:
+      time-to-live: ${DICTIONARY_CACHE_TTL:PT10M}
+  data:
+    redis:
+      host: ${REDIS_HOST:8.156.80.3}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:Colinzs@alyredis520}
+
+mybatis:
+  mapper-locations: classpath*:mapper/**/*.xml
+
+lingdong:
+  attachment:
+    # 附件为持久化数据，默认落在工作目录下的稳定存储目录，重启后必须可读；
+    # 与下方 export-job.temp-directory（临时产物，可丢弃）明确区分。部署时通过 ATTACHMENT_LOCAL_ROOT 指向持久卷。
+    local-root: ${ATTACHMENT_LOCAL_ROOT:${user.dir}/data/attachments}
+    # 不设定附件保留期限；仅状态机驱动的幂等收敛：重试清理已退役文件残留的物理内容。
+    cleanup:
+      scheduling-enabled: ${ATTACHMENT_CLEANUP_SCHEDULING_ENABLED:true}
+      batch-size: ${ATTACHMENT_CLEANUP_BATCH_SIZE:100}
+      cron: ${ATTACHMENT_CLEANUP_CRON:0 30 3 * * *}
+  import-validation:
+    scheduling-enabled: ${IMPORT_VALIDATION_SCHEDULING_ENABLED:true}
+    batch-size: ${IMPORT_VALIDATION_BATCH_SIZE:20}
+    max-rows: ${IMPORT_VALIDATION_MAX_ROWS:10000}
+    cron: ${IMPORT_VALIDATION_CRON:0 */1 * * * *}
+  export-job:
+    scheduling-enabled: ${EXPORT_JOB_SCHEDULING_ENABLED:true}
+    batch-size: ${EXPORT_JOB_BATCH_SIZE:20}
+    query-page-size: ${EXPORT_JOB_QUERY_PAGE_SIZE:500}
+    sheet-max-rows: ${EXPORT_JOB_SHEET_MAX_ROWS:50000}
+    cron: ${EXPORT_JOB_CRON:0 */1 * * * *}
+    temp-directory: ${EXPORT_JOB_TEMP_DIRECTORY:${java.io.tmpdir}/lingdong-export-jobs}
+    source-hmac-secret: ${EXPORT_SOURCE_HMAC_SECRET:}
+  student-import:
+    scheduling-enabled: ${STUDENT_IMPORT_SCHEDULING_ENABLED:true}
+    batch-size: ${STUDENT_IMPORT_BATCH_SIZE:10}
+    max-attempts: ${STUDENT_IMPORT_MAX_ATTEMPTS:3}
+    credential-ttl: ${STUDENT_IMPORT_CREDENTIAL_TTL:PT24H}
+    credential-key-version: ${STUDENT_IMPORT_CREDENTIAL_KEY_VERSION:v1}
+    credential-key: ${STUDENT_IMPORT_CREDENTIAL_KEY:}
+    cron: ${STUDENT_IMPORT_CRON:0 */1 * * * *}
+    cleanup-cron: ${STUDENT_IMPORT_CLEANUP_CRON:0 */10 * * * *}
+  recurring-task:
+    scheduling-enabled: ${RECURRING_TASK_SCHEDULING_ENABLED:true}
+    batch-size: ${RECURRING_TASK_BATCH_SIZE:100}
+    cron: ${RECURRING_TASK_CRON:0 5 0 * * *}
+  task-overdue:
+    scheduling-enabled: ${TASK_OVERDUE_SCHEDULING_ENABLED:true}
+    batch-size: ${TASK_OVERDUE_BATCH_SIZE:100}
+    cron: ${TASK_OVERDUE_CRON:59 59 23 * * *}
+  task-defer:
+    scheduling-enabled: ${TASK_DEFER_SCHEDULING_ENABLED:true}
+    batch-size: ${TASK_DEFER_BATCH_SIZE:100}
+    cron: ${TASK_DEFER_CRON:0 0 0 * * *}
+  point-lifecycle:
+    scheduling-enabled: ${POINT_LIFECYCLE_SCHEDULING_ENABLED:true}
+    batch-size: ${POINT_LIFECYCLE_BATCH_SIZE:100}
+    cron: ${POINT_LIFECYCLE_CRON:0 10 * * * *}
+  parent-account-finalization:
+    scheduling-enabled: ${PARENT_ACCOUNT_FINALIZATION_SCHEDULING_ENABLED:true}
+    batch-size: ${PARENT_ACCOUNT_FINALIZATION_BATCH_SIZE:100}
+    cron: ${PARENT_ACCOUNT_FINALIZATION_CRON:0 */10 * * * *}
+    relationship-retry-delay: ${PARENT_ACCOUNT_FINALIZATION_RELATIONSHIP_RETRY_DELAY:P1D}
+  reward-exchange:
+    cleanup:
+      scheduling-enabled: ${REWARD_EXCHANGE_CLEANUP_ENABLED:true}
+      batch-size: ${REWARD_EXCHANGE_CLEANUP_BATCH_SIZE:100}
+      initial-delay-ms: ${REWARD_EXCHANGE_CLEANUP_INITIAL_DELAY_MS:60000}
+      fixed-delay-ms: ${REWARD_EXCHANGE_CLEANUP_FIXED_DELAY_MS:60000}
+  id:
+    snowflake:
+      datacenter-id: ${SNOWFLAKE_DATACENTER_ID:0}
+      worker-id: ${SNOWFLAKE_WORKER_ID:0}
+  alert:
+    # 错误告警 webhook：未配置时仅本地记录 [ALERT] 日志，不虚构送达。
+    webhook-url: ${ALERT_WEBHOOK_URL:}
+  auth:
+    access-token-ttl: ${AUTH_ACCESS_TOKEN_TTL:PT30M}
+    refresh-token-ttl: ${AUTH_REFRESH_TOKEN_TTL:P7D}
+    student-code:
+      active-key-version: ${STUDENT_LOGIN_CODE_ACTIVE_KEY_VERSION:v1}
+      keys:
+        v1: ${STUDENT_LOGIN_CODE_SECRET_V1:}
+    student-protection:
+      captcha-ttl: ${STUDENT_CAPTCHA_TTL:PT2M}
+      captcha-requests-per-window: ${STUDENT_CAPTCHA_REQUESTS_PER_WINDOW:10}
+      captcha-rate-window: ${STUDENT_CAPTCHA_RATE_WINDOW:PT5M}
+      account-device-login-requests-per-window: ${STUDENT_LOGIN_ACCOUNT_DEVICE_LIMIT:10}
+      source-login-requests-per-window: ${STUDENT_LOGIN_SOURCE_LIMIT:60}
+      login-rate-window: ${STUDENT_LOGIN_RATE_WINDOW:PT1M}
+      account-lock-duration: ${STUDENT_ACCOUNT_LOCK_DURATION:PT15M}
+    parent-sms:
+      code-ttl: ${PARENT_SMS_CODE_TTL:PT5M}
+      issue-rate-window: ${PARENT_SMS_ISSUE_RATE_WINDOW:PT1M}
+      issues-per-window: ${PARENT_SMS_ISSUES_PER_WINDOW:3}
+      source-issues-per-window: ${PARENT_SMS_SOURCE_ISSUES_PER_WINDOW:30}
+      verification-rate-window: ${PARENT_SMS_VERIFICATION_RATE_WINDOW:PT5M}
+      verifications-per-window: ${PARENT_SMS_VERIFICATIONS_PER_WINDOW:10}
+      mobile-change-ticket-ttl: ${PARENT_MOBILE_CHANGE_TICKET_TTL:PT5M}
+      hmac-secret: ${PARENT_SMS_HMAC_SECRET:}
+    parent-wechat:
+      binding-ticket-ttl: ${PARENT_WECHAT_BINDING_TICKET_TTL:PT5M}
+      connect-timeout: ${PARENT_WECHAT_CONNECT_TIMEOUT:PT3S}
+      read-timeout: ${PARENT_WECHAT_READ_TIMEOUT:PT5S}
+
+wx:
+  app-id: ${WX_APP_ID:wx42353d5f7eafa780}
+  app-secret: ${WX_APP_SECRET:df20302890a11cd6c9c6ef9a6d2b3273}
+
+springdoc:
+  api-docs:
+    path: /api/v1/openapi
+  swagger-ui:
+    enabled: false

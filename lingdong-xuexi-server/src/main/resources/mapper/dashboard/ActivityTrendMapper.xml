@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.dashboard.infrastructure.persistence.ActivityTrendMapper">
+ <!-- 行为事实（docs/design/09 第 2.7 节）：学生本人任务事件（认领、打卡、暂停、恢复、放弃）
+      与学员复盘主动补录（编辑者为学生或家长）；审核驳回、转交、免执行属他人行为，积分账本
+      变动与登录不计。归属按学员当前 ACTIVE 班级关系落在授权组织树内，任务来源不限。 -->
+ <sql id="authorizedClasses">
+  <choose><when test="allOrganizations">1=1</when>
+   <when test="rootPaths != null and !rootPaths.isEmpty()">
+    <foreach collection="rootPaths" item="root" open="(" close=")" separator=" OR ">org.organization_path LIKE CONCAT(#{root},'%')</foreach>
+   </when>
+   <otherwise>1=0</otherwise></choose>
+ </sql>
+ <select id="findDailyActive" resultType="com.lingdong.learning.dashboard.infrastructure.persistence.ActivityTrendRow">
+  SELECT activity.activity_date, CAST(COUNT(DISTINCT activity.student_id) AS BIGINT) AS active_students
+  FROM (
+   SELECT CAST(e.occurred_at AS DATE) AS activity_date, a.student_id
+   FROM learn_task_assignment_event e
+   JOIN learn_task_assignment a ON a.id = e.assignment_id
+   JOIN edu_student_organization so ON so.student_id = a.student_id
+    AND so.relation_type = 'CLASS' AND so.status = 'ACTIVE'
+   JOIN sys_organization org ON org.id = so.organization_id
+    AND org.organization_type = 'CLASS' AND org.status = 'ENABLED'
+   WHERE e.event_type IN ('CLAIMED','CHECKED_IN','PAUSED','RESUMED','ABANDONED')
+    AND <include refid="authorizedClasses"/>
+   UNION ALL
+   SELECT CAST(s.supplemented_at AS DATE) AS activity_date, r.student_id
+   FROM growth_review_supplement s
+   JOIN growth_review r ON r.id = s.review_id
+   JOIN edu_student_organization so ON so.student_id = r.student_id
+    AND so.relation_type = 'CLASS' AND so.status = 'ACTIVE'
+   JOIN sys_organization org ON org.id = so.organization_id
+    AND org.organization_type = 'CLASS' AND org.status = 'ENABLED'
+   WHERE <include refid="authorizedClasses"/>
+  ) activity
+  WHERE activity.activity_date &gt;= #{start} AND activity.activity_date &lt;= #{end}
+  GROUP BY activity.activity_date
+  ORDER BY activity.activity_date
+ </select>
+</mapper>

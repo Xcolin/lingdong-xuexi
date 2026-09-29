@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lingdong.learning.exportjob.infrastructure.persistence.OrgTaskStatExportMapper">
+ <!-- 已生成的机构公开任务实例：按来源组织归属，家庭与教师来源、草稿任务、已失效实例与停用组织均排除。 -->
+ <sql id="publishedFacts">
+  FROM learn_task_assignment a JOIN learn_task t ON t.id=a.task_id
+  JOIN sys_organization org ON org.id=a.source_organization_id
+  WHERE t.source_type='ORGANIZATION' AND a.source_type='ORGANIZATION' AND t.status='PUBLISHED'
+  AND a.current_status &lt;&gt; 'INVALIDATED' AND org.status='ENABLED'
+ </sql>
+ <sql id="authorizedSource">
+  AND <choose><when test="scope.rootPaths != null and !scope.rootPaths.isEmpty()">
+   <foreach collection="scope.rootPaths" item="root" open="(" close=")" separator=" OR ">org.organization_path LIKE CONCAT(#{root},'%')</foreach>
+  </when><otherwise>1=0</otherwise></choose>
+ </sql>
+ <select id="findOrgOptions" resultType="com.lingdong.learning.exceptionreport.application.ExceptionReportClassOption">
+  SELECT DISTINCT org.id,org.organization_name <include refid="publishedFacts"/>
+  <if test="!scope.allOrganizations"><include refid="authorizedSource"/></if>
+  ORDER BY org.organization_name,org.id
+ </select>
+ <select id="findVisibleOrgIds" resultType="long">
+  SELECT DISTINCT a.source_organization_id <include refid="publishedFacts"/>
+  <if test="!scope.allOrganizations"><include refid="authorizedSource"/></if>
+  <if test="start != null">AND a.scheduled_date &gt;= #{start}</if>
+  <if test="end != null">AND a.scheduled_date &lt;= #{end}</if>
+  ORDER BY 1 LIMIT #{limit}
+ </select>
+ <select id="maxVisibleAssignmentId" resultType="java.lang.Long">
+  SELECT MAX(a.id) <include refid="publishedFacts"/>
+  AND a.source_organization_id IN <foreach collection="request.orgStatOrgIds" item="id" open="(" close=")" separator=",">#{id}</foreach>
+  <if test="request.startedAt != null">AND a.scheduled_date &gt;= CAST(#{request.startedAt} AS DATE)</if>
+  <if test="request.endedAt != null">AND a.scheduled_date &lt;= CAST(#{request.endedAt} AS DATE)</if>
+ </select>
+ <!-- 指标口径（docs/design/09 第 2.5 节）：完成率按 R-001 公式排除进行中与免执行，已失效实例不进入统计；游标为来源组织内实例主键上界。 -->
+ <sql id="statFilter">
+  a.id &lt;= #{upperBound} AND a.source_type='ORGANIZATION' AND a.current_status &lt;&gt; 'INVALIDATED'
+  AND a.source_organization_id IN <foreach collection="request.orgStatOrgIds" item="id" open="(" close=")" separator=",">#{id}</foreach>
+  <if test="request.startedAt != null">AND a.scheduled_date &gt;= CAST(#{request.startedAt} AS DATE)</if>
+  <if test="request.endedAt != null">AND a.scheduled_date &lt;= CAST(#{request.endedAt} AS DATE)</if>
+ </sql>
+ <sql id="statSelect">
+  a.source_organization_id AS org_id,MAX(a.id) AS rep_id,
+  (SELECT o2.organization_name FROM sys_organization o2 WHERE o2.organization_type='SCHOOL' AND org.organization_path LIKE CONCAT(o2.organization_path,'%') ORDER BY LENGTH(o2.organization_path) DESC LIMIT 1) AS school_name,
+  org.organization_name AS class_name,
+  CAST(COUNT(*) AS BIGINT) AS task_count,
+  CAST(SUM(CASE WHEN a.current_status='COMPLETED' THEN 1 ELSE 0 END) AS BIGINT) AS completed_count,
+  ROUND(CAST(SUM(CASE WHEN a.current_status='COMPLETED' THEN 1 ELSE 0 END) AS DECIMAL(14,4)) * 100
+   / NULLIF(COUNT(*) - SUM(CASE WHEN a.current_status='IN_PROGRESS' THEN 1 ELSE 0 END) - SUM(CASE WHEN a.current_status='EXEMPT' THEN 1 ELSE 0 END), 0), 2) AS completion_rate,
+  ROUND(COALESCE(AVG(CASE WHEN a.current_status='COMPLETED' THEN COALESCE((SELECT SUM(l.amount) FROM growth_point_ledger l WHERE l.source_assignment_id=a.id AND l.change_type IN ('TASK_REWARD','CORRECTION')),0) END), 0), 2) AS avg_points
+ </sql>
+ <select id="count" resultType="long">
+  SELECT COUNT(DISTINCT a.source_organization_id) FROM learn_task_assignment a WHERE <include refid="statFilter"/>
+ </select>
+ <select id="findAfter" resultType="com.lingdong.learning.exportjob.infrastructure.persistence.OrgTaskStatExportRow">
+  SELECT <include refid="statSelect"/>
+  FROM learn_task_assignment a JOIN sys_organization org ON org.id=a.source_organization_id
+  WHERE <include refid="statFilter"/>
+  GROUP BY a.source_organization_id,org.organization_path,org.organization_name
+  HAVING MAX(a.id) &gt; #{cursor}
+  ORDER BY MAX(a.id) LIMIT #{limit}
+ </select>
+</mapper>
