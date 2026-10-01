@@ -1,4 +1,6 @@
-import { Alert, Button, Form, Input, message, Modal, Select, Space, Table, Tabs, Tag, Tooltip } from 'antd';
+import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
+import { ViewportTable as Table } from '../../components/ViewportTable';
+import { Alert, Form, Input, message, Modal, Select, Space, Tabs, Tag, Tooltip } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
 import { Check, Pencil, Plus, Power, PowerOff, Search, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -222,7 +224,7 @@ export function InterfaceServiceManagementPage({ canManage, canReview }: Interfa
           <Form.Item label="状态" name="status">
             <Select allowClear options={statusOptions} style={{ width: 120 }} />
           </Form.Item>
-          <Form.Item><Button htmlType="submit" icon={<Search size={16} />}>查询</Button></Form.Item>
+          <Form.Item><Button actionKey="interface-services.interface-service-management-page.1" htmlType="submit" icon={<Search size={16} />}>查询</Button></Form.Item>
         </Form>
       </ProCard>
       <ProCard className="content-panel" bordered={false}>
@@ -244,10 +246,10 @@ export function InterfaceServiceManagementPage({ canManage, canReview }: Interfa
               render: (_: unknown, item: InterfaceServiceRecord) => (
                 <Space size={4}>
                   <Tooltip title="调整授权范围">
-                    <Button type="text" icon={<Pencil size={16} />} aria-label={`调整授权-${item.serviceName}`} onClick={() => openAuthorization(item)} />
+                    <Button actionKey="interface-services.interface-service-management-page.2" type="text" icon={<Pencil size={16} />} aria-label={`调整授权-${item.serviceName}`} onClick={() => openAuthorization(item)} />
                   </Tooltip>
                   <Tooltip title={item.status === 'ENABLED' ? '提交停用审核' : '提交启用审核'}>
-                    <Button
+                    <Button actionKey="interface-services.interface-service-management-page.3"
                       type="text" danger={item.status === 'ENABLED'}
                       icon={item.status === 'ENABLED' ? <PowerOff size={16} /> : <Power size={16} />}
                       aria-label={`${item.status === 'ENABLED' ? '停用' : '启用'}-${item.serviceName}`}
@@ -281,10 +283,10 @@ export function InterfaceServiceManagementPage({ canManage, canReview }: Interfa
             render: (_, item) => (
               <Space size={4}>
                 <Tooltip title="批准并执行">
-                  <Button type="text" icon={<Check size={16} />} aria-label={`批准-${item.taskTitle}`} onClick={() => openReview(item, 'approve')} />
+                  <Button actionKey="interface-services.interface-service-management-page.4" type="text" icon={<Check size={16} />} aria-label={`批准-${item.taskTitle}`} onClick={() => openReview(item, 'approve')} />
                 </Tooltip>
                 <Tooltip title="驳回">
-                  <Button danger type="text" icon={<X size={16} />} aria-label={`驳回-${item.taskTitle}`} onClick={() => openReview(item, 'reject')} />
+                  <Button actionKey="interface-services.interface-service-management-page.5" danger type="text" icon={<X size={16} />} aria-label={`驳回-${item.taskTitle}`} onClick={() => openReview(item, 'reject')} />
                 </Tooltip>
               </Space>
             )
@@ -315,10 +317,9 @@ export function InterfaceServiceManagementPage({ canManage, canReview }: Interfa
     <div className="page-stack">
       <div className="page-heading">
         <h1>接口服务管理</h1>
-        {canManage && <Button type="primary" icon={<Plus size={16} />} onClick={openRegistration}>登记接口服务</Button>}
+        {canManage && <Button actionKey="interface-services.interface-service-management-page.6" type="primary" icon={<Plus size={16} />} onClick={openRegistration}>登记接口服务</Button>}
       </div>
-      <Alert type="info" showIcon message="此处仅登记服务元数据和调用结果，不保存接口地址或凭据，也不会直接调用任意 URL。" description="真实调用由各业务适配器按外置配置控制超时和异常。" />
-      {errorMessage && <Alert type="error" showIcon message={errorMessage} action={<Button size="small" onClick={() => void reloadActiveTab()}>重试</Button>} />}
+      {errorMessage && <Alert type="error" showIcon message={errorMessage} action={<Button actionKey="interface-services.interface-service-management-page.7" size="small" onClick={() => void reloadActiveTab()}>重试</Button>} />}
       <Tabs activeKey={activeTab} onChange={setActiveTab} items={[
         { key: 'services', label: '服务登记', children: servicePanel },
         { key: 'changes', label: '变更记录', children: changesPanel },
@@ -407,7 +408,7 @@ function ChangeTable({ items, loading }: { items: InterfaceServiceChangeRecord[]
 }
 
 function ModalActions({ submitting, submitText, onCancel, danger = false }: { submitting: boolean; submitText: string; onCancel: () => void; danger?: boolean }) {
-  return <div className="form-actions"><Button onClick={onCancel}>取消</Button><Button type="primary" danger={danger} htmlType="submit" loading={submitting}>{submitText}</Button></div>;
+  return <div className="form-actions"><Button actionKey="interface-services.interface-service-management-page.8" onClick={onCancel}>取消</Button><Button actionKey="interface-services.interface-service-management-page.9" type="primary" danger={danger} htmlType="submit" loading={submitting}>{submitText}</Button></div>;
 }
 
 function ServiceStatusTag({ status }: { status: InterfaceServiceStatus }) {

@@ -1,5 +1,6 @@
+import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Button, Empty, List, Space } from 'antd';
+import { Alert, Empty, List, Space } from 'antd';
 import { rankApi as api, type WithdrawalOption } from './api';
 
 /** 必要退出操作独立于排行入口，关闭功能或失去关系后仍可撤回本人偏好。 */
@@ -30,11 +31,10 @@ export function AnonymousRankWithdrawalPage() {
     finally { writing.current = false; if (version === sequence.current) setBusy(false); }
   }
   return <div className="page-stack">
-    <header className="page-heading"><h1>排行查看授权</h1><Button disabled={busy} onClick={() => void load()}>刷新授权</Button></header>
-    <p>这里可撤回本人已开启的查看授权。功能关闭或孩子离开班级后仍可撤回；不会改变孩子的参榜资格。</p>
+    <header className="page-heading"><h1>排行查看授权</h1><Button actionKey="rank-preferences.anonymous-rank-withdrawal-page.1" disabled={busy} onClick={() => void load()}>刷新授权</Button></header>
     {error && <Alert type="error" message={error} />}
     <List loading={busy} dataSource={items} locale={{ emptyText: <Empty description="没有已开启的查看授权" /> }}
       renderItem={(item, index) => <List.Item><Space wrap><span>查看授权 {index + 1}</span>
-        <Button disabled={busy || !!error} onClick={() => void withdraw(item)}>撤回授权</Button></Space></List.Item>} />
+        <Button actionKey="rank-preferences.anonymous-rank-withdrawal-page.2" disabled={busy || !!error} onClick={() => void withdraw(item)}>撤回授权</Button></Space></List.Item>} />
   </div>;
 }

@@ -166,7 +166,7 @@ public class ParentPhoneAuthenticationService {
             throw new IllegalArgumentException("客户端类型不能为空");
         }
 
-        User user = userMapper.findByUsername(mobile);
+        User user = userMapper.findByUsernameForUpdate(mobile);
         ParentProfile profile = user == null ? null : parentMapper.findProfileByUserId(user.id());
         if (!isEnabledParent(user, profile) || !matchesPassword(command.password(), user.passwordHash())) {
             throw new AuthenticationFailedException();

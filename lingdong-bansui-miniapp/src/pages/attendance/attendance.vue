@@ -1,5 +1,5 @@
 <template>
-  <view class="page-shell">
+  <view class="has-tabbar page-shell">
     <view v-if="loading" class="state">正在核验考勤权限</view>
     <template v-else-if="enabled">
       <view class="heading-band">
@@ -99,10 +99,14 @@
       <view v-if="errorMessage" class="error">{{ errorMessage }}</view>
     </template>
     <view v-else class="state"><text>{{ errorMessage || '考勤暂不可用' }}</text><button class="outline" @tap="refresh">重新加载</button></view>
+  <AppTabBar v-if="identity === 'teacher'" :items="TEACHER_TABS" :active="2" />
+  <AppTabBar v-else-if="identity === 'organization'" :items="ORG_TABS" :active="2" />
   </view>
 </template>
 
 <script setup lang="ts">
+import AppTabBar from '@/components/AppTabBar.vue';
+import { TEACHER_TABS, ORG_TABS } from '@/config/tabbar';
 import { computed, ref } from 'vue';
 import { onLoad, onShow, onHide, onUnload, onPullDownRefresh } from '@dcloudio/uni-app';
 import { getMiniappCapabilities } from '@/api/capability';
@@ -146,7 +150,7 @@ const queryStatuses = [{ value: '', label: '全部状态' }, ...attendanceStatus
 let epoch = 0;
 
 onLoad((query) => {
-  const value = query?.identity;
+  const value = query?.identity ?? hashQueryIdentity();
   if (value === 'teacher' || value === 'organization' || value === 'parent' || value === 'student') {
     identity.value = value;
     identityValid.value = true;
@@ -156,6 +160,15 @@ onShow(refresh);
 onHide(invalidate);
 onUnload(invalidate);
 onPullDownRefresh(async () => { await refresh(); uni.stopPullDownRefresh(); });
+
+/** H5 直接刷新或粘贴链接进入时，onLoad 的 query 可能为空，从地址栏 hash 兜底解析。 */
+function hashQueryIdentity(): string | undefined {
+  // #ifdef H5
+  const match = window.location.hash.match(/[?&]identity=(teacher|organization|parent|student)/);
+  if (match) return match[1];
+  // #endif
+  return undefined;
+}
 
 function token(): string {
   if (!identityValid.value) return '';
@@ -173,7 +186,18 @@ function invalidate(): void {
 async function leave(): Promise<void> {
   const home = identityValid.value && token() ? `/pages/${identity.value}-home/${identity.value}-home` : '/pages/index/index';
   invalidate();
+  // #ifdef H5
+  // 页面栈被破坏时 reLaunch 可能静默不跳转，超时后改写 hash 强制离开，避免滞留死状态。
+  await new Promise<void>((resolve) => {
+    let settled = false;
+    const fallback = () => { if (!settled) { settled = true; window.location.hash = `#${home}`; resolve(); } };
+    const timer = setTimeout(fallback, 800);
+    uni.reLaunch({ url: home, success: () => { clearTimeout(timer); if (!settled) { settled = true; resolve(); } }, fail: fallback });
+  });
+  // #endif
+  // #ifndef H5
   await uni.reLaunch({ url: home });
+  // #endif
 }
 async function verifyAccess(current: number, accessToken: string): Promise<boolean> {
   const capabilities = await getMiniappCapabilities();
@@ -321,7 +345,8 @@ function formatTime(value: string): string { return value ? value.replace('T', '
 .tab { flex: 1; padding: 20rpx 12rpx; text-align: center; border-bottom: 4rpx solid transparent; }
 .tab.active { border-color: #167c5a; color: #167c5a; font-weight: 600; }
 .two-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16rpx; }
-.two-columns > * { min-width: 0; }
+/* 微信 WXSS 不支持 * 通配符选择器，用显式元素选择器替代。 */
+.two-columns > view, .two-columns > picker, .two-columns > button { min-width: 0; }
 .field { width: 100%; min-height: 80rpx; height: auto; margin-top: 18rpx; padding: 20rpx 16rpx; border: 2rpx solid #cbd7d1; border-radius: 8rpx; box-sizing: border-box; font-size: 27rpx; line-height: 1.5; overflow-wrap: anywhere; }
 input.field { height: 84rpx; }
 .primary, .outline { width: 100%; min-height: 80rpx; margin: 18rpx 0 0; padding: 18rpx 14rpx; border-radius: 8rpx; font-size: 27rpx; line-height: 1.5; box-sizing: border-box; }

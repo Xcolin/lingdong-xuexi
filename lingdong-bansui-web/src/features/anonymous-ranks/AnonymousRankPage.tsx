@@ -1,5 +1,7 @@
+import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
+import { ViewportTable as Table } from '../../components/ViewportTable';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Button, Empty, Select, Space, Spin, Switch, Table } from 'antd';
+import { Alert, Empty, Select, Space, Spin, Switch } from 'antd';
 import { rankApi as api, type StudentOption, type ClassOption, type Preference, type RankRow } from './api';
 const reason = (error: unknown) => error instanceof Error ? error.message : '读取失败，请刷新重试';
 
@@ -19,8 +21,7 @@ export function AnonymousRankPage() {
   }, [reload]);
   return <div className="page-stack">
     <header className="page-heading"><h1>班级匿名排行</h1>
-      <Button disabled={loading} onClick={() => setReload(value => value + 1)}>刷新孩子列表</Button></header>
-    <p>仅显示名次与积分；同分并列。累计当前班级来源的净积分，不含家庭积分。开启仅控制本人查看。</p>
+      <Button actionKey="anonymous-ranks.anonymous-rank-page.1" disabled={loading} onClick={() => setReload(value => value + 1)}>刷新孩子列表</Button></header>
     {error && <Alert type="error" message={error} />}
     {loading ? <Spin /> : <Select aria-label="选择孩子" style={{ width: '100%', maxWidth: 320 }} value={student}
       options={students.map(item => ({ value: item.studentId, label: item.studentName }))} onChange={setStudent} />}
@@ -98,7 +99,7 @@ function Ranking({ student, classroom }: { student: string; classroom: string })
   return <section aria-label="匿名排行">
     <Space wrap><span>主动开启查看</span><Switch aria-label="主动开启查看" checked={preference?.enabled ?? false}
       loading={busy} disabled={busy || !preference || writeError} onChange={value => void change(value)} />
-      <Button disabled={busy} onClick={() => void load()}>刷新排行</Button></Space>
+      <Button actionKey="anonymous-ranks.anonymous-rank-page.2" disabled={busy} onClick={() => void load()}>刷新排行</Button></Space>
     {error && <Alert style={{ marginTop: 12 }} type="error" message={error} />}
     {!preference?.enabled && !busy && <p>默认关闭，主动开启后可查看班级匿名排行。</p>}
     {rows && <Table style={{ marginTop: 16 }} pagination={false} dataSource={rows.map((row, index) => ({ ...row, key: index }))}

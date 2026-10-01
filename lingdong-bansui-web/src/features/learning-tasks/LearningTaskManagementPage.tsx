@@ -1,18 +1,8 @@
+import { ConfiguredModal as Modal } from '../../components/ConfiguredModal';
+import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
+import { ViewportTable as Table } from '../../components/ViewportTable';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import {
-  Alert,
-  Button,
-  Form,
-  Input,
-  Modal,
-  Segmented,
-  Select,
-  Space,
-  Table,
-  Tag,
-  Tooltip,
-  message
-} from 'antd';
+import { Alert, Form, Input, Segmented, Select, Space, Tag, Tooltip, message } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
 import { BarChart3, BookOpen, CircleStop, CopyPlus, Edit3, Plus, Rocket, Search } from 'lucide-react';
 import type { CurrentUser } from '../../api/auth';
@@ -131,7 +121,7 @@ export function LearningTaskManagementPage({
   }
 
   function confirmPublish(task: LearningTaskSummary): void {
-    Modal.confirm({
+    Modal.confirm({ actionPrefix: 'learning-tasks.learning-task-management-page.confirm.1',
       title: '确认发布学习任务',
       content: `${task.title}，计划日期 ${task.scheduledDate}。发布后内容不可再编辑。`,
       okText: '确认发布',
@@ -150,7 +140,7 @@ export function LearningTaskManagementPage({
   }
 
   function confirmBatchPublish(): void {
-    Modal.confirm({
+    Modal.confirm({ actionPrefix: 'learning-tasks.learning-task-management-page.confirm.2',
       title: '确认批量发布',
       content: `将逐项发布已选择的 ${selectedTaskIds.length} 个草稿，单项失败不会影响其他任务。`,
       okText: '确认发布',
@@ -172,7 +162,7 @@ export function LearningTaskManagementPage({
   }
 
   function confirmStopRecurrence(task: LearningTaskSummary): void {
-    Modal.confirm({
+    Modal.confirm({ actionPrefix: 'learning-tasks.learning-task-management-page.confirm.3',
       title: '确认停止每日固定任务',
       content: `${task.title}停止后不再生成后续日期任务，已经生成的学生任务不会删除。`,
       okText: '确认停止',
@@ -208,24 +198,24 @@ export function LearningTaskManagementPage({
           {viewMode === 'TASKS' && (
             <>
               {canCopyPreviousDay && (
-                <Button
+                <Button actionKey="learning-tasks.learning-task-management-page.1"
                   icon={<CopyPlus size={16} />}
                   onClick={() => setCopyModalOpen(true)}
                 >复制昨日任务</Button>
               )}
               {canUseTaskTemplates && (
-                <Button
+                <Button actionKey="learning-tasks.learning-task-management-page.2"
                   icon={<BookOpen size={16} />}
                   onClick={() => setTemplateLibraryOpen(true)}
                 >任务模板</Button>
               )}
-              <Button
+              <Button actionKey="learning-tasks.learning-task-management-page.3"
                 icon={<Rocket size={16} />}
                 disabled={selectedTaskIds.length === 0}
                 loading={batchPublishing}
                 onClick={confirmBatchPublish}
               >批量发布</Button>
-              <Button
+              <Button actionKey="learning-tasks.learning-task-management-page.4"
                 type="primary"
                 icon={<Plus size={16} />}
                 onClick={() => {
@@ -246,7 +236,7 @@ export function LearningTaskManagementPage({
           type="error"
           showIcon
           message={errorMessage}
-          action={<Button size="small" onClick={() => void loadTasks(filters, directory.page)}>重试</Button>}
+          action={<Button actionKey="learning-tasks.learning-task-management-page.5" size="small" onClick={() => void loadTasks(filters, directory.page)}>重试</Button>}
         />
       )}
 
@@ -263,7 +253,7 @@ export function LearningTaskManagementPage({
           </Form.Item>
           <Form.Item label="计划日期" name="scheduledDate"><Input type="date" /></Form.Item>
           <Form.Item label="标题" name="keyword"><Input allowClear maxLength={50} /></Form.Item>
-          <Form.Item><Button type="primary" htmlType="submit" icon={<Search size={16} />}>查询</Button></Form.Item>
+          <Form.Item><Button actionKey="learning-tasks.learning-task-management-page.6" type="primary" htmlType="submit" icon={<Search size={16} />}>查询</Button></Form.Item>
         </Form>
 
         <Table<LearningTaskSummary>
@@ -310,13 +300,13 @@ export function LearningTaskManagementPage({
               render: (_, task) => task.status === 'DRAFT' ? (
                 <Space size={2}>
                   <ActionButton
-                    label={`编辑 ${task.title}`}
+                    actionKey="learning-tasks.draft.edit" label={`编辑 ${task.title}`}
                     title="编辑草稿"
                     icon={<Edit3 size={16} />}
                     onClick={() => void openEditor(task)}
                   />
                   <ActionButton
-                    label={`发布 ${task.title}`}
+                    actionKey="learning-tasks.publish" label={`发布 ${task.title}`}
                     title="发布任务"
                     icon={<Rocket size={16} />}
                     onClick={() => confirmPublish(task)}
@@ -326,7 +316,7 @@ export function LearningTaskManagementPage({
                 <Space size={2}>
                   {currentUser.permissionCodes.includes('LEARNING_TASK_PROGRESS_READ') && (
                     <ActionButton
-                      label={`查看进度 ${task.title}`}
+                      actionKey="learning-tasks.progress" label={`查看进度 ${task.title}`}
                       title="学生进度"
                       icon={<BarChart3 size={16} />}
                       onClick={() => setProgressTask(task)}
@@ -334,7 +324,7 @@ export function LearningTaskManagementPage({
                   )}
                   {task.recurrenceStatus === 'ACTIVE' && (
                     <ActionButton
-                      label={`停止 ${task.title}`}
+                      actionKey="learning-tasks.recurrence.stop" label={`停止 ${task.title}`}
                       title="停止每日固定任务"
                       icon={<CircleStop size={16} />}
                       onClick={() => confirmStopRecurrence(task)}
@@ -387,14 +377,15 @@ export function LearningTaskManagementPage({
 }
 
 function ActionButton({
+  actionKey,
   label,
   title,
   icon,
   onClick
-}: { label: string; title: string; icon: ReactNode; onClick: () => void }) {
+}: { actionKey: string; label: string; title: string; icon: ReactNode; onClick: () => void }) {
   return (
     <Tooltip title={title}>
-      <Button type="text" aria-label={label} icon={icon} onClick={onClick} />
+      <Button actionKey={actionKey} type="text" aria-label={label} icon={icon} onClick={onClick} />
     </Tooltip>
   );
 }

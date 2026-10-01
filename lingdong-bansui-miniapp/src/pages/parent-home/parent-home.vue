@@ -1,26 +1,64 @@
 <template>
-  <view class="page-shell">
-    <view class="top-bar">
-      <view>
-        <text class="brand-name">灵动伴随</text>
-        <text class="account-text">{{ session?.mobile || '' }}</text>
+  <view class="ld-page has-tabbar">
+    <view class="ld-topbar">
+      <view class="ld-topbar-brand">
+        <view class="ld-topbar-logo">灵</view>
+        <view>
+          <text class="ld-topbar-name">家长端</text>
+          <text class="ld-topbar-meta">{{ session?.mobile || '' }}</text>
+        </view>
       </view>
-      <button class="logout-button" :disabled="loggingOut" @tap="logout">退出</button>
+      <button class="ld-logout" :disabled="loggingOut" @tap="logout">退出</button>
     </view>
-    <view class="content-band">
-      <text class="welcome-title">家长端</text>
-      <button v-if="familyTaskEnabled" class="relationship-entry" @tap="openFamilyTasks">家庭任务</button>
-      <button v-if="rewardEnabled" class="relationship-entry" @tap="openRewards">家庭奖励与兑换</button>
-      <button v-if="weeklyEnabled" class="relationship-entry" @tap="openWeekly">孩子成长周报</button>
-      <button v-if="rankEnabled" class="relationship-entry" @tap="openRank(false)">班级匿名排行</button>
-      <button v-if="rankWithdrawalEnabled" class="relationship-entry" @tap="openRank(true)">排行查看授权</button>
-      <button v-if="attendanceEnabled" class="relationship-entry" @tap="openAttendance">考勤记录</button>
-      <view v-if="reviewEnabled" class="status-text"><text v-if="reviewLoading">正在加载待审核任务…</text><text v-else-if="reviewError">{{ reviewError }}</text><text v-else>{{ reviewTotal === 0 ? '暂无待审核任务' : `待审核任务：${reviewTotal} 项` }}</text><button class="relationship-entry" @tap="openReviews">查看待审核任务</button></view>
-      <button v-if="relationshipEnabled" class="relationship-entry" @tap="openRelationships">家长关系</button>
-      <button v-if="accountSecurityEnabled" class="relationship-entry" @tap="openAccountSecurity">账号安全</button>
-      <button v-if="accountLifecycleEnabled" class="relationship-entry" @tap="openAccountLifecycle">账号与手机号</button>
-      <button v-if="studentWechatAuthEnabled" class="relationship-entry" @tap="openStudentWechat">学生微信绑定</button>
+
+    <view v-if="reviewEnabled" class="ld-card review-card">
+      <view class="review-info">
+        <text class="ld-card-title">任务审核</text>
+        <text class="review-count">{{ reviewLoading ? '正在加载待审核任务…' : reviewError || (reviewTotal === 0 ? '暂无待审核任务' : `待审核任务：${reviewTotal} 项`) }}</text>
+      </view>
+      <button class="review-button" @tap="openReviews">查看</button>
     </view>
+
+    <view class="ld-heading">
+      <text class="ld-heading-title">快捷入口</text>
+      <text class="ld-heading-sub">审核任务、奖励与孩子的成长动态</text>
+    </view>
+
+    <view class="ld-group">
+      <button v-if="rewardEnabled" class="ld-cell" @tap="openRewards">
+        <view class="ld-cell-icon gold">奖</view>
+        <view class="ld-cell-body">
+          <text class="ld-cell-title">家庭奖励与兑换</text>
+          <text class="ld-cell-sub">上架奖励并处理孩子的兑换申请</text>
+        </view>
+        <text class="ld-cell-arrow">›</text>
+      </button>
+      <button v-if="rankEnabled" class="ld-cell" @tap="openRank(false)">
+        <view class="ld-cell-icon teal">榜</view>
+        <view class="ld-cell-body">
+          <text class="ld-cell-title">班级匿名排行</text>
+          <text class="ld-cell-sub">主动开启后查看班级名次</text>
+        </view>
+        <text class="ld-cell-arrow">›</text>
+      </button>
+      <button v-if="rankWithdrawalEnabled" class="ld-cell" @tap="openRank(true)">
+        <view class="ld-cell-icon teal">授</view>
+        <view class="ld-cell-body">
+          <text class="ld-cell-title">排行查看授权</text>
+          <text class="ld-cell-sub">撤回已开启的查看授权</text>
+        </view>
+        <text class="ld-cell-arrow">›</text>
+      </button>
+      <button v-if="attendanceEnabled" class="ld-cell" @tap="openAttendance()">
+        <view class="ld-cell-icon ">勤</view>
+        <view class="ld-cell-body">
+          <text class="ld-cell-title">考勤记录</text>
+          <text class="ld-cell-sub">查看孩子的到离园记录</text>
+        </view>
+        <text class="ld-cell-arrow">›</text>
+      </button>
+    </view>
+  <AppTabBar :items="PARENT_TABS" :active="0" />
   </view>
 </template>
 
@@ -36,6 +74,8 @@ import { canReadWeekly } from '@/api/parent-weekly-review';
 import { canManageFamily } from '@/models/family-task-draft';
 import { canUseParentRewards } from '@/api/parent-reward';
 import { useAttendanceEntry } from '@/composables/use-attendance-entry';
+import AppTabBar from '@/components/AppTabBar.vue';
+import { PARENT_TABS } from '@/config/tabbar';
 const { attendanceEnabled, openAttendance } = useAttendanceEntry('parent');
 import {
   clearParentSession,
@@ -128,37 +168,35 @@ async function logout(): Promise<void> {
   }
 }
 
-function openRelationships(): Promise<unknown> {
-  return uni.navigateTo({ url: '/pages/parent-relationships/parent-relationships' });
-}
-
-function openAccountSecurity(): Promise<unknown> {
-  return uni.navigateTo({ url: '/pages/account-security/account-security?identity=parent' });
-}
-
-function openAccountLifecycle(): Promise<unknown> {
-  return uni.navigateTo({ url: '/pages/parent-account-lifecycle/parent-account-lifecycle' });
-}
-
-function openStudentWechat(): Promise<unknown> {
-  return uni.navigateTo({ url: '/pages/parent-student-wechat/parent-student-wechat' });
-}
 </script>
 
 <style lang="scss" scoped>
-.page-shell { min-height: 100vh; background: #f4f7f5; }
-/* #ifdef H5 */
-.page-shell { min-height: calc(100vh - 44px); }
-/* #endif */
-.top-bar { min-height: 144rpx; display: flex; align-items: center; justify-content: space-between; gap: 24rpx; padding: 32rpx 40rpx; box-sizing: border-box; border-bottom: 2rpx solid #dbe3df; background: #ffffff; }
-.brand-name, .account-text { display: block; }
-.brand-name { color: #1c2b28; font-size: 36rpx; font-weight: 700; }
-.account-text { margin-top: 8rpx; color: #708078; font-size: 24rpx; }
-.logout-button { width: 112rpx; height: 64rpx; margin: 0; padding: 0; background: transparent; color: #9a4b38; font-size: 26rpx; }
-.logout-button::after { border: 0; }
-.content-band { padding: 72rpx 40rpx; }
-.welcome-title { display: block; color: #1c2b28; font-size: 42rpx; font-weight: 700; }
-.status-text { display: block; margin-top: 48rpx; padding: 48rpx 0; border-top: 2rpx solid #dbe3df; border-bottom: 2rpx solid #dbe3df; color: #708078; font-size: 28rpx; }
-.relationship-entry { width: 100%; height: 88rpx; margin: 32rpx 0 0; border-radius: 10rpx; background: #167c5a; color: #ffffff; font-size: 29rpx; }
-.relationship-entry::after { border: 0; }
+.review-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24rpx;
+  margin-top: 32rpx;
+}
+.review-count {
+  display: block;
+  margin-top: 10rpx;
+  color: $ld-text-muted;
+  font-size: $ld-font-caption;
+}
+.review-button {
+  width: 132rpx;
+  height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  border-radius: $ld-radius-pill;
+  background: $ld-primary;
+  color: #ffffff;
+  font-size: $ld-font-caption;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.review-button::after { border: 0; }
 </style>

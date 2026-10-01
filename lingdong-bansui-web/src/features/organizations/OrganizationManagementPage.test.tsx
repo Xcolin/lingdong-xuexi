@@ -101,7 +101,9 @@ describe('组织管理页面', () => {
     const user = userEvent.setup();
     render(<OrganizationManagementPage currentUser={systemAdministrator} organizationManagementEnabled />);
 
-    expect(await screen.findByText('区域')).toBeInTheDocument();
+    await user.click(screen.getByRole('tab', { name: '组织类型' }));
+    expect(await screen.findByText('区域')).toBeVisible();
+    await user.click(screen.getByRole('tab', { name: '组织架构' }));
     expect(await screen.findByText('测试学校')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: '新增组织类型' }));

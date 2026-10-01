@@ -1,4 +1,6 @@
-import { Alert, Button, Checkbox, Form, Input, message, Modal, Select, Space, Table, Tabs, Tag, Tooltip } from 'antd';
+import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
+import { ViewportTable as Table } from '../../components/ViewportTable';
+import { Alert, Checkbox, Form, Input, message, Modal, Select, Space, Tabs, Tag, Tooltip } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
 import { Check, RefreshCw, Send, Trash2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -208,10 +210,10 @@ export function CacheManagementPage({ canManage, canReview }: CacheManagementPag
             render: (_, item) => (
               <Space size={4}>
                 <Tooltip title="批准并执行">
-                  <Button type="text" icon={<Check size={16} />} aria-label={`批准-${item.taskTitle}`} onClick={() => openReviewModal(item, 'approve')} />
+                  <Button actionKey="cache-management.cache-management-page.1" type="text" icon={<Check size={16} />} aria-label={`批准-${item.taskTitle}`} onClick={() => openReviewModal(item, 'approve')} />
                 </Tooltip>
                 <Tooltip title="驳回">
-                  <Button danger type="text" icon={<X size={16} />} aria-label={`驳回-${item.taskTitle}`} onClick={() => openReviewModal(item, 'reject')} />
+                  <Button actionKey="cache-management.cache-management-page.2" danger type="text" icon={<X size={16} />} aria-label={`驳回-${item.taskTitle}`} onClick={() => openReviewModal(item, 'reject')} />
                 </Tooltip>
               </Space>
             )
@@ -227,13 +229,12 @@ export function CacheManagementPage({ canManage, canReview }: CacheManagementPag
         <h1>缓存管理</h1>
         {canManage && (
           <Space wrap>
-            <Button icon={<RefreshCw size={16} />} onClick={openDirectModal}>执行缓存操作</Button>
-            <Button danger icon={<Send size={16} />} onClick={openHighRiskModal}>提交高风险操作</Button>
+            <Button actionKey="cache-management.cache-management-page.3" icon={<RefreshCw size={16} />} onClick={openDirectModal}>执行缓存操作</Button>
+            <Button actionKey="cache-management.cache-management-page.4" danger icon={<Send size={16} />} onClick={openHighRiskModal}>提交高风险操作</Button>
           </Space>
         )}
       </div>
-      <Alert type="info" showIcon message="当前真实操作范围：数据字典支持刷新和清除；全部缓存与用户会话仅支持审批后清除。其他缓存域尚无处理器，不提供执行入口。" />
-      {errorMessage && <Alert type="error" showIcon message={errorMessage} action={<Button size="small" onClick={() => activeTab === 'reviews' ? void loadReviews() : void loadOperations()}>重试</Button>} />}
+      {errorMessage && <Alert type="error" showIcon message={errorMessage} action={<Button actionKey="cache-management.cache-management-page.5" size="small" onClick={() => activeTab === 'reviews' ? void loadReviews() : void loadOperations()}>重试</Button>} />}
       <Tabs
         activeKey={activeTab}
         onChange={setActiveTab}
@@ -313,8 +314,8 @@ function ModalActions({ submitting, submitText, onCancel, danger = false }: {
 }) {
   return (
     <div className="form-actions">
-      <Button onClick={onCancel}>取消</Button>
-      <Button type="primary" danger={danger} htmlType="submit" loading={submitting} icon={danger ? <Trash2 size={16} /> : undefined}>{submitText}</Button>
+      <Button actionKey="cache-management.cache-management-page.6" onClick={onCancel}>取消</Button>
+      <Button actionKey="cache-management.cache-management-page.7" type="primary" danger={danger} htmlType="submit" loading={submitting} icon={danger ? <Trash2 size={16} /> : undefined}>{submitText}</Button>
     </div>
   );
 }

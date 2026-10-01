@@ -100,6 +100,7 @@ describe('角色与权限管理页面', () => {
   it('按事件类型查询身份权限变更审计', async () => {
     const user = userEvent.setup();
     renderPage();
+    await user.click(screen.getByRole('tab', { name: '授权审计' }));
     expect(await screen.findByText('权限变更日志')).toBeInTheDocument();
     await waitFor(() => expect(iamApi.listAudits).toHaveBeenCalledWith({ page: 1, pageSize: 10 }));
     expect(await screen.findByText('创建用户')).toBeInTheDocument();

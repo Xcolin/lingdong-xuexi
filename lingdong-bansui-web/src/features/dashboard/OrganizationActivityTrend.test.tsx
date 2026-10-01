@@ -42,7 +42,7 @@ describe('Web 机构管理员看板活跃度趋势', () => {
     granted();
     mocks.activityTrends.mockResolvedValue({ items: [] });
     render(<OrganizationActivityTrend userId={userId} />);
-    expect(await screen.findByText('近 30 天暂无学员活跃数据')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText('近 30 天暂无学员活跃数据')).toBeInTheDocument());
   });
 
   it('有数据时以柱状图呈现各日活跃人数', async () => {

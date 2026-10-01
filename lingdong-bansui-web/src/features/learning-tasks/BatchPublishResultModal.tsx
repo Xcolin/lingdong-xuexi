@@ -1,4 +1,6 @@
-import { Modal, Table, Tag } from 'antd';
+import { ConfiguredModal as Modal } from '../../components/ConfiguredModal';
+import { ViewportTable as Table } from '../../components/ViewportTable';
+import { Tag } from 'antd';
 import type { BatchPublishResult } from './types';
 
 interface BatchPublishResultModalProps {
@@ -9,7 +11,7 @@ interface BatchPublishResultModalProps {
 /** 清晰区分批量发布中的成功项和失败项。 */
 export function BatchPublishResultModal({ result, onClose }: BatchPublishResultModalProps) {
   return (
-    <Modal
+    <Modal actionPrefix="learning-tasks.batch-publish-result-modal.modal.1"
       title="批量发布结果"
       open={Boolean(result)}
       onCancel={onClose}

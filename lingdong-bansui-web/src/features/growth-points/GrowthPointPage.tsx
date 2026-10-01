@@ -1,5 +1,7 @@
+import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
+import { ViewportTable as Table } from '../../components/ViewportTable';
 import { useEffect, useState } from 'react';
-import { Alert, App as AntdApp, Button, Empty, Form, Input, Modal, Select, Space, Statistic, Table, Tag, Tooltip } from 'antd';
+import { Alert, App as AntdApp, Empty, Form, Input, Modal, Select, Space, Statistic, Tag, Tooltip } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
 import { Download, RefreshCw, RotateCcw } from 'lucide-react';
 import { CreateExportJobModal } from '../export-jobs/CreateExportJobModal';
@@ -157,7 +159,7 @@ export function GrowthPointPage({
             onChange={changeStudent}
           />
           {dataExportEnabled && canCreateExport ? <Tooltip title="导出当前孩子的积分台账">
-            <Button
+            <Button actionKey="growth-points.growth-point-page.1"
               aria-label="导出积分台账"
               icon={<Download size={16} />}
               disabled={!selectedStudentId}
@@ -165,7 +167,7 @@ export function GrowthPointPage({
             >导出</Button>
           </Tooltip> : null}
           <Tooltip title="刷新积分">
-            <Button
+            <Button actionKey="growth-points.growth-point-page.2"
               aria-label="刷新积分"
               icon={<RefreshCw size={16} />}
               loading={loading}
@@ -181,7 +183,7 @@ export function GrowthPointPage({
           type="error"
           showIcon
           message={errorMessage}
-          action={<Button size="small" onClick={() => void loadInitial()}>重试</Button>}
+          action={<Button actionKey="growth-points.growth-point-page.3" size="small" onClick={() => void loadInitial()}>重试</Button>}
         />
       )}
 
@@ -254,7 +256,7 @@ export function GrowthPointPage({
                   render: (_: unknown, item: GrowthPointLedger) => item.correctable ? (
                     <Tooltip title={item.correctionDeadline
                       ? `截止 ${formatDateTime(item.correctionDeadline)}` : '积分纠错'}>
-                      <Button
+                      <Button actionKey="growth-points.growth-point-page.4"
                         type="link"
                         size="small"
                         icon={<RotateCcw size={15} />}
@@ -300,8 +302,8 @@ export function GrowthPointPage({
               <Input.TextArea rows={4} maxLength={500} showCount placeholder="说明误操作情况和重新审核依据" />
             </Form.Item>
             <div className="form-actions">
-              <Button disabled={correctionSubmitting} onClick={closeCorrection}>取消</Button>
-              <Button type="primary" htmlType="submit" loading={correctionSubmitting}>确认纠错</Button>
+              <Button actionKey="growth-points.growth-point-page.5" disabled={correctionSubmitting} onClick={closeCorrection}>取消</Button>
+              <Button actionKey="growth-points.growth-point-page.6" type="primary" htmlType="submit" loading={correctionSubmitting}>确认纠错</Button>
             </div>
           </Form>
         )}

@@ -1,20 +1,7 @@
+import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
+import { ViewportTable as Table } from '../../components/ViewportTable';
 import { useEffect, useMemo, useState } from 'react';
-import {
-  Alert,
-  App as AntdApp,
-  Button,
-  Empty,
-  Form,
-  Input,
-  InputNumber,
-  Modal,
-  Select,
-  Space,
-  Table,
-  Tabs,
-  Tag,
-  Tooltip
-} from 'antd';
+import { Alert, App as AntdApp, Empty, Form, Input, InputNumber, Modal, Select, Space, Tabs, Tag, Tooltip } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
 import { Check, Eye, EyeOff, Pencil, Plus, RefreshCw, Trash2, X } from 'lucide-react';
 import { rewardApi } from './api';
@@ -266,7 +253,7 @@ export function RewardManagementPage() {
             onChange={changeStudent}
           />
           <Tooltip title="刷新奖励数据">
-            <Button
+            <Button actionKey="rewards.reward-management-page.1"
               aria-label="刷新奖励数据"
               icon={<RefreshCw size={16} />}
               loading={loading}
@@ -274,7 +261,7 @@ export function RewardManagementPage() {
               onClick={() => selectedStudentId && void loadStudentData(selectedStudentId)}
             />
           </Tooltip>
-          <Button
+          <Button actionKey="rewards.reward-management-page.2"
             type="primary"
             icon={<Plus size={16} />}
             disabled={!selectedStudentId}
@@ -288,7 +275,7 @@ export function RewardManagementPage() {
           type="error"
           showIcon
           message={errorMessage}
-          action={<Button size="small" onClick={() => void loadInitial()}>重试</Button>}
+          action={<Button actionKey="rewards.reward-management-page.3" size="small" onClick={() => void loadInitial()}>重试</Button>}
         />
       )}
 
@@ -338,7 +325,7 @@ export function RewardManagementPage() {
                         render: (_, reward) => (
                           <Space size={4}>
                             <Tooltip title="编辑奖励">
-                              <Button
+                              <Button actionKey="rewards.reward-management-page.4"
                                 type="text"
                                 aria-label={`编辑奖励 ${reward.rewardName}`}
                                 icon={<Pencil size={16} />}
@@ -346,7 +333,7 @@ export function RewardManagementPage() {
                               />
                             </Tooltip>
                             <Tooltip title={reward.status === 'ONLINE' ? '下架奖励' : '上架奖励'}>
-                              <Button
+                              <Button actionKey="rewards.reward-management-page.5"
                                 type="text"
                                 aria-label={`${reward.status === 'ONLINE' ? '下架' : '上架'}奖励 ${reward.rewardName}`}
                                 icon={reward.status === 'ONLINE' ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -354,7 +341,7 @@ export function RewardManagementPage() {
                               />
                             </Tooltip>
                             <Tooltip title="删除奖励">
-                              <Button
+                              <Button actionKey="rewards.reward-management-page.6"
                                 type="text"
                                 danger
                                 aria-label={`删除奖励 ${reward.rewardName}`}
@@ -420,14 +407,14 @@ export function RewardManagementPage() {
                           title: '操作', key: 'actions', width: 190, fixed: 'right',
                           render: (_, exchange) => exchange.status === 'PENDING_APPROVAL' ? (
                             <Space size={4}>
-                              <Button
+                              <Button actionKey="rewards.reward-management-page.7"
                                 type="link"
                                 size="small"
                                 icon={<Check size={15} />}
                                 aria-label={`同意兑换 ${exchange.rewardName}`}
                                 onClick={() => approveExchange(exchange)}
                               >同意</Button>
-                              <Button
+                              <Button actionKey="rewards.reward-management-page.8"
                                 type="link"
                                 danger
                                 size="small"
@@ -437,7 +424,7 @@ export function RewardManagementPage() {
                               >驳回</Button>
                             </Space>
                           ) : exchange.status === 'PENDING_VERIFICATION' ? (
-                            <Button
+                            <Button actionKey="rewards.reward-management-page.9"
                               type="link"
                               size="small"
                               icon={<Check size={15} />}
@@ -510,8 +497,8 @@ export function RewardManagementPage() {
               ]} />
             </Form.Item>
             <div className="form-actions">
-              <Button disabled={rewardSubmitting} onClick={() => setEditingReward(null)}>取消</Button>
-              <Button type="primary" htmlType="submit" loading={rewardSubmitting}>保存奖励</Button>
+              <Button actionKey="rewards.reward-management-page.10" disabled={rewardSubmitting} onClick={() => setEditingReward(null)}>取消</Button>
+              <Button actionKey="rewards.reward-management-page.11" type="primary" htmlType="submit" loading={rewardSubmitting}>保存奖励</Button>
             </div>
           </Form>
         )}
@@ -537,8 +524,8 @@ export function RewardManagementPage() {
             <Input.TextArea rows={4} maxLength={500} showCount placeholder="说明本次不能兑换的原因" />
           </Form.Item>
           <div className="form-actions">
-            <Button disabled={exchangeSubmitting} onClick={() => setRejectingExchange(null)}>取消</Button>
-            <Button type="primary" danger htmlType="submit" loading={exchangeSubmitting}>确认驳回</Button>
+            <Button actionKey="rewards.reward-management-page.12" disabled={exchangeSubmitting} onClick={() => setRejectingExchange(null)}>取消</Button>
+            <Button actionKey="rewards.reward-management-page.13" type="primary" danger htmlType="submit" loading={exchangeSubmitting}>确认驳回</Button>
           </div>
         </Form>
       </Modal>

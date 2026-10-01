@@ -79,3 +79,46 @@ $lingdong-primary-color: #167c5a;
 $lingdong-page-background: #f4f7f5;
 $lingdong-text-color: #1c2b28;
 $lingdong-muted-color: #708078;
+
+/* 灵动伴随设计令牌(2026-10 视觉统一) */
+/* 色板 */
+$ld-primary: #167c5a;
+$ld-primary-deep: #0f5e44;
+$ld-primary-soft: #e7f2ed;
+$ld-primary-border: #bcd8cd;
+$ld-accent: #e26d4f;
+$ld-accent-soft: #fdeee9;
+$ld-bg: #f4f7f5;
+$ld-card: #ffffff;
+$ld-text: #1c2b28;
+$ld-text-secondary: #4b5c55;
+$ld-text-muted: #8a9992;
+$ld-line: #e3ebe7;
+$ld-line-strong: #cfdcd6;
+$ld-danger: #b34f3b;
+$ld-danger-soft: #fbeeEA;
+$ld-warning: #b97f24;
+$ld-warning-soft: #fdf5e7;
+/* 渐变 */
+$ld-gradient-primary: linear-gradient(135deg, #1d9268 0%, #167c5a 60%, #12684c 100%);
+$ld-gradient-brand: linear-gradient(160deg, #1d9268 0%, #0f5e44 100%);
+/* 圆角 */
+$ld-radius-sm: 12rpx;
+$ld-radius-md: 16rpx;
+$ld-radius-lg: 24rpx;
+$ld-radius-pill: 999rpx;
+/* 间距 */
+$ld-gap-page: 32rpx;
+$ld-gap-block: 24rpx;
+$ld-gap-inner: 20rpx;
+$ld-pad-card: 30rpx;
+/* 阴影 */
+$ld-shadow-card: 0 6rpx 24rpx rgba(21, 54, 43, 0.06);
+$ld-shadow-float: 0 10rpx 30rpx rgba(21, 54, 43, 0.12);
+$ld-shadow-btn: 0 6rpx 16rpx rgba(22, 124, 90, 0.28);
+/* 字号 */
+$ld-font-title: 40rpx;
+$ld-font-heading: 34rpx;
+$ld-font-body: 28rpx;
+$ld-font-caption: 24rpx;
+$ld-font-mini: 22rpx;

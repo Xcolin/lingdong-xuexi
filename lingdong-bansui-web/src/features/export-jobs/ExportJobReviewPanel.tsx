@@ -1,4 +1,7 @@
-import { Alert, Button, Form, Input, Modal, Space, Table, Tag, Tooltip, message } from 'antd';
+import { ConfiguredModal as Modal } from '../../components/ConfiguredModal';
+import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
+import { ViewportTable as Table } from '../../components/ViewportTable';
+import { Alert, Form, Input, Space, Tag, Tooltip, message } from 'antd';
 import { Check, RefreshCw, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { exportJobApi, type ExportJobReview, type ExportJobReviewPage } from '../../api/export-jobs';
@@ -44,7 +47,7 @@ export function ExportJobReviewPanel() {
   return <section className="export-table-panel" aria-label="敏感导出审核">
     <div className="export-panel-toolbar">
       <span>仅展示等待当前系统审核员处理的申请</span>
-      <Tooltip title="刷新待审任务"><Button aria-label="刷新待审任务" icon={<RefreshCw size={16} />} loading={loading} onClick={() => void loadPage(page.page, page.pageSize)} /></Tooltip>
+      <Tooltip title="刷新待审任务"><Button actionKey="export-jobs.export-job-review-panel.1" aria-label="刷新待审任务" icon={<RefreshCw size={16} />} loading={loading} onClick={() => void loadPage(page.page, page.pageSize)} /></Tooltip>
     </div>
     {error ? <Alert type="error" showIcon message={error} /> : null}
     <Table<ExportJobReview>
@@ -58,12 +61,12 @@ export function ExportJobReviewPanel() {
         { title: '申请时间', dataIndex: 'requestedAt', width: 170, render: formatTime },
         { title: '状态', width: 100, render: () => <Tag color="gold">待审核</Tag> },
         { title: '操作', fixed: 'right', width: 96, render: (_: unknown, item) => <Space size={2}>
-          <Tooltip title="批准"><Button type="text" aria-label={`批准-${item.requesterName}`} icon={<Check size={16} />} onClick={() => openDecision('approve', item)} /></Tooltip>
-          <Tooltip title="驳回"><Button danger type="text" aria-label={`驳回-${item.requesterName}`} icon={<X size={16} />} onClick={() => openDecision('reject', item)} /></Tooltip>
+          <Tooltip title="批准"><Button actionKey="export-jobs.export-job-review-panel.2" type="text" aria-label={`批准-${item.requesterName}`} icon={<Check size={16} />} onClick={() => openDecision('approve', item)} /></Tooltip>
+          <Tooltip title="驳回"><Button actionKey="export-jobs.export-job-review-panel.3" danger type="text" aria-label={`驳回-${item.requesterName}`} icon={<X size={16} />} onClick={() => openDecision('reject', item)} /></Tooltip>
         </Space> }
       ]}
     />
-    <Modal
+    <Modal actionPrefix="export-jobs.export-job-review-panel.modal.1"
       open={Boolean(decision)}
       title={decision?.action === 'approve' ? '批准敏感导出' : '驳回敏感导出'}
       okText={decision?.action === 'approve' ? '确认批准' : '确认驳回'}

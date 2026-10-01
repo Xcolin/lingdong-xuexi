@@ -1,17 +1,6 @@
+import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { useEffect, useMemo, useState } from 'react';
-import {
-  Button,
-  Drawer,
-  Form,
-  Input,
-  InputNumber,
-  Segmented,
-  Select,
-  Space,
-  Spin,
-  Switch,
-  message
-} from 'antd';
+import { Drawer, Form, Input, InputNumber, Segmented, Select, Space, Spin, Switch, message } from 'antd';
 import { Plus, Trash2 } from 'lucide-react';
 import type { CurrentUser } from '../../api/auth';
 import { learningTaskApi } from './api';
@@ -211,9 +200,9 @@ export function LearningTaskEditorDrawer({
       extra={
         <Space>
           {taskTemplateEnabled && currentUser.roleCodes.includes('PARENT') && (
-            <Button onClick={() => void openTemplateEditor()}>保存为个人模板</Button>
+            <Button actionKey="learning-tasks.learning-task-editor-drawer.1" onClick={() => void openTemplateEditor()}>保存为个人模板</Button>
           )}
-          <Button type="primary" loading={submitting} onClick={() => form.submit()}>保存草稿</Button>
+          <Button actionKey="learning-tasks.learning-task-editor-drawer.2" type="primary" loading={submitting} onClick={() => form.submit()}>保存草稿</Button>
         </Space>
       }
     >
@@ -321,7 +310,7 @@ export function LearningTaskEditorDrawer({
               <div className="task-target-list">
                 <div className="task-target-heading">
                   <span>任务目标</span>
-                  <Button
+                  <Button actionKey="learning-tasks.learning-task-editor-drawer.3"
                     type="text"
                     icon={<Plus size={16} />}
                     onClick={() => add({ targetType: defaultTargetType(sourceType), targetId: '' })}
@@ -353,7 +342,7 @@ export function LearningTaskEditorDrawer({
                         );
                       }}
                     </Form.Item>
-                    <Button
+                    <Button actionKey="learning-tasks.learning-task-editor-drawer.4"
                       type="text"
                       danger
                       aria-label="删除目标"

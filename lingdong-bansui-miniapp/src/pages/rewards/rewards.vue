@@ -1,9 +1,13 @@
 <template>
-  <view class="page-shell">
+  <view class="ld-page has-tabbar">
     <view v-if="capabilityLoading" class="state-view">
       <text>正在检查功能状态</text>
     </view>
     <template v-else-if="rewardExchangeEnabled">
+      <view class="ld-heading">
+        <text class="ld-heading-title">奖励兑换</text>
+        <view class="ld-heading-rule" />
+      </view>
       <view class="balance-band">
         <text class="balance-label">当前可用积分</text>
         <view class="balance-value-row">
@@ -28,11 +32,21 @@
           :aria-selected="activeTab === 'exchanges'"
           @tap="activeTab = 'exchanges'"
         >我的兑换</button>
+        <button
+          class="tab-button"
+          :class="{ active: activeTab === 'points' }"
+          :aria-selected="activeTab === 'points'"
+          @tap="activeTab = 'points'"
+        >积分明细</button>
       </view>
 
       <view v-if="errorMessage" class="error-band">
         <text>{{ errorMessage }}</text>
         <button class="retry-button" @tap="reload">重试</button>
+      </view>
+
+      <view v-if="activeTab === 'points'" class="content-list">
+        <PointLedger />
       </view>
 
       <view v-if="activeTab === 'rewards'" class="content-list">
@@ -88,6 +102,7 @@
 
       <view v-if="loading" class="loading-footer">正在加载奖励数据</view>
     </template>
+  <AppTabBar :items="STUDENT_TABS" :active="1" />
   </view>
 </template>
 
@@ -106,13 +121,16 @@ import {
   type StudentRewardExchange
 } from '@/api/reward';
 import { getStudentSession } from '@/session/student-session';
+import AppTabBar from '@/components/AppTabBar.vue';
+import PointLedger from '@/components/PointLedger.vue';
+import { STUDENT_TABS } from '@/config/tabbar';
 
 const capabilityLoading = ref(true);
 const rewardExchangeEnabled = ref(false);
 const loading = ref(false);
 const applyingRewardId = ref('');
 const errorMessage = ref('');
-const activeTab = ref<'rewards' | 'exchanges'>('rewards');
+const activeTab = ref<'rewards' | 'exchanges' | 'points'>('rewards');
 const summary = ref<RewardAccountSummary | null>(null);
 const rewards = ref<StudentReward[]>([]);
 const exchanges = ref<StudentRewardExchange[]>([]);
@@ -229,52 +247,80 @@ function toMessage(error: unknown): string {
 </script>
 
 <style lang="scss" scoped>
-.page-shell { min-height: 100vh; padding-bottom: 48rpx; background: #f4f7f5; }
+.balance-band {
+  margin-top: 24rpx;
+  padding: 36rpx 32rpx;
+  border-radius: 28rpx;
+  background: $ld-gradient-primary;
+  box-shadow: 0 10rpx 30rpx rgba(22, 124, 90, 0.25);
+  color: #ffffff;
+}
+.balance-label { display: block; font-size: $ld-font-caption; opacity: 0.88; }
+.balance-value-row { display: flex; align-items: baseline; gap: 10rpx; margin-top: 12rpx; }
+.balance-value { font-size: 64rpx; font-weight: 700; line-height: 1; }
+.balance-unit { font-size: $ld-font-body; opacity: 0.88; }
+.balance-time { display: block; margin-top: 14rpx; font-size: $ld-font-mini; opacity: 0.8; }
 
-/* #ifdef H5 */
-.page-shell { min-height: calc(100vh - 44px); }
-/* #endif */
+.tab-bar { display: flex; gap: 16rpx; margin-top: 28rpx; }
+.tab-button {
+  flex: 1;
+  height: 76rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  border-radius: $ld-radius-pill;
+  background: #ffffff;
+  color: $ld-text-secondary;
+  font-size: $ld-font-caption;
+  font-weight: 600;
+  box-shadow: $ld-shadow-card;
+}
+.tab-button::after { border: 0; }
+.tab-button.active { background: $ld-primary; color: #ffffff; box-shadow: $ld-shadow-btn; }
 
-.balance-band { padding: 34rpx 40rpx 32rpx; background: #ffffff; border-bottom: 2rpx solid #dce4e1; }
-.balance-label, .balance-time { display: block; }
-.balance-label { color: #708078; font-size: 24rpx; }
-.balance-value-row { display: flex; align-items: baseline; gap: 10rpx; margin-top: 6rpx; }
-.balance-value { color: #167c5a; font-size: 58rpx; font-weight: 700; line-height: 1.2; }
-.balance-unit { color: #536760; font-size: 24rpx; }
-.balance-time { min-height: 32rpx; margin-top: 8rpx; color: #819088; font-size: 21rpx; }
+.error-band { display: flex; align-items: center; justify-content: space-between; gap: 20rpx; margin-top: 24rpx; padding: 26rpx 30rpx; border-radius: $ld-radius-lg; background: $ld-danger-soft; }
+.error-band text { color: $ld-danger; font-size: $ld-font-caption; flex: 1; }
+.retry-button {
+  width: 120rpx; height: 56rpx; display: flex; align-items: center; justify-content: center;
+  margin: 0; border-radius: $ld-radius-pill; background: $ld-card; color: $ld-danger;
+  font-size: $ld-font-caption; flex-shrink: 0;
+}
+.retry-button::after { border: 0; }
 
-.tab-bar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); background: #ffffff; border-bottom: 2rpx solid #dce4e1; }
-.tab-button { height: 88rpx; margin: 0; border-radius: 0; background: transparent; color: #61736c; font-size: 27rpx; }
-.tab-button::after { border: 0; border-radius: 0; }
-.tab-button.active { color: #167c5a; font-weight: 650; box-shadow: inset 0 -5rpx #167c5a; }
-
-.content-list { display: grid; gap: 20rpx; padding: 26rpx 28rpx; }
-.reward-item, .exchange-item { min-width: 0; padding: 28rpx; background: #ffffff; border: 2rpx solid #dce6e0; border-radius: 12rpx; }
-.item-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20rpx; }
-.item-title { min-width: 0; color: #1c2b28; font-size: 31rpx; font-weight: 650; line-height: 1.4; overflow-wrap: anywhere; }
-.points-badge, .status-badge { flex: 0 0 auto; padding: 7rpx 12rpx; border-radius: 8rpx; font-size: 22rpx; line-height: 1.3; }
-.points-badge { background: #e8f5ef; color: #116a4b; }
-.item-description { display: block; margin-top: 18rpx; color: #536760; font-size: 25rpx; line-height: 1.6; overflow-wrap: anywhere; }
-.item-meta, .exchange-points { display: block; margin-top: 16rpx; color: #7a8982; font-size: 22rpx; }
-.exchange-points { color: #536760; }
-.exchange-button { height: 70rpx; display: flex; align-items: center; justify-content: center; margin: 24rpx 0 0; border-radius: 10rpx; background: #167c5a; color: #ffffff; font-size: 26rpx; }
+.content-list { margin-top: 8rpx; }
+.reward-item, .exchange-item {
+  margin-top: $ld-gap-block;
+  padding: 28rpx 30rpx;
+  border-radius: $ld-radius-lg;
+  background: $ld-card;
+  box-shadow: $ld-shadow-card;
+}
+.item-heading { display: flex; align-items: center; justify-content: space-between; gap: 20rpx; }
+.item-title { color: $ld-text; font-size: 30rpx; font-weight: 650; overflow-wrap: anywhere; }
+.points-badge, .status-badge {
+  padding: 6rpx 18rpx; border-radius: $ld-radius-pill; font-size: $ld-font-mini; font-weight: 600; flex-shrink: 0;
+  background: $ld-primary-soft; color: $ld-primary;
+}
+.status-badge.status-pending_approval { background: $ld-warning-soft; color: $ld-warning; }
+.status-badge.status-approved { background: #e8f6ef; color: $ld-primary; }
+.status-badge.status-rejected, .status-badge.status-expired { background: $ld-danger-soft; color: $ld-danger; }
+.status-badge.status-verified { background: #eef1f5; color: #526170; }
+.item-description { display: block; margin-top: 14rpx; color: $ld-text-secondary; font-size: $ld-font-caption; line-height: 1.6; }
+.item-meta { display: block; margin-top: 14rpx; color: $ld-text-muted; font-size: $ld-font-mini; }
+.exchange-points { display: block; margin-top: 14rpx; color: $ld-text-secondary; font-size: $ld-font-caption; }
+.exchange-time-list { margin-top: 12rpx; }
+.exchange-time-list text { display: block; margin-top: 6rpx; color: $ld-text-muted; font-size: $ld-font-mini; }
+.reject-reason { display: block; margin-top: 12rpx; color: $ld-danger; font-size: $ld-font-caption; }
+.exchange-button {
+  width: 100%; height: 76rpx; display: flex; align-items: center; justify-content: center;
+  margin: 24rpx 0 0; border-radius: $ld-radius-md; background: $ld-gradient-primary;
+  color: #ffffff; font-size: $ld-font-body; font-weight: 600; box-shadow: $ld-shadow-btn;
+}
 .exchange-button::after { border: 0; }
-.exchange-button[disabled] { background: #e8ecea; color: #86928d; opacity: 1; }
+.exchange-button[disabled] { background: #e2e9e6; color: $ld-text-muted; box-shadow: none; }
 
-.status-pending_approval { background: #eaf2ff; color: #315f9f; }
-.status-pending_verification { background: #fff3dc; color: #8a5b18; }
-.status-rejected { background: #fff0ec; color: #a44835; }
-.status-auto_rejected, .status-expired { background: #eef1ef; color: #61716a; }
-.status-verified { background: #e8f5ef; color: #116a4b; }
-.exchange-time-list { display: grid; gap: 8rpx; margin-top: 18rpx; color: #7a8982; font-size: 22rpx; }
-.reject-reason { display: block; margin-top: 16rpx; padding: 16rpx; background: #fff5f1; color: #914936; font-size: 23rpx; line-height: 1.5; overflow-wrap: anywhere; }
-
-.state-view { min-height: 320rpx; display: flex; align-items: center; justify-content: center; color: #708078; font-size: 26rpx; }
-.state-view.compact { min-height: 360rpx; flex-direction: column; gap: 14rpx; }
-.state-title { color: #536760; font-size: 30rpx; }
-.state-description { color: #85928c; font-size: 23rpx; }
-.loading-footer { min-height: 120rpx; display: flex; align-items: center; justify-content: center; color: #708078; font-size: 24rpx; }
-.error-band { display: flex; align-items: center; justify-content: space-between; gap: 20rpx; padding: 20rpx 32rpx; background: #fff1ed; color: #9a4b38; font-size: 24rpx; }
-.retry-button { width: 120rpx; height: 56rpx; margin: 0; border-radius: 8rpx; background: #ffffff; color: #9a4b38; font-size: 26rpx; }
-.retry-button::after { border-color: #e8b4a8; }
+.state-view { padding: 64rpx 32rpx; text-align: center; }
+.state-title { display: block; color: $ld-text-secondary; font-size: 30rpx; font-weight: 600; }
+.state-description { display: block; margin-top: 12rpx; color: $ld-text-muted; font-size: $ld-font-caption; }
 </style>

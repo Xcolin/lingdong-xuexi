@@ -1,6 +1,7 @@
 package com.lingdong.learning.auth.web;
 
 import com.lingdong.learning.auth.application.AuthenticationFailedException;
+import com.lingdong.learning.auth.application.PasswordChangeRejectedException;
 import com.lingdong.learning.auth.application.AuthProtectionUnavailableException;
 import com.lingdong.learning.auth.application.CaptchaRequiredException;
 import com.lingdong.learning.auth.application.RateLimitedException;
@@ -44,6 +45,13 @@ public class AuthenticationExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .header("X-Request-Id", body.traceId())
                 .body(body);
+    }
+
+    @ExceptionHandler(PasswordChangeRejectedException.class)
+    public ResponseEntity<SecurityErrorResponse> handlePasswordChangeRejected(
+            PasswordChangeRejectedException exception, HttpServletRequest request
+    ) {
+        return response(HttpStatus.BAD_REQUEST, "PASSWORD_CHANGE_REJECTED", exception.getMessage(), request);
     }
 
     @ExceptionHandler(StudentAuthenticationFailedException.class)

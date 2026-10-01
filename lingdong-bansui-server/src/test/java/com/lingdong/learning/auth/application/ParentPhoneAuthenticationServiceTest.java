@@ -302,7 +302,7 @@ class ParentPhoneAuthenticationServiceTest {
     void createsMiniappSessionForEnabledParentPasswordLogin() {
         User parent = new User(21L, MOBILE, "家长用户", MOBILE, "encoded-password",
                 UserType.FAMILY, UserStatus.ENABLED, null, null);
-        when(userMapper.findByUsername(MOBILE)).thenReturn(parent);
+        when(userMapper.findByUsernameForUpdate(MOBILE)).thenReturn(parent);
         when(userRoleMapper.hasRoleCode(parent.id(), "PARENT")).thenReturn(true);
         when(parentMapper.findProfileByUserId(parent.id())).thenReturn(pendingProfile(parent.id()));
         when(parentMapper.hasAgreementAcceptance(parent.id(), AGREEMENT_VERSION)).thenReturn(false);
@@ -318,14 +318,14 @@ class ParentPhoneAuthenticationServiceTest {
 
     @Test
     void rejectsUnknownAndIncorrectParentPasswordWithSameFailure() {
-        when(userMapper.findByUsername(MOBILE)).thenReturn(null);
+        when(userMapper.findByUsernameForUpdate(MOBILE)).thenReturn(null);
         assertThatThrownBy(() -> service.loginByPassword(new ParentPasswordLoginCommand(
                 MOBILE, "ParentPassword1", AuthClientType.MINIAPP, "mini-device", "家长小程序")))
                 .isInstanceOf(AuthenticationFailedException.class);
 
         User parent = new User(21L, MOBILE, "家长用户", MOBILE, "encoded-password",
                 UserType.FAMILY, UserStatus.ENABLED, null, null);
-        when(userMapper.findByUsername(MOBILE)).thenReturn(parent);
+        when(userMapper.findByUsernameForUpdate(MOBILE)).thenReturn(parent);
         when(userRoleMapper.hasRoleCode(parent.id(), "PARENT")).thenReturn(true);
         when(parentMapper.findProfileByUserId(parent.id())).thenReturn(pendingProfile(parent.id()));
         when(passwordEncoder.matches("wrong-password", "encoded-password")).thenReturn(false);

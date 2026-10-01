@@ -1,5 +1,6 @@
+import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Button, Space, Switch, Tooltip } from 'antd';
+import { Alert, Space, Switch, Tooltip } from 'antd';
 import { RefreshCw } from 'lucide-react';
 import { growthReviewSubscriptionApi as api, type GrowthReviewSubscription } from './subscriptionApi';
 
@@ -58,7 +59,7 @@ function SubscriptionState({ studentId, canEnable }: Props) {
       <Switch aria-label="周报订阅" checked={value?.enabled ?? false} loading={busy}
         disabled={busy || !value || !!error || (!value.enabled && !canEnable)}
         onChange={enabled => void change(enabled)} />
-      <Tooltip title="刷新订阅状态"><Button aria-label="刷新订阅状态" icon={<RefreshCw size={16} />}
+      <Tooltip title="刷新订阅状态"><Button actionKey="growth-reviews.growth-review-subscription-panel.1" aria-label="刷新订阅状态" icon={<RefreshCw size={16} />}
         disabled={busy} onClick={() => void load()} /></Tooltip>
     </Space>
     {error && <Alert type="error" showIcon message={error} style={{ marginTop: 8 }} />}

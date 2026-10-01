@@ -1,80 +1,84 @@
 <template>
-  <view class="page-shell">
-    <view class="page-heading">
-      <text class="heading-title">学生登录</text>
-      <view class="heading-rule" />
+  <view class="ld-page">
+    <view class="ld-heading">
+      <text class="ld-heading-title">学生登录</text>
+      <view class="ld-heading-rule" />
     </view>
 
-    <view v-if="capabilityLoading" class="loading-state">正在加载</view>
-    <view v-else-if="!serviceEnabled" class="disabled-state">服务暂不可用</view>
-    <form v-else class="login-form" @submit="submitLogin">
-      <view v-if="modeCount > 1" class="login-mode-switch"
-            :style="{ gridTemplateColumns: `repeat(${modeCount}, minmax(0, 1fr))` }">
-        <button v-if="studentLoginEnabled" :class="['mode-button', { active: loginMode === 'ACCOUNT' }]" @tap="switchMode('ACCOUNT')">账号登录</button>
-        <button v-if="studentQrLoginEnabled" :class="['mode-button', { active: loginMode === 'QR' }]" @tap="switchMode('QR')">扫码登录</button>
+    <view v-if="capabilityLoading" class="ld-loading">正在加载</view>
+    <view v-else-if="!serviceEnabled" class="ld-empty">
+      <text class="ld-empty-main">服务暂不可用</text>
+      <text class="ld-empty-sub">请联系管理员确认学生登录开关</text>
+    </view>
+    <template v-else>
+      <view v-if="modeCount > 1" class="ld-tabs">
+        <button v-if="studentLoginEnabled" :class="['ld-tab', { active: loginMode === 'ACCOUNT' }]" @tap="switchMode('ACCOUNT')">账号登录</button>
+        <button v-if="studentQrLoginEnabled" :class="['ld-tab', { active: loginMode === 'QR' }]" @tap="switchMode('QR')">扫码登录</button>
         <!-- #ifdef MP-WEIXIN -->
-        <button v-if="studentWechatAuthEnabled" :class="['mode-button', { active: loginMode === 'WECHAT' }]" @tap="switchMode('WECHAT')">微信登录</button>
+        <button v-if="studentWechatAuthEnabled" :class="['ld-tab', { active: loginMode === 'WECHAT' }]" @tap="switchMode('WECHAT')">微信登录</button>
         <!-- #endif -->
       </view>
 
-      <view v-if="loginMode === 'ACCOUNT'" class="field-group">
-        <text class="field-label">学生账号</text>
-        <input v-model="studentAccount" class="field-input" type="number" maxlength="8"
-               placeholder="8位学生账号" :disabled="submitting" />
-      </view>
-
-      <view v-else-if="loginMode === 'QR'" class="qr-login-section">
-        <button v-if="!qrContent" class="scan-button" :disabled="submitting" @tap="scanLoginQr">扫描登录二维码</button>
-        <view v-else class="scan-success">
-          <text>二维码已识别</text>
-          <button class="rescan-button" :disabled="submitting" @tap="scanLoginQr">重新扫码</button>
+      <view class="ld-card">
+        <view v-if="loginMode === 'ACCOUNT'" class="ld-field first-field">
+          <text class="ld-field-label">学生账号</text>
+          <input v-model="studentAccount" class="ld-input" type="number" maxlength="8"
+                 placeholder="8位学生账号" :disabled="submitting" />
         </view>
-      </view>
 
-      <!-- #ifdef MP-WEIXIN -->
-      <view v-else class="wechat-login-section">
-        <button v-if="!wechatBindingTicket" class="wechat-login-button" :disabled="submitting" @tap="submitLogin">
-          微信授权登录
-        </button>
-        <text v-else-if="!wechatVerificationTicket" class="wechat-binding-hint">
-          首次绑定需验证学生账号、登录码和主监护人手机号
-        </text>
-        <text v-else class="wechat-binding-hint">
-          验证码已发送至 {{ wechatMaskedMobile }}
-        </text>
-      </view>
-      <!-- #endif -->
-
-      <view v-if="loginMode !== 'WECHAT' || (wechatBindingTicket && !wechatVerificationTicket)" class="field-group">
-        <text class="field-label">登录码</text>
-        <input v-model="loginCode" class="field-input" type="number" maxlength="4" password
-               placeholder="4位登录码" :disabled="submitting" />
-      </view>
-
-      <view v-if="loginMode === 'WECHAT' && wechatVerificationTicket" class="field-group">
-        <text class="field-label">主监护人短信验证码</text>
-        <input v-model="wechatSmsCode" class="field-input" type="number" maxlength="6"
-               placeholder="6位短信验证码" :disabled="submitting" />
-      </view>
-
-      <view v-if="captchaVisible" class="captcha-section">
-        <view class="field-group">
-          <text class="field-label">图形验证码</text>
-          <input v-model="captchaAnswer" class="field-input" maxlength="8"
-                 placeholder="验证码" :disabled="submitting" />
+        <view v-else-if="loginMode === 'QR'" class="qr-login-section">
+          <button v-if="!qrContent" class="ld-btn ld-btn-secondary" :disabled="submitting" @tap="scanLoginQr">扫描登录二维码</button>
+          <view v-else class="scan-success">
+            <text class="scan-success-text">二维码已识别</text>
+            <button class="rescan-button" :disabled="submitting" @tap="scanLoginQr">重新扫码</button>
+          </view>
         </view>
-        <button class="captcha-image-button" :disabled="captchaLoading" @tap="refreshCaptcha">
-          <image v-if="captchaImage" class="captcha-image" :src="captchaImage" mode="aspectFit" />
-          <text v-else>{{ captchaLoading ? '加载中' : '刷新' }}</text>
+
+        <!-- #ifdef MP-WEIXIN -->
+        <view v-else class="qr-login-section">
+          <button v-if="!wechatBindingTicket" class="ld-btn wechat-login-button" :disabled="submitting" @tap="submitLogin">
+            微信授权登录
+          </button>
+          <text v-else-if="!wechatVerificationTicket" class="wechat-binding-hint">
+            首次绑定需验证学生账号、登录码和主监护人手机号
+          </text>
+          <text v-else class="wechat-binding-hint">
+            验证码已发送至 {{ wechatMaskedMobile }}
+          </text>
+        </view>
+        <!-- #endif -->
+
+        <view v-if="loginMode !== 'WECHAT' || (wechatBindingTicket && !wechatVerificationTicket)" class="ld-field">
+          <text class="ld-field-label">登录码</text>
+          <input v-model="loginCode" class="ld-input" type="number" maxlength="4" password
+                 placeholder="4位登录码" :disabled="submitting" />
+        </view>
+
+        <view v-if="loginMode === 'WECHAT' && wechatVerificationTicket" class="ld-field">
+          <text class="ld-field-label">主监护人短信验证码</text>
+          <input v-model="wechatSmsCode" class="ld-input" type="number" maxlength="6"
+                 placeholder="6位短信验证码" :disabled="submitting" />
+        </view>
+
+        <view v-if="captchaVisible" class="captcha-section">
+          <view class="ld-field captcha-field">
+            <text class="ld-field-label">图形验证码</text>
+            <input v-model="captchaAnswer" class="ld-input" maxlength="8"
+                   placeholder="验证码" :disabled="submitting" />
+          </view>
+          <button class="captcha-image-button" :disabled="captchaLoading" @tap="refreshCaptcha">
+            <image v-if="captchaImage" class="captcha-image" :src="captchaImage" mode="aspectFit" />
+            <text v-else>{{ captchaLoading ? '加载中' : '刷新' }}</text>
+          </button>
+        </view>
+
+        <text v-if="errorMessage" class="ld-error-text error-gap">{{ errorMessage }}</text>
+        <button class="ld-btn ld-btn-primary submit-button" form-type="submit" :loading="submitting"
+                :disabled="submitting || locked || (loginMode === 'QR' && !qrContent)" @tap="submitLogin">
+          {{ locked ? lockedText : submitButtonText }}
         </button>
       </view>
-
-      <text v-if="errorMessage" class="error-message">{{ errorMessage }}</text>
-      <button class="submit-button" form-type="submit" :loading="submitting"
-              :disabled="submitting || locked || (loginMode === 'QR' && !qrContent)">
-        {{ locked ? lockedText : submitButtonText }}
-      </button>
-    </form>
+    </template>
   </view>
 </template>
 
@@ -484,191 +488,60 @@ function startLockTimer(): void {
 </script>
 
 <style lang="scss" scoped>
-.page-shell {
-  min-height: 100vh;
-  padding: 72rpx 40rpx 64rpx;
-  box-sizing: border-box;
-  background: #f4f7f5;
-}
+.first-field { margin-top: 0; }
 
-/* #ifdef H5 */
-.page-shell { min-height: calc(100vh - 44px); }
-/* #endif */
-
-.page-heading {
+.qr-login-section { min-height: 100rpx; display: flex; align-items: center; }
+.scan-success {
   width: 100%;
-  max-width: 720rpx;
-  margin: 0 auto 64rpx;
-}
-
-.heading-title {
-  display: block;
-  color: #1c2b28;
-  font-size: 44rpx;
-  font-weight: 700;
-}
-
-.heading-rule {
-  width: 72rpx;
-  height: 8rpx;
-  margin-top: 20rpx;
-  border-radius: 4rpx;
-  background: #e26d4f;
-}
-
-.loading-state,
-.disabled-state {
-  width: 100%;
-  max-width: 720rpx;
-  min-height: 320rpx;
+  min-height: 92rpx;
   display: flex;
   align-items: center;
-  justify-content: center;
-  margin: 0 auto;
-  color: #708078;
-  font-size: 30rpx;
+  justify-content: space-between;
+  padding: 0 28rpx;
+  border-radius: $ld-radius-md;
+  background: $ld-primary-soft;
 }
-
-.disabled-state { color: #9a4b38; }
-
-.login-form {
-  width: 100%;
-  max-width: 720rpx;
-  display: flex;
-  flex-direction: column;
-  gap: 36rpx;
-  margin: 0 auto;
-}
-
-.login-mode-switch {
-  width: 100%;
-  height: 76rpx;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  padding: 6rpx;
-  box-sizing: border-box;
-  border: 2rpx solid #c8d3cf;
-  border-radius: 12rpx;
-  background: #e9efec;
-}
-
-.mode-button {
+.scan-success-text { color: $ld-primary; font-size: 28rpx; font-weight: 600; }
+.rescan-button {
   height: 60rpx;
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 0;
-  border-radius: 8rpx;
-  background: transparent;
-  color: #62756e;
-  font-size: 26rpx;
+  margin: 0;
+  padding: 0 24rpx;
+  border-radius: $ld-radius-pill;
+  background: $ld-card;
+  color: $ld-primary;
+  font-size: $ld-font-caption;
 }
+.rescan-button::after { border: 2rpx solid $ld-primary-border; border-radius: $ld-radius-pill; }
 
-.mode-button::after { border: 0; }
-.mode-button.active { background: #ffffff; color: #167c5a; font-weight: 600; }
-
-.qr-login-section { min-height: 100rpx; display: flex; align-items: center; }
-.scan-button {
-  width: 100%;
-  height: 92rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12rpx;
-  background: #ffffff;
-  color: #167c5a;
-  font-size: 30rpx;
-}
-.scan-button::after { border: 2rpx solid #167c5a; border-radius: 12rpx; }
-.scan-success { width: 100%; display: flex; align-items: center; justify-content: space-between; color: #167c5a; }
-.rescan-button { margin: 0; padding: 0 24rpx; background: transparent; color: #167c5a; font-size: 26rpx; }
-.rescan-button::after { border: 0; }
-
-.wechat-login-section { min-height: 100rpx; display: flex; align-items: center; }
-.wechat-login-button { width: 100%; height: 92rpx; border-radius: 12rpx; background: #07c160; color: #ffffff; font-size: 30rpx; font-weight: 600; }
-.wechat-login-button::after { border: 0; }
-.wechat-binding-hint { color: #40514c; font-size: 27rpx; line-height: 42rpx; }
-
-.field-group {
-  display: flex;
-  flex-direction: column;
-  gap: 14rpx;
-}
-
-.field-label {
-  color: #40514c;
-  font-size: 26rpx;
-  font-weight: 600;
-}
-
-.field-input {
-  width: 100%;
-  height: 92rpx;
-  padding: 0 28rpx;
-  box-sizing: border-box;
-  border: 2rpx solid #c8d3cf;
-  border-radius: 12rpx;
-  background: #ffffff;
-  color: #1c2b28;
-  font-size: 32rpx;
-}
+.wechat-login-button { background: #07c160; box-shadow: 0 6rpx 16rpx rgba(7, 193, 96, 0.28); }
+.wechat-binding-hint { color: $ld-text-secondary; font-size: 26rpx; line-height: 42rpx; }
 
 .captcha-section {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 260rpx;
+  grid-template-columns: minmax(0, 1fr) 240rpx;
   align-items: end;
   gap: 20rpx;
 }
-
+.captcha-field { margin-top: $ld-gap-block; }
 .captcha-image-button {
-  width: 260rpx;
+  width: 240rpx;
   height: 92rpx;
   display: flex;
   align-items: center;
   justify-content: center;
+  margin: 14rpx 0 0;
   padding: 0;
-  border-radius: 12rpx;
-  background: #ffffff;
-  color: #167c5a;
-  font-size: 26rpx;
+  border-radius: $ld-radius-md;
+  background: #fbfdfc;
+  border: 2rpx solid $ld-line-strong;
+  color: $ld-primary;
+  font-size: $ld-font-caption;
 }
+.captcha-image-button::after { border: 0; }
+.captcha-image { width: 228rpx; height: 84rpx; }
 
-.captcha-image-button::after {
-  border: 2rpx solid #c8d3cf;
-  border-radius: 12rpx;
-}
-
-.captcha-image {
-  width: 248rpx;
-  height: 84rpx;
-}
-
-.error-message {
-  min-height: 40rpx;
-  color: #b34f3b;
-  font-size: 26rpx;
-  line-height: 40rpx;
-  word-break: break-word;
-}
-
-.submit-button {
-  width: 100%;
-  height: 96rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-top: 12rpx;
-  border-radius: 12rpx;
-  background: #167c5a;
-  color: #ffffff;
-  font-size: 32rpx;
-  font-weight: 600;
-}
-
-.submit-button::after { border: 0; }
-
-.submit-button[disabled] {
-  background: #91aaa1;
-  color: #ffffff;
-}
+.error-gap { margin-top: $ld-gap-block; }
+.submit-button { margin-top: $ld-gap-block; }
 </style>

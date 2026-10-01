@@ -1,5 +1,7 @@
+import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
+import { ViewportTable as Table } from '../../components/ViewportTable';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Button, Descriptions, Modal, Select, Space, Table, Tag } from 'antd';
+import { Alert, Descriptions, Form, Modal, Select, Tag } from 'antd';
 import { authApi, type CurrentUser } from '../../api/auth';
 import { capabilityApi, type ClientCapabilities } from '../../api/capability';
 import { systemTasksApi, type SystemTask, type SystemTaskStatus } from '../../api/system-tasks';
@@ -71,17 +73,16 @@ export function SystemTaskWorkbench({ currentUser, onNavigate, onAccessChange }:
   }
   const destination = detail && access ? systemTaskDestination(detail, access.user, access.caps) : null;
   return <div className="page-stack">
-    <div className="page-heading"><h1>系统任务工作台</h1><Button aria-label="刷新" onClick={() => void load()}>刷新</Button></div>
-    <Alert type="info" message={currentUser.roleCodes.includes('SYS_AUDITOR') ? '查看已提交任务与审批历史；审批与执行请进入对应领域处理页。' : '查看本人提交的系统任务与处理结果。'} />
-    <Space><span>任务状态</span><Select aria-label="任务状态" style={{ width: 160 }} allowClear placeholder="全部状态" value={status} options={Object.entries(statuses).map(([value, label]) => ({ value, label }))} onChange={value => { setPage(1); setStatus(value); }} /></Space>
-    {error && <Alert type="error" message={error} action={<Button aria-label="重试" onClick={() => void load()}>重试</Button>} />}
+    <div className="page-heading"><h1>系统任务工作台</h1><Button actionKey="system-tasks.system-task-workbench.1" aria-label="刷新" onClick={() => void load()}>刷新</Button></div>
+    <Form layout="inline" className="directory-filters"><Form.Item label="任务状态"><Select aria-label="任务状态" allowClear placeholder="全部状态" value={status} options={Object.entries(statuses).map(([value, label]) => ({ value, label }))} onChange={value => { setPage(1); setStatus(value); }} /></Form.Item></Form>
+    {error && <Alert type="error" message={error} action={<Button actionKey="system-tasks.system-task-workbench.2" aria-label="重试" onClick={() => void load()}>重试</Button>} />}
     <Table<SystemTask> rowKey="id" loading={loading} dataSource={items} locale={{emptyText:loading?'正在查询系统任务':error?'系统任务未能加载':'暂无可见系统任务'}} scroll={{ x: 900 }} pagination={{ current: page, pageSize: 20, total, showSizeChanger: false, showTotal: count => `共 ${count} 条`, onChange: setPage }} columns={[
       { title: '任务编号', dataIndex: 'code' }, { title: '任务标题', dataIndex: 'title' }, { title: '类型', dataIndex: 'type',render:value=>types[value]||value },
       { title: '影响范围', dataIndex: 'impactScope',render:value=>scopes[value]||value }, { title: '状态', dataIndex: 'status', render: (value: SystemTaskStatus) => <Tag>{statuses[value]}</Tag> },
       { title: '申请人 ID', dataIndex: 'submittedBy' }, { title: '提交时间', dataIndex: 'submittedAt', render: value => value || '—' },
-      { title: '操作', render: (_, row) => <Button disabled={loading} onClick={() => void openDetail(row.id)}>查看详情</Button> }
+      { title: '操作', render: (_, row) => <Button actionKey="system-tasks.system-task-workbench.3" disabled={loading} onClick={() => void openDetail(row.id)}>查看详情</Button> }
     ]} />
-    {detail && <Modal title="系统任务详情" open onCancel={() => setDetail(null)} footer={<Button onClick={() => setDetail(null)}>关闭</Button>} width={760}>
+    {detail && <Modal title="系统任务详情" open onCancel={() => setDetail(null)} footer={<Button actionKey="system-tasks.system-task-workbench.4" onClick={() => setDetail(null)}>关闭</Button>} width={760}>
       {detail && <><Descriptions column={1} items={[
         ['任务 ID', detail.id], ['编号', detail.code], ['标题', detail.title], ['类型', types[detail.type]||detail.type], ['状态', statuses[detail.status]],
         ['申请说明', detail.description], ['影响范围', scopes[detail.impactScope||'']||detail.impactScope], ['申请人 ID', detail.submittedBy], ['提交时间', detail.submittedAt],
@@ -98,7 +99,7 @@ export function SystemTaskWorkbench({ currentUser, onNavigate, onAccessChange }:
           {detail.payload.executionStatus && <Descriptions column={1} items={[{ key: 'execution', label: '执行状态', children: ({ PENDING: '待执行', APPLIED: '已执行', SUCCEEDED: '已成功', FAILED: '执行失败', REJECTED: '已驳回' } as Record<string,string>)[detail.payload.executionStatus] ?? detail.payload.executionStatus }]} />}
           {detail.payload.failureReason && <Alert type="error" message={detail.payload.failureReason} />}
         </>}
-        {destination ? <Button type="primary" onClick={() => onNavigate(destination)}>前往领域处理页</Button> : <Alert type="info" message="该任务当前不可在此页执行；无可用的领域处理入口。" />}
+        {destination ? <Button actionKey="system-tasks.system-task-workbench.5" type="primary" onClick={() => onNavigate(destination)}>前往领域处理页</Button> : <Alert type="info" message="该任务当前不可在此页执行；无可用的领域处理入口。" />}
       </>}
     </Modal>}
   </div>;

@@ -1,4 +1,5 @@
-import { Alert, Modal, Table, Tag } from 'antd';
+import { ViewportTable as Table } from '../../components/ViewportTable';
+import { Alert, Modal, Tag } from 'antd';
 import { useEffect, useState } from 'react';
 import { learningTaskApi } from './api';
 import type { ManagedTaskProgressPage, TaskAssignmentStatus } from './types';

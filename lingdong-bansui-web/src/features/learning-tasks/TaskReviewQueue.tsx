@@ -1,5 +1,7 @@
+import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
+import { ViewportTable as Table } from '../../components/ViewportTable';
 import { useEffect, useState } from 'react';
-import { Alert, Button, Table, Tag, Tooltip } from 'antd';
+import { Alert, Tag, Tooltip } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
 import { Eye } from 'lucide-react';
 import { taskReviewApi } from './reviewApi';
@@ -44,7 +46,7 @@ export function TaskReviewQueue() {
           type="error"
           showIcon
           message={errorMessage}
-          action={<Button size="small" onClick={() => void loadReviews(directory.page)}>重试</Button>}
+          action={<Button actionKey="learning-tasks.task-review-queue.1" size="small" onClick={() => void loadReviews(directory.page)}>重试</Button>}
         />
       )}
       <ProCard className="content-panel" bordered={false}>
@@ -81,7 +83,7 @@ export function TaskReviewQueue() {
               title: '操作', key: 'actions', fixed: 'right', width: 80,
               render: (_, review) => (
                 <Tooltip title="查看审核">
-                  <Button
+                  <Button actionKey="learning-tasks.task-review-queue.2"
                     type="text"
                     aria-label={`查看审核 ${review.title}`}
                     icon={<Eye size={16} />}

@@ -111,7 +111,7 @@ describe('接口服务管理页面', () => {
     renderPage(true, false);
     await screen.findByText('微信服务通知');
 
-    expect(screen.getByText('此处仅登记服务元数据和调用结果，不保存接口地址或凭据，也不会直接调用任意 URL。')).toBeInTheDocument();
+    expect(screen.queryByText('此处仅登记服务元数据和调用结果，不保存接口地址或凭据，也不会直接调用任意 URL。')).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '登记接口服务' }));
     const dialog = screen.getByRole('dialog', { name: '登记接口服务' });
     await user.type(within(dialog).getByLabelText('服务名称'), '学校数据同步');

@@ -1,5 +1,7 @@
+import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
+import { ViewportTable as Table } from '../../components/ViewportTable';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Button, Form, Input, Select, Space, Spin, Table, Tag } from 'antd';
+import { Alert, Form, Input, Select, Space, Spin, Tag } from 'antd';
 import { ClipboardCheck, Eye, RefreshCw, RotateCcw, Search } from 'lucide-react';
 import { authApi, type CurrentUser } from '../../api/auth';
 import { capabilityApi, type ClientCapabilities } from '../../api/capability';
@@ -51,7 +53,7 @@ export function AttendancePage({ currentUser, onAccessUpdated }: Props) {
     if (e instanceof ApiRequestError && (e.status === 401 || e.status === 403 || e.code?.includes('DISABLED'))) void checkAccess(true);
   }, [checkAccess]);
   if (checking) return <div className="route-loading"><Spin tip="正在校验考勤权限"><div /></Spin></div>;
-  if (!user) return <Alert type="warning" showIcon message={error} action={<Button icon={<RefreshCw size={16} />} onClick={() => void checkAccess(true)}>重试</Button>} />;
+  if (!user) return <Alert type="warning" showIcon message={error} action={<Button actionKey="attendance-records.attendance-page.1" icon={<RefreshCw size={16} />} onClick={() => void checkAccess(true)}>重试</Button>} />;
   return <AttendanceLedger key={user.userId} currentUser={user} checkAccess={checkAccess} onAccessError={handleAccessError} />;
 }
 
@@ -90,17 +92,17 @@ function AttendanceLedger({ currentUser, checkAccess, onAccessError }: {
   }
   return <div className="page-stack attendance-page">
     <div className="page-heading"><h1>考勤台账</h1><Space wrap>
-      <Button icon={<RefreshCw size={16} />} onClick={() => setRevision((value) => value + 1)}>刷新</Button>
-      {canRecord && <Button type="primary" icon={<ClipboardCheck size={16} />} onClick={() => setRecordOpen(true)}>班级点名</Button>}
+      <Button actionKey="attendance-records.attendance-page.2" icon={<RefreshCw size={16} />} onClick={() => setRevision((value) => value + 1)}>刷新</Button>
+      {canRecord && <Button actionKey="attendance-records.attendance-page.3" type="primary" icon={<ClipboardCheck size={16} />} onClick={() => setRecordOpen(true)}>班级点名</Button>}
     </Space></div>
-    {(error || classError) && <Alert type="error" showIcon message={error || classError} action={<Button onClick={() => setRevision((value) => value + 1)}>重试</Button>} />}
+    {(error || classError) && <Alert type="error" showIcon message={error || classError} action={<Button actionKey="attendance-records.attendance-page.4" onClick={() => setRevision((value) => value + 1)}>重试</Button>} />}
     <Form form={form} layout="inline" className="directory-filters attendance-filters" onFinish={search}>
       <Form.Item name="classOrganizationId" label="班级"><Select aria-label="筛选班级" allowClear showSearch optionFilterProp="label" className="filter-select" options={classes.map((item) => ({ value: item.classOrganizationId, label: item.className }))} /></Form.Item>
       <Form.Item name="keyword" label="学生关键字"><Input aria-label="学生关键字" allowClear /></Form.Item>
       <Form.Item name="status" label="状态"><Select aria-label="筛选状态" allowClear className="filter-select" options={Object.entries(statusLabels).map(([value, label]) => ({ value, label }))} /></Form.Item>
       <Form.Item name="dateFrom" label="开始日期"><Input aria-label="开始日期" type="date" /></Form.Item>
       <Form.Item name="dateTo" label="结束日期"><Input aria-label="结束日期" type="date" /></Form.Item>
-      <Form.Item><Space><Button htmlType="submit" icon={<Search size={16} />}>查询</Button><Button icon={<RotateCcw size={16} />} onClick={() => { form.resetFields(); setQuery({ page: 1, pageSize: 20 }); }}>重置</Button></Space></Form.Item>
+      <Form.Item><Space><Button actionKey="attendance-records.attendance-page.5" htmlType="submit" icon={<Search size={16} />}>查询</Button><Button actionKey="attendance-records.attendance-page.6" icon={<RotateCcw size={16} />} onClick={() => { form.resetFields(); setQuery({ page: 1, pageSize: 20 }); }}>重置</Button></Space></Form.Item>
     </Form>
     <Table rowKey="id" loading={loading} dataSource={result.items} scroll={{ x: 1200 }} locale={{ emptyText: '暂无考勤记录' }}
       pagination={{ current: query.page, pageSize: query.pageSize, total: result.total, showSizeChanger: true, pageSizeOptions: [20, 50, 100], onChange: (page, pageSize) => setQuery({ ...query, page: pageSize === query.pageSize ? page : 1, pageSize }) }}
@@ -110,7 +112,7 @@ function AttendanceLedger({ currentUser, checkAccess, onAccessError }: {
         { title: '签到', dataIndex: 'checkinTime', render: empty }, { title: '签退', dataIndex: 'checkoutTime', render: empty },
         { title: '来源', dataIndex: 'source', render: (value) => value === 'MANUAL' ? '人工登记' : value },
         { title: '最近登记人', dataIndex: 'recorderName' }, { title: '更新时间', dataIndex: 'updatedAt', render: formatTime },
-        { title: '操作', key: 'action', fixed: 'right', width: 85, render: (_, row) => <Button type="text" icon={<Eye size={16} />} aria-label={`查看${row.studentName}的考勤详情`} onClick={() => setDetailId(row.id)}>详情</Button> }
+        { title: '操作', key: 'action', fixed: 'right', width: 85, render: (_, row) => <Button actionKey="attendance-records.attendance-page.7" type="text" icon={<Eye size={16} />} aria-label={`查看${row.studentName}的考勤详情`} onClick={() => setDetailId(row.id)}>详情</Button> }
       ]} />
     {recordOpen && canRecord && <AttendanceRecordDrawer checkAccess={checkAccess} onAccessError={onAccessError} onClose={() => setRecordOpen(false)} onSaved={() => { setRecordOpen(false); setRevision((value) => value + 1); }} />}
     {detailId && <AttendanceDetailDrawer id={detailId} onClose={() => setDetailId(undefined)} onAccessError={onAccessError} />}

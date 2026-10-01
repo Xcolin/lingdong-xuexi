@@ -1,5 +1,8 @@
+import { ConfiguredModal as Modal } from '../../components/ConfiguredModal';
+import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
+import { ViewportTable as Table } from '../../components/ViewportTable';
 import { useEffect, useState } from 'react';
-import { Alert, Button, DatePicker, Modal, Space, Table, Tag, message } from 'antd';
+import { Alert, DatePicker, Space, Tag, message } from 'antd';
 import dayjs, { type Dayjs } from 'dayjs';
 import { CalendarClock, RefreshCw } from 'lucide-react';
 import { taskDeferApi } from './taskDeferApi';
@@ -66,12 +69,12 @@ export function TaskDeferQueue() {
           type="error"
           showIcon
           message={errorMessage}
-          action={<Button size="small" onClick={() => void load(page.page)}>重试</Button>}
+          action={<Button actionKey="learning-tasks.task-defer-queue.1" size="small" onClick={() => void load(page.page)}>重试</Button>}
         />
       )}
       <div className="table-toolbar">
         <span>待优化任务和尚未认领的自动顺延任务</span>
-        <Button icon={<RefreshCw size={16} />} onClick={() => void load(page.page)}>刷新</Button>
+        <Button actionKey="learning-tasks.task-defer-queue.2" icon={<RefreshCw size={16} />} onClick={() => void load(page.page)}>刷新</Button>
       </div>
       <Table<ManagedDeferCandidate>
         rowKey="assignmentId"
@@ -107,7 +110,7 @@ export function TaskDeferQueue() {
           {
             title: '操作', width: 100, fixed: 'right',
             render: (_, item) => (
-              <Button
+              <Button actionKey="learning-tasks.task-defer-queue.3"
                 type="link"
                 icon={<CalendarClock size={16} />}
                 onClick={() => openDefer(item)}
@@ -116,7 +119,7 @@ export function TaskDeferQueue() {
           }
         ]}
       />
-      <Modal
+      <Modal actionPrefix="learning-tasks.task-defer-queue.modal.1"
         title="顺延任务"
         open={selected !== null}
         okText="确认顺延"

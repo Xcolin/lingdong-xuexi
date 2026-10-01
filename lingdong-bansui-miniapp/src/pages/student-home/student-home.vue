@@ -1,58 +1,47 @@
 <template>
-  <view class="page-shell">
-    <view class="top-bar">
-      <view>
-        <text class="brand-name">灵动伴随</text>
-        <text class="account-text">{{ session?.studentAccount || '' }}</text>
+  <view class="ld-page has-tabbar">
+    <view class="ld-topbar">
+      <view class="ld-topbar-brand">
+        <view class="ld-topbar-logo">灵</view>
+        <view>
+          <text class="ld-topbar-name">灵动伴随</text>
+          <text class="ld-topbar-meta">{{ session?.studentAccount || '' }}</text>
+        </view>
       </view>
-      <button class="logout-button" :disabled="loggingOut" @tap="logout">退出</button>
+      <button class="ld-logout" :disabled="loggingOut" @tap="logout">退出</button>
     </view>
-    <view class="content-band">
-      <text class="welcome-title">欢迎回来</text>
-      <StudentTodayTasks />
-      <button v-if="attendanceEnabled" class="feature-entry" @tap="openAttendance"><text class="feature-entry-title">我的考勤</text></button>
-      <button v-if="learningTaskEnabled" class="feature-entry" @tap="openTasks">
-        <view>
-          <text class="task-entry-title">学习任务</text>
-          <text class="task-entry-subtitle">查看家庭、机构和教师发布的任务</text>
+
+    <view class="ld-heading">
+      <text class="ld-heading-title">我的</text>
+      <text class="ld-heading-sub">账号信息与个人功能</text>
+    </view>
+
+    <view class="ld-group">
+      <button v-if="attendanceEnabled" class="ld-cell" @tap="openAttendance()">
+        <view class="ld-cell-icon teal">勤</view>
+        <view class="ld-cell-body">
+          <text class="ld-cell-title">我的考勤</text>
+          <text class="ld-cell-sub">查看到离园记录</text>
         </view>
-        <text class="task-entry-arrow">›</text>
+        <text class="ld-cell-arrow">›</text>
       </button>
-      <button v-if="growthPointEnabled" class="feature-entry" @tap="openGrowthPoints">
-        <view>
-          <text class="feature-entry-title">我的积分</text>
-          <text class="feature-entry-subtitle">积分账户与变动台账</text>
+      <button v-if="accountSecurityEnabled" class="ld-cell" @tap="openAccountSecurity()">
+        <view class="ld-cell-icon soft">安</view>
+        <view class="ld-cell-body">
+          <text class="ld-cell-title">账号安全</text>
+          <text class="ld-cell-sub">查看设备和登录提醒</text>
         </view>
-        <text class="feature-entry-arrow">›</text>
-      </button>
-      <button v-if="rewardExchangeEnabled" class="feature-entry" @tap="openRewards">
-        <view>
-          <text class="feature-entry-title">奖励兑换</text>
-          <text class="feature-entry-subtitle">用积分兑换家庭奖励</text>
-        </view>
-        <text class="feature-entry-arrow">›</text>
-      </button>
-      <button v-if="dailyGrowthReviewEnabled" class="feature-entry" @tap="openGrowthReviews">
-        <view>
-          <text class="feature-entry-title">成长复盘</text>
-          <text class="feature-entry-subtitle">查看每日表现并补充成长记录</text>
-        </view>
-        <text class="feature-entry-arrow">›</text>
-      </button>
-      <button v-if="accountSecurityEnabled" class="feature-entry" @tap="openAccountSecurity">
-        <view>
-          <text class="feature-entry-title">账号安全</text>
-          <text class="feature-entry-subtitle">查看设备和登录提醒</text>
-        </view>
-        <text class="feature-entry-arrow">›</text>
+        <text class="ld-cell-arrow">›</text>
       </button>
     </view>
+  <AppTabBar :items="STUDENT_TABS" :active="3" />
   </view>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import StudentTodayTasks from '@/components/StudentTodayTasks.vue';
+import AppTabBar from '@/components/AppTabBar.vue';
+import { STUDENT_TABS } from '@/config/tabbar';
 import { onShow } from '@dcloudio/uni-app';
 import { logoutStudent } from '@/api/auth';
 import { getMiniappCapabilities } from '@/api/capability';
@@ -90,22 +79,6 @@ onShow(async () => {
   }
 });
 
-function openTasks(): void {
-  uni.navigateTo({ url: '/pages/task-list/task-list' });
-}
-
-function openGrowthPoints(): void {
-  uni.navigateTo({ url: '/pages/growth-points/growth-points' });
-}
-
-function openRewards(): void {
-  uni.navigateTo({ url: '/pages/rewards/rewards' });
-}
-
-function openGrowthReviews(): void {
-  uni.navigateTo({ url: '/pages/growth-reviews/growth-reviews' });
-}
-
 function openAccountSecurity(): void {
   uni.navigateTo({ url: '/pages/account-security/account-security?identity=student' });
 }
@@ -125,98 +98,3 @@ async function logout(): Promise<void> {
   }
 }
 </script>
-
-<style lang="scss" scoped>
-.page-shell {
-  min-height: 100vh;
-  background: #f4f7f5;
-}
-
-/* #ifdef H5 */
-.page-shell { min-height: calc(100vh - 44px); }
-/* #endif */
-
-.top-bar {
-  min-height: 144rpx;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24rpx;
-  padding: 32rpx 40rpx;
-  box-sizing: border-box;
-  background: #ffffff;
-  border-bottom: 2rpx solid #dce4e1;
-}
-
-.brand-name,
-.account-text { display: block; }
-
-.brand-name {
-  color: #1c2b28;
-  font-size: 34rpx;
-  font-weight: 700;
-}
-
-.account-text {
-  margin-top: 8rpx;
-  color: #708078;
-  font-size: 24rpx;
-}
-
-.logout-button {
-  width: 128rpx;
-  height: 68rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0;
-  border-radius: 10rpx;
-  background: #fff4f0;
-  color: #a44835;
-  font-size: 26rpx;
-}
-
-.logout-button::after {
-  border: 2rpx solid #e8b4a8;
-  border-radius: 10rpx;
-}
-
-.content-band { padding: 64rpx 40rpx; }
-
-.welcome-title {
-  color: #1c2b28;
-  font-size: 44rpx;
-  font-weight: 700;
-}
-
-.feature-entry {
-  width: 100%;
-  min-height: 132rpx;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin: 24rpx 0 0;
-  padding: 24rpx 30rpx;
-  box-sizing: border-box;
-  border-radius: 10rpx;
-  background: #ffffff;
-  text-align: left;
-}
-
-.feature-entry:first-of-type { margin-top: 44rpx; }
-.feature-entry::after { border: 2rpx solid #d5e0db; border-radius: 10rpx; }
-
-.task-entry-title,
-.task-entry-subtitle,
-.feature-entry-title,
-.feature-entry-subtitle { display: block; }
-
-.task-entry-title,
-.feature-entry-title { color: #1c2b28; font-size: 32rpx; font-weight: 650; }
-
-.task-entry-subtitle,
-.feature-entry-subtitle { margin-top: 10rpx; color: #708078; font-size: 24rpx; }
-
-.task-entry-arrow,
-.feature-entry-arrow { color: #167c5a; font-size: 48rpx; line-height: 1; }
-</style>

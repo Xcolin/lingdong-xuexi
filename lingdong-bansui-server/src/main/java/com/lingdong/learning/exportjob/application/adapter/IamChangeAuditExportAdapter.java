@@ -111,6 +111,9 @@ public class IamChangeAuditExportAdapter implements ExportDatasetAdapter {
             return "";
         }
         return switch (row.eventType()) {
+            case MENU_CREATE -> "菜单创建";
+            case MENU_UPDATE -> "菜单变更";
+            case MENU_REORDER -> "菜单排序";
             case USER_CREATE -> "用户创建";
             case USER_PROFILE_CHANGE -> "用户资料变更";
             case USER_PASSWORD_RESET -> "用户密码重置";
@@ -133,6 +136,7 @@ public class IamChangeAuditExportAdapter implements ExportDatasetAdapter {
             return "";
         }
         return switch (row.targetType()) {
+            case MENU -> "菜单";
             case USER -> "用户";
             case ROLE -> "角色";
             case PERMISSION -> "权限";

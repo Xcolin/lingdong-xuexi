@@ -44,6 +44,12 @@
         FOR UPDATE
     </select>
 
+    <select id="findByUsernameForUpdate" resultMap="UserResultMap">
+        SELECT id, username, display_name, mobile, password_hash, user_type, status, created_at, updated_at
+        FROM sys_user WHERE username = #{username}
+        FOR UPDATE
+    </select>
+
     <sql id="directoryFilters">
         <where>
             <if test="query.keyword != null">
@@ -101,6 +107,12 @@
             updated_at = CURRENT_TIMESTAMP
         WHERE id = #{id}
           AND mobile = #{expectedMobile}
+    </update>
+
+    <update id="updatePasswordHashIfExpected">
+        UPDATE sys_user
+        SET password_hash = #{passwordHash}, updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id} AND password_hash = #{expectedPasswordHash} AND status = 'ENABLED'
     </update>
 
     <update id="updateStatus">

@@ -1,10 +1,10 @@
+import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
+import { ConfiguredModal as Modal } from '../../components/ConfiguredModal';
+import { ViewportTable as Table } from '../../components/ViewportTable';
 import { useEffect, useMemo, useState } from 'react';
-import {
-  Alert, Button, Card, Col, Descriptions, Form, Input, InputNumber, Modal,
-  Row, Select, Space, Spin, Table, Tag, Tree, message
-} from 'antd';
+import { Alert, Card, Col, Descriptions, Form, Input, InputNumber, Row, Select, Space, Spin, Tabs, Tag, Tree, message } from 'antd';
 import type { DataNode } from 'antd/es/tree';
-import type { FormInstance } from 'antd';
+import { FormInstance } from 'antd';
 import {
   ArrowRightLeft, Building2, Edit3, FolderPlus, Move, Plus, Power,
   PowerOff, ShieldCheck, Trash2, UserRoundCheck
@@ -163,7 +163,7 @@ function PlatformOrganizationManagementView() {
 
   function confirmEnable(): void {
     if (!selectedNode) return;
-    Modal.confirm({
+    Modal.confirm({ actionPrefix: 'organizations.organization-management-page.confirm.1',
       title: '重新启用组织节点', content: `确认重新启用“${selectedNode.name}”并重算其下级有效状态吗？`,
       okText: '确认启用', cancelText: '取消',
       onOk: async () => {
@@ -179,25 +179,17 @@ function PlatformOrganizationManagementView() {
       <div className="page-heading">
         <h1>组织管理</h1>
         <Space wrap>
-          <Button icon={<Plus size={16} />} onClick={() => setTypeModalOpen(true)}>新增组织类型</Button>
-          <Button type="primary" icon={<FolderPlus size={16} />} onClick={() => setNodeModalOpen(true)}>新增组织节点</Button>
+          <Button actionKey="organizations.organization-management-page.1" icon={<Plus size={16} />} onClick={() => setTypeModalOpen(true)}>新增组织类型</Button>
+          <Button actionKey="organizations.organization-management-page.2" type="primary" icon={<FolderPlus size={16} />} onClick={() => setNodeModalOpen(true)}>新增组织节点</Button>
         </Space>
       </div>
-      {errorMessage && <Alert type="error" showIcon message={errorMessage} action={<Button size="small" onClick={() => void loadOrganizationData()}>重试</Button>} />}
-      <Spin spinning={loading}>
-        <Row gutter={[16, 16]}>
-          <Col xs={24} xl={8}>
-            <Card title="组织类型" className="content-panel">
-              <Table<OrganizationType> rowKey="id" columns={typeColumns} dataSource={types} pagination={false} size="small" locale={{ emptyText: '暂无组织类型' }} />
-            </Card>
-          </Col>
-          <Col xs={24} md={12} xl={8}>
-            <Card title="组织树" className="content-panel">
+      {errorMessage && <Alert type="error" showIcon message={errorMessage} action={<Button actionKey="organizations.organization-management-page.3" size="small" onClick={() => void loadOrganizationData()}>重试</Button>} />}
+      <Tabs className="page-sections" items={[
+        { key: 'tree', label: '组织架构', children: <Spin spinning={loading}><Row gutter={[16, 16]}>
+          <Col xs={24} md={12}><Card title="组织树" className="content-panel">
               {organizationTree.length ? <Tree showLine defaultExpandAll selectedKeys={selectedNode ? [selectedNode.id] : []} onSelect={(keys) => setSelectedNode(findNode(organizationTree, String(keys[0])))} treeData={toTreeData(organizationTree)} className="organization-tree" /> : <div className="empty-state">暂无组织节点</div>}
-            </Card>
-          </Col>
-          <Col xs={24} md={12} xl={8}>
-            <Card title="节点详情" className="content-panel">
+            </Card></Col>
+          <Col xs={24} md={12}><Card title="节点详情" className="content-panel">
               {selectedNode ? <>
                 <Descriptions column={1} size="small">
                   <Descriptions.Item label="名称">{selectedNode.name}</Descriptions.Item>
@@ -208,20 +200,21 @@ function PlatformOrganizationManagementView() {
                   <Descriptions.Item label="版本">{selectedNode.versionNo}</Descriptions.Item>
                 </Descriptions>
                 <Space wrap className="organization-node-actions">
-                  <Button icon={<Edit3 size={15} />} onClick={() => setEditorOpen(true)}>编辑</Button>
+                  <Button actionKey="organizations.organization-management-page.4" icon={<Edit3 size={15} />} onClick={() => setEditorOpen(true)}>编辑</Button>
                   {selectedNode.status === 'DISABLED'
-                    ? <Button icon={<Power size={15} />} onClick={confirmEnable}>重新启用</Button>
-                    : <Button icon={<PowerOff size={15} />} onClick={() => openChange('DISABLE')}>申请停用</Button>}
-                  <Button icon={<Move size={15} />} onClick={() => openChange('MOVE')}>申请移动</Button>
-                  <Button danger icon={<Trash2 size={15} />} onClick={() => openChange('DELETE')}>申请删除</Button>
+                    ? <Button actionKey="organizations.organization-management-page.5" icon={<Power size={15} />} onClick={confirmEnable}>重新启用</Button>
+                    : <Button actionKey="organizations.organization-management-page.6" icon={<PowerOff size={15} />} onClick={() => openChange('DISABLE')}>申请停用</Button>}
+                  <Button actionKey="organizations.organization-management-page.7" icon={<Move size={15} />} onClick={() => openChange('MOVE')}>申请移动</Button>
+                  <Button actionKey="organizations.organization-management-page.8" danger icon={<Trash2 size={15} />} onClick={() => openChange('DELETE')}>申请删除</Button>
                 </Space>
               </> : <div className="empty-state">请选择组织节点</div>}
-            </Card>
-          </Col>
-        </Row>
-      </Spin>
-
-      <OrganizationChangeReviewPanel canReview={false} refreshKey={changeRefreshKey} />
+            </Card></Col>
+        </Row></Spin> },
+        { key: 'types', label: '组织类型', children: <Card title="组织类型" className="content-panel">
+              <Table<OrganizationType> rowKey="id" columns={typeColumns} dataSource={types} pagination={false} size="small" locale={{ emptyText: '暂无组织类型' }} />
+            </Card> },
+        { key: 'changes', label: '变更记录', children: <OrganizationChangeReviewPanel canReview={false} refreshKey={changeRefreshKey} /> }
+      ]} />
       <OrganizationNodeEditorDrawer open={editorOpen} node={selectedNode} onClose={() => setEditorOpen(false)} onSaved={loadOrganizationData} />
       <CreateTypeModal open={typeModalOpen} form={typeForm} submitting={submitting} onCancel={() => setTypeModalOpen(false)} onSubmit={createOrganizationType} />
       <CreateNodeModal open={nodeModalOpen} form={nodeForm} types={types} parentOptions={parentOptions} submitting={submitting} onCancel={() => setNodeModalOpen(false)} onSubmit={createOrganizationNode} />
@@ -229,7 +222,7 @@ function PlatformOrganizationManagementView() {
         <Form form={changeForm} layout="vertical" onFinish={submitChange}>
           {changeType === 'MOVE' && <Form.Item name="targetParentId" label="目标上级组织" rules={[{ required: true, message: '请选择目标上级组织' }]}><Select options={parentOptions.filter((item) => item.id !== selectedNode?.id).map((item) => ({ value: item.id, label: item.label }))} /></Form.Item>}
           <Form.Item name="reason" label="申请原因" rules={[{ required: true, whitespace: true, message: '请输入申请原因' }, { max: 500 }]}><Input.TextArea rows={4} maxLength={500} showCount /></Form.Item>
-          <div className="form-actions"><Button onClick={() => setChangeType(null)}>取消</Button><Button danger type="primary" htmlType="submit" loading={submitting}>提交审核</Button></div>
+          <div className="form-actions"><Button actionKey="organizations.organization-management-page.9" onClick={() => setChangeType(null)}>取消</Button><Button actionKey="organizations.organization-management-page.10" danger type="primary" htmlType="submit" loading={submitting}>提交审核</Button></div>
         </Form>
       </Modal>
     </div>
@@ -243,10 +236,10 @@ function OrganizationOperationView({ studentOrganizationRelationshipEnabled, par
   const [studentCancellationOpen, setStudentCancellationOpen] = useState(false);
   return <div className="page-stack">
     <div className="page-heading"><h1>机构业务</h1><Space wrap>
-      {studentOrganizationRelationshipEnabled && <Button icon={<ArrowRightLeft size={16} />} onClick={() => setStudentRelationshipOpen(true)}>学员关系</Button>}
-      {parentMobileManualRecoveryEnabled && <Button icon={<ShieldCheck size={16} />} onClick={() => setParentMobileOpen(true)}>家长换号核验</Button>}
-      {studentAccountCancellationEnabled && <Button danger icon={<Trash2 size={16} />} onClick={() => setStudentCancellationOpen(true)}>学生账号注销</Button>}
-      <Button icon={<UserRoundCheck size={16} />} onClick={() => setTeacherClassOpen(true)}>配置教师班级</Button>
+      {studentOrganizationRelationshipEnabled && <Button actionKey="organizations.organization-management-page.11" icon={<ArrowRightLeft size={16} />} onClick={() => setStudentRelationshipOpen(true)}>学员关系</Button>}
+      {parentMobileManualRecoveryEnabled && <Button actionKey="organizations.organization-management-page.12" icon={<ShieldCheck size={16} />} onClick={() => setParentMobileOpen(true)}>家长换号核验</Button>}
+      {studentAccountCancellationEnabled && <Button actionKey="organizations.organization-management-page.13" danger icon={<Trash2 size={16} />} onClick={() => setStudentCancellationOpen(true)}>学生账号注销</Button>}
+      <Button actionKey="organizations.organization-management-page.14" icon={<UserRoundCheck size={16} />} onClick={() => setTeacherClassOpen(true)}>配置教师班级</Button>
     </Space></div>
     {classManagementEnabled && <ClassManagementPanel />}
     <StudentOrganizationLifecycleDrawer open={studentRelationshipOpen} onClose={() => setStudentRelationshipOpen(false)} />
@@ -261,7 +254,7 @@ function CreateTypeModal({ open, form, submitting, onCancel, onSubmit }: { open:
     <Form.Item name="code" label="类型编码" rules={[{ required: true, message: '请输入类型编码' }, { max: 32 }]}><Input autoComplete="off" /></Form.Item>
     <Form.Item name="name" label="类型名称" rules={[{ required: true, message: '请输入类型名称' }, { max: 32 }]}><Input autoComplete="off" /></Form.Item>
     <Form.Item name="sortOrder" label="排序" rules={[{ required: true, message: '请输入排序值' }]}><InputNumber min={0} precision={0} className="full-width" /></Form.Item>
-    <div className="form-actions"><Button onClick={onCancel}>取消</Button><Button type="primary" htmlType="submit" loading={submitting}>创建类型</Button></div>
+    <div className="form-actions"><Button actionKey="organizations.organization-management-page.15" onClick={onCancel}>取消</Button><Button actionKey="organizations.organization-management-page.16" type="primary" htmlType="submit" loading={submitting}>创建类型</Button></div>
   </Form></Modal>;
 }
 
@@ -272,7 +265,7 @@ function CreateNodeModal({ open, form, types, parentOptions, submitting, onCance
     <Form.Item name="typeCode" label="组织类型" rules={[{ required: true, message: '请选择组织类型' }]}><Select options={types.filter((item) => item.status === 'ENABLED').map((item) => ({ value: item.code, label: `${item.name}（${item.code}）` }))} /></Form.Item>
     <Form.Item name="parentId" label="上级组织"><Select allowClear placeholder="不选择则创建根节点" options={parentOptions.map((item) => ({ value: item.id, label: item.label }))} /></Form.Item>
     <Form.Item name="sortOrder" label="排序" rules={[{ required: true, message: '请输入排序值' }]}><InputNumber min={0} precision={0} className="full-width" /></Form.Item>
-    <div className="form-actions"><Button onClick={onCancel}>取消</Button><Button type="primary" htmlType="submit" loading={submitting}>创建节点</Button></div>
+    <div className="form-actions"><Button actionKey="organizations.organization-management-page.17" onClick={onCancel}>取消</Button><Button actionKey="organizations.organization-management-page.18" type="primary" htmlType="submit" loading={submitting}>创建节点</Button></div>
   </Form></Modal>;
 }
 

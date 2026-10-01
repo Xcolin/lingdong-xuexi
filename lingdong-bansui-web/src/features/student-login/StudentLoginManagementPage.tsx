@@ -1,5 +1,8 @@
+import { ConfiguredModal as Modal } from '../../components/ConfiguredModal';
+import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
+import { ViewportTable as Table } from '../../components/ViewportTable';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Button, Input, Modal, QRCode, Space, Table, Tag, Tooltip, message } from 'antd';
+import { Alert, Input, QRCode, Space, Tag, Tooltip, message } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
 import { QrCode, RefreshCw, Search, Unlink } from 'lucide-react';
 import { studentLoginApi, type StudentDirectoryItem, type StudentDirectoryPage, type StudentLoginQrTicket, type StudentWechatBindingSummary } from './api';
@@ -46,7 +49,7 @@ export function StudentLoginManagementPage({
   }, [canManageStudentWechat, studentWechatAuthEnabled]);
 
   function confirmWechatUnbinding(student: StudentDirectoryItem): void {
-    Modal.confirm({
+    Modal.confirm({ actionPrefix: 'student-login.student-login-management-page.confirm.1',
       title: `解绑${student.studentName}的微信？`,
       content: '解绑后该学生不能继续使用微信快捷登录，账号登录和已有学习数据不受影响。',
       okText: '确认解绑',
@@ -105,7 +108,7 @@ export function StudentLoginManagementPage({
   return (
     <div className="page-stack">
       <div className="page-heading"><h1>学生登录</h1></div>
-      {errorMessage && <Alert type="error" showIcon message={errorMessage} action={<Button size="small" onClick={() => void loadStudents(keyword, directory.page)}>重试</Button>} />}
+      {errorMessage && <Alert type="error" showIcon message={errorMessage} action={<Button actionKey="student-login.student-login-management-page.1" size="small" onClick={() => void loadStudents(keyword, directory.page)}>重试</Button>} />}
       <ProCard className="content-panel" bordered={false}>
         <Space className="student-login-toolbar">
           <Input
@@ -115,7 +118,7 @@ export function StudentLoginManagementPage({
             onChange={(event) => setKeyword(event.target.value)}
             onPressEnter={() => void loadStudents(keyword.trim(), 1)}
           />
-          <Button type="primary" icon={<Search size={16} />} onClick={() => void loadStudents(keyword.trim(), 1)}>查询</Button>
+          <Button actionKey="student-login.student-login-management-page.2" type="primary" icon={<Search size={16} />} onClick={() => void loadStudents(keyword.trim(), 1)}>查询</Button>
         </Space>
         <Table<StudentDirectoryItem>
           rowKey="id"
@@ -145,7 +148,7 @@ export function StudentLoginManagementPage({
               render: (_, student) => (
                 <Space size={2}>
                   <Tooltip title="登录二维码">
-                    <Button
+                    <Button actionKey="student-login.student-login-management-page.3"
                       type="text"
                       icon={<QrCode size={18} />}
                       aria-label={`生成 ${student.studentName} 的登录二维码`}
@@ -155,7 +158,7 @@ export function StudentLoginManagementPage({
                   </Tooltip>
                   {studentWechatAuthEnabled && canManageStudentWechat && wechatBindings[student.id]?.bound && (
                     <Tooltip title="解绑微信">
-                      <Button
+                      <Button actionKey="student-login.student-login-management-page.4"
                         danger
                         type="text"
                         icon={<Unlink size={18} />}
@@ -175,7 +178,7 @@ export function StudentLoginManagementPage({
         title={selectedStudent ? `${selectedStudent.studentName}的登录二维码` : '学生登录二维码'}
         open={Boolean(selectedStudent)}
         onCancel={closeQr}
-        footer={<Button onClick={closeQr}>关闭</Button>}
+        footer={<Button actionKey="student-login.student-login-management-page.5" onClick={closeQr}>关闭</Button>}
         destroyOnHidden
       >
         <div className="student-login-qr">
@@ -183,7 +186,7 @@ export function StudentLoginManagementPage({
           <div className="student-login-qr-status">
             {ticket ? `二维码将在 ${remainingSeconds} 秒后自动刷新` : '正在生成二维码'}
           </div>
-          <Button
+          <Button actionKey="student-login.student-login-management-page.6"
             icon={<RefreshCw size={16} />}
             loading={ticketLoading}
             disabled={!selectedStudent}

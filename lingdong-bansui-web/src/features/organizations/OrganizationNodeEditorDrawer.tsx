@@ -1,5 +1,6 @@
+import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { useEffect, useState } from 'react';
-import { Button, Drawer, Form, Input, InputNumber, message } from 'antd';
+import { Drawer, Form, Input, InputNumber, message } from 'antd';
 import { Save } from 'lucide-react';
 import { organizationApi, type OrganizationNode, type UpdateOrganizationInput } from '../../api/organization';
 
@@ -50,8 +51,8 @@ export function OrganizationNodeEditorDrawer({ open, node, onClose, onSaved }: O
           <InputNumber min={0} precision={0} className="full-width" />
         </Form.Item>
         <div className="form-actions">
-          <Button onClick={onClose}>取消</Button>
-          <Button type="primary" htmlType="submit" loading={submitting} icon={<Save size={16} />}>保存</Button>
+          <Button actionKey="organizations.organization-node-editor-drawer.1" onClick={onClose}>取消</Button>
+          <Button actionKey="organizations.organization-node-editor-drawer.2" type="primary" htmlType="submit" loading={submitting} icon={<Save size={16} />}>保存</Button>
         </div>
       </Form>
     </Drawer>

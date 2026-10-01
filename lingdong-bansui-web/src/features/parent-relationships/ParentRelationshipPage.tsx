@@ -1,5 +1,8 @@
+import { ConfiguredModal as Modal } from '../../components/ConfiguredModal';
+import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
+import { ViewportTable as Table } from '../../components/ViewportTable';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Button, Empty, Form, Input, Modal, Select, Space, Table, Tag, Tooltip, message } from 'antd';
+import { Alert, Empty, Form, Input, Select, Space, Tag, Tooltip, message } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
 import { ArrowRightLeft, Link2, UserMinus, UserPlus } from 'lucide-react';
 import type { CurrentUser } from '../../api/auth';
@@ -86,7 +89,7 @@ export function ParentRelationshipPage({ currentUser }: ParentRelationshipPagePr
 
   function confirmUnbindSecondary(member: ParentRelationshipMember): void {
     if (!selectedStudentId) return;
-    Modal.confirm({
+    Modal.confirm({ actionPrefix: 'parent-relationships.parent-relationship-page.confirm.1',
       title: '确认解除副家长',
       content: `解除后，${member.displayName || '该副家长'}将立即失去该学生的数据访问权限。`,
       okText: '确认解除',
@@ -102,7 +105,7 @@ export function ParentRelationshipPage({ currentUser }: ParentRelationshipPagePr
 
   function confirmUnbindPrimary(): void {
     if (!selectedStudentId) return;
-    Modal.confirm({
+    Modal.confirm({ actionPrefix: 'parent-relationships.parent-relationship-page.confirm.2',
       title: '确认解除主家长关系',
       content: relationship?.secondaryParent
         ? '解除后，当前副家长将自动晋升为主家长。'
@@ -144,16 +147,16 @@ export function ParentRelationshipPage({ currentUser }: ParentRelationshipPagePr
         {!selectedStudentId && !loading ? <Empty description="暂无关联学生" /> : <>
           {canManage && <Space className="parent-relationship-actions" wrap>
             <Tooltip title={relationship?.secondaryParent ? '需先解除现有副家长关系' : undefined}>
-              <Button
+              <Button actionKey="parent-relationships.parent-relationship-page.1"
                 type="primary" icon={<UserPlus size={16} />}
                 disabled={Boolean(relationship?.secondaryParent)}
                 onClick={() => setInvitationMode('SECONDARY')}
               >邀请副家长</Button>
             </Tooltip>
-            <Button icon={<ArrowRightLeft size={16} />} onClick={() => setInvitationMode('TRANSFER')}>
+            <Button actionKey="parent-relationships.parent-relationship-page.2" icon={<ArrowRightLeft size={16} />} onClick={() => setInvitationMode('TRANSFER')}>
               转移监护权
             </Button>
-            <Button danger icon={<UserMinus size={16} />} onClick={confirmUnbindPrimary}>
+            <Button actionKey="parent-relationships.parent-relationship-page.3" danger icon={<UserMinus size={16} />} onClick={confirmUnbindPrimary}>
               解除我的主家长关系
             </Button>
           </Space>}
@@ -174,7 +177,7 @@ export function ParentRelationshipPage({ currentUser }: ParentRelationshipPagePr
               { title: '状态', key: 'status', width: 110, render: () => <Tag color="green">有效</Tag> },
               { title: '操作', key: 'action', width: 140, render: (_, member) => (
                 canManage && member.relationshipRole === 'SECONDARY_GUARDIAN'
-                  ? <Button danger type="text" icon={<Link2 size={16} />}
+                  ? <Button actionKey="parent-relationships.parent-relationship-page.4" danger type="text" icon={<Link2 size={16} />}
                       onClick={() => confirmUnbindSecondary(member)}>解除副家长</Button>
                   : null
               ) }
@@ -183,7 +186,7 @@ export function ParentRelationshipPage({ currentUser }: ParentRelationshipPagePr
         </>}
       </ProCard>
 
-      <Modal
+      <Modal actionPrefix="parent-relationships.parent-relationship-page.modal.1"
         title={invitationMode === 'SECONDARY' ? '邀请副家长' : '转移监护权'}
         open={Boolean(invitationMode)}
         okText="发送邀请"

@@ -1,5 +1,5 @@
 <template>
-  <view class="page-shell">
+  <view class="page-shell has-tabbar">
     <view v-if="capabilityLoading" class="state-view">正在检查功能状态</view>
     <template v-else-if="enabled">
       <scroll-view v-if="reviews.length" class="date-strip" scroll-x>
@@ -85,10 +85,13 @@
       <view v-else-if="!loading && !errorMessage" class="state-view">暂无成长复盘</view>
       <view v-if="loading" class="loading-mask">正在加载</view>
     </template>
+  <AppTabBar :items="STUDENT_TABS" :active="2" />
   </view>
 </template>
 
 <script setup lang="ts">
+import AppTabBar from '@/components/AppTabBar.vue';
+import { STUDENT_TABS } from '@/config/tabbar';
 import { ref } from 'vue';
 import { onPullDownRefresh, onShow } from '@dcloudio/uni-app';
 import { getMiniappCapabilities } from '@/api/capability';

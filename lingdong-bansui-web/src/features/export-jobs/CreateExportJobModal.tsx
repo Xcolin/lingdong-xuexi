@@ -1,4 +1,5 @@
-import { Alert, Button, Checkbox, Form, Input, Modal, Select, Spin, message } from 'antd';
+import { ConfiguredModal as Modal } from '../../components/ConfiguredModal';
+import { Alert, Button, Checkbox, Form, Input, Select, Spin, message } from 'antd';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { exportJobApi, type CreateExportJobInput, type ExportJobOptions, type ExportJobType } from '../../api/export-jobs';
 
@@ -173,7 +174,7 @@ export function CreateExportJobModal(props: CreateExportJobModalProps) {
   }
 
   const exportType = Form.useWatch('exportType', form);
-  return <Modal
+  return <Modal actionPrefix="export-jobs.create-export-job-modal.modal.1"
     open={props.open}
     title="新建数据导出"
     className="export-job-create-modal"

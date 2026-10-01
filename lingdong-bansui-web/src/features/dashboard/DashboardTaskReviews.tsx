@@ -1,5 +1,6 @@
+import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { useEffect, useState } from 'react';
-import { Alert, Button, Spin } from 'antd';
+import { Alert, Spin } from 'antd';
 import { authApi } from '../../api/auth';
 import { capabilityApi } from '../../api/capability';
 import { TaskReviewQueue } from '../learning-tasks/TaskReviewQueue';
@@ -31,7 +32,7 @@ export function DashboardTaskReviews({ userId }: { userId: string }) {
   return <section aria-label="待审核任务">
     <h2>待审核任务</h2>
     {busy && <Spin />}
-    {error && <Alert type="error" message={error} action={<Button onClick={() => setReload(value => value + 1)}>重试</Button>} />}
+    {error && <Alert type="error" message={error} action={<Button actionKey="dashboard.dashboard-task-reviews.1" onClick={() => setReload(value => value + 1)}>重试</Button>} />}
     {!busy && !error && !allowed && <p>当前无任务审核权限或功能未开启。</p>}
     {!busy && allowed && <TaskReviewQueue key={`${userId}-${reload}`} />}
   </section>;

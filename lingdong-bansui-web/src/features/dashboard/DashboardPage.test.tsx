@@ -45,10 +45,13 @@ describe('Web 账号安全工作台', () => {
     const user = userEvent.setup();
     render(<DashboardPage currentUser={currentUser} accountSecurityManagementEnabled onSessionEnded={vi.fn()} />);
 
+    await user.click(screen.getByRole('tab', { name: '设备会话' }));
     expect(await screen.findByText('当前设备')).toBeInTheDocument();
-    expect(screen.getByText('检测到新的 Web 设备登录')).toBeInTheDocument();
+
     expect(screen.getByRole('button', { name: '下线 家长小程序' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '下线 当前浏览器' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('tab', { name: '安全事件' }));
+    expect(screen.getByText('检测到新的 Web 设备登录')).toBeVisible();
     await user.click(screen.getByRole('button', { name: '标记已读' }));
     await waitFor(() => expect(authMocks.markSecurityEventRead).toHaveBeenCalledWith('1000000000000000004'));
     await user.click(screen.getByRole('button', { name: '全部标记已读' }));

@@ -1,11 +1,13 @@
 <template>
-  <view class="page-shell">
-    <view v-if="capabilityLoading" class="state-view">
-      <text>正在检查功能状态</text>
+  <view class="ld-page">
+    <view class="ld-heading">
+      <text class="ld-heading-title">我的积分</text>
+      <view class="ld-heading-rule" />
     </view>
+    <view v-if="capabilityLoading" class="ld-loading">正在检查功能状态</view>
     <template v-else-if="growthPointEnabled">
       <view class="account-band">
-        <view>
+        <view class="account-left">
           <text class="student-name">{{ account?.studentName || '我的积分' }}</text>
           <text class="updated-at">{{ account ? `更新于 ${formatDateTime(account.updatedAt)}` : '' }}</text>
         </view>
@@ -14,21 +16,24 @@
             <text class="balance-label">累计积分</text>
             <text class="balance-value">{{ account?.totalPoints ?? 0 }}</text>
           </view>
+          <view class="balance-divider" />
           <view class="balance-item">
             <text class="balance-label">可用积分</text>
-            <text class="balance-value available">{{ account?.availablePoints ?? 0 }}</text>
+            <text class="balance-value">{{ account?.availablePoints ?? 0 }}</text>
           </view>
         </view>
       </view>
 
-      <view v-if="errorMessage" class="error-band">
-        <text>{{ errorMessage }}</text>
+      <view v-if="errorMessage" class="ld-card error-band">
+        <text class="error-text">{{ errorMessage }}</text>
         <button class="retry-button" @tap="reload">重试</button>
       </view>
 
-      <view class="section-heading">积分明细</view>
+      <view class="ld-heading">
+        <text class="ld-heading-title">积分明细</text>
+      </view>
       <view class="ledger-list">
-        <view v-for="ledger in ledgers" :key="ledger.id" class="ledger-row">
+        <view v-for="ledger in ledgers" :key="ledger.id" class="ledger-card">
           <view class="ledger-main">
             <view class="ledger-title-row">
               <text class="ledger-title">{{ ledgerTitle(ledger) }}</text>
@@ -56,11 +61,12 @@
         </view>
       </view>
 
-      <view v-if="loading" class="list-footer">正在加载</view>
+      <view v-if="loading" class="ld-loading">正在加载</view>
       <view v-else-if="hasMore" class="list-footer">继续上滑加载</view>
       <view v-else-if="ledgers.length" class="list-footer">已加载全部积分明细</view>
-      <view v-else-if="!errorMessage" class="state-view compact">
-        <text class="state-title">暂无积分变动</text>
+      <view v-else-if="!errorMessage" class="ld-empty">
+        <text class="ld-empty-main">暂无积分变动</text>
+        <text class="ld-empty-sub">完成任务获得积分后会显示在这里</text>
       </view>
     </template>
   </view>
@@ -188,42 +194,50 @@ function toMessage(error: unknown): string {
 </script>
 
 <style lang="scss" scoped>
-.page-shell { min-height: 100vh; padding-bottom: 48rpx; background: #f4f7f5; }
-
-/* #ifdef H5 */
-.page-shell { min-height: calc(100vh - 44px); }
-/* #endif */
-
-.account-band { padding: 36rpx 40rpx 34rpx; background: #ffffff; border-bottom: 2rpx solid #dce4e1; }
-.student-name, .updated-at, .balance-label, .balance-value { display: block; }
-.student-name { color: #1c2b28; font-size: 32rpx; font-weight: 650; }
-.updated-at { min-height: 34rpx; margin-top: 8rpx; color: #708078; font-size: 22rpx; }
-.balance-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32rpx; margin-top: 32rpx; }
-.balance-item { min-width: 0; }
-.balance-label { color: #708078; font-size: 24rpx; }
-.balance-value { margin-top: 8rpx; color: #1c2b28; font-size: 48rpx; font-weight: 700; line-height: 1.2; }
-.balance-value.available { color: #167c5a; }
-
-.section-heading { padding: 26rpx 36rpx 18rpx; color: #536760; font-size: 26rpx; font-weight: 600; }
-.ledger-list { background: #ffffff; }
-.ledger-row { min-height: 162rpx; padding: 26rpx 36rpx; box-sizing: border-box; border-bottom: 2rpx solid #e5ece8; }
-.ledger-main { min-width: 0; }
-.ledger-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 24rpx; }
-.ledger-title { min-width: 0; color: #1c2b28; font-size: 30rpx; font-weight: 650; line-height: 1.4; overflow-wrap: anywhere; }
-.ledger-amount { flex: 0 0 auto; color: #167c5a; font-size: 32rpx; font-weight: 700; }
-.ledger-amount.negative { color: #c13f3f; }
-.ledger-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 12rpx 20rpx; margin-top: 14rpx; color: #708078; font-size: 22rpx; }
-.source-label { padding: 4rpx 10rpx; border-radius: 6rpx; }
-.source-family { background: #fceff3; color: #9d3658; }
-.source-organization { background: #edf3ff; color: #315f9f; }
-.source-teacher { background: #e9f7f5; color: #147069; }
-.reviewer-name { display: block; margin-top: 12rpx; color: #536760; font-size: 23rpx; }
-.correction-reason { display: block; margin-top: 10rpx; color: #8f4b3d; font-size: 23rpx; line-height: 1.5; overflow-wrap: anywhere; }
-
-.list-footer, .state-view { min-height: 180rpx; display: flex; align-items: center; justify-content: center; color: #708078; font-size: 26rpx; }
-.state-view.compact { min-height: 280rpx; }
-.state-title { color: #536760; font-size: 30rpx; }
-.error-band { display: flex; align-items: center; justify-content: space-between; gap: 20rpx; padding: 20rpx 32rpx; background: #fff1ed; color: #9a4b38; font-size: 24rpx; }
-.retry-button { width: 120rpx; height: 56rpx; margin: 0; border-radius: 8rpx; background: #ffffff; color: #9a4b38; font-size: 26rpx; }
-.retry-button::after { border-color: #e8b4a8; }
+.account-band {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24rpx;
+  margin-top: 24rpx;
+  padding: 36rpx 32rpx;
+  border-radius: 28rpx;
+  background: $ld-gradient-primary;
+  box-shadow: 0 10rpx 30rpx rgba(22, 124, 90, 0.25);
+  color: #ffffff;
+}
+.account-left { min-width: 0; }
+.student-name, .updated-at { display: block; }
+.student-name { font-size: 32rpx; font-weight: 700; overflow-wrap: anywhere; }
+.updated-at { margin-top: 10rpx; font-size: $ld-font-mini; opacity: 0.85; }
+.balance-row { display: flex; align-items: center; gap: 28rpx; flex-shrink: 0; }
+.balance-divider { width: 2rpx; height: 64rpx; background: rgba(255, 255, 255, 0.28); }
+.balance-item { text-align: center; }
+.balance-label { display: block; font-size: $ld-font-mini; opacity: 0.85; }
+.balance-value { display: block; margin-top: 8rpx; font-size: 44rpx; font-weight: 700; line-height: 1; }
+.error-band { display: flex; align-items: center; justify-content: space-between; gap: 20rpx; background: $ld-danger-soft; }
+.error-text { color: $ld-danger; font-size: $ld-font-caption; flex: 1; }
+.retry-button {
+  width: 120rpx; height: 56rpx; display: flex; align-items: center; justify-content: center;
+  margin: 0; border-radius: $ld-radius-pill; background: $ld-card; color: $ld-danger;
+  font-size: $ld-font-caption; flex-shrink: 0;
+}
+.retry-button::after { border: 0; }
+.ledger-card {
+  margin-top: $ld-gap-block;
+  padding: 26rpx 28rpx;
+  border-radius: $ld-radius-lg;
+  background: $ld-card;
+  box-shadow: $ld-shadow-card;
+}
+.ledger-title-row { display: flex; align-items: center; justify-content: space-between; gap: 20rpx; }
+.ledger-title { color: $ld-text; font-size: 29rpx; font-weight: 600; overflow-wrap: anywhere; }
+.ledger-amount { color: $ld-primary; font-size: 34rpx; font-weight: 700; flex-shrink: 0; }
+.ledger-amount.negative { color: $ld-danger; }
+.ledger-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 10rpx 20rpx; margin-top: 14rpx; color: $ld-text-muted; font-size: $ld-font-caption; }
+.ledger-meta text { display: block; }
+.source-label { padding: 4rpx 14rpx; border-radius: $ld-radius-pill; background: $ld-primary-soft; color: $ld-primary; font-size: $ld-font-mini; font-weight: 600; }
+.reviewer-name { display: block; margin-top: 12rpx; color: $ld-text-secondary; font-size: $ld-font-caption; }
+.correction-reason { display: block; margin-top: 10rpx; color: $ld-accent; font-size: $ld-font-caption; }
+.list-footer { padding: 32rpx 0; color: $ld-text-muted; font-size: $ld-font-caption; text-align: center; }
 </style>

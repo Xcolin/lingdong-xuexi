@@ -1,5 +1,7 @@
+import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
+import { ViewportTable as Table } from '../../components/ViewportTable';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Button, Drawer, Form, Input, Select, Space, Table, message } from 'antd';
+import { Alert, Drawer, Form, Input, Select, Space, message } from 'antd';
 import { RefreshCw, Save } from 'lucide-react';
 import type { CurrentUser } from '../../api/auth';
 import { attendanceApi, type AttendanceClass, type AttendanceRosterRow } from './api';
@@ -63,15 +65,15 @@ export function AttendanceRecordDrawer({ checkAccess, onAccessError, onClose, on
   }
   const selected = Object.values(drafts).filter((draft) => draft.status).length;
   return <Drawer title="班级点名" open width={900} onClose={onClose} closable={!submitting} maskClosable={!submitting} keyboard={!submitting}
-    footer={<Space wrap><span>已选择 {selected} / 100 人</span><Button disabled={submitting} onClick={onClose}>取消</Button>
-      <Button type="primary" icon={<Save size={16} />} loading={submitting} disabled={loading || classLoading || Boolean(classError) || selected < 1 || selected > 100} onClick={() => void submit()}>提交考勤</Button></Space>}>
+    footer={<Space wrap><span>已选择 {selected} / 100 人</span><Button actionKey="attendance-records.attendance-record-drawer.1" disabled={submitting} onClick={onClose}>取消</Button>
+      <Button actionKey="attendance-records.attendance-record-drawer.2" type="primary" icon={<Save size={16} />} loading={submitting} disabled={loading || classLoading || Boolean(classError) || selected < 1 || selected > 100} onClick={() => void submit()}>提交考勤</Button></Space>}>
     <div className="page-stack attendance-page">
       {(error || classError) && <Alert type="error" showIcon message={error || classError} />}
       {date > shanghaiToday() && <Alert type="warning" message="不能登记未来日期的考勤" />}
       <Form layout="inline" className="attendance-filters">
         <Form.Item label="班级"><Select aria-label="点名班级" className="filter-select" loading={classLoading} disabled={submitting} value={classId} onChange={(value) => { setRoster([]); setDrafts({}); setClassId(value); }} options={classes.map((item) => ({ value: item.classOrganizationId, label: item.className }))} /></Form.Item>
         <Form.Item label="考勤日期"><Input aria-label="考勤日期" type="date" max={shanghaiToday()} disabled={submitting} value={date} onChange={(e) => { setRoster([]); setDrafts({}); setDate(e.target.value); }} /></Form.Item>
-        <Form.Item><Button icon={<RefreshCw size={16} />} disabled={submitting} onClick={() => setRevision((value) => value + 1)}>重新加载名单</Button></Form.Item>
+        <Form.Item><Button actionKey="attendance-records.attendance-record-drawer.3" icon={<RefreshCw size={16} />} disabled={submitting} onClick={() => setRevision((value) => value + 1)}>重新加载名单</Button></Form.Item>
       </Form>
       <Table rowKey="studentId" loading={loading} dataSource={roster} pagination={false} scroll={{ x: 720, y: 480 }} locale={{ emptyText: classId ? '暂无可登记学生' : '请选择班级' }} columns={[
         { title: '学生', dataIndex: 'studentName', width: 110 },

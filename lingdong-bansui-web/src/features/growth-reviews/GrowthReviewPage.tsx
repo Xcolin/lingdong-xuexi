@@ -1,9 +1,8 @@
+import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
+import { ViewportTable as Table } from '../../components/ViewportTable';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ProCard } from '@ant-design/pro-components';
-import {
-  App, Button, Empty, Form, Input, List, Modal, Progress, Segmented,
-  Select, Space, Statistic, Table, Tag, Tooltip
-} from 'antd';
+import { App, Empty, Form, Input, List, Modal, Progress, Segmented, Select, Space, Statistic, Tag, Tooltip } from 'antd';
 import { FilePenLine, RefreshCw } from 'lucide-react';
 import { growthReviewApi } from './api';
 import { GrowthReviewExportHistory } from './GrowthReviewExportHistory';
@@ -164,7 +163,7 @@ export function GrowthReviewPage({ canReadExportHistory = false, canCreateExport
             onChange={value => { setCreated(undefined); setStudentId(value); }}
           />
           <Tooltip title="刷新复盘">
-            <Button
+            <Button actionKey="growth-reviews.growth-review-page.1"
               aria-label="刷新复盘"
               icon={<RefreshCw size={16} />}
               loading={loading}
@@ -235,7 +234,7 @@ export function GrowthReviewPage({ canReadExportHistory = false, canCreateExport
                       <Tag color="green">第 {detail.contentVersion} 版</Tag>
                     </div>
                     {detail.periodType === 'DAY' && (
-                      <Button
+                      <Button actionKey="growth-reviews.growth-review-page.2"
                         icon={<FilePenLine size={16} />}
                         onClick={() => setSupplementOpen(true)}
                       >补录复盘</Button>
@@ -354,8 +353,8 @@ export function GrowthReviewPage({ canReadExportHistory = false, canCreateExport
             <Input.TextArea rows={5} maxLength={1000} showCount />
           </Form.Item>
           <div className="form-actions">
-            <Button disabled={submitting} onClick={() => setSupplementOpen(false)}>取消</Button>
-            <Button type="primary" htmlType="submit" loading={submitting}>确认追加</Button>
+            <Button actionKey="growth-reviews.growth-review-page.3" disabled={submitting} onClick={() => setSupplementOpen(false)}>取消</Button>
+            <Button actionKey="growth-reviews.growth-review-page.4" type="primary" htmlType="submit" loading={submitting}>确认追加</Button>
           </div>
         </Form>
       </Modal>

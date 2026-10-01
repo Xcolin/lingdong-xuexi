@@ -1,5 +1,6 @@
+import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { useEffect, useState } from 'react';
-import { Button, Form, Input, InputNumber, Modal, Segmented, Select, message } from 'antd';
+import { Form, Input, InputNumber, Modal, Segmented, Select, message } from 'antd';
 import { taskTemplateApi } from './taskTemplateApi';
 import type { LearningTaskTemplate, LearningTaskTemplateInput } from './types';
 
@@ -69,8 +70,8 @@ export function TaskTemplateEditorModal({
       onCancel={onClose}
       destroyOnHidden
       footer={[
-        <Button key="cancel" onClick={onClose}>取消</Button>,
-        <Button
+        <Button actionKey="learning-tasks.task-template-editor-modal.1" key="cancel" onClick={onClose}>取消</Button>,
+        <Button actionKey="learning-tasks.task-template-editor-modal.2"
           key="save"
           type="primary"
           loading={submitting}

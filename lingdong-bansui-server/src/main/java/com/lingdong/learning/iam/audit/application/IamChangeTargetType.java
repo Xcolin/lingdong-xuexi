@@ -2,6 +2,7 @@ package com.lingdong.learning.iam.audit.application;
 
 /** 审计记录的主要业务对象类型。 */
 public enum IamChangeTargetType {
+    MENU,
     USER,
     ROLE,
     PERMISSION,

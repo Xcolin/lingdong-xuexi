@@ -1,5 +1,8 @@
+import { ConfiguredModal as Modal } from '../../components/ConfiguredModal';
+import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
+import { ViewportTable as Table } from '../../components/ViewportTable';
 import { useEffect, useState } from 'react';
-import { Alert, Button, Descriptions, Form, Input, List, Modal, Select, Space, Table, Tag, message } from 'antd';
+import { Alert, Descriptions, Form, Input, List, Select, Space, Tag, message } from 'antd';
 import { ClipboardPlus, Eye, RotateCcw, Search, SearchCheck } from 'lucide-react';
 import type { CurrentUser } from '../../api/auth';
 import { exceptionReportApi, type ExceptionReport, type ExceptionReportClassOption,
@@ -67,9 +70,9 @@ export function ExceptionReportPage({ currentUser }: { currentUser: CurrentUser 
 
   return <div className="page-stack">
     <div className="page-heading"><div><h1>异常报备</h1><p>教师提交授权班级学生异常，机构管理员按组织范围处理。</p></div>
-      {canCreate && <Button type="primary" icon={<ClipboardPlus size={16} />} onClick={() => void openCreate()}>新增报备</Button>}
+      {canCreate && <Button actionKey="exception-reports.exception-report-page.1" type="primary" icon={<ClipboardPlus size={16} />} onClick={() => void openCreate()}>新增报备</Button>}
     </div>
-    {error && <Alert type="error" showIcon message={error} action={<Button icon={<SearchCheck size={16} />} onClick={() => void load(page, filters)}>重试</Button>} />}
+    {error && <Alert type="error" showIcon message={error} action={<Button actionKey="exception-reports.exception-report-page.2" icon={<SearchCheck size={16} />} onClick={() => void load(page, filters)}>重试</Button>} />}
     <Form form={filterForm} layout="inline" className="directory-filters" onFinish={(values) => void search(values)}>
       <Form.Item label="班级" name="classOrganizationId"><Select allowClear className="filter-select"
         options={classes.map((item) => ({ value: item.classOrganizationId, label: item.className }))} /></Form.Item>
@@ -78,8 +81,8 @@ export function ExceptionReportPage({ currentUser }: { currentUser: CurrentUser 
       <Form.Item label="状态" name="status"><Select allowClear className="filter-select" options={[
         { value: 'SUBMITTED', label: '待处理' }, { value: 'HANDLED', label: '已处理' }
       ]} /></Form.Item>
-      <Form.Item><Space><Button htmlType="submit" icon={<Search size={16} />}>查询</Button>
-        <Button icon={<RotateCcw size={16} />} onClick={() => void resetFilters()}>重置</Button></Space></Form.Item>
+      <Form.Item><Space><Button actionKey="exception-reports.exception-report-page.3" htmlType="submit" icon={<Search size={16} />}>查询</Button>
+        <Button actionKey="exception-reports.exception-report-page.4" icon={<RotateCcw size={16} />} onClick={() => void resetFilters()}>重置</Button></Space></Form.Item>
     </Form>
     <Table rowKey="id" loading={loading} dataSource={items} pagination={{ current: page, pageSize: 20, total, onChange: (value) => void load(value, filters) }}
       scroll={{ x: 900 }} columns={[
@@ -90,9 +93,9 @@ export function ExceptionReportPage({ currentUser }: { currentUser: CurrentUser 
         { title: '报备教师', dataIndex: 'reporterName' },
         { title: '状态', dataIndex: 'status', render: (value) => <Tag color={value === 'HANDLED' ? 'green' : 'gold'}>{value === 'HANDLED' ? '已处理' : '待处理'}</Tag> },
         { title: '报备时间', dataIndex: 'reportedAt', render: formatTime },
-        { title: '操作', key: 'action', fixed: 'right', render: (_, row) => <Button type="text" icon={<Eye size={16} />} onClick={() => void openDetails(row.id)}>详情</Button> }
+        { title: '操作', key: 'action', fixed: 'right', render: (_, row) => <Button actionKey="exception-reports.exception-report-page.5" type="text" icon={<Eye size={16} />} onClick={() => void openDetails(row.id)}>详情</Button> }
       ]} />
-    <Modal title="新增异常报备" open={createOpen} onCancel={() => setCreateOpen(false)} onOk={() => form.submit()} confirmLoading={submitting} destroyOnClose>
+    <Modal actionPrefix="exception-reports.exception-report-page.modal.1" title="新增异常报备" open={createOpen} onCancel={() => setCreateOpen(false)} onOk={() => form.submit()} confirmLoading={submitting} destroyOnClose>
       <Form form={form} layout="vertical" onFinish={(values) => void create(values)}>
         <Form.Item name="classOrganizationId" label="班级" rules={[{ required: true, message: '请选择班级' }]}>
           <Select options={classes.map((item) => ({ value: item.classOrganizationId, label: item.className }))} onChange={(value) => void classChanged(value)} />
@@ -109,8 +112,8 @@ export function ExceptionReportPage({ currentUser }: { currentUser: CurrentUser 
       </Form>
     </Modal>
     <Modal title="异常报备详情" open={Boolean(details)} onCancel={() => setDetails(undefined)} footer={details?.report.status === 'SUBMITTED' && canHandle
-      ? <Space><Button onClick={() => setDetails(undefined)}>取消</Button><Button type="primary" loading={submitting} onClick={() => void handle()}>确认处理</Button></Space>
-      : <Button onClick={() => setDetails(undefined)}>关闭</Button>} width={720}>
+      ? <Space><Button actionKey="exception-reports.exception-report-page.6" onClick={() => setDetails(undefined)}>取消</Button><Button actionKey="exception-reports.exception-report-page.7" type="primary" loading={submitting} onClick={() => void handle()}>确认处理</Button></Space>
+      : <Button actionKey="exception-reports.exception-report-page.8" onClick={() => setDetails(undefined)}>关闭</Button>} width={720}>
       {details && <Space direction="vertical" size="middle" style={{ width: '100%' }}>
         <Descriptions column={{ xs: 1, sm: 2 }} bordered size="small" items={[
           { key: 'student', label: '学生', children: `${details.report.studentName} ${details.report.studentAccountMasked}` },

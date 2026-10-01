@@ -38,6 +38,7 @@ it('审核员混合角色只审批，成功刷新全局能力', async () => {
   vi.mocked(authApi.currentUser).mockResolvedValue(auditor);
   const callback = vi.fn();
   render(<FeatureManagementPage currentUser={auditor} onAccessChange={callback} />);
+  fireEvent.click(await screen.findByRole('tab', { name: '待审批申请' }));
   fireEvent.click(await screen.findByRole('button', { name: '批准' }));
   expect(screen.queryByRole('button', { name: '申请启用' })).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: '确认批准' }));
@@ -59,13 +60,15 @@ it('定位功能禁止启用且申请历史使用服务端分页', async () => {
   vi.mocked(featureManagementApi.toggles).mockResolvedValue([{ ...toggle, featureCode: 'GEO_ATTENDANCE', enableAllowed: false }]);
   render(<FeatureManagementPage currentUser={user} />);
   expect(await screen.findByRole('button', { name: '申请启用' })).toBeDisabled();
-  fireEvent.click(screen.getByTitle('2'));
+  fireEvent.click(screen.getByRole('tab', { name: '申请与审批记录' }));
+  fireEvent.click(screen.getAllByTitle('2').find(element => element.classList.contains('ant-pagination-item-2'))!);
   await waitFor(() => expect(featureManagementApi.changes).toHaveBeenLastCalledWith({ page: 2, pageSize: 20 }));
 });
 it('未知历史前值禁止批准但允许驳回', async () => {
   vi.mocked(authApi.currentUser).mockResolvedValue({ ...user, roleCodes: ['SYS_AUDITOR'] });
   vi.mocked(featureManagementApi.reviewQueue).mockResolvedValue({ items: [{ ...change, beforeStatus: null, baseVersion: null } as unknown as typeof change], total: 1, page: 1, pageSize: 20 });
   render(<FeatureManagementPage currentUser={user} />);
+  fireEvent.click(await screen.findByRole('tab', { name: '待审批申请' }));
   expect(await screen.findByRole('button', { name: '批准' })).toBeDisabled();
   expect(screen.getByRole('button', { name: '驳回' })).toBeEnabled();
   expect(screen.getByText('未知')).toBeInTheDocument();
@@ -108,13 +111,15 @@ it('审批在途时焦点查询先返回旧值，审批完成后仍重新验证�
   let complete!: (value: typeof change) => void;
   vi.mocked(featureManagementApi.approve).mockReturnValueOnce(new Promise(resolve => { complete = resolve; }));
   render(<FeatureManagementPage currentUser={auditor} />);
+  fireEvent.click(await screen.findByRole('tab', { name: '待审批申请' }));
   fireEvent.click(await screen.findByRole('button', { name: '批准' }));
   fireEvent.click(screen.getByRole('button', { name: '确认批准' }));
   await waitFor(() => expect(featureManagementApi.approve).toHaveBeenCalled());
   fireEvent.focus(window);
   await waitFor(() => expect(featureManagementApi.toggles).toHaveBeenCalledTimes(2));
   await screen.findByRole('button', { name: '批准' });
-  fireEvent.click(screen.getAllByTitle('2')[0]);
+  fireEvent.click(screen.getByRole('tab', { name: '申请与审批记录' }));
+  fireEvent.click(screen.getAllByTitle('2').find(element => element.classList.contains('ant-pagination-item-2'))!);
   await waitFor(() => expect(featureManagementApi.changes).toHaveBeenLastCalledWith({ page: 2, pageSize: 20 }));
   complete(change);
   await waitFor(() => expect(featureManagementApi.toggles).toHaveBeenCalledTimes(3));

@@ -1,5 +1,7 @@
-import { Alert, Button, Descriptions, Drawer, Form, Progress, Select, Space, Table, Tabs, Tag, Tooltip, message } from 'antd';
-import type { TableProps } from 'antd';
+import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
+import { ViewportTable as Table } from '../../components/ViewportTable';
+import { Alert, Descriptions, Drawer, Form, Progress, Select, Space, Tabs, Tag, Tooltip, message } from 'antd';
+import { TableProps } from 'antd';
 import { Download, Eye, Plus, RefreshCw, RotateCcw, Search } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -143,7 +145,7 @@ export function ExportJobManagementPage(props: ExportJobManagementPageProps) {
   return <div className="page-stack export-job-page">
     <div className="page-heading">
       <h1>数据导出中心</h1>
-      {props.canCreateOrdinary || props.canSubmitSensitive || props.canExportDictionary || props.canExportTemplate || props.canExportInterface || props.canExportCache || props.canExportSystemTasks || props.canExportRewards || props.canExportExceptions || props.canExportAttachments || props.canExportStudentTasks || props.canExportOrgTaskStatistics || props.canExportAttendanceLedger ? <Button type="primary" icon={<Plus size={16} />} onClick={() => setCreateOpen(true)}>新建导出</Button> : null}
+      {props.canCreateOrdinary || props.canSubmitSensitive || props.canExportDictionary || props.canExportTemplate || props.canExportInterface || props.canExportCache || props.canExportSystemTasks || props.canExportRewards || props.canExportExceptions || props.canExportAttachments || props.canExportStudentTasks || props.canExportOrgTaskStatistics || props.canExportAttendanceLedger ? <Button actionKey="export-jobs.export-job-management-page.1" type="primary" icon={<Plus size={16} />} onClick={() => setCreateOpen(true)}>新建导出</Button> : null}
     </div>
     {tabs.length > 1 ? <Tabs className="export-job-tabs" items={tabs} /> : tabs[0]?.children}
     <CreateExportJobModal
@@ -202,9 +204,9 @@ function OwnExportJobs(props: OwnExportJobsProps) {
     { title: '申请原因', dataIndex: 'requestReason', width: 220, ellipsis: true },
     { title: '申请时间', dataIndex: 'requestedAt', width: 170, render: formatTime },
     { title: '操作', fixed: 'right', width: 96, render: (_: unknown, job) => (job.exportType === 'DICTIONARY_LEDGER' && !props.canExportDictionary) || (job.exportType === 'TEMPLATE_LEDGER' && !props.canExportTemplate) || (job.exportType === 'INTERFACE_SERVICE_LEDGER' && !props.canExportInterface) || (job.exportType === 'CACHE_OPERATION_LOG' && !props.canExportCache) || (job.exportType === 'SYSTEM_TASK_LEDGER' && !props.canExportSystemTasks) || (job.exportType === 'REWARD_EXCHANGE_LEDGER' && !props.canExportRewards) || (job.exportType === 'STUDENT_TASK_REPORT' && !props.canExportStudentTasks) || (job.exportType === 'ATTACHMENT_LEDGER' && !props.canExportAttachments && !props.canExportStudentTasks) || (job.exportType === 'EXCEPTION_REPORT_LEDGER' && !props.canExportExceptions) || (job.exportType === 'ORGANIZATION_TASK_STATISTICS' && !props.canExportOrgTaskStatistics) || (job.exportType === 'ATTENDANCE_LEDGER' && !props.canExportAttendanceLedger) ? '-' : <Space size={2}>
-      <Tooltip title="查看详情"><Button type="text" aria-label={`详情-${job.jobCode}`} icon={<Eye size={16} />} onClick={() => void props.onDetail(job.id)} /></Tooltip>
+      <Tooltip title="查看详情"><Button actionKey="export-jobs.export-job-management-page.2" type="text" aria-label={`详情-${job.jobCode}`} icon={<Eye size={16} />} onClick={() => void props.onDetail(job.id)} /></Tooltip>
       <Tooltip title={job.status === 'SUCCEEDED' ? '下载结果' : '作业成功后可下载'}>
-        <Button type="text" aria-label={`下载-${job.jobCode}`} icon={<Download size={16} />} disabled={job.status !== 'SUCCEEDED'} onClick={() => void props.onDownload(job)} />
+        <Button actionKey="export-jobs.export-job-management-page.3" type="text" aria-label={`下载-${job.jobCode}`} icon={<Download size={16} />} disabled={job.status !== 'SUCCEEDED'} onClick={() => void props.onDownload(job)} />
       </Tooltip>
     </Space> }
   ];
@@ -215,9 +217,9 @@ function OwnExportJobs(props: OwnExportJobsProps) {
         <Form.Item label="数据集" name="exportType"><Select allowClear className="filter-select" options={exportTypeOptions} /></Form.Item>
         <Form.Item label="状态" name="status"><Select allowClear className="filter-select" options={statusOptions} /></Form.Item>
         <Form.Item><Space>
-          <Button htmlType="submit" icon={<Search size={16} />}>查询</Button>
-          <Button icon={<RotateCcw size={16} />} onClick={() => { props.filterForm.resetFields(); void props.onLoad({ page: 1, pageSize: props.page.pageSize }); }}>重置</Button>
-          <Tooltip title="刷新作业"><Button aria-label="刷新作业" icon={<RefreshCw size={16} />} onClick={() => void props.onLoad({ ...props.filterForm.getFieldsValue(), page: props.page.page, pageSize: props.page.pageSize })} /></Tooltip>
+          <Button actionKey="export-jobs.export-job-management-page.4" htmlType="submit" icon={<Search size={16} />}>查询</Button>
+          <Button actionKey="export-jobs.export-job-management-page.5" icon={<RotateCcw size={16} />} onClick={() => { props.filterForm.resetFields(); void props.onLoad({ page: 1, pageSize: props.page.pageSize }); }}>重置</Button>
+          <Tooltip title="刷新作业"><Button actionKey="export-jobs.export-job-management-page.6" aria-label="刷新作业" icon={<RefreshCw size={16} />} onClick={() => void props.onLoad({ ...props.filterForm.getFieldsValue(), page: props.page.page, pageSize: props.page.pageSize })} /></Tooltip>
         </Space></Form.Item>
       </Form>
     </section>

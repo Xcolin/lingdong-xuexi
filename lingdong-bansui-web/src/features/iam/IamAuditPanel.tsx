@@ -1,5 +1,7 @@
+import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
+import { ViewportTable as Table } from '../../components/ViewportTable';
 import { useEffect, useState } from 'react';
-import { Button, Form, Input, Select, Space, Table, Tag, message } from 'antd';
+import { Form, Input, Select, Space, Tag, message } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
 import { RotateCcw, Search } from 'lucide-react';
 import {
@@ -18,13 +20,14 @@ const eventLabels: Record<IamAuditEventType, string> = {
   ROLE_CREATE: '创建角色', PERMISSION_CREATE: '创建权限',
   ROLE_PERMISSION_CONFIGURE: '配置角色权限', ROLE_PERMISSION_REMOVE: '撤销角色权限',
   USER_PERMISSION_CONFIGURE: '配置用户权限', USER_PERMISSION_REMOVE: '撤销用户权限',
-  ROLE_DATA_SCOPE_ADD: '新增角色数据范围', ORGANIZATION_ADMIN_ASSIGN: '配置组织管理员'
+  ROLE_DATA_SCOPE_ADD: '新增角色数据范围', ORGANIZATION_ADMIN_ASSIGN: '配置组织管理员',
+  MENU_CREATE: '新增菜单', MENU_UPDATE: '编辑菜单', MENU_REORDER: '菜单排序'
 };
 
 const targetLabels: Record<IamAuditTargetType, string> = {
   USER: '用户', ROLE: '角色', PERMISSION: '权限', ROLE_PERMISSION: '角色权限',
   USER_PERMISSION: '用户权限', ROLE_DATA_SCOPE: '角色数据范围',
-  ORGANIZATION_ADMIN: '组织管理员', USER_ORGANIZATION: '用户组织关系', USER_ROLE: '用户角色关系'
+  ORGANIZATION_ADMIN: '组织管理员', USER_ORGANIZATION: '用户组织关系', USER_ROLE: '用户角色关系', MENU: '菜单'
 };
 
 export function IamAuditPanel() {
@@ -75,8 +78,8 @@ export function IamAuditPanel() {
         <Form.Item label="结束时间" name="endedAt"><Input type="datetime-local" /></Form.Item>
         <Form.Item>
           <Space>
-            <Button type="primary" htmlType="submit" icon={<Search size={16} />}>查询审计日志</Button>
-            <Button icon={<RotateCcw size={16} />} onClick={reset}>重置</Button>
+            <Button actionKey="iam.iam-audit-panel.1" type="primary" htmlType="submit" icon={<Search size={16} />}>查询审计日志</Button>
+            <Button actionKey="iam.iam-audit-panel.2" icon={<RotateCcw size={16} />} onClick={reset}>重置</Button>
           </Space>
         </Form.Item>
       </Form>

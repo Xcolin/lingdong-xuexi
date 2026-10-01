@@ -1,5 +1,7 @@
+import { ConfiguredModal as Modal } from '../../components/ConfiguredModal';
+import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Button, Drawer, Form, Input, Modal, Select, message } from 'antd';
+import { Alert, Drawer, Form, Input, Select, message } from 'antd';
 import { Trash2 } from 'lucide-react';
 import {
   studentAccountCancellationApi,
@@ -43,7 +45,7 @@ export function StudentAccountCancellationDrawer({
   })), [candidates]);
 
   function submit(values: CancellationFormValues): void {
-    Modal.confirm({
+    Modal.confirm({ actionPrefix: 'organizations.student-account-cancellation-drawer.confirm.1',
       title: '确认永久注销该学生账号？',
       content: '账号、登录码、二维码和全部会话将立即失效，操作不可恢复。',
       okText: '确认注销',
@@ -118,8 +120,8 @@ export function StudentAccountCancellationDrawer({
           <Input autoComplete="off" />
         </Form.Item>
         <div className="form-actions">
-          <Button onClick={onClose}>取消</Button>
-          <Button danger type="primary" htmlType="submit" loading={submitting} icon={<Trash2 size={16} />}>
+          <Button actionKey="organizations.student-account-cancellation-drawer.1" onClick={onClose}>取消</Button>
+          <Button actionKey="organizations.student-account-cancellation-drawer.2" danger type="primary" htmlType="submit" loading={submitting} icon={<Trash2 size={16} />}>
             注销学生账号
           </Button>
         </div>

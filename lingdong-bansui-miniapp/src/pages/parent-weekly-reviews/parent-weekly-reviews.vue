@@ -1,5 +1,5 @@
 <template>
-  <view class="page">
+  <view class="page has-tabbar">
     <text class="title">孩子成长周报</text>
     <button :disabled="busy" @tap="initialize">刷新周报</button>
     <text v-if="busy">正在加载周报</text>
@@ -32,9 +32,12 @@
         <view v-if="total > 0" class="paging"><button :disabled="page <= 1" @tap="loadPage(page - 1)">上一页</button><text>第 {{ page }} 页</text><button :disabled="page * 20 >= total" @tap="loadPage(page + 1)">下一页</button></view>
       </template>
     </template>
+  <AppTabBar :items="PARENT_TABS" :active="2" />
   </view>
 </template>
 <script setup lang="ts">
+import AppTabBar from '@/components/AppTabBar.vue';
+import { PARENT_TABS } from '@/config/tabbar';
 import { ref } from 'vue';
 import { onLoad, onShow, onHide, onUnload } from '@dcloudio/uni-app';
 import { weeklyApi, canReadWeekly, type WeeklyStudent, type WeeklySummary, type WeeklyDetail } from '@/api/parent-weekly-review';

@@ -1,5 +1,6 @@
+import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Button, Drawer, Form, Input, Select, Space, message } from 'antd';
+import { Alert, Drawer, Form, Input, Select, Space, message } from 'antd';
 import {
   parentMobileManualRecoveryApi,
   type ParentMobileManualRecoveryCandidate,
@@ -114,7 +115,7 @@ export function ParentMobileManualRecoveryDrawer({ open, onClose }: ParentMobile
                 autoComplete="off"
               />
             </Form.Item>
-            <Button loading={sending} onClick={() => void issueCode()}>发送验证码</Button>
+            <Button actionKey="organizations.parent-mobile-manual-recovery-drawer.1" loading={sending} onClick={() => void issueCode()}>发送验证码</Button>
           </Space.Compact>
         </Form.Item>
         <Form.Item label="验证码" name="smsCode" rules={[
@@ -138,8 +139,8 @@ export function ParentMobileManualRecoveryDrawer({ open, onClose }: ParentMobile
           <Input autoComplete="off" />
         </Form.Item>
         <div className="form-actions">
-          <Button onClick={onClose}>取消</Button>
-          <Button type="primary" htmlType="submit" loading={submitting}>确认换绑</Button>
+          <Button actionKey="organizations.parent-mobile-manual-recovery-drawer.2" onClick={onClose}>取消</Button>
+          <Button actionKey="organizations.parent-mobile-manual-recovery-drawer.3" type="primary" htmlType="submit" loading={submitting}>确认换绑</Button>
         </div>
       </Form>
     </Drawer>

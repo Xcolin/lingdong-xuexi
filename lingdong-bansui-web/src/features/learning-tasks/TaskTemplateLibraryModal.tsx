@@ -1,5 +1,7 @@
+import { ConfiguredModal as Modal } from '../../components/ConfiguredModal';
+import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Button, Empty, List, Modal, Space, Tabs, Tag, Tooltip, message } from 'antd';
+import { Empty, List, Space, Tabs, Tag, Tooltip, message } from 'antd';
 import { ArrowDown, ArrowUp, Check, Edit3, Plus, Trash2 } from 'lucide-react';
 import { taskTemplateApi } from './taskTemplateApi';
 import { TaskTemplateEditorModal } from './TaskTemplateEditorModal';
@@ -41,7 +43,7 @@ export function TaskTemplateLibraryModal({ open, onClose, onSelect }: TaskTempla
   }
 
   function confirmDelete(template: LearningTaskTemplate): void {
-    Modal.confirm({
+    Modal.confirm({ actionPrefix: 'learning-tasks.task-template-library-modal.confirm.1',
       title: '确认删除个人模板',
       content: `删除“${template.templateName}”后，不影响已经创建的学习任务。`,
       okText: '确认删除',
@@ -88,6 +90,7 @@ export function TaskTemplateLibraryModal({ open, onClose, onSelect }: TaskTempla
           <List.Item actions={[
             <TemplateAction
               key="select"
+              actionKey="learning-tasks.template.select"
               label={`选用 ${template.templateName}`}
               title="选用模板"
               icon={<Check size={16} />}
@@ -96,6 +99,7 @@ export function TaskTemplateLibraryModal({ open, onClose, onSelect }: TaskTempla
             ...(personal ? [
               <TemplateAction
                 key="edit"
+                actionKey="learning-tasks.template.edit"
                 label={`编辑 ${template.templateName}`}
                 title="编辑个人模板"
                 icon={<Edit3 size={16} />}
@@ -106,6 +110,7 @@ export function TaskTemplateLibraryModal({ open, onClose, onSelect }: TaskTempla
               />,
               <TemplateAction
                 key="up"
+                actionKey="learning-tasks.template.up"
                 label={`上移 ${template.templateName}`}
                 title="上移"
                 icon={<ArrowUp size={16} />}
@@ -114,6 +119,7 @@ export function TaskTemplateLibraryModal({ open, onClose, onSelect }: TaskTempla
               />,
               <TemplateAction
                 key="down"
+                actionKey="learning-tasks.template.down"
                 label={`下移 ${template.templateName}`}
                 title="下移"
                 icon={<ArrowDown size={16} />}
@@ -122,6 +128,7 @@ export function TaskTemplateLibraryModal({ open, onClose, onSelect }: TaskTempla
               />,
               <TemplateAction
                 key="delete"
+                actionKey="learning-tasks.template.delete"
                 label={`删除 ${template.templateName}`}
                 title="删除个人模板"
                 icon={<Trash2 size={16} />}
@@ -152,7 +159,7 @@ export function TaskTemplateLibraryModal({ open, onClose, onSelect }: TaskTempla
         title="任务模板"
         open={open}
         onCancel={onClose}
-        footer={<Button onClick={onClose}>关闭</Button>}
+        footer={<Button actionKey="learning-tasks.task-template-library-modal.1" onClick={onClose}>关闭</Button>}
         width={760}
         destroyOnHidden
       >
@@ -164,7 +171,7 @@ export function TaskTemplateLibraryModal({ open, onClose, onSelect }: TaskTempla
             children: (
               <div className="task-template-personal-pane">
                 <div className="task-template-toolbar">
-                  <Button
+                  <Button actionKey="learning-tasks.task-template-library-modal.2"
                     type="primary"
                     icon={<Plus size={16} />}
                     onClick={() => {
@@ -190,6 +197,7 @@ export function TaskTemplateLibraryModal({ open, onClose, onSelect }: TaskTempla
 }
 
 function TemplateAction({
+  actionKey,
   label,
   title,
   icon,
@@ -197,6 +205,7 @@ function TemplateAction({
   disabled = false,
   onClick
 }: {
+  actionKey: string;
   label: string;
   title: string;
   icon: ReactNode;
@@ -206,7 +215,7 @@ function TemplateAction({
 }) {
   return (
     <Tooltip title={title}>
-      <Button
+      <Button actionKey={actionKey}
         type="text"
         aria-label={label}
         icon={icon}

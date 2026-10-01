@@ -2,6 +2,9 @@ package com.lingdong.learning.iam.audit.application;
 
 /** 身份权限管理中已经落地的变更事件类型。 */
 public enum IamChangeAuditEventType {
+    MENU_CREATE,
+    MENU_UPDATE,
+    MENU_REORDER,
     USER_CREATE,
     USER_PROFILE_CHANGE,
     USER_PASSWORD_RESET,

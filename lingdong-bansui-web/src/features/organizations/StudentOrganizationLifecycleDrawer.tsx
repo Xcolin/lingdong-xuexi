@@ -1,5 +1,7 @@
+import { ConfiguredModal as Modal } from '../../components/ConfiguredModal';
+import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { useEffect, useMemo, useState } from 'react';
-import { Button, Drawer, Form, Input, Modal, Segmented, Select, Spin, message } from 'antd';
+import { Drawer, Form, Input, Segmented, Select, Spin, message } from 'antd';
 import {
   classAssignmentApi,
   type StudentOrganizationClassOption,
@@ -73,7 +75,7 @@ export function StudentOrganizationLifecycleDrawer({
 
   function confirmDeactivation(values: RelationshipValues): void {
     if (!selectedStudent) return;
-    Modal.confirm({
+    Modal.confirm({ actionPrefix: 'organizations.student-organization-lifecycle-drawer.confirm.1',
       title: '确认转出该学生？',
       content: '转出后机构和班级活动关系立即停用，历史数据继续保留。',
       okText: '确认转出',
@@ -157,8 +159,8 @@ export function StudentOrganizationLifecycleDrawer({
             <Input.TextArea rows={3} maxLength={200} showCount />
           </Form.Item>
           <div className="form-actions">
-            <Button onClick={onClose}>取消</Button>
-            <Button
+            <Button actionKey="organizations.student-organization-lifecycle-drawer.1" onClick={onClose}>取消</Button>
+            <Button actionKey="organizations.student-organization-lifecycle-drawer.2"
               type="primary"
               danger={mode === 'DEACTIVATE'}
               htmlType="submit"

@@ -1,5 +1,7 @@
+import { ConfiguredModal as Modal } from '../../components/ConfiguredModal';
+import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { useEffect, useState } from 'react';
-import { Alert, Button, Descriptions, Drawer, Image, Input, Modal, Select, Space, Spin, message } from 'antd';
+import { Alert, Descriptions, Drawer, Image, Input, Select, Space, Spin, message } from 'antd';
 import { CircleCheckBig, RotateCcw, UserRoundCheck } from 'lucide-react';
 import { taskReviewApi } from './reviewApi';
 import { ApiRequestError } from '../../api/http';
@@ -59,7 +61,7 @@ export function TaskReviewDrawer({
       message.warning('请填写驳回意见');
       return;
     }
-    Modal.confirm({
+    Modal.confirm({ actionPrefix: 'learning-tasks.task-review-drawer.confirm.1',
       title: '确认驳回本次打卡',
       content: '任务将退回学生继续执行，当前打卡记录会保留。',
       okText: '确认驳回',
@@ -74,7 +76,7 @@ export function TaskReviewDrawer({
 
   function confirmApprove(): void {
     if (!assignmentId || !review) return;
-    Modal.confirm({
+    Modal.confirm({ actionPrefix: 'learning-tasks.task-review-drawer.confirm.2',
       title: '确认审核通过',
       content: `任务将完成并向学生发放 ${review.basePoints} 积分。积分到账后只能通过纠错台账调整。`,
       okText: '确认通过',
@@ -127,7 +129,7 @@ export function TaskReviewDrawer({
       onClose={submitting ? undefined : onClose}
     >
       {errorMessage && <Alert type="error" showIcon message={errorMessage}
-        action={<Button disabled={submitting} onClick={() => setReload(value => value + 1)}>刷新详情</Button>} />}
+        action={<Button actionKey="learning-tasks.task-review-drawer.1" disabled={submitting} onClick={() => setReload(value => value + 1)}>刷新详情</Button>} />}
       {review && (
         <div className="review-drawer-content">
           <Descriptions column={1} size="small" bordered>
@@ -149,7 +151,7 @@ export function TaskReviewDrawer({
 
           <section className="review-section">
             <h2>审核通过</h2>
-            <Button
+            <Button actionKey="learning-tasks.task-review-drawer.2"
               type="primary"
               icon={<CircleCheckBig size={16} />}
               loading={submitting}
@@ -167,7 +169,7 @@ export function TaskReviewDrawer({
               placeholder="填写驳回意见"
               onChange={(event) => setReviewComment(event.target.value)}
             />
-            <Button
+            <Button actionKey="learning-tasks.task-review-drawer.3"
               danger
               icon={<RotateCcw size={16} />}
               loading={submitting}
@@ -194,7 +196,7 @@ export function TaskReviewDrawer({
               onChange={(event) => setTransferReason(event.target.value)}
             />
             <Space>
-              <Button
+              <Button actionKey="learning-tasks.task-review-drawer.4"
                 icon={<UserRoundCheck size={16} />}
                 disabled={!reviewerOptions.length}
                 loading={submitting}

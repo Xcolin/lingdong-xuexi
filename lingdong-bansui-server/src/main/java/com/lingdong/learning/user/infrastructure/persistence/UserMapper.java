@@ -19,6 +19,8 @@ public interface UserMapper {
 
     User findByUsername(@Param("username") String username);
 
+    User findByUsernameForUpdate(@Param("username") String username);
+
     User findByMobileForUpdate(@Param("mobile") String mobile);
 
     List<User> findPage(@Param("query") UserDirectoryQuery query);
@@ -32,6 +34,10 @@ public interface UserMapper {
     int insert(@Param("user") User user);
 
     int updatePasswordHash(@Param("id") Long id, @Param("passwordHash") String passwordHash);
+
+    int updatePasswordHashIfExpected(@Param("id") Long id,
+                                    @Param("expectedPasswordHash") String expectedPasswordHash,
+                                    @Param("passwordHash") String passwordHash);
 
     int updateMobileIfExpected(
             @Param("id") Long id,

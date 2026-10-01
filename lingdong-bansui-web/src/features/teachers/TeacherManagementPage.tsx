@@ -1,8 +1,7 @@
+import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
+import { ViewportTable as Table } from '../../components/ViewportTable';
 import { ProCard } from '@ant-design/pro-components';
-import {
-  Alert, Button, Checkbox, Drawer, Form, Input, Modal, Popconfirm, Select,
-  Space, Table, Tag, Tooltip, message
-} from 'antd';
+import { Alert, Checkbox, Drawer, Form, Input, Modal, Popconfirm, Select, Space, Tag, Tooltip, message } from 'antd';
 import {
   CircleCheck, CircleOff, KeyRound, Link2, LockKeyhole, Pencil,
   Search, UserPlus, UsersRound
@@ -239,11 +238,11 @@ export function TeacherManagementPage({ permissionCodes }: TeacherManagementPage
       <div className="page-heading">
         <h1>教师管理</h1>
         <Space wrap>
-          {canUseBatch && <Button icon={<UsersRound size={16} />} disabled={selectedIds.length === 0} onClick={openBatch}>批量操作</Button>}
-          {canCreate && <Button type="primary" icon={<UserPlus size={16} />} onClick={() => setCreateOpen(true)}>新增教师</Button>}
+          {canUseBatch && <Button actionKey="teachers.teacher-management-page.1" icon={<UsersRound size={16} />} disabled={selectedIds.length === 0} onClick={openBatch}>批量操作</Button>}
+          {canCreate && <Button actionKey="teachers.teacher-management-page.2" type="primary" icon={<UserPlus size={16} />} onClick={() => setCreateOpen(true)}>新增教师</Button>}
         </Space>
       </div>
-      {errorMessage && <Alert type="error" showIcon message={errorMessage} action={<Button size="small" onClick={() => void loadTeachers(filters, directory.page)}>重试</Button>} />}
+      {errorMessage && <Alert type="error" showIcon message={errorMessage} action={<Button actionKey="teachers.teacher-management-page.3" size="small" onClick={() => void loadTeachers(filters, directory.page)}>重试</Button>} />}
       <ProCard className="content-panel" bordered={false}>
         <Form form={filterForm} layout="inline" className="directory-filters" onFinish={search}>
           <Form.Item label="账号或姓名" name="keyword"><Input allowClear /></Form.Item>
@@ -255,7 +254,7 @@ export function TeacherManagementPage({ permissionCodes }: TeacherManagementPage
           </Form.Item>
           <Form.Item label="班级" name="classOrganizationId"><Select allowClear className="filter-select" options={filterClasses.map(toOption)} /></Form.Item>
           <Form.Item label="状态" name="status"><Select allowClear className="filter-select" options={statusOptions} /></Form.Item>
-          <Form.Item><Button type="primary" htmlType="submit" icon={<Search size={16} />}>查询</Button></Form.Item>
+          <Form.Item><Button actionKey="teachers.teacher-management-page.4" type="primary" htmlType="submit" icon={<Search size={16} />}>查询</Button></Form.Item>
         </Form>
         <Table<Teacher>
           rowKey="id" loading={loading} dataSource={directory.items} scroll={{ x: 1060 }}
@@ -273,9 +272,9 @@ export function TeacherManagementPage({ permissionCodes }: TeacherManagementPage
             {
               title: '操作', key: 'actions', fixed: 'right', width: 220,
               render: (_, teacher) => <Space size={2}>
-                {canUpdate && <ActionButton title="编辑资料" label={`编辑教师-${teacher.displayName}`} icon={<Pencil size={16} />} onClick={() => openProfile(teacher)} />}
-                {canResetPassword && <ActionButton title="重置密码" label={`重置密码-${teacher.displayName}`} icon={<KeyRound size={16} />} onClick={() => setPasswordTeacher(teacher)} />}
-                {canManageClass && <ActionButton title="班级范围" label={`班级范围-${teacher.displayName}`} icon={<Link2 size={16} />} onClick={() => openClasses(teacher)} />}
+                {canUpdate && <ActionButton actionKey="teachers.profile.edit" title="编辑资料" label={`编辑教师-${teacher.displayName}`} icon={<Pencil size={16} />} onClick={() => openProfile(teacher)} />}
+                {canResetPassword && <ActionButton actionKey="teachers.password.reset" title="重置密码" label={`重置密码-${teacher.displayName}`} icon={<KeyRound size={16} />} onClick={() => setPasswordTeacher(teacher)} />}
+                {canManageClass && <ActionButton actionKey="teachers.classes.configure" title="班级范围" label={`班级范围-${teacher.displayName}`} icon={<Link2 size={16} />} onClick={() => openClasses(teacher)} />}
                 {canChangeStatus && <StatusActions teacher={teacher} onChange={changeStatus} />}
               </Space>
             }
@@ -311,7 +310,7 @@ export function TeacherManagementPage({ permissionCodes }: TeacherManagementPage
         </Form>
       </Modal>
 
-      <Drawer title={classTeacher ? `${classTeacher.displayName}的班级范围` : '教师班级范围'} open={Boolean(classTeacher)} width={420} onClose={() => setClassTeacher(undefined)} extra={<Button type="primary" loading={submitting} onClick={() => void saveClasses()}>保存</Button>}>
+      <Drawer title={classTeacher ? `${classTeacher.displayName}的班级范围` : '教师班级范围'} open={Boolean(classTeacher)} width={420} onClose={() => setClassTeacher(undefined)} extra={<Button actionKey="teachers.teacher-management-page.5" type="primary" loading={submitting} onClick={() => void saveClasses()}>保存</Button>}>
         <Checkbox.Group className="teacher-class-checkboxes" value={selectedClassIds} onChange={(values) => setSelectedClassIds(values.map(String))} options={classDrawerOptions.map(toOption)} />
         {classDrawerOptions.length === 0 && <Alert type="info" showIcon message="该学校暂无可用班级" />}
       </Drawer>
@@ -329,24 +328,24 @@ export function TeacherManagementPage({ permissionCodes }: TeacherManagementPage
 }
 
 function StatusActions({ teacher, onChange }: { teacher: Teacher; onChange: (teacher: Teacher, status: TeacherStatus) => Promise<void> }) {
-  return <>
+  return <Space size={2}>
     {teacher.status !== 'ENABLED' && <ConfirmStatus teacher={teacher} status="ENABLED" icon={<CircleCheck size={16} />} onChange={onChange} />}
     {teacher.status !== 'DISABLED' && <ConfirmStatus teacher={teacher} status="DISABLED" icon={<CircleOff size={16} />} onChange={onChange} />}
     {teacher.status !== 'LOCKED' && <ConfirmStatus teacher={teacher} status="LOCKED" icon={<LockKeyhole size={16} />} onChange={onChange} />}
-  </>;
+  </Space>;
 }
 
 function ConfirmStatus({ teacher, status, icon, onChange }: { teacher: Teacher; status: TeacherStatus; icon: ReactNode; onChange: (teacher: Teacher, status: TeacherStatus) => Promise<void> }) {
   const label = statusLabel(status);
-  return <Tooltip title={label}><Popconfirm title={`确认${label}该教师？`} onConfirm={() => void onChange(teacher, status)}><Button type="text" icon={icon} aria-label={`${label}-${teacher.displayName}`} /></Popconfirm></Tooltip>;
+  return <Tooltip title={label}><Popconfirm title={`确认${label}该教师？`} onConfirm={() => void onChange(teacher, status)}><Button actionKey={`teachers.status.${status.toLowerCase()}`} type="text" icon={icon} aria-label={`${label}-${teacher.displayName}`} /></Popconfirm></Tooltip>;
 }
 
-function ActionButton({ title, label, icon, onClick }: { title: string; label: string; icon: ReactNode; onClick: () => void }) {
-  return <Tooltip title={title}><Button type="text" icon={icon} aria-label={label} onClick={onClick} /></Tooltip>;
+function ActionButton({ actionKey, title, label, icon, onClick }: { actionKey: string; title: string; label: string; icon: ReactNode; onClick: () => void }) {
+  return <Tooltip title={title}><Button actionKey={actionKey} type="text" icon={icon} aria-label={label} onClick={onClick} /></Tooltip>;
 }
 
 function FormActions({ submitting, onCancel, submitText = '保存' }: { submitting: boolean; onCancel: () => void; submitText?: string }) {
-  return <div className="form-actions"><Button onClick={onCancel}>取消</Button><Button type="primary" htmlType="submit" loading={submitting}>{submitText}</Button></div>;
+  return <div className="form-actions"><Button actionKey="teachers.teacher-management-page.8" onClick={onCancel}>取消</Button><Button actionKey="teachers.teacher-management-page.9" type="primary" htmlType="submit" loading={submitting}>{submitText}</Button></div>;
 }
 
 function StatusTag({ status }: { status: TeacherStatus }) {

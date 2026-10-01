@@ -134,6 +134,9 @@ export const authApi = {
   currentUser(): Promise<CurrentUser> {
     return apiClient.get<CurrentUser>('/auth/me');
   },
+  changePassword(input: { oldPassword: string; newPassword: string }): Promise<void> {
+    return apiClient.post<void>('/auth/password', input);
+  },
   listDevices(): Promise<DeviceSession[]> {
     return apiClient.get<DeviceSession[]>('/auth/devices');
   },

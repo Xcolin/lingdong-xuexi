@@ -105,6 +105,38 @@ public class AuthenticationApplicationService {
         }
     }
 
+    /** 验证当前 Web 身份与旧密码，原子保存新密码并撤销全部设备凭证。 */
+    @Transactional
+    public void changePassword(Long currentUserId, Long currentSessionId, String oldPassword, String newPassword) {
+        User user = userMapper.findByIdForUpdate(currentUserId);
+        if (user == null) {
+            throw new PasswordChangeRejectedException("当前账号不可修改密码");
+        }
+        DeviceSessionRecord session = requireOwnedSession(currentUserId, currentSessionId);
+        LocalDateTime now = LocalDateTime.now();
+        if (session.clientType() != AuthClientType.WEB || session.status() != DeviceSessionStatus.ACTIVE
+                || !session.accessExpiresAt().isAfter(now) || user.status() != UserStatus.ENABLED) {
+            throw new PasswordChangeRejectedException("当前账号或会话不可修改密码");
+        }
+        if (!matchesPassword(user, oldPassword)) {
+            throw new PasswordChangeRejectedException("旧密码错误");
+        }
+        try {
+            passwordPolicy.validate(newPassword);
+        } catch (IllegalArgumentException exception) {
+            throw new PasswordChangeRejectedException("密码必须为 8 至 20 位字母和数字组合");
+        }
+        if (Objects.equals(oldPassword, newPassword)) {
+            throw new PasswordChangeRejectedException("新密码不能与旧密码相同");
+        }
+        if (userMapper.updatePasswordHashIfExpected(user.id(), user.passwordHash(),
+                passwordEncoder.encode(newPassword)) != 1) {
+            throw new PasswordChangeRejectedException("账号状态或密码已变化，请重新登录后再试");
+        }
+        sessionMapper.revokeAllActiveByUserId(user.id(), now);
+        securityEventService.recordAllSessionsRevoked(user.id(), session, now);
+    }
+
     /** 使用平台、机构或家长账号密码建立新的 Web 设备会话。 */
     @Transactional
     public AuthenticatedSession loginByPassword(PasswordLoginCommand command) {
@@ -112,7 +144,7 @@ public class AuthenticationApplicationService {
         String username = requiredText(command.username(), "用户账号", 64);
         String deviceId = requiredText(command.deviceId(), "设备标识", 128);
         String deviceName = requiredText(command.deviceName(), "设备名称", 100);
-        User user = userMapper.findByUsername(username);
+        User user = userMapper.findByUsernameForUpdate(username);
         if (!isEnabledWebUserWithMatchingPassword(user, command.password())) {
             throw authenticationFailed();
         }
@@ -127,7 +159,7 @@ public class AuthenticationApplicationService {
         String username = requiredText(command.username(), "用户账号", 64);
         String deviceId = requiredText(command.deviceId(), "设备标识", 128);
         String deviceName = requiredText(command.deviceName(), "设备名称", 100);
-        User user = userMapper.findByUsername(username);
+        User user = userMapper.findByUsernameForUpdate(username);
         boolean passwordMatches = matchesPassword(user, command.password());
         boolean enabledOperator = isEnabledOrganizationMiniappOperator(user);
         if (!passwordMatches || !enabledOperator) {

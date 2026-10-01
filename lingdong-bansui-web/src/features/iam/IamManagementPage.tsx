@@ -1,7 +1,7 @@
+import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
+import { ViewportTable as Table } from '../../components/ViewportTable';
 import { useEffect, useState } from 'react';
-import {
-  Alert, Button, Form, Input, Modal, Popconfirm, Segmented, Select, Space, Table, Tag, Tooltip, message
-} from 'antd';
+import { Alert, Form, Input, Modal, Popconfirm, Segmented, Select, Space, Tabs, Tag, Tooltip, message } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
 import { KeyRound, Plus, ShieldCheck, Trash2, UserCog } from 'lucide-react';
 import {
@@ -168,14 +168,15 @@ export function IamManagementPage() {
       <div className="page-heading">
         <h1>角色与权限</h1>
         <Space wrap>
-          <Button icon={<Plus size={16} />} onClick={() => setRoleModalOpen(true)}>新增角色</Button>
-          <Button icon={<KeyRound size={16} />} onClick={() => setPermissionModalOpen(true)}>新增权限</Button>
-          <Button icon={<ShieldCheck size={16} />} onClick={() => setRolePermissionModalOpen(true)}>配置角色权限</Button>
-          <Button type="primary" icon={<UserCog size={16} />} onClick={() => setUserPermissionModalOpen(true)}>配置用户权限</Button>
+          <Button actionKey="iam.iam-management-page.1" icon={<Plus size={16} />} onClick={() => setRoleModalOpen(true)}>新增角色</Button>
+          <Button actionKey="iam.iam-management-page.2" icon={<KeyRound size={16} />} onClick={() => setPermissionModalOpen(true)}>新增权限</Button>
+          <Button actionKey="iam.iam-management-page.3" icon={<ShieldCheck size={16} />} onClick={() => setRolePermissionModalOpen(true)}>配置角色权限</Button>
+          <Button actionKey="iam.iam-management-page.4" type="primary" icon={<UserCog size={16} />} onClick={() => setUserPermissionModalOpen(true)}>配置用户权限</Button>
         </Space>
       </div>
-      {errorMessage && <Alert type="error" showIcon message={errorMessage} action={<Button size="small" onClick={() => void loadIamData()}>重试</Button>} />}
-      <ProCard className="content-panel" title="角色目录" bordered={false}>
+      {errorMessage && <Alert type="error" showIcon message={errorMessage} action={<Button actionKey="iam.iam-management-page.5" size="small" onClick={() => void loadIamData()}>重试</Button>} />}
+      <Tabs className="page-sections" items={[
+        { key: 'roles', label: '角色目录', children: (<ProCard className="content-panel" title="角色目录" bordered={false}>
         <Table<Role> rowKey="id" loading={loading} dataSource={roles} pagination={false} locale={{ emptyText: '暂无角色' }} columns={[
           { title: '编码', dataIndex: 'code', key: 'code' },
           { title: '名称', dataIndex: 'name', key: 'name' },
@@ -183,8 +184,8 @@ export function IamManagementPage() {
           { title: '来源', dataIndex: 'builtIn', key: 'builtIn', width: 90, render: (builtIn) => <Tag color={builtIn ? 'blue' : 'default'}>{builtIn ? '内置' : '自定义'}</Tag> },
           { title: '状态', dataIndex: 'status', key: 'status', width: 90, render: (status) => <Tag color={status === 'ENABLED' ? 'green' : 'default'}>{status === 'ENABLED' ? '启用' : '停用'}</Tag> }
         ]} />
-      </ProCard>
-      <ProCard className="content-panel" title="权限目录" bordered={false}>
+      </ProCard>) },
+        { key: 'permissions', label: '权限目录', children: (<ProCard className="content-panel" title="权限目录" bordered={false}>
         <Table<Permission> rowKey="id" loading={loading} dataSource={permissions} pagination={{ pageSize: 10, showSizeChanger: false }} locale={{ emptyText: '暂无权限' }} columns={[
           { title: '编码', dataIndex: 'code', key: 'code' },
           { title: '名称', dataIndex: 'name', key: 'name' },
@@ -192,8 +193,9 @@ export function IamManagementPage() {
           { title: '客户端', dataIndex: 'client', key: 'client', width: 100 },
           { title: '状态', dataIndex: 'status', key: 'status', width: 90, render: (status) => <Tag color={status === 'ENABLED' ? 'green' : 'default'}>{status === 'ENABLED' ? '启用' : '停用'}</Tag> }
         ]} />
-      </ProCard>
-      <IamAuditPanel />
+      </ProCard>) },
+        { key: 'audit', label: '授权审计', children: <IamAuditPanel /> }
+      ]} />
 
       <Modal title="新增角色" open={roleModalOpen} footer={null} onCancel={() => setRoleModalOpen(false)} destroyOnHidden>
         <Form form={roleForm} layout="vertical" initialValues={{ dataScope: 'SELF' }} onFinish={createRole}>
@@ -201,7 +203,7 @@ export function IamManagementPage() {
           <Form.Item label="角色名称" name="name" rules={[{ required: true, message: '请输入角色名称' }]}><Input autoComplete="off" /></Form.Item>
           <Form.Item label="数据范围" name="dataScope" rules={[{ required: true, message: '请选择数据范围' }]}><Select options={['ALL', 'REGION', 'SCHOOL', 'CLASS', 'SELF', 'CUSTOM'].map((value) => ({ value, label: value }))} /></Form.Item>
           <Form.Item label="说明" name="description"><Input.TextArea autoSize={{ minRows: 2, maxRows: 4 }} /></Form.Item>
-          <div className="form-actions"><Button onClick={() => setRoleModalOpen(false)}>取消</Button><Button type="primary" htmlType="submit" loading={submitting}>创建角色</Button></div>
+          <div className="form-actions"><Button actionKey="iam.iam-management-page.6" onClick={() => setRoleModalOpen(false)}>取消</Button><Button actionKey="iam.iam-management-page.7" type="primary" htmlType="submit" loading={submitting}>创建角色</Button></div>
         </Form>
       </Modal>
 
@@ -212,7 +214,7 @@ export function IamManagementPage() {
           <Form.Item label="资源类型" name="resourceType" rules={[{ required: true, message: '请选择资源类型' }]}><Select options={['MENU', 'PAGE', 'BUTTON', 'OPERATION'].map((value) => ({ value, label: value }))} /></Form.Item>
           <Form.Item label="客户端" name="client" rules={[{ required: true, message: '请选择客户端' }]}><Select options={['WEB', 'MINIAPP', 'BOTH'].map((value) => ({ value, label: value }))} /></Form.Item>
           <Form.Item label="父级权限" name="parentId"><Select allowClear options={permissions.map((permission) => ({ value: permission.id, label: `${permission.name}（${permission.code}）` }))} /></Form.Item>
-          <div className="form-actions"><Button onClick={() => setPermissionModalOpen(false)}>取消</Button><Button type="primary" htmlType="submit" loading={submitting}>创建权限</Button></div>
+          <div className="form-actions"><Button actionKey="iam.iam-management-page.8" onClick={() => setPermissionModalOpen(false)}>取消</Button><Button actionKey="iam.iam-management-page.9" type="primary" htmlType="submit" loading={submitting}>创建权限</Button></div>
         </Form>
       </Modal>
 
@@ -297,7 +299,7 @@ function PermissionConfigurationModal({
             <Segmented options={[{ label: '允许', value: 'ALLOW' }, { label: '禁止', value: 'DENY' }]} />
           </Form.Item>
         </Space>
-        <div className="form-actions"><Button type="primary" htmlType="submit" loading={submitting} disabled={!selectedSubjectId}>{submitText}</Button></div>
+        <div className="form-actions"><Button actionKey="iam.iam-management-page.10" type="primary" htmlType="submit" loading={submitting} disabled={!selectedSubjectId}>{submitText}</Button></div>
       </Form>
       <Table<PermissionAssignment>
         rowKey="permissionId"
@@ -329,7 +331,7 @@ function PermissionConfigurationModal({
               return (
                 <Popconfirm title="确认撤销该显式权限？" onConfirm={() => void onRemove(assignment.permissionId)}>
                   <Tooltip title="撤销显式权限">
-                    <Button danger type="text" icon={<Trash2 size={16} />} aria-label={`撤销 ${permissionName}`} />
+                    <Button actionKey="iam.iam-management-page.11" danger type="text" icon={<Trash2 size={16} />} aria-label={`撤销 ${permissionName}`} />
                   </Tooltip>
                 </Popconfirm>
               );

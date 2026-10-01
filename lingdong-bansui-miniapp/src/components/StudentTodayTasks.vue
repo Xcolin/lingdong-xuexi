@@ -1,18 +1,26 @@
 <template>
   <view class="today">
-    <text class="heading">今日任务</text>
-    <text v-if="busy">正在加载今日任务</text>
-    <text v-else-if="error" class="error">{{ error }}</text>
+    <view class="head-row">
+      <text class="heading">今日任务</text>
+      <button class="refresh-button" :disabled="busy" @tap="load">{{ busy ? '加载中' : '刷新' }}</button>
+    </view>
+    <view v-if="busy" class="state">正在加载今日任务</view>
+    <view v-else-if="error" class="state error">{{ error }}</view>
     <template v-else-if="allowed">
-      <text>今日共 {{ total }} 项任务</text>
-      <text v-if="total === 0">今日暂无任务</text>
-      <button v-for="task in tasks" :key="task.id" @tap="open(task.id)">
-        <text>{{ task.title }}</text>
-        <text class="meta">{{ sourceName(task.sourceType) }} · {{ statusName(task.effectiveStatus) }}</text>
-      </button>
+      <view class="summary-row">
+        <text class="summary-count">今日共 {{ total }} 项任务</text>
+        <text v-if="total === 0" class="summary-hint">今日暂无任务</text>
+      </view>
+      <view v-for="task in tasks" :key="task.id" class="task-row" @tap="open(task.id)">
+        <view class="task-main">
+          <text class="task-title">{{ task.title }}</text>
+          <text class="meta">{{ sourceName(task.sourceType) }} · {{ statusName(task.effectiveStatus) }}</text>
+        </view>
+        <text class="task-arrow">›</text>
+      </view>
+      <view v-if="total === 0" class="empty-tip">完成的任务将转为待审核，由家长或教师确认</view>
     </template>
-    <text v-else>今日任务暂不可用</text>
-    <button :disabled="busy" @tap="load">刷新今日任务</button>
+    <view v-else class="state">今日任务暂不可用</view>
   </view>
 </template>
 <script setup lang="ts">
@@ -53,7 +61,46 @@ function hide() { revision++; clear(); busy.value = false; }
 onShow(load); onHide(hide); onUnload(hide);
 </script>
 <style scoped>
-.today { margin-top:32rpx; padding:24rpx; background:#fff; border:1px solid #dce4e1; border-radius:12rpx; }
-.today text { display:block; overflow-wrap:anywhere; }.heading { font-weight:700; margin-bottom:16rpx; }
-.today button { margin-top:16rpx; font-size:28rpx; text-align:left; }.meta { color:#708078; font-size:24rpx; }.error { color:#a33c2e; }
+.today {
+  margin-top: 32rpx;
+  padding: 30rpx;
+  background: #ffffff;
+  border-radius: 24rpx;
+  box-shadow: 0 6rpx 24rpx rgba(21, 54, 43, 0.06);
+}
+.head-row { display: flex; align-items: center; justify-content: space-between; }
+.heading { font-size: 34rpx; font-weight: 700; color: #1c2b28; }
+.refresh-button {
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0 24rpx;
+  border-radius: 999rpx;
+  background: #e7f2ed;
+  color: #167c5a;
+  font-size: 24rpx;
+  font-weight: 600;
+}
+.refresh-button::after { border: 0; }
+.summary-row { display: flex; align-items: baseline; gap: 16rpx; margin-top: 20rpx; }
+.summary-count { color: #4b5c55; font-size: 26rpx; }
+.summary-hint { color: #8a9992; font-size: 24rpx; }
+.state { padding: 40rpx 0 16rpx; color: #8a9992; font-size: 26rpx; }
+.state.error { color: #b34f3b; }
+.task-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20rpx;
+  margin-top: 20rpx;
+  padding: 24rpx 26rpx;
+  border-radius: 16rpx;
+  background: #f7faf8;
+}
+.task-main { min-width: 0; flex: 1; }
+.task-title { display: block; color: #1c2b28; font-size: 28rpx; font-weight: 600; overflow-wrap: anywhere; }
+.meta { display: block; margin-top: 8rpx; color: #8a9992; font-size: 24rpx; }
+.task-arrow { color: #bcd8cd; font-size: 40rpx; line-height: 1; }
+.empty-tip { margin-top: 20rpx; color: #8a9992; font-size: 24rpx; }
 </style>

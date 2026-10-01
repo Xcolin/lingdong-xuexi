@@ -65,6 +65,14 @@ public class AuthenticationController {
         return toSessionResponse(authenticationApplicationService.refreshSession(new RefreshSessionCommand(request.refreshToken())));
     }
 
+    @PostMapping("/password")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void changePassword(@AuthenticationPrincipal AuthenticatedUser currentUser,
+                               @Valid @RequestBody ChangePasswordRequest request) {
+        authenticationApplicationService.changePassword(currentUser.userId(), currentUser.sessionId(),
+                request.oldPassword(), request.newPassword());
+    }
+
     @DeleteMapping("/sessions/current")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void logoutCurrentSession(@AuthenticationPrincipal AuthenticatedUser currentUser) {

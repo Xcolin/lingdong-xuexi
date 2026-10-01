@@ -1,5 +1,6 @@
+import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { useEffect, useState } from 'react';
-import { Alert, Button, Checkbox, Descriptions, Empty, List, Modal, Select, Space, Spin, Tag, message } from 'antd';
+import { Alert, Checkbox, Descriptions, Empty, List, Modal, Select, Space, Spin, Tag, message } from 'antd';
 import { RotateCcw } from 'lucide-react';
 import { learningTaskApi } from './api';
 import { previousDayTaskCopyApi } from './previousDayTaskCopyApi';
@@ -104,8 +105,8 @@ export function PreviousDayTaskCopyModal({
       width={680}
       onCancel={onClose}
       footer={[
-        <Button key="close" onClick={onClose}>关闭</Button>,
-        <Button
+        <Button actionKey="learning-tasks.previous-day-task-copy-modal.1" key="close" onClick={onClose}>关闭</Button>,
+        <Button actionKey="learning-tasks.previous-day-task-copy-modal.2"
           key="copy"
           type="primary"
           loading={submitting}
@@ -170,7 +171,7 @@ export function PreviousDayTaskCopyModal({
             renderItem={(item) => (
               <List.Item
                 actions={[
-                  <Button
+                  <Button actionKey="learning-tasks.previous-day-task-copy-modal.3"
                     key="retry"
                     type="text"
                     icon={<RotateCcw size={16} />}

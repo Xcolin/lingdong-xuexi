@@ -1,5 +1,7 @@
+import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
+import { ViewportTable as Table } from '../../components/ViewportTable';
 import { useEffect, useState } from 'react';
-import { Alert, Button, Descriptions, Drawer, Spin, Table } from 'antd';
+import { Alert, Descriptions, Drawer, Spin } from 'antd';
 import { RefreshCw } from 'lucide-react';
 import { attendanceApi, type AttendanceDetails } from './api';
 import { statusLabels } from './rules';
@@ -20,7 +22,7 @@ export function AttendanceDetailDrawer({ id, onClose, onAccessError }: { id: str
   return <Drawer title="考勤详情" open width={880} onClose={onClose}>
     <div className="page-stack">
       {loading && <Spin />}
-      {error && <Alert type="error" showIcon message={error} action={<Button icon={<RefreshCw size={16} />} onClick={() => setRevision((value) => value + 1)}>重试</Button>} />}
+      {error && <Alert type="error" showIcon message={error} action={<Button actionKey="attendance-records.attendance-detail-drawer.1" icon={<RefreshCw size={16} />} onClick={() => setRevision((value) => value + 1)}>重试</Button>} />}
       {record && <>
         <Descriptions column={{ xs: 1, sm: 2 }} bordered size="small" items={[
           { key: 'id', label: '记录ID', children: record.id }, { key: 'student', label: '学生', children: record.studentName },

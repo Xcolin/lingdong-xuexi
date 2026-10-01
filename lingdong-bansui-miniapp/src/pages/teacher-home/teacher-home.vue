@@ -1,39 +1,55 @@
 <template>
-  <view class="page-shell">
-    <view class="top-bar">
-      <view class="identity-area">
-        <text class="display-name">{{ context?.displayName || '教师工作台' }}</text>
-        <text class="account-text">{{ context?.username || '' }}</text>
-      </view>
-      <button class="logout-button" :disabled="loggingOut" @tap="logout">退出</button>
-    </view>
-      <view v-if="reviewEnabled || reviewLoading || reviewError" class="review-summary">
-        <text v-if="reviewLoading">正在加载待审核任务…</text>
-        <template v-else-if="reviewError"><text>{{ reviewError }}</text><button @tap="refreshReviews">重试待审核查询</button></template>
-        <text v-else>{{ reviewTotal === 0 ? '暂无待审核任务' : `待审核任务：${reviewTotal} 项` }}</text>
-        <button v-if="reviewEnabled && !reviewLoading" @tap="openReviews">查看待审核任务</button>
-      </view>
-    <view v-if="loading" class="state-text">正在加载</view>
-    <template v-else>
-      <view class="section-band">
-        <text class="section-title">我的班级</text>
-        <view v-for="item in context?.classes || []" :key="item.classId" class="class-row">
-          <text class="class-name">{{ item.className }}</text>
-          <text class="school-name">{{ item.schoolName }}</text>
+  <view class="ld-page has-tabbar">
+    <view class="ld-topbar">
+      <view class="ld-topbar-brand">
+        <view class="ld-topbar-logo">师</view>
+        <view>
+          <text class="ld-topbar-name">{{ context?.displayName || '教师工作台' }}</text>
+          <text class="ld-topbar-meta">{{ context?.username || '' }}</text>
         </view>
       </view>
-      <button v-if="taskEnabled" class="workbench-button" @tap="openTasks">班级任务</button>
-      <button v-if="exceptionReportEnabled" class="workbench-button" @tap="openExceptionReports">异常报备</button>
-      <button v-if="attendanceEnabled" class="workbench-button" @tap="openAttendance">考勤台账</button>
-      <button v-if="accountSecurityEnabled" class="security-button" @tap="openSecurity">账号安全</button>
+      <button class="ld-logout" :disabled="loggingOut" @tap="logout">退出</button>
+    </view>
+
+    <view v-if="loading" class="ld-loading">正在加载</view>
+    <template v-else>
+      <view class="ld-heading">
+        <text class="ld-heading-title">我的</text>
+        <text class="ld-heading-sub">任教班级与账号设置</text>
+      </view>
+      <view class="ld-card class-card">
+        <view v-for="item in context?.classes || []" :key="item.classId" class="class-row">
+          <view class="class-badge">班</view>
+          <view class="class-main">
+            <text class="class-name">{{ item.className }}</text>
+            <text class="school-name">{{ item.schoolName }}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="ld-heading">
+        <text class="ld-heading-title">账号</text>
+      </view>
+      <view class="ld-group">
+        <button v-if="accountSecurityEnabled" class="ld-cell" @tap="openSecurity">
+          <view class="ld-cell-icon soft">安</view>
+          <view class="ld-cell-body">
+            <text class="ld-cell-title">账号安全</text>
+            <text class="ld-cell-sub">登录设备与安全事件</text>
+          </view>
+          <text class="ld-cell-arrow">›</text>
+        </button>
+      </view>
+      </view>
     </template>
+  <AppTabBar :items="TEACHER_TABS" :active="3" />
   </view>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { useManagedReviewSummary } from '@/composables/use-managed-review-summary';
-const { reviewEnabled, reviewLoading, reviewTotal, reviewError, refreshReviews, openReviews } = useManagedReviewSummary('teacher');
+import AppTabBar from '@/components/AppTabBar.vue';
+import { TEACHER_TABS } from '@/config/tabbar';
 import { onShow } from '@dcloudio/uni-app';
 import { logoutOrganization } from '@/api/auth';
 import { getMiniappCapabilities } from '@/api/capability';
@@ -70,14 +86,6 @@ onShow(async () => {
   }
 });
 
-function openTasks(): Promise<unknown> {
-  return uni.navigateTo({ url: '/pages/managed-tasks/managed-tasks?identity=teacher' });
-}
-
-function openExceptionReports(): Promise<unknown> {
-  return uni.navigateTo({ url: '/pages/exception-reports/exception-reports?identity=teacher' });
-}
-
 function openSecurity(): Promise<unknown> {
   return uni.navigateTo({ url: '/pages/account-security/account-security?identity=organization' });
 }
@@ -97,20 +105,58 @@ async function leave(): Promise<void> {
 </script>
 
 <style lang="scss" scoped>
-.page-shell { min-height: 100vh; background: #f4f7f5; }
-.top-bar { min-height: 144rpx; display: flex; align-items: center; justify-content: space-between; gap: 24rpx; padding: 32rpx 40rpx; box-sizing: border-box; border-bottom: 2rpx solid #dbe3df; background: #fff; }
-.identity-area { min-width: 0; flex: 1; }
-.display-name, .account-text, .section-title, .class-name, .school-name { display: block; }
-.display-name { color: #1c2b28; font-size: 36rpx; font-weight: 700; }
-.account-text, .school-name { margin-top: 8rpx; color: #708078; font-size: 24rpx; }
-.logout-button { width: 112rpx; height: 64rpx; margin: 0; background: transparent; color: #9a4b38; font-size: 26rpx; }
-.logout-button::after, .workbench-button::after, .security-button::after { border: 0; }
-.state-text { min-height: 360rpx; display: flex; align-items: center; justify-content: center; color: #708078; }
-.section-band { margin-top: 28rpx; border-block: 2rpx solid #dbe3df; background: #fff; }
-.section-title { padding: 28rpx 40rpx; color: #1c2b28; font-size: 30rpx; font-weight: 700; }
-.class-row { padding: 24rpx 40rpx; border-top: 2rpx solid #edf1ef; }
-.class-name { color: #1c2b28; font-size: 28rpx; }
-.workbench-button, .security-button { width: calc(100% - 80rpx); height: 88rpx; margin: 32rpx 40rpx 0; border-radius: 8rpx; background: #167c5a; color: #fff; font-size: 29rpx; }
-.security-button { border: 2rpx solid #167c5a; background: #fff; color: #167c5a; }
-.review-summary { margin: 28rpx 40rpx; padding: 24rpx; background: #fff; border-radius: 12rpx; color: #40514c; font-size: 28rpx; }.review-summary button { margin-top: 20rpx; font-size: 28rpx; }
+.review-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24rpx;
+  margin-top: 32rpx;
+}
+.review-count {
+  display: block;
+  margin-top: 10rpx;
+  color: $ld-text-muted;
+  font-size: $ld-font-caption;
+}
+.review-button {
+  width: 132rpx;
+  height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  border-radius: $ld-radius-pill;
+  background: $ld-primary;
+  color: #ffffff;
+  font-size: $ld-font-caption;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.review-button::after { border: 0; }
+.class-card { padding: 12rpx 28rpx; }
+.class-row {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  padding: 26rpx 0;
+  border-top: 2rpx solid $ld-line;
+}
+.class-row:first-child { border-top: 0; }
+.class-badge {
+  width: 72rpx;
+  height: 72rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18rpx;
+  background: $ld-primary-soft;
+  color: $ld-primary;
+  font-size: 30rpx;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.class-main { min-width: 0; }
+.class-name, .school-name { display: block; }
+.class-name { color: $ld-text; font-size: 29rpx; font-weight: 600; }
+.school-name { margin-top: 6rpx; color: $ld-text-muted; font-size: $ld-font-mini; }
 </style>

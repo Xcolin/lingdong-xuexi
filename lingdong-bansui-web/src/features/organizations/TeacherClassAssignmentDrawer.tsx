@@ -1,5 +1,6 @@
+import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { useEffect, useState } from 'react';
-import { Button, Drawer, Form, Select, Spin, message } from 'antd';
+import { Drawer, Form, Select, Spin, message } from 'antd';
 import { classAssignmentApi } from './classAssignmentApi';
 import type { OrganizationOption, TeacherOption } from '../learning-tasks/types';
 
@@ -83,9 +84,9 @@ export function TeacherClassAssignmentDrawer({ open, onClose }: TeacherClassAssi
             />
           </Form.Item>
           <div className="form-actions">
-            <Button onClick={onClose}>取消</Button>
-            <Button danger loading={submitting} onClick={() => void form.validateFields().then((values) => update(values, false))}>解除绑定</Button>
-            <Button type="primary" loading={submitting} onClick={() => void form.validateFields().then((values) => update(values, true))}>确认绑定</Button>
+            <Button actionKey="organizations.teacher-class-assignment-drawer.1" onClick={onClose}>取消</Button>
+            <Button actionKey="organizations.teacher-class-assignment-drawer.2" danger loading={submitting} onClick={() => void form.validateFields().then((values) => update(values, false))}>解除绑定</Button>
+            <Button actionKey="organizations.teacher-class-assignment-drawer.3" type="primary" loading={submitting} onClick={() => void form.validateFields().then((values) => update(values, true))}>确认绑定</Button>
           </div>
         </Form>
       </Spin>

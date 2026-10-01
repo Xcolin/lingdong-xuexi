@@ -1,5 +1,8 @@
+import { ConfiguredModal as Modal } from '../../components/ConfiguredModal';
+import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
+import { ViewportTable as Table } from '../../components/ViewportTable';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Button, Form, Input, InputNumber, Modal, Select, Space, Table, Tag, message } from 'antd';
+import { Alert, Form, Input, InputNumber, Select, Space, Tag, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { Edit3, Plus, Power, PowerOff, RefreshCw } from 'lucide-react';
 import {
@@ -86,7 +89,7 @@ export function ClassManagementPanel() {
 
   function confirmStatus(item: ClassOrganization): void {
     const disabling = item.status === 'ENABLED';
-    Modal.confirm({
+    Modal.confirm({ actionPrefix: 'organizations.class-management-panel.confirm.1',
       title: disabling ? '确认停用班级' : '确认启用班级',
       content: disabling
         ? `停用“${item.name}”后，班内未完成的机构和教师任务将失效。`
@@ -127,8 +130,8 @@ export function ClassManagementPanel() {
     {
       title: '操作', key: 'actions', width: 190,
       render: (_, item) => <Space size="small">
-        <Button size="small" icon={<Edit3 size={14} />} onClick={() => openEdit(item)}>编辑</Button>
-        <Button
+        <Button actionKey="organizations.class-management-panel.1" size="small" icon={<Edit3 size={14} />} onClick={() => openEdit(item)}>编辑</Button>
+        <Button actionKey="organizations.class-management-panel.2"
           size="small"
           danger={item.status === 'ENABLED'}
           icon={item.status === 'ENABLED' ? <PowerOff size={14} /> : <Power size={14} />}
@@ -142,11 +145,11 @@ export function ClassManagementPanel() {
     <div className="section-heading">
       <h2 id="class-management-heading">班级管理</h2>
       <Space>
-        <Button icon={<RefreshCw size={15} />} onClick={() => void loadData()} loading={loading}>刷新</Button>
-        <Button type="primary" icon={<Plus size={15} />} onClick={openCreate}>新增班级</Button>
+        <Button actionKey="organizations.class-management-panel.3" icon={<RefreshCw size={15} />} onClick={() => void loadData()} loading={loading}>刷新</Button>
+        <Button actionKey="organizations.class-management-panel.4" type="primary" icon={<Plus size={15} />} onClick={openCreate}>新增班级</Button>
       </Space>
     </div>
-    {errorMessage && <Alert type="error" showIcon message={errorMessage} action={<Button size="small" onClick={() => void loadData()}>重试</Button>} />}
+    {errorMessage && <Alert type="error" showIcon message={errorMessage} action={<Button actionKey="organizations.class-management-panel.5" size="small" onClick={() => void loadData()}>重试</Button>} />}
     <Table<ClassOrganization>
       rowKey="id" columns={columns} dataSource={classes} loading={loading}
       size="small" pagination={{ pageSize: 20, hideOnSinglePage: true }}
@@ -177,8 +180,8 @@ export function ClassManagementPanel() {
           rules={[{ required: true, message: '请输入排序值' }]}
         ><InputNumber min={0} precision={0} className="full-width" /></Form.Item>
         <div className="form-actions">
-          <Button onClick={() => setModalOpen(false)}>取消</Button>
-          <Button type="primary" htmlType="submit" loading={submitting}>
+          <Button actionKey="organizations.class-management-panel.6" onClick={() => setModalOpen(false)}>取消</Button>
+          <Button actionKey="organizations.class-management-panel.7" type="primary" htmlType="submit" loading={submitting}>
             {editing ? '保存修改' : '创建班级'}
           </Button>
         </div>

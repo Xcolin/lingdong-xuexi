@@ -24,6 +24,12 @@
 			}
 		},
 		{
+			"path": "pages/parent-me/parent-me",
+			"style": {
+				"navigationBarTitleText": "我的"
+			}
+		},
+		{
 			"path": "pages/parent-onboarding/parent-onboarding",
 			"style": {
 				"navigationBarTitleText": "家长首次引导"

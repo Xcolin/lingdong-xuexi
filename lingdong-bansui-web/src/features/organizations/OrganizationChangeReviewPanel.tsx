@@ -1,5 +1,7 @@
+import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
+import { ViewportTable as Table } from '../../components/ViewportTable';
 import { useEffect, useState } from 'react';
-import { Alert, Button, Form, Input, Modal, Space, Table, Tag, message } from 'antd';
+import { Alert, Form, Input, Modal, Space, Tag, message } from 'antd';
 import { Check, RefreshCw, X } from 'lucide-react';
 import { organizationApi, type OrganizationChange } from '../../api/organization';
 
@@ -90,8 +92,8 @@ export function OrganizationChangeReviewPanel({ canReview, refreshKey = 0 }: Org
       title: '操作', key: 'actions', width: 154,
       render: (_: unknown, item: OrganizationChange) => item.taskStatus === 'PENDING_REVIEW' ? (
         <Space size={4}>
-          <Button size="small" type="primary" icon={<Check size={14} />} onClick={() => openReview(item, 'APPROVE')}>批准</Button>
-          <Button size="small" danger icon={<X size={14} />} onClick={() => openReview(item, 'REJECT')}>驳回</Button>
+          <Button actionKey="organizations.organization-change-review-panel.1" size="small" type="primary" icon={<Check size={14} />} onClick={() => openReview(item, 'APPROVE')}>批准</Button>
+          <Button actionKey="organizations.organization-change-review-panel.2" size="small" danger icon={<X size={14} />} onClick={() => openReview(item, 'REJECT')}>驳回</Button>
         </Space>
       ) : null
     }] : [])
@@ -101,7 +103,7 @@ export function OrganizationChangeReviewPanel({ canReview, refreshKey = 0 }: Org
     <section className="organization-change-panel">
       <div className="section-heading">
         <h2>{canReview ? '组织变更审核' : '我的变更申请'}</h2>
-        <Button icon={<RefreshCw size={16} />} onClick={() => void load()} loading={loading}>刷新</Button>
+        <Button actionKey="organizations.organization-change-review-panel.3" icon={<RefreshCw size={16} />} onClick={() => void load()} loading={loading}>刷新</Button>
       </div>
       {errorMessage && <Alert type="error" showIcon message={errorMessage} />}
       <Table<OrganizationChange>
@@ -124,8 +126,8 @@ export function OrganizationChangeReviewPanel({ canReview, refreshKey = 0 }: Org
             <Input.TextArea rows={4} maxLength={500} showCount />
           </Form.Item>
           <div className="form-actions">
-            <Button onClick={() => setReviewing(null)}>取消</Button>
-            <Button type="primary" danger={reviewing?.action === 'REJECT'} htmlType="submit" loading={submitting}>
+            <Button actionKey="organizations.organization-change-review-panel.4" onClick={() => setReviewing(null)}>取消</Button>
+            <Button actionKey="organizations.organization-change-review-panel.5" type="primary" danger={reviewing?.action === 'REJECT'} htmlType="submit" loading={submitting}>
               {reviewing?.action === 'APPROVE' ? '确认批准' : '确认驳回'}
             </Button>
           </div>

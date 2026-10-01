@@ -1,5 +1,5 @@
 <template>
-  <view class="page-shell">
+  <view class="has-tabbar page-shell">
     <view v-if="warningCount > 0" class="warning-band">
       <text class="warning-title">发现 {{ warningCount }} 条新设备登录提醒</text>
       <text class="warning-copy">请核对设备，发现异常时及时下线。</text>
@@ -36,10 +36,13 @@
         <text v-else class="read-tag">已读</text>
       </view>
     </view>
+  <AppTabBar v-if="identity === 'organization'" :items="ORG_TABS" :active="3" />
   </view>
 </template>
 
 <script setup lang="ts">
+import AppTabBar from '@/components/AppTabBar.vue';
+import { TEACHER_TABS, ORG_TABS } from '@/config/tabbar';
 import { computed, ref } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import {

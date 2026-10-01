@@ -1,6 +1,8 @@
 <template>
-  <view class="page-shell">
-    <button :disabled="loading||submitting" @tap="load()">刷新报备记录</button>
+  <view class="has-tabbar page-shell">
+    <view class="toolbar">
+      <button class="toolbar-button" :disabled="loading||submitting" @tap="load()">刷新报备记录</button>
+    </view>
     <view v-if="error" class="state">{{ error }}</view>
     <view v-if="loading" class="state">正在加载</view>
     <template v-else>
@@ -20,8 +22,10 @@
       </view>
 
       <view class="list-band">
-        <text class="section-title">{{ statusFilter==='SUBMITTED'?'待处理异常':'报备记录' }} · 共 {{ total }} 项</text>
-        <button @tap="toggleStatus">{{ statusFilter==='SUBMITTED'?'查看全部记录':'只看待处理' }}</button>
+        <view class="list-head">
+          <text class="section-title">{{ statusFilter==='SUBMITTED'?'待处理异常':'报备记录' }} · 共 {{ total }} 项</text>
+          <button class="filter-button" @tap="toggleStatus">{{ statusFilter==='SUBMITTED'?'全部记录':'只看待处理' }}</button>
+        </view>
         <view v-if="!error && reports.length === 0" class="state">暂无报备记录</view>
         <view v-for="item in reports" :key="item.id" class="report-row" @tap="showDetails(item.id)">
           <view class="row-head">
@@ -36,13 +40,20 @@
             <button v-else class="primary compact" :disabled="submitting" @tap.stop="confirmHandle(item)">确认处理</button>
           </template>
         </view>
-        <view v-if="total"><button :disabled="page<=1||submitting" @tap="load(page-1)">上一页</button><text>第 {{ page }} 页</text><button :disabled="page*20>=total||submitting" @tap="load(page+1)">下一页</button></view>
+        <view v-if="total" class="pager">
+          <button class="pager-button" :disabled="page<=1||submitting" @tap="load(page-1)">上一页</button>
+          <text class="pager-label">第 {{ page }} 页</text>
+          <button class="pager-button" :disabled="page*20>=total||submitting" @tap="load(page+1)">下一页</button>
+        </view>
       </view>
     </template>
+  <AppTabBar v-if="identity === 'teacher'" :items="TEACHER_TABS" :active="1" />
   </view>
 </template>
 
 <script setup lang="ts">
+import AppTabBar from '@/components/AppTabBar.vue';
+import { TEACHER_TABS, ORG_TABS } from '@/config/tabbar';
 import { computed, ref } from 'vue';
 import { onLoad, onPullDownRefresh, onShow, onHide, onUnload } from '@dcloudio/uni-app';
 import { requireExceptionAccess } from '@/api/exception-access';
@@ -146,20 +157,75 @@ function leave(): Promise<unknown> { return uni.reLaunch({ url: '/pages/index/in
 </script>
 
 <style lang="scss" scoped>
-.page-shell { min-height: 100vh; background: #f4f7f5; padding-bottom: 40rpx; }
-.form-band, .list-band { border-block: 2rpx solid #dbe3df; background: #fff; }
-.form-band { padding: 28rpx 40rpx; } .list-band { margin-top: 28rpx; }
-.section-title { display: block; color: #1c2b28; font-size: 30rpx; font-weight: 700; }
-.field, .textarea, .handle-note { box-sizing: border-box; width: 100%; margin-top: 22rpx; border: 2rpx solid #cbd7d1; border-radius: 8rpx; background: #fff; color: #1c2b28; font-size: 28rpx; }
+.page-shell { min-height: 100vh; background: $ld-bg; padding-bottom: 40rpx; }
+
+.toolbar { display: flex; justify-content: flex-end; margin-top: 4rpx; }
+.toolbar-button {
+  width: auto;
+  height: 64rpx;
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0 30rpx;
+  border-radius: $ld-radius-pill;
+  background: $ld-card;
+  color: $ld-primary;
+  font-size: $ld-font-caption;
+  font-weight: 600;
+  box-shadow: $ld-shadow-card;
+}
+.toolbar-button::after { border: 0; }
+
+.form-band, .list-band { background: $ld-card; border-radius: $ld-radius-lg; box-shadow: $ld-shadow-card; }
+.form-band { margin-top: $ld-gap-block; padding: 30rpx; }
+.list-band { margin-top: $ld-gap-block; padding: 30rpx; }
+.list-head { display: flex; align-items: center; justify-content: space-between; gap: 20rpx; }
+.filter-button {
+  width: auto;
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0 24rpx;
+  border-radius: $ld-radius-pill;
+  background: $ld-primary-soft;
+  color: $ld-primary;
+  font-size: $ld-font-mini;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.filter-button::after { border: 0; }
+
+.section-title { display: block; color: $ld-text; font-size: $ld-font-heading; font-weight: 700; }
+.field, .textarea, .handle-note { box-sizing: border-box; width: 100%; margin-top: 22rpx; border: 2rpx solid $ld-line-strong; border-radius: $ld-radius-md; background: #fbfdfc; color: $ld-text; font-size: $ld-font-body; }
 .field { min-height: 82rpx; padding: 22rpx 24rpx; } .textarea { height: 180rpx; padding: 20rpx 24rpx; }
-.primary, .outline { height: 82rpx; margin: 24rpx 0 0; border-radius: 8rpx; background: #167c5a; color: #fff; font-size: 28rpx; }
-.outline { border: 2rpx solid #167c5a; background: #fff; color: #167c5a; } .compact { height: 72rpx; }
-.primary::after, .outline::after { border: 0; } .state { padding: 80rpx 40rpx; color: #708078; text-align: center; }
-.list-band > .section-title { padding: 28rpx 40rpx; } .report-row { padding: 28rpx 40rpx; border-top: 2rpx solid #edf1ef; }
+.primary, .outline { height: 82rpx; margin: 24rpx 0 0; border-radius: $ld-radius-md; background: $ld-gradient-primary; color: #fff; font-size: $ld-font-body; font-weight: 600; box-shadow: $ld-shadow-btn; }
+.outline { border: 2rpx solid $ld-primary-border; background: $ld-card; color: $ld-primary; box-shadow: none; } .compact { height: 72rpx; }
+.primary::after, .outline::after { border: 0; } .state { padding: 80rpx 40rpx; color: $ld-text-muted; text-align: center; }
+.report-row { padding: 28rpx 4rpx; border-top: 2rpx solid $ld-line; }
+.list-head + .state { padding-top: 40rpx; }
 .row-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 20rpx; }
-.student { min-width: 0; color: #1c2b28; font-size: 29rpx; font-weight: 600; word-break: break-word; }
-.status { flex: none; font-size: 24rpx; } .submitted { color: #a15c00; } .handled { color: #167c5a; }
-.meta, .content { display: block; margin-top: 12rpx; } .meta { color: #708078; font-size: 24rpx; }
-.content { color: #31433e; font-size: 27rpx; line-height: 1.6; word-break: break-word; }
+.student { min-width: 0; color: $ld-text; font-size: 29rpx; font-weight: 600; word-break: break-word; }
+.status { flex: none; font-size: $ld-font-mini; font-weight: 600; } .submitted { color: $ld-warning; } .handled { color: $ld-primary; }
+.meta, .content { display: block; margin-top: 12rpx; } .meta { color: $ld-text-muted; font-size: $ld-font-caption; }
+.content { color: $ld-text-secondary; font-size: 27rpx; line-height: 1.6; word-break: break-word; }
 .handle-note { height: 140rpx; padding: 18rpx 22rpx; }
+
+.pager { display: flex; align-items: center; justify-content: center; gap: 28rpx; padding: 28rpx 0 8rpx; }
+.pager-button {
+  width: 160rpx;
+  height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  border-radius: $ld-radius-pill;
+  background: $ld-card;
+  color: $ld-primary;
+  font-size: $ld-font-caption;
+  border: 2rpx solid $ld-primary-border;
+}
+.pager-button::after { border: 0; }
+.pager-button[disabled] { color: $ld-text-muted; border-color: $ld-line; }
+.pager-label { color: $ld-text-muted; font-size: $ld-font-caption; }
 </style>

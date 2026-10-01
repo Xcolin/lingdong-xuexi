@@ -1,5 +1,5 @@
 <template>
-  <view class="page-shell">
+  <view class="has-tabbar page-shell">
     <view class="toolbar">
       <view>
         <text class="page-title">{{ reviewMode ? '待审核任务' : identity === 'teacher' ? '班级任务' : '机构任务' }}</text>
@@ -105,10 +105,14 @@
         <text class="status-text">{{ assignmentStatusName(item.currentStatus) }}</text>
       </view>
     </view>
+  <AppTabBar v-if="identity === 'teacher'" :items="TEACHER_TABS" :active="0" />
+  <AppTabBar v-else :items="ORG_TABS" :active="1" />
   </view>
 </template>
 
 <script setup lang="ts">
+import AppTabBar from '@/components/AppTabBar.vue';
+import { TEACHER_TABS, ORG_TABS } from '@/config/tabbar';
 import { computed, reactive, ref } from 'vue';
 import { onLoad, onShow, onHide, onUnload, onPullDownRefresh } from '@dcloudio/uni-app';
 import { ApiError, apiUrl } from '@/api/http';

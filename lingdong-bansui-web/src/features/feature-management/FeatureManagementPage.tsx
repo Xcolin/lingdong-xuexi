@@ -1,5 +1,7 @@
+import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
+import { ViewportTable as Table } from '../../components/ViewportTable';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Button, Descriptions, Input, Modal, Table } from 'antd';
+import { Alert, Descriptions, Input, Modal, Tabs } from 'antd';
 import { authApi, type CurrentUser } from '../../api/auth';
 import { capabilityApi, type ClientCapabilities } from '../../api/capability';
 import { ApiRequestError } from '../../api/http';
@@ -11,6 +13,7 @@ const manager = (user: CurrentUser) => user.roleCodes.includes('SYS_ADMIN') && !
 const reader = (user: CurrentUser) => user.roleCodes.some(role => ['SYS_ADMIN', 'SYS_AUDITOR'].includes(role)) && user.permissionCodes.includes('FEATURE_TOGGLE_READ');
 const blocked = (row: GlobalFeatureToggle) => row.status === 'DISABLED' && (!row.enableAllowed || ['GEO_ATTENDANCE', 'STUDENT_LOCATION_TRACK'].includes(row.featureCode));
 export function FeatureManagementPage({ currentUser, onAccessChange }: { currentUser: CurrentUser; onAccessChange?: (user: CurrentUser, caps: ClientCapabilities) => void }) {
+  const [section, setSection] = useState('toggles');
   const [access, setAccess] = useState<Access | null>(null);
   const [toggles, setToggles] = useState<GlobalFeatureToggle[]>([]);
   const [changes, setChanges] = useState<FeatureToggleChange[]>([]);
@@ -77,30 +80,29 @@ export function FeatureManagementPage({ currentUser, onAccessChange }: { current
     } finally { if (request === generation.current) setLoading(false); }
   }
   const columns = [
-    { title: '申请标题', dataIndex: 'title' }, { title: '功能', dataIndex: 'featureName' },
-    { title: '申请前状态', dataIndex: 'beforeStatus', render: status }, { title: '目标状态', dataIndex: 'targetStatus', render: status }, { title: '当前状态', dataIndex: 'currentStatus', render: status },
-    { title: '任务状态', dataIndex: 'taskStatus', render: status }, { title: '申请人', dataIndex: 'submittedBy' }, { title: '审批人', dataIndex: 'reviewedBy', render: (value: string | null) => value || '—' },
-    { title: '记录', render: (_: unknown, row: FeatureToggleChange) => <Button aria-label="查看记录" onClick={() => setDetail(row)}>查看记录</Button> }
+    { title: '申请标题', dataIndex: 'title', width: 240, ellipsis: true }, { title: '功能', dataIndex: 'featureName', width: 180, ellipsis: true },
+    { title: '申请前状态', dataIndex: 'beforeStatus', width: 110, render: status }, { title: '目标状态', dataIndex: 'targetStatus', width: 100, render: status }, { title: '当前状态', dataIndex: 'currentStatus', width: 100, render: status },
+    { title: '任务状态', dataIndex: 'taskStatus', width: 100, render: status }, { title: '申请人', dataIndex: 'submittedBy', width: 130, ellipsis: true }, { title: '审批人', dataIndex: 'reviewedBy', width: 130, ellipsis: true, render: (value: string | null) => value || '—' },
+    { title: '记录', width: 110, fixed: 'right' as const, render: (_: unknown, row: FeatureToggleChange) => <Button actionKey="feature-management.feature-management-page.1" aria-label="查看记录" onClick={() => setDetail(row)}>查看记录</Button> }
   ];
   return <div className="page-stack">
-    <div className="page-heading"><h1>全局功能开关</h1><Button aria-label="刷新" onClick={() => void load()}>刷新</Button></div>
-    <Alert type="info" message="仅管理全局功能开关；变更需申请并经审核后生效。地理位置考勤与学生轨迹记录禁止启用。" />
-    {error && <Alert type="error" message={error} action={<Button aria-label="重试" onClick={() => void load()}>重试</Button>} />}
+    {error && <Alert type="error" message={error} action={<Button actionKey="feature-management.feature-management-page.2" aria-label="重试" onClick={() => void load()}>重试</Button>} />}
     {notice && <Alert type="info" message={notice} />}
-    <Table<GlobalFeatureToggle> rowKey="id" loading={loading} dataSource={toggles} pagination={false} locale={{ emptyText: error ? '功能开关未能加载' : '暂无全局功能开关' }} columns={[
-      { title: '功能编码', dataIndex: 'featureCode' }, { title: '功能名称', dataIndex: 'featureName' }, { title: '当前状态', dataIndex: 'status', render: status }, { title: '版本', dataIndex: 'versionNo' }, { title: '说明', dataIndex: 'description' },
-      { title: '操作', render: (_, row) => access && manager(access.user) ? <Button aria-label={row.status === 'ENABLED' ? '申请停用' : '申请启用'} disabled={loading || blocked(row)} onClick={() => { setSelected(row); setDescription(''); setFormError(''); setConfirming(false); }}>{row.status === 'ENABLED' ? '申请停用' : '申请启用'}</Button> : '只读' }
+    <Tabs className="page-sections" activeKey={section === 'queue' && !(access && reviewer(access.user)) ? 'toggles' : section} onChange={setSection} tabBarExtraContent={<Button actionKey="feature-management.feature-management-page.3" aria-label="刷新" onClick={() => void load()}>刷新</Button>} items={[
+      { key: 'toggles', label: '开关列表', children: <Table<GlobalFeatureToggle> rowKey="id" loading={loading} dataSource={toggles} pagination={false} scroll={{ x: 1100 }} locale={{ emptyText: error ? '功能开关未能加载' : '暂无全局功能开关' }} columns={[
+      { title: '功能编码', dataIndex: 'featureCode', width: 260, ellipsis: true }, { title: '功能名称', dataIndex: 'featureName', width: 200, ellipsis: true }, { title: '当前状态', dataIndex: 'status', width: 90, render: status }, { title: '版本', dataIndex: 'versionNo', width: 80, ellipsis: true }, { title: '说明', dataIndex: 'description', width: 360, ellipsis: true },
+      { title: '操作', width: 110, fixed: 'right', render: (_, row) => access && manager(access.user) ? <Button actionKey="feature-management.feature-management-page.4" aria-label={row.status === 'ENABLED' ? '申请停用' : '申请启用'} disabled={loading || blocked(row)} onClick={() => { setSelected(row); setDescription(''); setFormError(''); setConfirming(false); }}>{row.status === 'ENABLED' ? '申请停用' : '申请启用'}</Button> : '只读' }
+    ]} /> },
+      { key: 'history', label: '申请与审批记录', children: <Table<FeatureToggleChange> rowKey="id" loading={loading} dataSource={changes} columns={columns} scroll={{ x: 1200 }} locale={{ emptyText: '暂无申请记录' }} pagination={{ current: page, total, pageSize: 20, showSizeChanger: false, showTotal: n => `共 ${n} 条`, onChange: setPage }} /> },
+      ...(access && reviewer(access.user) ? [{ key: 'queue', label: '待审批申请', children: <Table<FeatureToggleChange> rowKey="id" loading={loading} dataSource={queue} columns={[...columns, { title: '审批操作', width: 150, fixed: 'right', render: (_, row) => row.taskStatus === 'PENDING_REVIEW' && <><Button actionKey="feature-management.feature-management-page.5" aria-label="批准" disabled={loading || row.beforeStatus === null || row.baseVersion === null || (row.targetStatus === 'ENABLED' && (!row.enableAllowed || ['GEO_ATTENDANCE', 'STUDENT_LOCATION_TRACK'].includes(row.featureCode)))} onClick={() => { setReview({ item: row, action: 'approve' }); setComment(''); setFormError(''); }}>批准</Button><Button actionKey="feature-management.feature-management-page.6" aria-label="驳回" disabled={loading} onClick={() => { setReview({ item: row, action: 'reject' }); setComment(''); setFormError(''); }}>驳回</Button></> }]} scroll={{ x: 1350 }} locale={{ emptyText: '暂无待审批申请' }} pagination={{ current: queuePage, total: queueTotal, pageSize: 20, showSizeChanger: false, onChange: setQueuePage }} /> }] : [])
     ]} />
-    <h2>申请与审批记录</h2>
-    <Table<FeatureToggleChange> rowKey="id" loading={loading} dataSource={changes} columns={columns} scroll={{ x: 1000 }} locale={{ emptyText: '暂无申请记录' }} pagination={{ current: page, total, pageSize: 20, showSizeChanger: false, showTotal: n => `共 ${n} 条`, onChange: setPage }} />
-    {access && reviewer(access.user) && <><h2>待审批申请</h2><Table<FeatureToggleChange> rowKey="id" loading={loading} dataSource={queue} columns={[...columns, { title: '审批操作', render: (_, row) => row.taskStatus === 'PENDING_REVIEW' && <><Button aria-label="批准" disabled={loading || row.beforeStatus === null || row.baseVersion === null || (row.targetStatus === 'ENABLED' && (!row.enableAllowed || ['GEO_ATTENDANCE', 'STUDENT_LOCATION_TRACK'].includes(row.featureCode)))} onClick={() => { setReview({ item: row, action: 'approve' }); setComment(''); setFormError(''); }}>批准</Button><Button aria-label="驳回" disabled={loading} onClick={() => { setReview({ item: row, action: 'reject' }); setComment(''); setFormError(''); }}>驳回</Button></> }]} scroll={{ x: 1100 }} locale={{ emptyText: '暂无待审批申请' }} pagination={{ current: queuePage, total: queueTotal, pageSize: 20, showSizeChanger: false, onChange: setQueuePage }} /></>}
-    {selected && <Modal open title={confirming ? '确认全局功能变更申请' : '申请全局功能变更'} onCancel={() => setSelected(null)} footer={<Button type="primary" aria-label={confirming ? '确认提交' : '下一步'} loading={loading} onClick={() => { if (!description.trim()) setFormError('请填写申请说明'); else if (!confirming) { setFormError(''); setConfirming(true); } else void mutate(); }}>{confirming ? '确认提交' : '下一步'}</Button>}>
+    {selected && <Modal open title={confirming ? '确认全局功能变更申请' : '申请全局功能变更'} onCancel={() => setSelected(null)} footer={<Button actionKey="feature-management.feature-management-page.7" type="primary" aria-label={confirming ? '确认提交' : '下一步'} loading={loading} onClick={() => { if (!description.trim()) setFormError('请填写申请说明'); else if (!confirming) { setFormError(''); setConfirming(true); } else void mutate(); }}>{confirming ? '确认提交' : '下一步'}</Button>}>
       <p>{selected.featureCode === 'ORGANIZATION_MINIAPP_AUTH' && selected.status === 'ENABLED' ? '停用后将强制退出所有机构小程序活动会话。' : ''}</p><p>{selected.featureName}：{status(selected.status)} → {status(selected.status === 'ENABLED' ? 'DISABLED' : 'ENABLED')}（当前版本 {selected.versionNo}）</p>
       {formError && <Alert type="error" message={formError} />}
       {confirming ? <><p>{description}</p><Alert type="warning" message="请确认影响范围为全局，审核通过后将影响相关客户端功能。" /></> : <><label htmlFor="feature-description">申请说明</label><Input.TextArea id="feature-description" value={description} maxLength={1000} onChange={e => setDescription(e.target.value)} /></>}
     </Modal>}
-    {review && <Modal open title={review.action === 'approve' ? '批准全局功能变更' : '驳回全局功能变更'} onCancel={() => setReview(null)} footer={<Button type="primary" aria-label={review.action === 'approve' ? '确认批准' : '确认驳回'} loading={loading} onClick={() => void mutate()}>{review.action === 'approve' ? '确认批准' : '确认驳回'}</Button>}><p>{review.item.title}：{status(review.item.beforeStatus)} → {status(review.item.targetStatus)}；当前{status(review.item.currentStatus)}</p><p>{review.item.description}</p>{formError && <Alert type="error" message={formError} />}<label htmlFor="feature-comment">审批意见</label><Input.TextArea id="feature-comment" value={comment} maxLength={500} onChange={e => setComment(e.target.value)} /></Modal>}
-    {detail && <Modal open title="申请与审批记录详情" onCancel={() => setDetail(null)} footer={<Button onClick={() => setDetail(null)}>关闭</Button>}><Descriptions column={1} items={[
+    {review && <Modal open title={review.action === 'approve' ? '批准全局功能变更' : '驳回全局功能变更'} onCancel={() => setReview(null)} footer={<Button actionKey="feature-management.feature-management-page.8" type="primary" aria-label={review.action === 'approve' ? '确认批准' : '确认驳回'} loading={loading} onClick={() => void mutate()}>{review.action === 'approve' ? '确认批准' : '确认驳回'}</Button>}><p>{review.item.title}：{status(review.item.beforeStatus)} → {status(review.item.targetStatus)}；当前{status(review.item.currentStatus)}</p><p>{review.item.description}</p>{formError && <Alert type="error" message={formError} />}<label htmlFor="feature-comment">审批意见</label><Input.TextArea id="feature-comment" value={comment} maxLength={500} onChange={e => setComment(e.target.value)} /></Modal>}
+    {detail && <Modal open title="申请与审批记录详情" onCancel={() => setDetail(null)} footer={<Button actionKey="feature-management.feature-management-page.9" onClick={() => setDetail(null)}>关闭</Button>}><Descriptions column={1} items={[
       ['申请标题', detail.title], ['功能编码', detail.featureCode], ['申请说明', detail.description], ['申请前状态', status(detail.beforeStatus)], ['目标状态', status(detail.targetStatus)], ['当前状态', status(detail.currentStatus)], ['申请版本', detail.baseVersion ?? '未知'], ['当前版本', detail.currentVersion], ['任务状态', status(detail.taskStatus)], ['申请人', detail.submittedBy], ['提交时间', detail.submittedAt], ['审批人', detail.reviewedBy], ['审批时间', detail.reviewedAt], ['审批意见', detail.reviewComment], ['创建时间', detail.createdAt]
     ].map(([label, value]) => ({ key: label!, label, children: value || '—' }))} /></Modal>}
   </div>;

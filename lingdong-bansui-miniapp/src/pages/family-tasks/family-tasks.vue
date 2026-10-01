@@ -1,5 +1,5 @@
 <template>
-  <view class="page">
+  <view class="page has-tabbar">
     <text class="title">家庭任务</text>
     <button :disabled="busy" @tap="load(1)">刷新任务</button>
     <button v-if="canCreate" :disabled="busy" @tap="edit()">新建家庭任务</button>
@@ -25,9 +25,12 @@
       </view>
       <view v-if="total" class="paging"><button :disabled="page<=1" @tap="load(page-1)">上一页</button><text>第 {{ page }} 页</text><button :disabled="page*20>=total" @tap="load(page+1)">下一页</button></view>
     </template>
+  <AppTabBar :items="PARENT_TABS" :active="1" />
   </view>
 </template>
 <script setup lang="ts">
+import AppTabBar from '@/components/AppTabBar.vue';
+import { PARENT_TABS } from '@/config/tabbar';
 import { ref,reactive,computed } from 'vue';
 import { onShow,onHide,onUnload } from '@dcloudio/uni-app';
 import { familyTaskApi,type FamilyTask,type FamilyStudent } from '@/api/family-task';

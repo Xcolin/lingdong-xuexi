@@ -1,5 +1,7 @@
+import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
+import { ViewportTable as Table } from '../../components/ViewportTable';
 import { useEffect, useState, type ReactNode } from 'react';
-import { Alert, Button, Form, Input, Modal, Popconfirm, Select, Space, Table, Tag, Tooltip, message } from 'antd';
+import { Alert, Form, Input, Modal, Popconfirm, Select, Space, Tag, Tooltip, message } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
 import { CircleCheck, CircleOff, LockKeyhole, Search, UserPlus } from 'lucide-react';
 import { usersApi, type CreateUserInput, type ManagedUser, type MutableUserStatus, type UserDirectoryPage, type UserStatus, type UserType } from '../../api/users';
@@ -92,17 +94,17 @@ export function UserManagementPage() {
     <div className="page-stack">
       <div className="page-heading">
         <h1>用户管理</h1>
-        <Button type="primary" icon={<UserPlus size={16} />} onClick={() => setCreateModalOpen(true)}>新增用户</Button>
+        <Button actionKey="users.user-management-page.1" type="primary" icon={<UserPlus size={16} />} onClick={() => setCreateModalOpen(true)}>新增用户</Button>
       </div>
 
-      {errorMessage && <Alert type="error" showIcon message={errorMessage} action={<Button size="small" onClick={() => void loadUsers(filters, directory.page)}>重试</Button>} />}
+      {errorMessage && <Alert type="error" showIcon message={errorMessage} action={<Button actionKey="users.user-management-page.2" size="small" onClick={() => void loadUsers(filters, directory.page)}>重试</Button>} />}
 
       <ProCard className="content-panel" bordered={false}>
         <Form form={filterForm} layout="inline" className="directory-filters" onFinish={search}>
           <Form.Item label="账号或名称" name="keyword"><Input allowClear /></Form.Item>
           <Form.Item label="用户类型" name="type"><Select allowClear options={userTypeOptions} className="filter-select" /></Form.Item>
           <Form.Item label="账号状态" name="status"><Select allowClear options={statusOptions} className="filter-select" /></Form.Item>
-          <Form.Item><Button type="primary" htmlType="submit" icon={<Search size={16} />}>查询</Button></Form.Item>
+          <Form.Item><Button actionKey="users.user-management-page.3" type="primary" htmlType="submit" icon={<Search size={16} />}>查询</Button></Form.Item>
         </Form>
 
         <Table<ManagedUser>
@@ -142,7 +144,7 @@ export function UserManagementPage() {
           <Form.Item label="用户名称" name="displayName" rules={[{ required: true, message: '请输入用户名称' }, { max: 64, message: '用户名称不能超过 64 个字符' }]}><Input autoComplete="off" /></Form.Item>
           <Form.Item label="手机号" name="mobile" rules={[{ max: 32, message: '手机号不能超过 32 个字符' }]}><Input autoComplete="off" /></Form.Item>
           <Form.Item label="用户类型" name="type" rules={[{ required: true, message: '请选择用户类型' }]}><Select options={userTypeOptions} /></Form.Item>
-          <div className="form-actions"><Button onClick={() => setCreateModalOpen(false)}>取消</Button><Button type="primary" htmlType="submit" loading={submitting}>创建用户</Button></div>
+          <div className="form-actions"><Button actionKey="users.user-management-page.4" onClick={() => setCreateModalOpen(false)}>取消</Button><Button actionKey="users.user-management-page.5" type="primary" htmlType="submit" loading={submitting}>创建用户</Button></div>
         </Form>
       </Modal>
     </div>
@@ -153,7 +155,7 @@ export function UserManagementPage() {
     return (
       <Tooltip title={label}>
         <Popconfirm title={`确认${label}该用户？`} onConfirm={() => void updateStatus(user, status)}>
-          <Button type="text" icon={icon} aria-label={`${label} ${user.displayName}`} />
+          <Button actionKey={`users.status.${status.toLowerCase()}`} type="text" icon={icon} aria-label={`${label} ${user.displayName}`} />
         </Popconfirm>
       </Tooltip>
     );

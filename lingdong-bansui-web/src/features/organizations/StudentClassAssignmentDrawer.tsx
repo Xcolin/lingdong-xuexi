@@ -1,5 +1,6 @@
+import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { useEffect, useState } from 'react';
-import { Button, Drawer, Form, Select, Spin, message } from 'antd';
+import { Drawer, Form, Select, Spin, message } from 'antd';
 import { classAssignmentApi } from './classAssignmentApi';
 import type { OrganizationOption, StudentOption } from '../learning-tasks/types';
 
@@ -71,8 +72,8 @@ export function StudentClassAssignmentDrawer({ open, onClose }: StudentClassAssi
             />
           </Form.Item>
           <div className="form-actions">
-            <Button onClick={onClose}>取消</Button>
-            <Button type="primary" htmlType="submit" loading={submitting}>确认配置</Button>
+            <Button actionKey="organizations.student-class-assignment-drawer.1" onClick={onClose}>取消</Button>
+            <Button actionKey="organizations.student-class-assignment-drawer.2" type="primary" htmlType="submit" loading={submitting}>确认配置</Button>
           </div>
         </Form>
       </Spin>

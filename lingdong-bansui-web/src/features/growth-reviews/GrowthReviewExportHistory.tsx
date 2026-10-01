@@ -1,5 +1,7 @@
+import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
+import { ViewportTable as Table } from '../../components/ViewportTable';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, App, Button, Descriptions, Drawer, Select, Space, Table, Tag, Tooltip } from 'antd';
+import { Alert, App, Descriptions, Drawer, Select, Space, Tag, Tooltip } from 'antd';
 import { Download, Eye, History, RefreshCw } from 'lucide-react';
 import { growthReviewExportApi as api, type GrowthReviewExportPage, type GrowthReviewExportRecord } from './exportApi';
 import type { ExportJobStatus } from '../../api/export-jobs';
@@ -64,13 +66,13 @@ export function GrowthReviewExportHistory({ studentId, initialOpen = false }: { 
     finally { if (request === epoch.current) setDownloading(undefined); }
   }
   return <>
-    <Button icon={<History size={16} />} onClick={() => { setPage(1); setOpen(true); }}>导出历史</Button>
+    <Button actionKey="growth-reviews.growth-review-export-history.1" icon={<History size={16} />} onClick={() => { setPage(1); setOpen(true); }}>导出历史</Button>
     <Drawer title="复盘导出历史" open={open} onClose={close} width={800}>
       <Space wrap style={{ marginBottom: 16 }}>
         <Select aria-label="导出状态" placeholder="全部状态" allowClear value={status} style={{ width: 140 }}
           options={(['QUEUED', 'EXPORTING', 'SUCCEEDED', 'FAILED'] as const).map(value => ({ value, label: labels[value] }))}
           onChange={value => { epoch.current++; setStatus(value); setPage(1); }} />
-        <Tooltip title="刷新导出历史"><Button aria-label="刷新导出历史" icon={<RefreshCw size={16} />} loading={loading}
+        <Tooltip title="刷新导出历史"><Button actionKey="growth-reviews.growth-review-export-history.2" aria-label="刷新导出历史" icon={<RefreshCw size={16} />} loading={loading}
           onClick={() => { epoch.current++; setRefresh(value => value + 1); }} /></Tooltip>
       </Space>
       {error && <Alert type="error" showIcon message={error} />}
@@ -82,8 +84,8 @@ export function GrowthReviewExportHistory({ studentId, initialOpen = false }: { 
           { title: '完成份数', width: 90, render: (_, row) => `${row.processedRows}/${row.totalRows}` },
           { title: '申请时间', dataIndex: 'requestedAt', width: 170, render: (value: string) => value.replace('T', ' ') },
           { title: '操作', fixed: 'right', width: 90, render: (_, row) => <Space size={0}>
-            <Tooltip title="查看详情"><Button type="text" aria-label={`详情-${row.jobCode}`} icon={<Eye size={16} />} onClick={() => void showDetail(row.id)} /></Tooltip>
-            <Tooltip title="下载结果"><Button type="text" aria-label={`下载-${row.jobCode}`} icon={<Download size={16} />}
+            <Tooltip title="查看详情"><Button actionKey="growth-reviews.growth-review-export-history.3" type="text" aria-label={`详情-${row.jobCode}`} icon={<Eye size={16} />} onClick={() => void showDetail(row.id)} /></Tooltip>
+            <Tooltip title="下载结果"><Button actionKey="growth-reviews.growth-review-export-history.4" type="text" aria-label={`下载-${row.jobCode}`} icon={<Download size={16} />}
               disabled={row.status !== 'SUCCEEDED' || !!downloading} loading={downloading === row.id} onClick={() => void download(row)} /></Tooltip>
           </Space> }
         ]} />

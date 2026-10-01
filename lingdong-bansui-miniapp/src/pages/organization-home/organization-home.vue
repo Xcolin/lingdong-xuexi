@@ -1,47 +1,108 @@
 <template>
-  <view class="page-shell">
-    <view class="top-bar">
-      <view class="identity-area">
-        <text class="display-name">{{ context?.displayName || '机构工作台' }}</text>
-        <text class="account-text">{{ context?.username || '' }}</text>
+  <view class="ld-page has-tabbar">
+    <view class="ld-topbar">
+      <view class="ld-topbar-brand">
+        <view class="ld-topbar-logo">校</view>
+        <view>
+          <text class="ld-topbar-name">{{ context?.displayName || '机构工作台' }}</text>
+          <text class="ld-topbar-meta">{{ context?.username || '' }}</text>
+        </view>
       </view>
-      <button class="logout-button" :disabled="loggingOut" @tap="logout">退出</button>
+      <button class="ld-logout" :disabled="loggingOut" @tap="logout">退出</button>
     </view>
 
-      <view v-if="reviewEnabled || reviewLoading || reviewError" class="review-summary">
-        <text v-if="reviewLoading">正在加载待审核任务…</text>
-        <template v-else-if="reviewError"><text>{{ reviewError }}</text><button @tap="refreshReviews">重试待审核查询</button></template>
-        <text v-else>{{ reviewTotal === 0 ? '暂无待审核任务' : `待审核任务：${reviewTotal} 项` }}</text>
-        <button v-if="reviewEnabled && !reviewLoading" @tap="openReviews">查看待审核任务</button>
+    <view v-if="reviewEnabled || reviewLoading || reviewError" class="ld-card review-card">
+      <view class="review-info">
+        <text class="ld-card-title">任务审核</text>
+        <text class="review-count">
+          <template v-if="reviewLoading">正在加载待审核任务…</template>
+          <template v-else-if="reviewError">{{ reviewError }}</template>
+          <template v-else>{{ reviewTotal === 0 ? '暂无待审核任务' : `待审核任务：${reviewTotal} 项` }}</template>
+        </text>
       </view>
+      <button v-if="reviewEnabled && !reviewLoading" class="review-button" @tap="openReviews">
+        {{ reviewError ? '重试' : '查看' }}
+      </button>
+    </view>
+
     <OrganizationExceptionSummary />
-    <view v-if="loading" class="state-text">正在加载</view>
+
+    <view v-if="loading" class="ld-loading">正在加载</view>
     <template v-else>
-      <view class="section-band">
-        <text class="section-title">管理组织</text>
+      <view class="ld-heading">
+        <text class="ld-heading-title">管理组织</text>
+        <text class="ld-heading-sub">当前账号负责的组织范围</text>
+      </view>
+      <view class="ld-card org-card">
         <view v-for="organization in context?.organizations || []" :key="organization.id" class="organization-row">
+          <view class="org-badge">{{ organizationTypeName(organization.typeCode).slice(0, 1) }}</view>
           <view class="organization-main">
             <text class="organization-name">{{ organization.name }}</text>
             <text class="organization-type">{{ organizationTypeName(organization.typeCode) }}</text>
           </view>
         </view>
       </view>
-      <button v-if="studentRelationshipEnabled" class="workbench-button" @tap="openStudentRelationships">学员关系</button>
-      <button v-if="classManagementEnabled" class="workbench-button" @tap="openClassManagement">班级管理</button>
-      <button v-if="teacherManagementEnabled" class="workbench-button" @tap="openTeacherManagement">教师管理</button>
-      <button v-if="taskManagementEnabled" class="workbench-button" @tap="openTaskManagement">机构任务</button>
-      <button v-if="exceptionReportEnabled" class="workbench-button" @tap="openExceptionReports">异常报备</button>
-      <button v-if="attendanceEnabled" class="workbench-button" @tap="openAttendance">考勤台账</button>
-      <button v-if="parentMobileManualRecoveryEnabled" class="recovery-button" @tap="openParentMobileRecovery">家长换号核验</button>
-      <button v-if="studentAccountCancellationEnabled" class="cancellation-button" @tap="openStudentCancellation">学生账号注销</button>
-      <button v-if="accountSecurityEnabled" class="security-button" @tap="openAccountSecurity">账号安全</button>
+
+      <view class="ld-group">
+      <button v-if="studentRelationshipEnabled" class="ld-cell" @tap="openStudentRelationships()">
+        <view class="ld-cell-icon blue">员</view>
+        <view class="ld-cell-body">
+          <text class="ld-cell-title">学员关系</text>
+          <text class="ld-cell-sub">转班与离校关系管理</text>
+        </view>
+        <text class="ld-cell-arrow">›</text>
+      </button>
+      <button v-if="classManagementEnabled" class="ld-cell" @tap="openClassManagement()">
+        <view class="ld-cell-icon teal">班</view>
+        <view class="ld-cell-body">
+          <text class="ld-cell-title">班级管理</text>
+          <text class="ld-cell-sub">维护班级与启用状态</text>
+        </view>
+        <text class="ld-cell-arrow">›</text>
+      </button>
+      <button v-if="teacherManagementEnabled" class="ld-cell" @tap="openTeacherManagement()">
+        <view class="ld-cell-icon purple">师</view>
+        <view class="ld-cell-body">
+          <text class="ld-cell-title">教师管理</text>
+          <text class="ld-cell-sub">账号、班级绑定与密码重置</text>
+        </view>
+        <text class="ld-cell-arrow">›</text>
+      </button>
+      <button v-if="exceptionReportEnabled" class="ld-cell" @tap="openExceptionReports()">
+        <view class="ld-cell-icon orange">报</view>
+        <view class="ld-cell-body">
+          <text class="ld-cell-title">异常报备</text>
+          <text class="ld-cell-sub">处理出勤异常报备记录</text>
+        </view>
+        <text class="ld-cell-arrow">›</text>
+      </button>
+      <button v-if="parentMobileManualRecoveryEnabled" class="ld-cell" @tap="openParentMobileRecovery()">
+        <view class="ld-cell-icon warn-soft">换</view>
+        <view class="ld-cell-body">
+          <text class="ld-cell-title">家长换号核验</text>
+          <text class="ld-cell-sub">线下核验后为家长换绑手机号</text>
+        </view>
+        <text class="ld-cell-arrow">›</text>
+      </button>
+      <button v-if="studentAccountCancellationEnabled" class="ld-cell" @tap="openStudentCancellation()">
+        <view class="ld-cell-icon danger-soft">销</view>
+        <view class="ld-cell-body">
+          <text class="ld-cell-title">学生账号注销</text>
+          <text class="ld-cell-sub">注销学生账号及其数据</text>
+        </view>
+        <text class="ld-cell-arrow">›</text>
+      </button>
+      </view>
     </template>
+  <AppTabBar :items="ORG_TABS" :active="0" />
   </view>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue';
 import OrganizationExceptionSummary from '@/components/OrganizationExceptionSummary.vue';
+import AppTabBar from '@/components/AppTabBar.vue';
+import { ORG_TABS } from '@/config/tabbar';
 import { useManagedReviewSummary } from '@/composables/use-managed-review-summary';
 const { reviewEnabled, reviewLoading, reviewTotal, reviewError, refreshReviews, openReviews } = useManagedReviewSummary('organization');
 import { onShow } from '@dcloudio/uni-app';
@@ -119,10 +180,6 @@ async function logout(): Promise<void> {
   }
 }
 
-function openAccountSecurity(): Promise<unknown> {
-  return uni.navigateTo({ url: '/pages/account-security/account-security?identity=organization' });
-}
-
 function openStudentRelationships(): Promise<unknown> {
   return uni.navigateTo({ url: '/pages/organization-students/organization-students' });
 }
@@ -133,10 +190,6 @@ function openClassManagement(): Promise<unknown> {
 
 function openTeacherManagement(): Promise<unknown> {
   return uni.navigateTo({ url: '/pages/organization-teachers/organization-teachers' });
-}
-
-function openTaskManagement(): Promise<unknown> {
-  return uni.navigateTo({ url: '/pages/managed-tasks/managed-tasks?identity=organization' });
 }
 
 function openExceptionReports(): Promise<unknown> {
@@ -170,28 +223,60 @@ function organizationTypeName(typeCode: string): string {
 </script>
 
 <style lang="scss" scoped>
-.page-shell { min-height: 100vh; background: #f4f7f5; }
-/* #ifdef H5 */
-.page-shell { min-height: calc(100vh - 44px); }
-/* #endif */
-.top-bar { min-height: 144rpx; display: flex; align-items: center; justify-content: space-between; gap: 24rpx; padding: 32rpx 40rpx; box-sizing: border-box; border-bottom: 2rpx solid #dbe3df; background: #ffffff; }
-.identity-area { min-width: 0; flex: 1; }
-.display-name, .account-text, .section-title, .organization-name, .organization-type { display: block; }
-.display-name { overflow: hidden; color: #1c2b28; font-size: 36rpx; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
-.account-text { margin-top: 8rpx; color: #708078; font-size: 24rpx; }
-.logout-button { width: 112rpx; height: 64rpx; margin: 0; padding: 0; background: transparent; color: #9a4b38; font-size: 26rpx; }
-.logout-button::after { border: 0; }
-.state-text { min-height: 360rpx; display: flex; align-items: center; justify-content: center; color: #708078; font-size: 28rpx; }
-.section-band { margin-top: 28rpx; border-top: 2rpx solid #dbe3df; border-bottom: 2rpx solid #dbe3df; background: #ffffff; }
-.section-title { padding: 28rpx 40rpx; color: #1c2b28; font-size: 30rpx; font-weight: 700; }
-.organization-row { min-height: 104rpx; display: flex; align-items: center; padding: 0 40rpx; border-top: 2rpx solid #edf1ef; }
+.review-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24rpx;
+  margin-top: 32rpx;
+}
+.review-count {
+  display: block;
+  margin-top: 10rpx;
+  color: $ld-text-muted;
+  font-size: $ld-font-caption;
+}
+.review-button {
+  width: 132rpx;
+  height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  border-radius: $ld-radius-pill;
+  background: $ld-primary;
+  color: #ffffff;
+  font-size: $ld-font-caption;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.review-button::after { border: 0; }
+.org-card { padding: 12rpx 28rpx; }
+.organization-row {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  padding: 26rpx 0;
+  border-top: 2rpx solid $ld-line;
+}
+.organization-row:first-child { border-top: 0; }
+.org-badge {
+  width: 72rpx;
+  height: 72rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18rpx;
+  background: $ld-primary-soft;
+  color: $ld-primary;
+  font-size: 30rpx;
+  font-weight: 700;
+  flex-shrink: 0;
+}
 .organization-main { min-width: 0; }
-.organization-name { color: #1c2b28; font-size: 28rpx; word-break: break-word; }
-.organization-type { margin-top: 8rpx; color: #708078; font-size: 22rpx; }
-.workbench-button, .recovery-button, .cancellation-button, .security-button { width: calc(100% - 80rpx); height: 88rpx; margin: 32rpx 40rpx 0; border-radius: 10rpx; background: #167c5a; color: #ffffff; font-size: 29rpx; }
-.recovery-button { background: #b54732; }
-.cancellation-button { background: #b42318; }
-.security-button { background: #ffffff; color: #167c5a; border: 2rpx solid #167c5a; }
-.workbench-button::after, .recovery-button::after, .cancellation-button::after, .security-button::after { border: 0; }
-.review-summary { margin: 28rpx 40rpx; padding: 24rpx; background: #fff; border-radius: 12rpx; color: #40514c; font-size: 28rpx; }.review-summary button { margin-top: 20rpx; font-size: 28rpx; }
+.organization-name, .organization-type { display: block; }
+.organization-name { color: $ld-text; font-size: 29rpx; font-weight: 600; word-break: break-word; }
+.organization-type { margin-top: 6rpx; color: $ld-text-muted; font-size: $ld-font-mini; }
+.icon-warn { background: $ld-warning-soft; color: $ld-warning; }
+.icon-danger { background: $ld-danger-soft; color: $ld-danger; }
 </style>

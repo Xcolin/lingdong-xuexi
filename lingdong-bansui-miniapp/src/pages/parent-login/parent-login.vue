@@ -1,65 +1,74 @@
 <template>
-  <view class="page-shell">
-    <view class="page-heading">
-      <text class="heading-title">家长登录</text>
-      <view class="heading-rule" />
+  <view class="ld-page">
+    <view class="ld-heading">
+      <text class="ld-heading-title">家长登录</text>
+      <view class="ld-heading-rule" />
     </view>
 
-    <view v-if="loading" class="loading-state">正在加载</view>
-    <view v-else-if="!context?.enabled" class="disabled-state">服务暂不可用</view>
-    <form v-else class="login-form" @submit="submitLogin">
+    <view v-if="loading" class="ld-loading">正在加载</view>
+    <view v-else-if="!context?.enabled" class="ld-empty">
+      <text class="ld-empty-main">服务暂不可用</text>
+      <text class="ld-empty-sub">请联系管理员确认家长登录开关</text>
+    </view>
+    <form v-else @submit="submitLogin">
       <!-- #ifdef MP-WEIXIN -->
-      <button v-if="context?.wechatEnabled && !wechatBinding" class="wechat-button"
+      <button v-if="context?.wechatEnabled && !wechatBinding" class="ld-btn ld-btn-primary wechat-button"
               :loading="wechatSubmitting" :disabled="submitting || wechatSubmitting" @tap="loginByWechat">
         <text class="wechat-mark">微</text>
         <text>微信快捷登录</text>
       </button>
       <view v-if="context?.wechatEnabled && !wechatBinding" class="separator-row">
-        <view class="separator-line" /><text>或使用手机号</text><view class="separator-line" />
+        <view class="separator-line" /><text class="separator-text">或使用手机号</text><view class="separator-line" />
       </view>
       <!-- #endif -->
 
-      <view v-if="wechatBinding" class="binding-heading">
-        <text class="binding-title">绑定家长手机号</text>
-        <button class="back-button" :disabled="submitting" @tap="cancelWechatBinding">返回</button>
+      <view v-if="wechatBinding" class="ld-card binding-band">
+        <text class="ld-card-title">绑定家长手机号</text>
+        <text class="ld-card-sub">完成验证后即绑定当前微信</text>
+        <button class="ld-btn ld-btn-ghost back-button" :disabled="submitting" @tap="cancelWechatBinding">返回</button>
       </view>
 
-      <view v-else class="mode-switch">
-        <button :class="['mode-button', { active: mode === 'SMS' }]" @tap="switchMode('SMS')">验证码登录</button>
-        <button :class="['mode-button', { active: mode === 'PASSWORD' }]" @tap="switchMode('PASSWORD')">密码登录</button>
-      </view>
-
-      <view class="field-group">
-        <text class="field-label">手机号</text>
-        <input v-model="mobile" class="field-input" type="number" maxlength="11"
-               placeholder="请输入手机号" :disabled="submitting" />
-      </view>
-
-      <view v-if="mode === 'SMS' || wechatBinding" class="field-group">
-        <text class="field-label">验证码</text>
-        <view class="code-row">
-          <input v-model="code" class="field-input" type="number" maxlength="6"
-                 placeholder="6位验证码" :disabled="submitting" />
-          <button class="code-button" :disabled="sendingCode || countdown > 0" :loading="sendingCode" @tap="sendCode">
-            {{ countdown > 0 ? `${countdown}秒` : '获取验证码' }}
-          </button>
+      <view v-else class="ld-card">
+        <view class="ld-tabs tabs-in-card">
+          <button :class="['ld-tab', { active: mode === 'SMS' }]" @tap="switchMode('SMS')">验证码登录</button>
+          <button :class="['ld-tab', { active: mode === 'PASSWORD' }]" @tap="switchMode('PASSWORD')">密码登录</button>
         </view>
+
+        <view class="ld-field first-field">
+          <text class="ld-field-label">手机号</text>
+          <input v-model="mobile" class="ld-input" type="number" maxlength="11"
+                 placeholder="请输入手机号" :disabled="submitting" />
+        </view>
+
+        <view v-if="mode === 'SMS' || wechatBinding" class="ld-field code-field">
+          <text class="ld-field-label">验证码</text>
+          <view class="code-row">
+            <input v-model="code" class="ld-input code-input" type="number" maxlength="6"
+                   placeholder="6位验证码" :disabled="submitting" />
+            <button class="code-button" :disabled="sendingCode || countdown > 0" :loading="sendingCode" @tap="sendCode">
+              {{ countdown > 0 ? `${countdown}秒` : '获取验证码' }}
+            </button>
+          </view>
+        </view>
+
+        <view v-else class="ld-field">
+          <text class="ld-field-label">密码</text>
+          <input v-model="password" class="ld-input" password maxlength="64"
+                 placeholder="请输入密码" :disabled="submitting" />
+        </view>
+
+        <checkbox-group v-if="mode === 'SMS' || wechatBinding" class="agreement-row" @change="changeAgreement">
+          <label class="agreement-label">
+            <checkbox value="accepted" color="#167c5a" :checked="agreementAccepted" />
+            <text class="agreement-text">我已阅读并同意当前用户协议</text>
+          </label>
+        </checkbox-group>
+
+        <text v-if="errorMessage" class="ld-error-text error-gap">{{ errorMessage }}</text>
+        <button class="ld-btn ld-btn-primary submit-button" form-type="submit" :loading="submitting" :disabled="submitting">
+          {{ wechatBinding ? '验证并绑定' : '登录' }}
+        </button>
       </view>
-
-      <view v-else class="field-group">
-        <text class="field-label">密码</text>
-        <input v-model="password" class="field-input" password maxlength="64"
-               placeholder="请输入密码" :disabled="submitting" />
-      </view>
-
-      <checkbox-group v-if="mode === 'SMS' || wechatBinding" class="agreement-row" @change="changeAgreement">
-        <label><checkbox value="accepted" color="#167c5a" :checked="agreementAccepted" />我已阅读并同意当前用户协议</label>
-      </checkbox-group>
-
-      <text v-if="errorMessage" class="error-message">{{ errorMessage }}</text>
-      <button class="submit-button" form-type="submit" :loading="submitting" :disabled="submitting">
-        {{ wechatBinding ? '验证并绑定' : '登录' }}
-      </button>
     </form>
   </view>
 </template>
@@ -274,40 +283,52 @@ function handleRequestError(error: unknown, fallback: string): void {
 </script>
 
 <style lang="scss" scoped>
-.page-shell { min-height: 100vh; padding: 72rpx 40rpx 64rpx; box-sizing: border-box; background: #f4f7f5; }
-/* #ifdef H5 */
-.page-shell { min-height: calc(100vh - 44px); }
-/* #endif */
-.page-heading { width: 100%; max-width: 720rpx; margin: 0 auto 64rpx; }
-.heading-title { display: block; color: #1c2b28; font-size: 44rpx; font-weight: 700; }
-.heading-rule { width: 72rpx; height: 8rpx; margin-top: 20rpx; border-radius: 4rpx; background: #e26d4f; }
-.loading-state, .disabled-state { min-height: 320rpx; display: flex; align-items: center; justify-content: center; color: #708078; font-size: 30rpx; }
-.disabled-state { color: #9a4b38; }
-.login-form { width: 100%; max-width: 720rpx; display: flex; flex-direction: column; gap: 36rpx; margin: 0 auto; }
-.wechat-button { width: 100%; height: 96rpx; display: flex; align-items: center; justify-content: center; gap: 16rpx; border-radius: 12rpx; background: #07c160; color: #ffffff; font-size: 30rpx; font-weight: 600; }
-.wechat-button::after { border: 0; }
-.wechat-button[disabled] { background: #8fcfac; color: #ffffff; }
-.wechat-mark { width: 48rpx; height: 48rpx; display: flex; align-items: center; justify-content: center; border: 2rpx solid #ffffff; border-radius: 50%; font-size: 24rpx; }
-.separator-row { height: 36rpx; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 20rpx; color: #708078; font-size: 24rpx; }
-.separator-line { height: 2rpx; background: #d4ded9; }
-.binding-heading { min-height: 76rpx; display: flex; align-items: center; justify-content: space-between; border-bottom: 2rpx solid #dbe3df; }
-.binding-title { color: #1c2b28; font-size: 32rpx; font-weight: 700; }
-.back-button { min-width: 112rpx; height: 60rpx; margin: 0; padding: 0 20rpx; background: transparent; color: #167c5a; font-size: 26rpx; }
-.back-button::after { border: 0; }
-.mode-switch { height: 76rpx; display: grid; grid-template-columns: repeat(2, 1fr); padding: 6rpx; border: 2rpx solid #c8d3cf; border-radius: 12rpx; box-sizing: border-box; background: #e9efec; }
-.mode-button { height: 60rpx; display: flex; align-items: center; justify-content: center; padding: 0; border-radius: 8rpx; background: transparent; color: #62756e; font-size: 26rpx; }
-.mode-button::after { border: 0; }
-.mode-button.active { background: #ffffff; color: #167c5a; font-weight: 600; }
-.field-group { display: flex; flex-direction: column; gap: 14rpx; }
-.field-label { color: #40514c; font-size: 26rpx; font-weight: 600; }
-.field-input { width: 100%; height: 92rpx; padding: 0 28rpx; border: 2rpx solid #c8d3cf; border-radius: 12rpx; box-sizing: border-box; background: #ffffff; color: #1c2b28; font-size: 32rpx; }
-.code-row { display: grid; grid-template-columns: minmax(0, 1fr) 220rpx; gap: 20rpx; }
-.code-button { width: 220rpx; height: 92rpx; display: flex; align-items: center; justify-content: center; padding: 0; border-radius: 12rpx; background: #ffffff; color: #167c5a; font-size: 26rpx; }
-.code-button::after { border: 2rpx solid #167c5a; border-radius: 12rpx; }
-.agreement-row { color: #40514c; font-size: 26rpx; line-height: 44rpx; }
-.agreement-row checkbox { transform: scale(.82); }
-.error-message { min-height: 40rpx; color: #b34f3b; font-size: 26rpx; line-height: 40rpx; word-break: break-word; }
-.submit-button { width: 100%; height: 96rpx; display: flex; align-items: center; justify-content: center; border-radius: 12rpx; background: #167c5a; color: #ffffff; font-size: 32rpx; font-weight: 600; }
-.submit-button::after { border: 0; }
-.submit-button[disabled] { background: #91aaa1; color: #ffffff; }
+.wechat-button { background: #07c160; box-shadow: 0 6rpx 16rpx rgba(7, 193, 96, 0.28); }
+.wechat-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40rpx;
+  height: 40rpx;
+  margin-right: 14rpx;
+  border-radius: 10rpx;
+  background: rgba(255, 255, 255, 0.22);
+  font-size: 24rpx;
+}
+.separator-row {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  margin: 36rpx 8rpx;
+}
+.separator-line { flex: 1; height: 2rpx; background: $ld-line; }
+.separator-text { color: $ld-text-muted; font-size: $ld-font-caption; }
+.binding-band { display: flex; flex-direction: column; }
+.back-button { margin-top: 28rpx; }
+.tabs-in-card { margin-top: 0; }
+.first-field { margin-top: 28rpx; }
+.code-field { margin-top: $ld-gap-block; }
+.code-row { display: flex; gap: 20rpx; margin-top: 14rpx; }
+.code-input { flex: 1; margin-top: 0; }
+.code-button {
+  width: 220rpx;
+  height: 92rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  border-radius: $ld-radius-md;
+  background: $ld-primary-soft;
+  color: $ld-primary;
+  font-size: $ld-font-caption;
+  font-weight: 600;
+}
+.code-button::after { border: 0; }
+.code-button[disabled] { background: #f0f3f1; color: $ld-text-muted; }
+.agreement-row { margin-top: 28rpx; }
+.agreement-label { display: flex; align-items: center; }
+.agreement-text { color: $ld-text-secondary; font-size: $ld-font-caption; }
+.error-gap { margin-top: 20rpx; }
+.submit-button { margin-top: 32rpx; }
 </style>
