@@ -1,8 +1,5 @@
 <template>
   <view class="has-tabbar page-shell">
-    <view class="toolbar">
-      <button class="toolbar-button" :disabled="loading||submitting" @tap="load()">刷新报备记录</button>
-    </view>
     <view v-if="error" class="state">{{ error }}</view>
     <view v-if="loading" class="state">正在加载</view>
     <template v-else>
@@ -158,23 +155,6 @@ function leave(): Promise<unknown> { return uni.reLaunch({ url: '/pages/index/in
 
 <style lang="scss" scoped>
 .page-shell { min-height: 100vh; background: $ld-bg; padding-bottom: 40rpx; }
-
-.toolbar { display: flex; justify-content: flex-end; margin-top: 4rpx; }
-.toolbar-button {
-  width: auto;
-  height: 64rpx;
-  display: flex;
-  align-items: center;
-  margin: 0;
-  padding: 0 30rpx;
-  border-radius: $ld-radius-pill;
-  background: $ld-card;
-  color: $ld-primary;
-  font-size: $ld-font-caption;
-  font-weight: 600;
-  box-shadow: $ld-shadow-card;
-}
-.toolbar-button::after { border: 0; }
 
 .form-band, .list-band { background: $ld-card; border-radius: $ld-radius-lg; box-shadow: $ld-shadow-card; }
 .form-band { margin-top: $ld-gap-block; padding: 30rpx; }

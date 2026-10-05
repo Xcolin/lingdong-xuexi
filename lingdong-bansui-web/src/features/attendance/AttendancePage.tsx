@@ -8,6 +8,7 @@ import { capabilityApi, type ClientCapabilities } from '../../api/capability';
 import { ApiRequestError } from '../../api/http';
 import { attendanceApi, type AttendanceClass, type AttendanceQuery, type AttendanceResult, type AttendanceStatus } from './api';
 import { canAccessAttendance, canRecordAttendance, normalizeFilters, statusLabels } from './rules';
+import { formatDateTime } from '../../utils/datetime';
 import { AttendanceRecordDrawer } from './AttendanceRecordDrawer';
 import { AttendanceDetailDrawer } from './AttendanceDetailDrawer';
 import './attendance.css';
@@ -92,8 +93,7 @@ function AttendanceLedger({ currentUser, checkAccess, onAccessError }: {
   }
   return <div className="page-stack attendance-page">
     <div className="page-heading"><h1>考勤台账</h1><Space wrap>
-      <Button actionKey="attendance-records.attendance-page.2" icon={<RefreshCw size={16} />} onClick={() => setRevision((value) => value + 1)}>刷新</Button>
-      {canRecord && <Button actionKey="attendance-records.attendance-page.3" type="primary" icon={<ClipboardCheck size={16} />} onClick={() => setRecordOpen(true)}>班级点名</Button>}
+      {canRecord && <Button actionKey="ATTENDANCE_RECORD" type="primary" icon={<ClipboardCheck size={16} />} onClick={() => setRecordOpen(true)}>班级点名</Button>}
     </Space></div>
     {(error || classError) && <Alert type="error" showIcon message={error || classError} action={<Button actionKey="attendance-records.attendance-page.4" onClick={() => setRevision((value) => value + 1)}>重试</Button>} />}
     <Form form={form} layout="inline" className="directory-filters attendance-filters" onFinish={search}>
@@ -120,4 +120,4 @@ function AttendanceLedger({ currentUser, checkAccess, onAccessError }: {
 }
 export function toMessage(e: unknown): string { return e instanceof Error ? e.message : '请求未能完成，请重试'; }
 export function empty(value: string | null): string { return value || '-'; }
-export function formatTime(value: string): string { return value?.replace('T', ' ').slice(0, 19) || '-'; }
+export function formatTime(value: string): string { return formatDateTime(value); }

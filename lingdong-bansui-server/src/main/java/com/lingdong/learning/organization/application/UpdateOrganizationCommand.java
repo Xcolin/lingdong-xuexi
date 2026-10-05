@@ -5,6 +5,13 @@ public record UpdateOrganizationCommand(
         Long organizationId,
         String name,
         Integer sortOrder,
-        Integer versionNo
+        Integer versionNo,
+        String adminDivisionCode
 ) {
+    /** 兼容既有调用：传 null 表示保持既有行政区划不变。 */
+    public UpdateOrganizationCommand(
+            Long organizationId, String name, Integer sortOrder, Integer versionNo
+    ) {
+        this(organizationId, name, sortOrder, versionNo, null);
+    }
 }

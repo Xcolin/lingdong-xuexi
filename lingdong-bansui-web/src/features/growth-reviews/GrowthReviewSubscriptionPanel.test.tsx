@@ -29,15 +29,13 @@ it('无开启权限仍可取消既有订阅，取消后不可重新开启', asyn
   await waitFor(() => expect(screen.getByRole('switch')).toBeDisabled());
   expect(api.set).toHaveBeenCalledWith(studentId, { enabled: false, version: 4 });
 });
-it('保存失败不重试写入，禁用开关并允许重新读取', async () => {
+it('保存失败不重试写入，禁用开关', async () => {
   vi.mocked(api.set).mockRejectedValue(new Error('当前状态不允许执行此操作'));
   render(<App><GrowthReviewSubscriptionPanel studentId={studentId} canEnable /></App>);
   await waitFor(() => expect(screen.getByRole('switch')).toBeEnabled());
   await userEvent.click(screen.getByRole('switch'));
   expect(await screen.findByText('当前状态不允许执行此操作')).toBeInTheDocument();
   expect(screen.getByRole('switch')).toBeDisabled();
-  await userEvent.click(screen.getByRole('button', { name: '刷新订阅状态' }));
-  await waitFor(() => expect(screen.getByRole('switch')).toBeEnabled());
   expect(api.set).toHaveBeenCalledTimes(1);
 });
 it('切换孩子后忽略旧读取响应', async () => {
@@ -59,7 +57,6 @@ it('保存中禁止重复操作，切换孩子后旧保存结果不回填', asyn
   await waitFor(() => expect(screen.getByRole('switch')).toBeEnabled());
   await userEvent.click(screen.getByRole('switch'));
   expect(screen.getByRole('switch')).toBeDisabled();
-  expect(screen.getByRole('button', { name: '刷新订阅状态' })).toBeDisabled();
   await userEvent.click(screen.getByRole('switch'));
   expect(api.set).toHaveBeenCalledTimes(1);
   const next = '1874244142494661103';
@@ -71,13 +68,10 @@ it('保存中禁止重复操作，切换孩子后旧保存结果不回填', asyn
   expect(screen.getByRole('switch')).toBeEnabled();
 });
 
-it('首次读取失败时不允许写入，刷新成功后恢复操作', async () => {
+it('首次读取失败时不允许写入', async () => {
   vi.mocked(api.get).mockRejectedValueOnce(new Error('读取失败'));
   render(<App><GrowthReviewSubscriptionPanel studentId={studentId} canEnable /></App>);
   expect(await screen.findByText('读取失败')).toBeInTheDocument();
   expect(screen.getByRole('switch')).toBeDisabled();
   expect(api.set).not.toHaveBeenCalled();
-  await userEvent.click(screen.getByRole('button', { name: '刷新订阅状态' }));
-  await waitFor(() => expect(screen.getByRole('switch')).toBeEnabled());
-  expect(screen.queryByText('读取失败')).not.toBeInTheDocument();
 });

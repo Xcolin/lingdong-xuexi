@@ -12,6 +12,8 @@ public interface UserPermissionMapper {
 
     List<PermissionAssignment> findByUserId(@Param("userId") Long userId);
 
+    List<PermissionAssignment> lockByUserId(@Param("userId") Long userId);
+
     int insert(
             @Param("id") Long id,
             @Param("userId") Long userId,

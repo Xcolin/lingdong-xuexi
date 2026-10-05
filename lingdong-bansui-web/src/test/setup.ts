@@ -1,13 +1,15 @@
 import '@testing-library/jest-dom/vitest';
-import { cleanup } from '@testing-library/react';
+import { act, cleanup } from '@testing-library/react';
 import { afterEach } from 'vitest';
 import { message, notification, Modal } from 'antd';
 
-afterEach(() => {
-  cleanup();
-  message.destroy();
-  notification.destroy();
-  Modal.destroyAll();
+afterEach(async () => {
+  await act(async () => {
+    cleanup();
+    message.destroy();
+    notification.destroy();
+    Modal.destroyAll();
+  });
 });
 
 Object.defineProperty(window, 'matchMedia', {

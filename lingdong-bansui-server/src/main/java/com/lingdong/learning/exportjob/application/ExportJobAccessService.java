@@ -118,14 +118,11 @@ public class ExportJobAccessService {
         featureAccessService.requireEnabled("STUDENT_EXCEPTION_REPORT", null);
         requireEnabledUser(userId);
         var roles = userRoleMapper.findEnabledRoleCodesByUserId(userId);
-        if (roles.contains("SYS_AUDITOR") || (!roles.contains("TEACHER") && !roles.contains("ORG_ADMIN"))) {
-            throw denied("仅教师或机构管理员可导出异常报备台账");
-        }
         requirePermission(userId, "EXCEPTION_REPORT_EXPORT");
         requirePermission(userId, "EXCEPTION_REPORT_READ");
         var user = new com.lingdong.learning.auth.application.AuthenticatedUser(userId, null, null, null,
                 com.lingdong.learning.auth.domain.AuthClientType.WEB, roles);
-        return new ExceptionExportScope(!roles.contains("ORG_ADMIN"), exceptionReports.findClassOptions(user));
+        return new ExceptionExportScope(roles.contains("TEACHER") && !roles.contains("ORG_ADMIN"), exceptionReports.findClassOptions(user));
     }
 
     private void requireExceptionSnapshot(ExportJobRecord job) {
@@ -154,9 +151,18 @@ public class ExportJobAccessService {
         var current = requireSystemTaskExport(job.requesterId());
         try {
             ExportScopeSnapshot frozen = objectMapper.readValue(job.scopeSnapshot(), ExportScopeSnapshot.class);
+            // Legacy auditor snapshots represented every frozen type as reviewable. Never upgrade an old
+            // requester-only snapshot using permissions granted after the file was frozen.
+            var reviewable = frozen == null || frozen.systemTaskTypes() == null ? null
+                    : frozen.systemTaskReviewableTypes() != null ? frozen.systemTaskReviewableTypes()
+                    : Boolean.TRUE.equals(frozen.systemTaskAuditor()) ? frozen.systemTaskTypes()
+                    : java.util.List.<com.lingdong.learning.audit.application.SystemTaskType>of();
             if (frozen == null || frozen.studentId() != null || frozen.upperBound() < 0 || frozen.systemTaskAuditor() == null
-                    || frozen.systemTaskTypes() == null || frozen.systemTaskAuditor() != current.auditor()
-                    || !current.types().containsAll(frozen.systemTaskTypes())) {
+                    || frozen.systemTaskTypes() == null || reviewable == null
+                    || !frozen.systemTaskTypes().containsAll(reviewable)
+                    || (!Boolean.TRUE.equals(frozen.systemTaskAuditor()) && !reviewable.isEmpty())
+                    || !current.types().containsAll(frozen.systemTaskTypes())
+                    || !current.reviewableTypes().containsAll(reviewable)) {
                 throw denied("系统任务导出角色或领域范围已失效");
             }
         } catch (com.fasterxml.jackson.core.JsonProcessingException | IllegalArgumentException exception) {
@@ -192,10 +198,6 @@ public class ExportJobAccessService {
         requireFeatures();
         featureAccessService.requireEnabled("DICTIONARY_MANAGEMENT", null);
         requireEnabledUser(userId);
-        requireRole(userId, "SYS_ADMIN", "仅系统管理员可导出字典台账");
-        if (userRoleMapper.hasRoleCode(userId, "SYS_AUDITOR")) {
-            throw denied("系统审核员不能导出字典台账");
-        }
         requirePermission(userId, "DICTIONARY_READ");
         requirePermission(userId, "DICTIONARY_EXPORT");
     }
@@ -203,10 +205,6 @@ public class ExportJobAccessService {
     public void requireTemplateExport(long userId) {
         requireFeatures();
         requireEnabledUser(userId);
-        requireRole(userId, "SYS_ADMIN", "仅系统管理员可导出模板台账");
-        if (userRoleMapper.hasRoleCode(userId, "SYS_AUDITOR")) {
-            throw denied("系统审核员不能导出模板台账");
-        }
         requirePermission(userId, "IMPORT_EXPORT_TEMPLATE_READ");
         requirePermission(userId, "IMPORT_EXPORT_TEMPLATE_EXPORT");
     }
@@ -222,10 +220,6 @@ public class ExportJobAccessService {
         requireFeatures();
         featureAccessService.requireEnabled("CACHE_MANAGEMENT", null);
         requireEnabledUser(userId);
-        requireRole(userId, "SYS_ADMIN", "仅系统管理员可导出缓存操作日志");
-        if (userRoleMapper.hasRoleCode(userId, "SYS_AUDITOR")) {
-            throw denied("系统审核员不能导出缓存操作日志");
-        }
         requirePermission(userId, "CACHE_READ");
         requirePermission(userId, "CACHE_EXPORT");
     }
@@ -234,10 +228,6 @@ public class ExportJobAccessService {
         requireFeatures();
         featureAccessService.requireEnabled("INTERFACE_SERVICE_MANAGEMENT", null);
         requireEnabledUser(userId);
-        requireRole(userId, "SYS_ADMIN", "仅系统管理员可导出接口服务台账");
-        if (userRoleMapper.hasRoleCode(userId, "SYS_AUDITOR")) {
-            throw denied("系统审核员不能导出接口服务台账");
-        }
         requirePermission(userId, "INTERFACE_SERVICE_READ");
         requirePermission(userId, "INTERFACE_SERVICE_EXPORT");
     }
@@ -245,7 +235,6 @@ public class ExportJobAccessService {
     public void requireSensitiveSubmit(long userId) {
         requireFeatures();
         requireEnabledUser(userId);
-        requireRole(userId, "SYS_ADMIN", "仅系统管理员可提交敏感导出");
         requirePermission(userId, "EXPORT_SENSITIVE_SUBMIT");
         requirePermission(userId, "IAM_AUDIT_READ");
     }
@@ -253,7 +242,6 @@ public class ExportJobAccessService {
     public void requireSensitiveReview(long userId) {
         requireFeatures();
         requireEnabledUser(userId);
-        requireRole(userId, "SYS_AUDITOR", "仅系统审核员可审核敏感导出");
         requirePermission(userId, "EXPORT_SENSITIVE_REVIEW");
     }
 
@@ -261,15 +249,7 @@ public class ExportJobAccessService {
         requireFeatures();
         requireEnabledUser(userId);
         requirePermission(userId, "EXPORT_JOB_READ");
-        if (!userRoleMapper.hasRoleCode(userId, "PARENT")
-                && !userRoleMapper.hasRoleCode(userId, "SYS_ADMIN")
-                && !userRoleMapper.hasRoleCode(userId, "SYS_AUDITOR")
-                && !userRoleMapper.hasRoleCode(userId, "TEACHER")
-                && !userRoleMapper.hasRoleCode(userId, "ORG_ADMIN")
-                && !(permissionDecisionService.isAllowed(userId, PermissionClient.WEB, "ATTACHMENT_FILE_LEDGER_READ")
-                    && permissionDecisionService.isAllowed(userId, PermissionClient.WEB, "ATTACHMENT_FILE_LEDGER_EXPORT"))) {
-            throw denied("当前账号不能查询导出作业");
-        }
+
     }
 
     public void requireExecution(ExportJobRecord job) {
@@ -401,8 +381,7 @@ public class ExportJobAccessService {
             return;
         }
         if (job.exportType() == ExportJobType.IAM_CHANGE_AUDIT) {
-            requireRole(userId, "SYS_ADMIN", "当前账号不再具备系统管理员身份");
-            requirePermission(userId, "IAM_AUDIT_READ");
+                requirePermission(userId, "IAM_AUDIT_READ");
             return;
         }
         throw denied("导出作业类型或对象范围无效");

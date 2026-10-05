@@ -20,7 +20,7 @@ export function OrganizationActivityTrend({ userId }: { userId: string }) {
       if (!active) return;
       setAllowed(user.userId === userId && user.clientType === 'WEB'
         && capability.learningTaskManagementEnabled
-        && user.roleCodes.includes('ORG_ADMIN'));
+        && user.permissionCodes.includes('LEARNING_TASK_PROGRESS_READ'));
     }).catch(cause => { if (active) setError(cause instanceof Error ? cause.message : '看板权限核验失败'); })
       .finally(() => { if (active) setBusy(false); });
     return () => { active = false; };

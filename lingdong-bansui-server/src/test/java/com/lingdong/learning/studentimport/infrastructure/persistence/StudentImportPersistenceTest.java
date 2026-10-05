@@ -85,6 +85,21 @@ class StudentImportPersistenceTest {
                 .credentialCiphertext()).isNull();
     }
 
+    @Test
+    void requesterListAndCountApplyCurrentOrganizationScopeBeforePaging() {
+        insertFixtures();
+        executionMapper.insert(queuedExecution(LocalDateTime.now()));
+        var own = new com.lingdong.learning.datascope.application.OrganizationDataScope(false, false, java.util.List.of("/SCHOOL-IMPORT/"));
+        var outside = new com.lingdong.learning.datascope.application.OrganizationDataScope(false, false, java.util.List.of("/OUTSIDE/"));
+        var all = com.lingdong.learning.datascope.application.OrganizationDataScope.all(false);
+        assertThat(executionMapper.findPageByRequesterScope(USER_ID, null, own, 0, 20)).hasSize(1);
+        assertThat(executionMapper.countByRequesterScope(USER_ID, null, own)).isEqualTo(1);
+        assertThat(executionMapper.findPageByRequesterScope(USER_ID, null, all, 0, 20)).hasSize(1);
+        assertThat(executionMapper.findPageByRequesterScope(USER_ID, null, outside, 0, 20)).isEmpty();
+        assertThat(executionMapper.countByRequesterScope(USER_ID, null, outside)).isZero();
+        assertThat(executionMapper.countByRequesterScope(USER_ID + 1, null, all)).isZero();
+    }
+
     private StudentImportExecutionRecord queuedExecution(LocalDateTime now) {
         return new StudentImportExecutionRecord(
                 EXECUTION_ID, "SIM-" + EXECUTION_ID, VALIDATION_JOB_ID,

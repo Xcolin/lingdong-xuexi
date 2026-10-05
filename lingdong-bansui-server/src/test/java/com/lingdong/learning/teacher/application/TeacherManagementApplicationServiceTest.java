@@ -248,6 +248,21 @@ class TeacherManagementApplicationServiceTest {
                 username, displayName, mobile, "Password123", fixture.school().id(), List.of()));
     }
 
+    @Test
+    void teacherListAndDetailsHideActiveClassesOutsideOperatorOrganizationScope() {
+        var fixture = createFixture("teacher_meta_scope");
+        var own = createClass(fixture.school(), "TEACHER_META_OWN", "范围内班级");
+        var outside = createClass(fixture.outsideSchool(), "TEACHER_META_OUTSIDE", "范围外班级");
+        var teacher = service.create(fixture.currentUser(), new CreateTeacherCommand(
+                "teacher_meta_account", "跨校教师", null, "Password123", fixture.school().id(), List.of(own.id())));
+        jdbcTemplate.update("INSERT INTO edu_teacher_class(id,teacher_user_id,class_organization_id,status) VALUES(?,?,?,'ACTIVE')",
+                idGenerator.nextId(), teacher.id(), outside.id());
+        assertThat(service.get(fixture.currentUser(), teacher.id()).classOrganizationIds()).containsExactly(own.id());
+        var page = service.list(fixture.currentUser(), new TeacherQuery("teacher_meta_account", null, null, null, 1, 20));
+        assertThat(page.items()).hasSize(1);
+        assertThat(page.items().get(0).classOrganizationIds()).containsExactly(own.id());
+    }
+
     private Fixture createFixture(String suffix) {
         Organization school = createSchool(suffix + "_school", "授权学校" + suffix);
         Organization outsideSchool = createSchool(suffix + "_outside", "范围外学校" + suffix);

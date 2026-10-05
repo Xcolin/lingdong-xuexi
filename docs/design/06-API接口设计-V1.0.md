@@ -1,5 +1,17 @@
 # 灵动伴随 API 接口设计
 
+## 管理端权限与组织体系升级接口（V90–V94）
+
+OpenSpec 变更 `management-authority-upgrade` 新增/扩展接口，编码即权限编码（菜单树为 Web 权限目录唯一入口）：
+
+- **菜单树勾选式授权**：`GET /iam/roles/{roleId}/menu-grants` 返回页面与权限按钮及当前授权状态（纯 UI 按钮与目录不出现）；`PUT /iam/roles/{roleId}/menu-grants` 提交勾选编码集合，服务端差量增删 `sys_role_permission`（非菜单来源授权不受影响，汇总一条 `ROLE_PERMISSION_CONFIGURE` 审计）。需 `IAM_ROLE_PERMISSION_GRANT`。
+- **角色侧批量授予用户**：`POST /iam/roles/{roleId}/users:batch`，请求体 `{assignments:[{userId, organizationId}]}`；组织范围角色必填组织，整批事务原子，任一失败整批回滚并报告失败明细；逐用户复用既有授予用例并逐条审计。需 `IAM_USER_ROLE_ASSIGN`。
+- **按钮批量维护**：`POST /iam/menus/{id}/buttons:batch`（整批原子新增，冲突返回明细）、`PUT /iam/menus/buttons:batch`（整批原子修改）。需 `MENU_MANAGE`。
+- **菜单拖拽排序与层级调整**：`PUT /iam/menus/order` 同级排序（需完整提交该父级下全部 id 与版本，服务端按序把 `sort_order` 归一化为 `i*10`）；`PUT /iam/menus/{id}/position` 改父级并指定插入序号（防移入自身子孙、类型约束“按钮必挂页面、目录与页面必挂目录或根层级”，同父级调用返回 400「同级顺序请使用排序接口」），两者均产生 `MENU_REORDER` 审计。Web 菜单管理页以「菜单树（拖拽排序）」页签消费该契约，间隙落点走 `/order`、内部落点走 `/position`，关键入口节点（工作台、菜单管理）不可拖动。
+- **组织树直接生效拖拽**：`PUT /organizations/order` 同级排序（条目顺序即目标顺序，需完整提交同级集合）；`PUT /organizations/{id}/position` 改父级。均需 `ORG_NODE_UPDATE`，仅限 SYS_ADMIN 数据范围，复用路径重建与唯一名校验，产生 `DIRECT_REORDER`/`DIRECT_MOVE` 审计；既有“申请停用/移动/删除”审核流保留不变。
+- **组织行政区划**：创建/更新组织请求与树响应携带 `adminDivisionCode`（≤32 字符，逻辑引用字典 `ADMIN_DIVISION` 启用条目，非法编码创建时拒绝、编辑时传 null 保持不变、空串清除）。
+- **菜单写接口字段调整**：移除“绑定已有路由/动作选项”与权限绑定入参；PAGE 路由直填，按钮以 `grantable` 标记参与授权勾选。
+
 ## R06 附件管理台账
 
 沿用 `/api/v1/export-jobs`，类型 `ATTACHMENT_LEDGER`、模板模块 `ATTACHMENT_LEDGER_REPORT`。筛选为可选 `attachmentModuleCode`、`attachmentUploaderId`（19 位字符串）、`attachmentFileCategory` 与创建时间 `startedAt/endedAt`。默认七列安全元数据，禁止存储键、摘要、路径、关系明细和源内容链接。

@@ -11,7 +11,7 @@ vi.mock('../../api/feature-management', () => ({ featureManagementApi: { toggles
 const user: CurrentUser = { userId: '1', sessionId: 's', username: 'admin', displayName: '管理员', clientType: 'WEB', roleCodes: ['SYS_ADMIN'], permissionCodes: ['FEATURE_TOGGLE_READ', 'FEATURE_TOGGLE_MANAGE', 'FEATURE_TOGGLE_REVIEW'] };
 const caps = { client: 'WEB' } as ClientCapabilities;
 const toggle = { id: '9', featureCode: 'LEARNING_TASK', featureName: '学习任务', status: 'DISABLED' as const, versionNo: '9007199254740993', description: '学习功能', enableAllowed: true };
-const change = { id: '8', taskId: '7', featureCode: toggle.featureCode, featureName: toggle.featureName, beforeStatus: 'DISABLED' as const, targetStatus: 'ENABLED' as const, currentStatus: 'DISABLED' as const, baseVersion: '1', currentVersion: '1', taskStatus: 'PENDING_REVIEW' as const, title: '开启学习', description: '申请原因', submittedBy: '2', submittedAt: null, reviewedBy: null, reviewedAt: null, reviewComment: null, createdAt: null, enableAllowed: true };
+const change = { id: '8', taskId: '7', featureCode: toggle.featureCode, featureName: toggle.featureName, beforeStatus: 'DISABLED' as const, targetStatus: 'ENABLED' as const, currentStatus: 'DISABLED' as const, baseVersion: '1', currentVersion: '1', taskStatus: 'PENDING_REVIEW' as const, title: '开启学习', description: '申请原因', submittedBy: '其他申请人', submittedByUserId: '2', submittedAt: null, reviewedBy: null, reviewedAt: null, reviewComment: null, createdAt: null, enableAllowed: true };
 beforeEach(() => {
   vi.resetAllMocks();
   vi.mocked(authApi.currentUser).mockResolvedValue(user);
@@ -34,7 +34,7 @@ it('管理员提交要求说明和二次确认并保留字符串版本', async (
   await waitFor(() => expect(featureManagementApi.submit).toHaveBeenCalledWith(expect.objectContaining({ expectedVersion: toggle.versionNo, description: '业务需要', confirmed: true, targetStatus: 'ENABLED' })));
 });
 it('审核员混合角色只审批，成功刷新全局能力', async () => {
-  const auditor = { ...user, roleCodes: ['SYS_ADMIN', 'SYS_AUDITOR'] };
+  const auditor = { ...user, roleCodes: ['ALL_ROLE_TEST'], permissionCodes: ['FEATURE_TOGGLE_READ', 'FEATURE_TOGGLE_REVIEW'] };
   vi.mocked(authApi.currentUser).mockResolvedValue(auditor);
   const callback = vi.fn();
   render(<FeatureManagementPage currentUser={auditor} onAccessChange={callback} />);
@@ -124,4 +124,16 @@ it('审批在途时焦点查询先返回旧值，审批完成后仍重新验证�
   complete(change);
   await waitFor(() => expect(featureManagementApi.toggles).toHaveBeenCalledTimes(3));
   expect(featureManagementApi.changes).toHaveBeenLastCalledWith({ page: 2, pageSize: 20 });
+});
+
+it('自定义角色同时具备提交和审批权限仍不能审批本人申请', async () => {
+  const custom = { ...user, roleCodes: ['ALL_ROLE_TEST'] };
+  vi.mocked(authApi.currentUser).mockResolvedValue(custom);
+  vi.mocked(featureManagementApi.reviewQueue).mockResolvedValue({ items: [{ ...change, submittedBy: custom.displayName, submittedByUserId: custom.userId }], total: 1, page: 1, pageSize: 20 });
+  render(<FeatureManagementPage currentUser={custom} />);
+  expect(await screen.findByRole('button', { name: '申请启用' })).toBeEnabled();
+  fireEvent.click(screen.getByRole('tab', { name: '待审批申请' }));
+  await screen.findByText('开启学习');
+  expect(screen.queryByRole('button', { name: '批准' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: '驳回' })).not.toBeInTheDocument();
 });

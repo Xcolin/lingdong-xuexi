@@ -98,6 +98,7 @@ public class TeacherManagementApplicationService {
     /** 在一个事务中创建教师身份及其初始班级范围。 */
     @Transactional
     public TeacherAccount create(AuthenticatedUser currentUser, CreateTeacherCommand command) {
+        requirePermission(currentUser, "TEACHER_CREATE");
         Objects.requireNonNull(command, "创建教师请求不能为空");
         Organization school = accessService.requireManageableSchool(currentUser, command.schoolId());
         String displayName = requiredText(command.displayName(), "教师姓名", 20);
@@ -146,6 +147,7 @@ public class TeacherManagementApplicationService {
 
     /** 在数据库分页前应用组织根路径，避免范围外教师影响页数和总数。 */
     public TeacherPage list(AuthenticatedUser currentUser, TeacherQuery query) {
+        requirePermission(currentUser, "TEACHER_READ");
         Objects.requireNonNull(query, "教师目录查询不能为空");
         accessService.requireManager(currentUser);
         int page = query.page() < 1 ? 1 : query.page();
@@ -173,7 +175,7 @@ public class TeacherManagementApplicationService {
                 scope.allOrganizations(), scope.rootPaths(), pageSize, (page - 1) * pageSize);
         List<TeacherDirectoryRow> rows = teacherManagementMapper.findPage(criteria);
         Map<Long, List<Long>> classIds = rows.isEmpty() ? Map.of() : teacherManagementMapper
-                .findActiveClassIds(rows.stream().map(TeacherDirectoryRow::id).toList())
+                .findActiveClassIds(rows.stream().map(TeacherDirectoryRow::id).toList(), scope.allOrganizations(), scope.rootPaths())
                 .stream()
                 .collect(Collectors.groupingBy(
                         TeacherClassIdRow::teacherUserId,
@@ -189,7 +191,8 @@ public class TeacherManagementApplicationService {
 
     /** 查询组织范围内单个教师的安全详情。 */
     public TeacherAccount get(AuthenticatedUser currentUser, Long teacherUserId) {
-        return toAccount(requireAccessibleTeacher(currentUser, teacherUserId));
+        requirePermission(currentUser, "TEACHER_READ");
+        return toAccount(currentUser, requireAccessibleTeacher(currentUser, teacherUserId));
     }
 
     /** 修改教师姓名和手机号，账号与学校关系保持不可变。 */
@@ -199,6 +202,7 @@ public class TeacherManagementApplicationService {
             Long teacherUserId,
             UpdateTeacherProfileCommand command
     ) {
+        requirePermission(currentUser, "TEACHER_UPDATE");
         Objects.requireNonNull(command, "教师资料修改请求不能为空");
         TeacherDirectoryRow current = requireAccessibleTeacher(currentUser, teacherUserId);
         String displayName = requiredText(command.displayName(), "教师姓名", 20);
@@ -227,12 +231,13 @@ public class TeacherManagementApplicationService {
                 current.schoolId(),
                 null,
                 null);
-        return toAccount(requireAccessibleTeacher(currentUser, teacherUserId));
+        return toAccount(currentUser, requireAccessibleTeacher(currentUser, teacherUserId));
     }
 
     /** 重置教师密码并立即使该教师的全部既有会话失效。 */
     @Transactional
     public void resetPassword(AuthenticatedUser currentUser, Long teacherUserId, String newPassword) {
+        requirePermission(currentUser, "TEACHER_PASSWORD_RESET");
         TeacherDirectoryRow teacher = requireAccessibleTeacher(currentUser, teacherUserId);
         passwordPolicy.validate(newPassword);
         if (userMapper.updatePasswordHash(teacherUserId, passwordEncoder.encode(newPassword)) != 1) {
@@ -257,6 +262,7 @@ public class TeacherManagementApplicationService {
             Long teacherUserId,
             UserStatus targetStatus
     ) {
+        requirePermission(currentUser, "TEACHER_STATUS_CHANGE");
         TeacherDirectoryRow teacher = requireAccessibleTeacher(currentUser, teacherUserId);
         Objects.requireNonNull(targetStatus, "教师状态不能为空");
         if (targetStatus == UserStatus.CANCELLED) {
@@ -267,7 +273,7 @@ public class TeacherManagementApplicationService {
         }
         userAccessApplicationService.updateStatus(new UpdateUserStatusCommand(
                 teacherUserId, targetStatus, currentUser.userId()));
-        return toAccount(requireAccessibleTeacher(currentUser, teacherUserId));
+        return toAccount(currentUser, requireAccessibleTeacher(currentUser, teacherUserId));
     }
 
     /** 组织路径范围在 SQL 中裁剪，范围外目标统一按不存在处理。 */
@@ -288,8 +294,9 @@ public class TeacherManagementApplicationService {
         return teacher;
     }
 
-    private TeacherAccount toAccount(TeacherDirectoryRow row) {
-        List<Long> classIds = teacherManagementMapper.findActiveClassIds(List.of(row.id())).stream()
+    private TeacherAccount toAccount(AuthenticatedUser currentUser, TeacherDirectoryRow row) {
+        var scope = organizationDataScopeService.resolve(currentUser.userId());
+        List<Long> classIds = teacherManagementMapper.findActiveClassIds(List.of(row.id()), scope.allOrganizations(), scope.rootPaths()).stream()
                 .map(TeacherClassIdRow::classOrganizationId)
                 .toList();
         return new TeacherAccount(

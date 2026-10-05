@@ -16,7 +16,7 @@ class MenuApplicationServiceTest {
         assertThat(tree.get("version").isTextual()).isTrue();
     }
     private MenuNode node(long id, Long parent, MenuType type, MenuStatus status, String permission) {
-        return new MenuNode(id,"node-"+id,"节点",type,parent,type == MenuType.PAGE ? "/rewards" : null,null,permission,0,status,0L);
+        return new MenuNode(id,"node-"+id,"节点",type,parent,type == MenuType.PAGE ? "/rewards" : null,null,permission,permission!=null,0,status,0L);
     }
     @Test void disabledAncestorHidesAllDescendants() {
         var nodes = List.of(node(1,null,MenuType.DIRECTORY,MenuStatus.DISABLED,null),node(2,1L,MenuType.PAGE,MenuStatus.ENABLED,null),node(3,2L,MenuType.BUTTON,MenuStatus.ENABLED,null));
@@ -25,10 +25,21 @@ class MenuApplicationServiceTest {
     @Test void deniedAncestorHidesUngatedChild() {
         var nodes = List.of(node(1,null,MenuType.PAGE,MenuStatus.ENABLED,"REWARD_READ"),node(2,1L,MenuType.BUTTON,MenuStatus.ENABLED,null));
         assertThat(MenuApplicationService.filterVisible(nodes,Set.of())).isEmpty();
-        assertThat(MenuApplicationService.filterVisible(nodes,Set.of("REWARD_READ"))).hasSize(2);
+        assertThat(MenuApplicationService.filterVisible(nodes,Set.of("REWARD_READ"))).extracting(MenuNode::id).containsExactly(1L);
     }
     @Test void cyclesCannotBecomeVisible() {
         var nodes = List.of(node(1,2L,MenuType.DIRECTORY,MenuStatus.ENABLED,null),node(2,1L,MenuType.DIRECTORY,MenuStatus.ENABLED,null));
         assertThat(MenuApplicationService.filterVisible(nodes,Set.of())).isEmpty();
+    }
+    @Test void grantedActionButtonRevealsItsPage() {
+        var nodes = List.of(node(1,null,MenuType.PAGE,MenuStatus.ENABLED,"REWARD_READ"),node(2,1L,MenuType.BUTTON,MenuStatus.ENABLED,"REWARD_REVIEW"));
+        // 仅授予页面下的可授权按钮权限：页面与该按钮均可见（修复审核员授权后菜单不显示）
+        assertThat(MenuApplicationService.filterVisible(nodes,Set.of("REWARD_REVIEW")))
+                .extracting(MenuNode::id).containsExactlyInAnyOrder(1L,2L);
+        // 未授予任何权限：页面与按钮均不可见
+        assertThat(MenuApplicationService.filterVisible(nodes,Set.of())).isEmpty();
+        // 仅授予页面权限：页面可见，未授权的可授权按钮不可见
+        assertThat(MenuApplicationService.filterVisible(nodes,Set.of("REWARD_READ")))
+                .extracting(MenuNode::id).containsExactly(1L);
     }
 }

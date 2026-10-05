@@ -46,7 +46,7 @@ const assert = require('node:assert/strict');
   await page.getByText('发布任务',{exact:true}).click();await page.getByText('确定',{exact:true}).click();
   await page.getByText(/已发布/).waitFor();assert.equal(writes,4);
   await page.screenshot({path:'../.local-verification/family-tasks-mini.png',fullPage:true});
-  allowed=false;await page.getByText('刷新任务',{exact:true}).click();await page.getByText('家庭任务未开启或无操作权限',{exact:true}).waitFor();
+  allowed=false;await page.reload();await page.getByText('家庭任务未开启或无操作权限',{exact:true}).waitFor();
   assert.equal(await page.getByText('保留原配置的阅读',{exact:true}).count(),0);assert.equal(writes,4);
   console.log('家庭任务：创建、编辑保留配置、失败保留输入、发布和权限撤回通过');
  } finally {await browser.close();}

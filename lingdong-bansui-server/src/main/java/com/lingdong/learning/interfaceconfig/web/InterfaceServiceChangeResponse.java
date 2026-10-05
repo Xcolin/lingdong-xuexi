@@ -10,8 +10,9 @@ import com.lingdong.learning.interfaceconfig.domain.InterfaceServiceChangeExecut
 import com.lingdong.learning.interfaceconfig.domain.InterfaceServiceStatus;
 
 import java.time.LocalDateTime;
+import java.util.function.Function;
 
-/** 接口服务变更与审核状态响应。 */
+/** 接口服务变更与审核状态响应；责任人/申请人/审核人展示为姓名。 */
 public record InterfaceServiceChangeResponse(
         String changeId,
         String taskId,
@@ -37,14 +38,14 @@ public record InterfaceServiceChangeResponse(
         String reviewComment,
         LocalDateTime createdAt
 ) {
-    static InterfaceServiceChangeResponse from(InterfaceServiceChangeView view) {
+    static InterfaceServiceChangeResponse from(InterfaceServiceChangeView view, Function<Long, String> nameOf) {
         return new InterfaceServiceChangeResponse(
                 text(view.changeId()), text(view.taskId()), text(view.serviceId()), view.changeType(),
                 view.serviceName(), view.direction(), view.purpose(), view.callerName(),
-                view.authorizationScope(), view.authorizationScopeValue(), text(view.ownerId()), view.targetStatus(),
+                view.authorizationScope(), view.authorizationScopeValue(), nameOf.apply(view.ownerId()), view.targetStatus(),
                 view.executionStatus(), view.failureReason(),
-                view.taskTitle(), view.taskDescription(), view.taskStatus(), text(view.submittedBy()),
-                view.submittedAt(), text(view.reviewedBy()), view.reviewedAt(), view.reviewComment(), view.createdAt()
+                view.taskTitle(), view.taskDescription(), view.taskStatus(), nameOf.apply(view.submittedBy()),
+                view.submittedAt(), nameOf.apply(view.reviewedBy()), view.reviewedAt(), view.reviewComment(), view.createdAt()
         );
     }
 

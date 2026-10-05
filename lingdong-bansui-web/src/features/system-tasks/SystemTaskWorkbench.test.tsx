@@ -30,7 +30,8 @@ describe('系统任务工作台', () => {
     const reviewer = { ...user, permissionCodes: ['SYSTEM_TASK_READ', 'FEATURE_TOGGLE_READ', 'FEATURE_TOGGLE_REVIEW'] };
     expect(systemTaskDestination(task, reviewer, caps)).toBe('/feature-management');
     expect(systemTaskDestination(task, { ...reviewer, permissionCodes: ['SYSTEM_TASK_READ', 'FEATURE_TOGGLE_REVIEW'] }, caps)).toBeNull();
-    expect(systemTaskDestination(task, { ...reviewer, roleCodes: ['SYS_ADMIN'] }, caps)).toBeNull();
+    expect(systemTaskDestination(task, { ...reviewer, roleCodes: ['ALL_ROLE_TEST'] }, caps)).toBe('/feature-management');
+    expect(systemTaskDestination({ ...task, submittedBy: reviewer.userId }, reviewer, caps)).toBeNull();
     expect(systemTaskDestination({ ...task, status: 'EFFECTIVE' }, reviewer, caps)).toBeNull();
   });
   beforeEach(() => {
@@ -65,16 +66,14 @@ describe('系统任务工作台', () => {
     expect(screen.queryByText('变更说明')).not.toBeInTheDocument();
   });
   it('查询失败清空旧数据并可重试', async () => {
-    render(<SystemTaskWorkbench currentUser={user} onNavigate={vi.fn()} />);
-    await screen.findByText('清理缓存申请');
     vi.mocked(systemTasksApi.list).mockRejectedValueOnce(new Error('网络失败'));
-    fireEvent.click(screen.getByRole('button', { name: '刷新' }));
+    render(<SystemTaskWorkbench currentUser={user} onNavigate={vi.fn()} />);
     await screen.findByText('网络失败');
     expect(screen.queryByText('清理缓存申请')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '重试' }));
     expect(await screen.findByText('清理缓存申请')).toBeInTheDocument();
   });
-  it.each([{ ...user, roleCodes: ['PARENT'] }, { ...user, clientType: 'MINIAPP' }, { ...user, userId: 'other' }])('拒绝普通角色、跨端或身份变更', async changed => {
+  it.each([{ ...user, permissionCodes: [] }, { ...user, clientType: 'MINIAPP' }, { ...user, userId: 'other' }])('拒绝普通角色、跨端或身份变更', async changed => {
     vi.mocked(authApi.currentUser).mockResolvedValue(changed as CurrentUser);
     render(<SystemTaskWorkbench currentUser={user} onNavigate={vi.fn()} />);
     await screen.findByText('当前会话无系统任务读取权限');

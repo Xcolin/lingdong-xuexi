@@ -8,8 +8,9 @@ import com.lingdong.learning.cache.domain.CacheOperationStatus;
 import com.lingdong.learning.cache.domain.CacheOperationType;
 
 import java.time.LocalDateTime;
+import java.util.function.Function;
 
-/** 缓存操作台账响应，雪花标识统一按字符串输出。 */
+/** 缓存操作台账响应，雪花标识统一按字符串输出；申请人展示为姓名。 */
 public record CacheOperationResponse(
         @JsonSerialize(using = ToStringSerializer.class) Long id,
         String code,
@@ -18,14 +19,14 @@ public record CacheOperationResponse(
         CacheOperationType operationType,
         CacheOperationStatus status,
         String impactDescription,
-        @JsonSerialize(using = ToStringSerializer.class) Long requestedBy,
+        String requestedBy,
         @JsonSerialize(using = ToStringSerializer.class) Long executedBy,
         String failureMessage,
         LocalDateTime executedAt,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
-    public static CacheOperationResponse from(CacheOperation operation) {
+    public static CacheOperationResponse from(CacheOperation operation, Function<Long, String> nameOf) {
         return new CacheOperationResponse(
                 operation.id(),
                 operation.code(),
@@ -34,7 +35,7 @@ public record CacheOperationResponse(
                 operation.operationType(),
                 operation.status(),
                 operation.impactDescription(),
-                operation.requestedBy(),
+                nameOf.apply(operation.requestedBy()),
                 operation.executedBy(),
                 operation.failureMessage(),
                 operation.executedAt(),

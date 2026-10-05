@@ -10,11 +10,15 @@ import java.util.List;
  */
 @Mapper
 public interface UserRoleMapper {
+    List<com.lingdong.learning.user.application.RoleUserAssignment> findByRoleId(@Param("roleId") Long roleId);
+
     boolean hasRoleCode(@Param("userId") Long userId, @Param("roleCode") String roleCode);
     List<String> findEnabledRoleCodesByUserId(@Param("userId") Long userId);
     boolean hasPermissionViaRole(@Param("userId") Long userId, @Param("permissionId") Long permissionId);
 
     boolean hasAnyEnabledRole(@Param("userId") Long userId);
+    Long lockRelation(@Param("userId") Long userId, @Param("roleId") Long roleId, @Param("organizationScopeKey") String organizationScopeKey);
+
     boolean exists(
             @Param("userId") Long userId,
             @Param("roleId") Long roleId,

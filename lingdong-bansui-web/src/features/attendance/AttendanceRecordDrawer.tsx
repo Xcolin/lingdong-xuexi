@@ -64,7 +64,7 @@ export function AttendanceRecordDrawer({ checkAccess, onAccessError, onClose, on
     finally { submittingRef.current = false; if (alive.current) setSubmitting(false); }
   }
   const selected = Object.values(drafts).filter((draft) => draft.status).length;
-  return <Drawer title="班级点名" open width={900} onClose={onClose} closable={!submitting} maskClosable={!submitting} keyboard={!submitting}
+  return <Drawer title="班级点名" open width="min(1100px, 92vw)" onClose={onClose} closable={!submitting} maskClosable={!submitting} keyboard={!submitting}
     footer={<Space wrap><span>已选择 {selected} / 100 人</span><Button actionKey="attendance-records.attendance-record-drawer.1" disabled={submitting} onClick={onClose}>取消</Button>
       <Button actionKey="attendance-records.attendance-record-drawer.2" type="primary" icon={<Save size={16} />} loading={submitting} disabled={loading || classLoading || Boolean(classError) || selected < 1 || selected > 100} onClick={() => void submit()}>提交考勤</Button></Space>}>
     <div className="page-stack attendance-page">

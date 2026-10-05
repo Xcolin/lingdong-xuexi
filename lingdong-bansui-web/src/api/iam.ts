@@ -1,4 +1,5 @@
 import { apiClient } from './http';
+import type { MenuNode } from './menus';
 
 export interface Role {
   id: string;
@@ -89,6 +90,18 @@ export const iamApi = {
   listRoles(): Promise<Role[]> {
     return apiClient.get<Role[]>('/roles');
   },
+  listRoleUsers(roleId: string): Promise<{userId:string;organizationId:string|null}[]> {
+    return apiClient.get(`/roles/${roleId}/users`);
+  },
+  assignRoleUsers(roleId: string, assignments: {userId:string;organizationId:string|null}[]): Promise<void> {
+    return apiClient.post(`/roles/${roleId}/users:batch`, {assignments});
+  },
+  userPermissionTree(userId:string): Promise<{menus:MenuNode[];inheritedPermissionIds:string[];inheritedDeniedPermissionIds:string[]}> {
+    return apiClient.get(`/users/${userId}/permission-tree`);
+  },
+  batchUserPermissions(userId:string,input:{permissionIds:string[];managedPermissionIds:string[];expectedAssignments:PermissionAssignment[]}):Promise<void> {
+    return apiClient.put(`/users/${userId}/permissions:batch`,input);
+  },
   createRole(input: CreateRoleInput): Promise<Role> {
     return apiClient.post<Role>('/roles', input);
   },
@@ -100,6 +113,12 @@ export const iamApi = {
   },
   listRolePermissions(roleId: string): Promise<PermissionAssignment[]> {
     return apiClient.get<PermissionAssignment[]>(`/roles/${roleId}/permissions`);
+  },
+  listRolePermissionMenus(): Promise<MenuNode[]> {
+    return apiClient.get<MenuNode[]>('/iam/role-permission-menus');
+  },
+  batchRolePermissions(roleId: string, input: { permissionIds: string[]; managedPermissionIds: string[]; expectedAssignments: PermissionAssignment[] }): Promise<void> {
+    return apiClient.put<void>(`/roles/${roleId}/permissions:batch`, input);
   },
   configureRolePermission(roleId: string, permissionId: string, effect: PermissionEffect): Promise<void> {
     return apiClient.put<void>(`/roles/${roleId}/permissions/${permissionId}`, { effect });

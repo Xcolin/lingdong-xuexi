@@ -6,6 +6,7 @@ import { CircleCheckBig, RotateCcw, UserRoundCheck } from 'lucide-react';
 import { taskReviewApi } from './reviewApi';
 import { ApiRequestError } from '../../api/http';
 import type { ReviewerOption, TaskReview } from './types';
+import { formatDateTime as formatTime } from '../../utils/datetime';
 
 interface TaskReviewDrawerProps {
   open: boolean;
@@ -123,7 +124,7 @@ export function TaskReviewDrawer({
     <Drawer
       title="任务审核"
       open={open}
-      width={560}
+      width="min(640px, 92vw)"
       destroyOnClose
       loading={loading}
       onClose={submitting ? undefined : onClose}
@@ -132,7 +133,7 @@ export function TaskReviewDrawer({
         action={<Button actionKey="learning-tasks.task-review-drawer.1" disabled={submitting} onClick={() => setReload(value => value + 1)}>刷新详情</Button>} />}
       {review && (
         <div className="review-drawer-content">
-          <Descriptions column={1} size="small" bordered>
+          <Descriptions column={{ xs: 1, sm: 2 }} size="small" bordered>
             <Descriptions.Item label="任务">{review.title}</Descriptions.Item>
             <Descriptions.Item label="学生">{review.studentName}</Descriptions.Item>
             <Descriptions.Item label="基础积分">{review.basePoints} 分</Descriptions.Item>
@@ -151,7 +152,7 @@ export function TaskReviewDrawer({
 
           <section className="review-section">
             <h2>审核通过</h2>
-            <Button actionKey="learning-tasks.task-review-drawer.2"
+            <Button actionKey="TASK_ASSIGNMENT_REVIEW"
               type="primary"
               icon={<CircleCheckBig size={16} />}
               loading={submitting}
@@ -262,12 +263,6 @@ function TaskAttachmentPreview({ review }: { review: TaskReview }) {
       </div>
     </Image.PreviewGroup>
   );
-}
-
-function formatTime(value: string): string {
-  return new Intl.DateTimeFormat('zh-CN', {
-    dateStyle: 'medium', timeStyle: 'short'
-  }).format(new Date(value));
 }
 
 function toMessage(error: unknown): string {

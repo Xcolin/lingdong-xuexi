@@ -4,4 +4,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 /** 设置平台账号密码的 HTTP 请求。 */
-public record SetUserPasswordRequest(@NotBlank @Size(max = 64) String password) { }
+public record SetUserPasswordRequest(@NotBlank @Size(max = 64) String password) {
+    @Override public String toString() { return "SetUserPasswordRequest[password=REDACTED]"; }
+}

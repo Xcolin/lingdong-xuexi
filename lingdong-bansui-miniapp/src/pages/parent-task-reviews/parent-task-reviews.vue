@@ -1,7 +1,6 @@
 <template>
   <view class="page">
     <text class="title">待审核任务</text>
-    <button :disabled="busy" @tap="load(1)">刷新待办</button>
     <text v-if="busy" class="muted">正在处理…</text>
     <text v-if="error" class="error">{{ error }}</text>
     <template v-if="allowed">

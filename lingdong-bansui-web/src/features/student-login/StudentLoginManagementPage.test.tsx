@@ -33,6 +33,13 @@ describe('学生登录管理页', () => {
     vi.mocked(studentLoginApi.unbindWechat).mockResolvedValue();
   });
 
+  it('二维码开关关闭时保留微信管理并隐藏生成入口', async () => {
+    render(<StudentLoginManagementPage studentQrLoginEnabled={false} studentWechatAuthEnabled canManageStudentWechat />);
+    await screen.findByText('林小满');
+    expect(screen.queryByRole('button', { name: '生成 林小满 的登录二维码' })).not.toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /解绑.*微信/ })).toBeInTheDocument();
+  });
+
   it('按数据范围加载学生并生成短时二维码', async () => {
     render(<StudentLoginManagementPage />);
     expect(await screen.findByText('林小满')).toBeInTheDocument();

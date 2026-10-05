@@ -7,6 +7,8 @@ public record ManagedDeferCandidateQuery(
         boolean teacher,
         boolean organizationAdministrator,
         int limit,
-        long offset
+        long offset,
+        boolean allOrganizations,
+        java.util.List<String> rootPaths
 ) {
 }

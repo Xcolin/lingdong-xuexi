@@ -65,13 +65,15 @@
                     OR (source_type = 'ORGANIZATION' AND EXISTS (
                         SELECT 1
                         FROM sys_organization task_source_organization
-                        JOIN sys_organization administrator_root
-                          ON task_source_organization.organization_path
-                             LIKE CONCAT(administrator_root.organization_path, '%')
-                        JOIN sys_organization_admin organization_admin
-                          ON organization_admin.organization_id = administrator_root.id
                         WHERE task_source_organization.id = learn_task.source_organization_id
-                          AND organization_admin.user_id = #{query.currentUserId}
+                          AND (
+                            <choose>
+                              <when test="query.allOrganizations">1 = 1</when>
+                              <otherwise>1 = 0
+                                <foreach collection="query.rootPaths" item="path">OR task_source_organization.organization_path LIKE CONCAT(#{path}, '%')</foreach>
+                              </otherwise>
+                            </choose>
+                          )
                     ))
                 </if>
             )

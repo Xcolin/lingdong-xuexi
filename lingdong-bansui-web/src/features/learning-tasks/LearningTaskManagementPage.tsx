@@ -8,6 +8,7 @@ import { BarChart3, BookOpen, CircleStop, CopyPlus, Edit3, Plus, Rocket, Search 
 import type { CurrentUser } from '../../api/auth';
 import { learningTaskApi } from './api';
 import { BatchPublishResultModal } from './BatchPublishResultModal';
+import { formatDateTime as formatTime } from '../../utils/datetime';
 import { LearningTaskEditorDrawer } from './LearningTaskEditorDrawer';
 import { TaskReviewQueue } from './TaskReviewQueue';
 import { TaskProgressModal } from './TaskProgressModal';
@@ -68,13 +69,9 @@ export function LearningTaskManagementPage({
   const [progressTask, setProgressTask] = useState<LearningTaskSummary | null>(null);
   const [filterForm] = Form.useForm<FilterValues>();
   const sourceOptions = useMemo(() => availableSources(currentUser), [currentUser]);
-  const canDefer = currentUser.roleCodes.some((role) =>
-    ['PARENT', 'TEACHER', 'ORG_ADMIN'].includes(role)
-  );
-  const canCopyPreviousDay = previousDayTaskCopyEnabled
-    && currentUser.roleCodes.includes('PARENT');
-  const canUseTaskTemplates = learningTaskTemplateEnabled
-    && currentUser.roleCodes.includes('PARENT');
+  const canDefer = currentUser.permissionCodes.includes('TASK_ASSIGNMENT_DEFER');
+  const canCopyPreviousDay = previousDayTaskCopyEnabled && currentUser.permissionCodes.includes('LEARNING_TASK_COPY_PREVIOUS_DAY');
+  const canUseTaskTemplates = learningTaskTemplateEnabled && currentUser.permissionCodes.includes('LEARNING_TASK_TEMPLATE_READ');
 
   useEffect(() => {
     void loadTasks({}, 1);
@@ -215,7 +212,7 @@ export function LearningTaskManagementPage({
                 loading={batchPublishing}
                 onClick={confirmBatchPublish}
               >批量发布</Button>
-              <Button actionKey="learning-tasks.learning-task-management-page.4"
+              <Button actionKey="LEARNING_TASK_CREATE"
                 type="primary"
                 icon={<Plus size={16} />}
                 onClick={() => {
@@ -306,7 +303,7 @@ export function LearningTaskManagementPage({
                     onClick={() => void openEditor(task)}
                   />
                   <ActionButton
-                    actionKey="learning-tasks.publish" label={`发布 ${task.title}`}
+                    actionKey="LEARNING_TASK_PUBLISH" label={`发布 ${task.title}`}
                     title="发布任务"
                     icon={<Rocket size={16} />}
                     onClick={() => confirmPublish(task)}
@@ -396,7 +393,7 @@ function availableSources(currentUser: CurrentUser) {
     { role: 'ORG_ADMIN', value: 'ORGANIZATION', label: '机构' },
     { role: 'TEACHER', value: 'TEACHER', label: '教师' }
   ];
-  return options.filter((option) => currentUser.roleCodes.includes(option.role));
+  return options.filter(option => option.value === 'ORGANIZATION' || currentUser.roleCodes.includes(option.role));
 }
 
 function sourceColor(source: LearningTaskSourceType): string {
@@ -412,12 +409,6 @@ function recurrenceLabel(task: LearningTaskSummary) {
   return task.recurrenceStatus
     ? <Tag color={colors[task.recurrenceStatus]}>{labels[task.recurrenceStatus]}</Tag>
     : <Tag>待发布</Tag>;
-}
-
-function formatTime(value: string): string {
-  return new Intl.DateTimeFormat('zh-CN', {
-    dateStyle: 'medium', timeStyle: 'short'
-  }).format(new Date(value));
 }
 
 function toMessage(error: unknown): string {

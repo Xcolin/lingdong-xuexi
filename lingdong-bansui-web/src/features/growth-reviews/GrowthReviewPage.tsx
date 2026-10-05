@@ -2,8 +2,8 @@ import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { ViewportTable as Table } from '../../components/ViewportTable';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ProCard } from '@ant-design/pro-components';
-import { App, Empty, Form, Input, List, Modal, Progress, Segmented, Select, Space, Statistic, Tag, Tooltip } from 'antd';
-import { FilePenLine, RefreshCw } from 'lucide-react';
+import { App, Empty, Form, Input, List, Modal, Progress, Segmented, Select, Space, Statistic, Tag } from 'antd';
+import { FilePenLine } from 'lucide-react';
 import { growthReviewApi } from './api';
 import { GrowthReviewExportHistory } from './GrowthReviewExportHistory';
 import { CreateGrowthReviewExport } from './CreateGrowthReviewExport';
@@ -162,14 +162,6 @@ export function GrowthReviewPage({ canReadExportHistory = false, canCreateExport
             }))}
             onChange={value => { setCreated(undefined); setStudentId(value); }}
           />
-          <Tooltip title="刷新复盘">
-            <Button actionKey="growth-reviews.growth-review-page.1"
-              aria-label="刷新复盘"
-              icon={<RefreshCw size={16} />}
-              loading={loading}
-              onClick={() => void loadReviews()}
-            />
-          </Tooltip>
         </Space>
       </header>
 
@@ -334,6 +326,7 @@ export function GrowthReviewPage({ canReadExportHistory = false, canCreateExport
         title="补录成长复盘"
         open={supplementOpen}
         footer={null}
+        width="min(640px, 92vw)"
         maskClosable={!submitting}
         onCancel={() => !submitting && setSupplementOpen(false)}
       >

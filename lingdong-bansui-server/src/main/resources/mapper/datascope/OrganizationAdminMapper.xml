@@ -9,6 +9,7 @@
         WHERE user_id = #{userId}
     </select>
 
+    <select id="lockRelation" resultType="java.lang.Long">SELECT id FROM sys_organization_admin WHERE user_id = #{userId} AND organization_id = #{organizationId} FOR UPDATE</select>
     <select id="exists" resultType="boolean">
         SELECT EXISTS(
             SELECT 1

@@ -32,7 +32,7 @@ describe('考勤台账', () => {
     vi.mocked(attendanceApi.details).mockResolvedValue({ record, actions: [{ id: '1874244142494647401', actionType: 'CORRECT', operatorUserId: user.userId, operatorName: '王老师', beforeStatus: 'NORMAL', afterStatus: 'LATE', beforeCheckinTime: '08:00:00', afterCheckinTime: '09:00:00', beforeCheckoutTime: null, afterCheckoutTime: null, createdAt: '2026-09-01T10:00:00' }] });
   });
   it.each(['PARENT', 'STUDENT'])('%s 只读且不请求操作班级', async (role) => {
-    vi.mocked(authApi.currentUser).mockResolvedValue({ ...user, roleCodes: [role] });
+    vi.mocked(authApi.currentUser).mockResolvedValue({ ...user, roleCodes: [role], permissionCodes: ['ATTENDANCE_READ'] });
     mount(); await screen.findByText('小明');
     expect(screen.queryByRole('button', { name: '班级点名' })).not.toBeInTheDocument();
     expect(attendanceApi.classes).not.toHaveBeenCalledWith(true);

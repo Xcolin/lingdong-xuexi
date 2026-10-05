@@ -48,8 +48,8 @@ const assert=require('node:assert/strict');
   await page.locator('textarea').fill('补充计划后再申请');await page.getByText('驳回兑换',{exact:true}).click();await page.getByText('确定',{exact:true}).click();await page.getByText('20 积分 · 已驳回',{exact:true}).waitFor();
   assert.equal(writes,5);await page.screenshot({path:'../.local-verification/parent-rewards-mini.png',fullPage:true});
   await page.getByText('奖励库',{exact:true}).click();await page.getByText('删除奖励',{exact:true}).click();await page.getByText('确定',{exact:true}).click();await page.getByText('暂无奖励',{exact:true}).waitFor();assert.equal(writes,6);
-  primary=false;await page.getByText('刷新',{exact:true}).click();await page.getByText('暂无奖励',{exact:true}).waitFor();assert.equal(await page.getByText('新增奖励',{exact:true}).count(),0);assert.equal(await page.getByText('编辑奖励',{exact:true}).count(),0);
-  enabled=false;const before=reads;await page.getByText('刷新',{exact:true}).click();await page.getByText('奖励功能未开启或无访问权限',{exact:true}).waitFor();assert.equal(reads,before);
+  primary=false;await page.reload();await page.getByText('暂无奖励',{exact:true}).waitFor();assert.equal(await page.getByText('新增奖励',{exact:true}).count(),0);assert.equal(await page.getByText('编辑奖励',{exact:true}).count(),0);
+  enabled=false;const before=reads;await page.reload();await page.getByText('奖励功能未开启或无访问权限',{exact:true}).waitFor();assert.equal(reads,before);
   enabled=true;auditor=true;await page.reload();await page.getByText('奖励功能未开启或无访问权限',{exact:true}).waitFor();assert.equal(reads,before);assert.equal(writes,6);
   console.log('家长奖励：创建编辑保留有效期、同意扣分确认、核销、驳回、副家长只读、关闭与混合审核员拦截通过');
  }finally{await browser.close();}

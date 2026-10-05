@@ -51,7 +51,7 @@ class TaskDeferServiceTest {
     private final TaskDeferService service = new TaskDeferService(
             deferMapper, taskMapper, tagMapper, assignmentMapper, historyMapper,
             parentStudentMapper, organizationDataScopeService, featureAccessService,
-            idGenerator, clock);
+            idGenerator, clock, mock(LearningTaskScopeService.class));
     private final AuthenticatedUser parent = new AuthenticatedUser(
             44L, 55L, "parent", "家长", AuthClientType.WEB, List.of("PARENT"));
 

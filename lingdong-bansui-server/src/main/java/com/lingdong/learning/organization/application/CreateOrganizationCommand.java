@@ -8,6 +8,13 @@ public record CreateOrganizationCommand(
         String name,
         String typeCode,
         Long parentId,
-        Integer sortOrder
+        Integer sortOrder,
+        String adminDivisionCode
 ) {
+    /** 兼容既有调用：未指定行政区划时保存为空。 */
+    public CreateOrganizationCommand(
+            String code, String name, String typeCode, Long parentId, Integer sortOrder
+    ) {
+        this(code, name, typeCode, parentId, sortOrder, null);
+    }
 }

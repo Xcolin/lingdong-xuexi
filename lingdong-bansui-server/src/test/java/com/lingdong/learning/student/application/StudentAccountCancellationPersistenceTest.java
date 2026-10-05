@@ -72,6 +72,8 @@ class StudentAccountCancellationPersistenceTest {
                 INSERT INTO sys_organization_admin (id, organization_id, user_id)
                 VALUES (?, ?, ?)
                 """, ORGANIZATION_ADMIN_ID, ORGANIZATION_ID, OPERATOR_ID);
+        jdbcTemplate.update("INSERT INTO sys_user_organization(id,user_id,organization_id) VALUES(?,?,?)",
+                ORGANIZATION_ADMIN_ID + 100, OPERATOR_ID, ORGANIZATION_ID);
         jdbcTemplate.update("""
                 INSERT INTO edu_student (
                     id, student_name, grade_code, student_user_id, status
@@ -197,6 +199,7 @@ class StudentAccountCancellationPersistenceTest {
         jdbcTemplate.update("DELETE FROM edu_student_organization WHERE id = ?", ENROLLMENT_ID);
         jdbcTemplate.update("DELETE FROM edu_student WHERE id = ?", STUDENT_ID);
         jdbcTemplate.update("DELETE FROM sys_organization_admin WHERE id = ?", ORGANIZATION_ADMIN_ID);
+        jdbcTemplate.update("DELETE FROM sys_user_organization WHERE user_id = ?", OPERATOR_ID);
         jdbcTemplate.update(
                 "DELETE FROM sys_user_role WHERE id IN (?, ?)", OPERATOR_ROLE_ID, STUDENT_ROLE_ID);
         jdbcTemplate.update("DELETE FROM sys_user WHERE id IN (?, ?)", OPERATOR_ID, STUDENT_USER_ID);

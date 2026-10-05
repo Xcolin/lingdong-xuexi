@@ -73,6 +73,32 @@
         WHERE status = 'QUEUED' ORDER BY queued_at, id LIMIT #{limit}
     </select>
 
+    <sql id="currentOrganizationScope">
+        AND EXISTS (SELECT 1 FROM sys_organization authorized_organization
+            WHERE authorized_organization.id = sys_student_import_execution.organization_id
+            <if test="!scope.allOrganizations">
+                AND <choose>
+                    <when test="scope.rootPaths != null and scope.rootPaths.size() > 0">
+                        <foreach collection="scope.rootPaths" item="path" open="(" close=")" separator=" OR ">
+                            authorized_organization.organization_path LIKE CONCAT(#{path}, '%')
+                        </foreach>
+                    </when>
+                    <otherwise>1 = 0</otherwise>
+                </choose>
+            </if>)
+    </sql>
+    <select id="findPageByRequesterScope" resultMap="ExecutionMap">
+        SELECT <include refid="columns"/> FROM sys_student_import_execution
+        WHERE requester_id = #{requesterId}
+        <if test="status != null">AND status = #{status}</if>
+        <include refid="currentOrganizationScope"/>
+        ORDER BY created_at DESC, id DESC LIMIT #{limit} OFFSET #{offset}
+    </select>
+    <select id="countByRequesterScope" resultType="long">
+        SELECT COUNT(*) FROM sys_student_import_execution WHERE requester_id = #{requesterId}
+        <if test="status != null">AND status = #{status}</if>
+        <include refid="currentOrganizationScope"/>
+    </select>
     <select id="findPageByRequester" resultMap="ExecutionMap">
         SELECT <include refid="columns"/> FROM sys_student_import_execution
         WHERE requester_id = #{requesterId}

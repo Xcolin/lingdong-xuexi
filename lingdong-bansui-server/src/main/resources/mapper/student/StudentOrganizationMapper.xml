@@ -307,4 +307,61 @@
             #{id}, #{studentId}, #{classOrganizationId}, 'CLASS', 'ACTIVE', CURRENT_TIMESTAMP
         )
     </insert>
+
+    <select id="findActiveSummariesByOrganizationAdministratorScope"
+            resultMap="studentOrganizationSummaryMap">
+        SELECT DISTINCT
+               student.id AS student_id,
+               student.student_name,
+               student.grade_code,
+               enrollment.organization_id AS enrollment_organization_id,
+               enrollment_organization.organization_name AS enrollment_organization_name,
+               student_class.organization_id AS current_class_organization_id,
+               class_organization.organization_name AS current_class_organization_name
+        FROM edu_student student
+        JOIN edu_student_organization enrollment
+          ON enrollment.student_id = student.id
+         AND enrollment.relation_type = 'ENROLLMENT'
+         AND enrollment.status = 'ACTIVE'
+        JOIN sys_organization enrollment_organization
+          ON enrollment_organization.id = enrollment.organization_id
+        LEFT JOIN edu_student_organization student_class
+          ON student_class.student_id = student.id
+         AND student_class.relation_type = 'CLASS'
+         AND student_class.status = 'ACTIVE'
+        LEFT JOIN sys_organization class_organization
+          ON class_organization.id = student_class.organization_id
+        WHERE student.status = 'ENABLED'
+          <if test="!scope.allOrganizations">
+            AND <choose>
+              <when test="scope.rootPaths != null and scope.rootPaths.size() > 0">
+                <foreach collection="scope.rootPaths" item="path" open="(" close=")" separator=" OR ">
+                  enrollment_organization.organization_path LIKE CONCAT(#{path}, '%')
+                </foreach>
+              </when>
+              <otherwise>1 = 0</otherwise>
+            </choose>
+          </if>
+        ORDER BY student.student_name, student.id
+    </select>
+
+    <select id="findEnabledClassOptionsByOrganizationAdministratorScope"
+            resultMap="studentOrganizationClassOptionMap">
+        SELECT DISTINCT class_organization.id, class_organization.organization_name AS name
+        FROM sys_organization class_organization
+        WHERE class_organization.organization_type = 'CLASS'
+          AND class_organization.status = 'ENABLED'
+          AND class_organization.effective_status = 'ENABLED'
+          <if test="!scope.allOrganizations">
+            AND <choose>
+              <when test="scope.rootPaths != null and scope.rootPaths.size() > 0">
+                <foreach collection="scope.rootPaths" item="path" open="(" close=")" separator=" OR ">
+                  class_organization.organization_path LIKE CONCAT(#{path}, '%')
+                </foreach>
+              </when>
+              <otherwise>1 = 0</otherwise>
+            </choose>
+          </if>
+        ORDER BY class_organization.organization_name, class_organization.id
+    </select>
 </mapper>

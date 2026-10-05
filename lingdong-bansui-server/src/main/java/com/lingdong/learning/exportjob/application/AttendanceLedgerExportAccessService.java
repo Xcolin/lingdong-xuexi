@@ -46,11 +46,11 @@ public class AttendanceLedgerExportAccessService {
         features.requireEnabled("ATTENDANCE_MANAGEMENT", null);
         var roleCodes = roles.findEnabledRoleCodesByUserId(userId);
         // 审核员仅处理系统审批，兼任其他角色也不能导出考勤台账。
-        if (roleCodes.contains("SYS_AUDITOR")) throw denied();
+        // Dynamic permissions below apply to every enabled role.
         for (String permission : List.of("ATTENDANCE_LEDGER_EXPORT", "ATTENDANCE_READ")) {
             if (!permissions.isAllowed(userId, PermissionClient.WEB, permission)) throw denied();
         }
-        if (roleCodes.contains("ORG_ADMIN")) {
+        if (roleCodes.contains("ORG_ADMIN") || roleCodes.stream().noneMatch(role -> List.of("TEACHER", "PARENT", "STUDENT").contains(role))) {
             var scope = organizations.resolve(userId);
             if (!scope.allOrganizations() && scope.rootPaths().isEmpty()) throw denied();
             return new AttendanceScope(userId, "ORGANIZATION", scope.allOrganizations(), scope.rootPaths());

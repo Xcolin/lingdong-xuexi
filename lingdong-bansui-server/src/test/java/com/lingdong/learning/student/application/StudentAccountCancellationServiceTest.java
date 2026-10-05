@@ -58,21 +58,25 @@ class StudentAccountCancellationServiceTest {
     private final DeviceSessionMapper sessionMapper = mock(DeviceSessionMapper.class);
     private final FeatureAccessService featureAccessService = mock(FeatureAccessService.class);
     private final IdGenerator idGenerator = mock(IdGenerator.class);
+    private final StudentManagementAccessService managementAccess = mock(StudentManagementAccessService.class);
+    private final com.lingdong.learning.datascope.application.OrganizationDataScope scope = com.lingdong.learning.datascope.application.OrganizationDataScope.all(false);
     private StudentAccountCancellationService service;
 
     @BeforeEach
     void setUp() {
+        when(managementAccess.webAllowed(any(), org.mockito.ArgumentMatchers.eq("STUDENT_ACCOUNT_CANCELLATION_MANAGE"))).thenReturn(true);
+        when(managementAccess.scope(any())).thenReturn(scope);
         Clock clock = Clock.fixed(
                 Instant.parse("2026-08-14T03:00:00Z"), ZoneId.of("Asia/Shanghai"));
         service = new StudentAccountCancellationService(
                 cancellationMapper, studentMapper, userMapper, userRoleMapper,
                 parentStudentMapper, organizationMapper, credentialMapper, qrTicketMapper,
-                sessionMapper, featureAccessService, idGenerator, clock);
+                sessionMapper, featureAccessService, idGenerator, clock, managementAccess);
     }
 
     @Test
     void listsOnlyCandidatesFromLatestInactiveEnrollmentScope() {
-        when(cancellationMapper.findCandidatesByOrganizationAdministrator(OPERATOR_ID))
+        when(cancellationMapper.findCandidatesByOrganizationScope(scope))
                 .thenReturn(List.of(candidateRow()));
 
         assertThat(service.listCandidates(operator()))
@@ -144,8 +148,8 @@ class StudentAccountCancellationServiceTest {
         when(userRoleMapper.hasRoleCode(STUDENT_USER_ID, "STUDENT")).thenReturn(true);
         when(organizationMapper.findActiveOrganizationIdsForUpdate(STUDENT_ID)).thenReturn(List.of());
         when(parentStudentMapper.findActiveByStudentIdForUpdate(STUDENT_ID)).thenReturn(List.of());
-        when(cancellationMapper.findAccessibleLatestInactiveEnrollmentOrganizationId(
-                OPERATOR_ID, STUDENT_ID)).thenReturn(ORGANIZATION_ID);
+        when(cancellationMapper.findAccessibleLatestInactiveEnrollmentOrganizationIdByScope(
+                scope, STUDENT_ID)).thenReturn(ORGANIZATION_ID);
         when(studentMapper.anonymizeCancelledStudent(STUDENT_ID)).thenReturn(1);
         when(userMapper.anonymizeCancelledStudent(
                 STUDENT_USER_ID, "cancelled_student_" + STUDENT_ID)).thenReturn(1);

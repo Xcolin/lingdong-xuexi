@@ -73,6 +73,26 @@ class DictionaryApplicationServiceTest {
     }
 
     @Test
+    void allowsDigitLeadingItemCodeButRejectsDigitLeadingTypeCode() {
+        User administrator = createUserWithRole("dictionary_digit_admin", "数字编码管理员", "SYS_ADMIN");
+
+        assertThatThrownBy(() -> dictionaryApplicationService.createType(
+                new CreateDictionaryTypeCommand(administrator.id(), "1ST_SCENE", "数字开头分类", 10)
+        ))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("必须以字母开头");
+
+        DictionaryType type = dictionaryApplicationService.createType(
+                new CreateDictionaryTypeCommand(administrator.id(), "SCENE_TEST", "场景测试分类", 10)
+        );
+        DictionaryItem item = dictionaryApplicationService.createItem(
+                new CreateDictionaryItemCommand(administrator.id(), type.id(), "1ST", "第一名", 10, false)
+        );
+
+        assertThat(item.code()).isEqualTo("1ST");
+    }
+
+    @Test
     void rejectsDirectCreationOfKeyDictionaryType() {
         User administrator = createUserWithRole("key_dictionary_admin", "关键字典管理员", "SYS_ADMIN");
 

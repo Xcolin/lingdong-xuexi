@@ -25,15 +25,17 @@ import static org.mockito.Mockito.when;
 
 class LearningTaskScopeServiceSecondaryParentTest {
     private final LearningTaskAssignmentMapper assignmentMapper = mock(LearningTaskAssignmentMapper.class);
+    private final com.lingdong.learning.permission.application.PermissionDecisionService permissions = mock(com.lingdong.learning.permission.application.PermissionDecisionService.class);
     private final LearningTaskScopeService service = new LearningTaskScopeService(
             mock(OrganizationMapper.class), mock(OrganizationDataScopeService.class),
             mock(ParentStudentMapper.class), mock(StudentOrganizationMapper.class),
             mock(TeacherClassMapper.class), mock(UserMapper.class), mock(UserRoleMapper.class),
-            assignmentMapper);
+            assignmentMapper, permissions);
 
     @Test
     void linkedSecondaryParentReadsPublishedAssignmentButCannotManageTask() {
         long parentId = 8910000000000000831L;
+        when(permissions.isAllowed(parentId, com.lingdong.learning.permission.domain.PermissionClient.WEB, "LEARNING_TASK_READ_MANAGED")).thenReturn(true);
         long taskId = 8910000000000000832L;
         AuthenticatedUser secondaryParent = new AuthenticatedUser(
                 parentId, 1L, "secondary", "副家长", AuthClientType.WEB, List.of("PARENT"));

@@ -74,7 +74,7 @@ class StudentImportAccessServiceTest {
     }
 
     @Test
-    void rejectsDisabledUserMissingRolePermissionOrOrganizationScope() {
+    void rejectsDisabledUserMissingPermissionOrOrganizationScopeAndAllowsCustomRole() {
         allow("STUDENT_IMPORT_EXECUTE");
         when(userMapper.findById(USER_ID)).thenReturn(new User(
                 USER_ID, "disabled", "停用账号", null, null,
@@ -84,8 +84,8 @@ class StudentImportAccessServiceTest {
 
         when(userMapper.findById(USER_ID)).thenReturn(enabledUser());
         when(userRoleMapper.hasRoleCode(USER_ID, "ORG_ADMIN")).thenReturn(false);
-        assertThatThrownBy(() -> service.requireExecute(USER_ID, SCHOOL_ID, null))
-                .isInstanceOf(SystemOperationAccessDeniedException.class);
+        assertThatCode(() -> service.requireExecute(USER_ID, SCHOOL_ID, null))
+                .doesNotThrowAnyException();
 
         when(userRoleMapper.hasRoleCode(USER_ID, "ORG_ADMIN")).thenReturn(true);
         when(permissionDecisionService.isAllowed(
@@ -132,7 +132,7 @@ class StudentImportAccessServiceTest {
         String path = "CLASS".equals(typeCode) ? "/school/class/" : "/school/";
         return new Organization(id, null, "ROOT", "ORG-" + id, "测试组织", typeCode,
                 path, 1, OrganizationStatus.ENABLED,
-                OrganizationEffectiveStatus.ENABLED, 1, null, null);
+                OrganizationEffectiveStatus.ENABLED, 1, null, null, null);
     }
 
     private StudentImportExecutionRecord execution(long requesterId) {

@@ -18,8 +18,8 @@ public interface SystemTaskMapper {
                      @Param("reviewerId") Long reviewerId, @Param("comment") String comment);
     int markEffective(@Param("id") Long id);
     List<SystemTask> findVisiblePage(@Param("userId") Long userId, @Param("auditor") boolean auditor,
-            @Param("types") List<SystemTaskType> types, @Param("status") SystemTaskStatus status, @Param("limit") int limit, @Param("offset") int offset);
+            @Param("types") List<SystemTaskType> types, @Param("reviewableTypes") List<SystemTaskType> reviewableTypes, @Param("status") SystemTaskStatus status, @Param("limit") int limit, @Param("offset") int offset);
     long countVisible(@Param("userId") Long userId, @Param("auditor") boolean auditor,
-            @Param("types") List<SystemTaskType> types, @Param("status") SystemTaskStatus status);
-    SystemTask findVisibleById(@Param("id") Long id, @Param("userId") Long userId, @Param("auditor") boolean auditor, @Param("types") List<SystemTaskType> types);
+            @Param("types") List<SystemTaskType> types, @Param("reviewableTypes") List<SystemTaskType> reviewableTypes, @Param("status") SystemTaskStatus status);
+    SystemTask findVisibleById(@Param("id") Long id, @Param("userId") Long userId, @Param("auditor") boolean auditor, @Param("types") List<SystemTaskType> types, @Param("reviewableTypes") List<SystemTaskType> reviewableTypes);
 }

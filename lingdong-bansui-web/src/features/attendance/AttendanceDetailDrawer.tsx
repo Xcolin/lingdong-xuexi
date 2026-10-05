@@ -5,6 +5,7 @@ import { Alert, Descriptions, Drawer, Spin } from 'antd';
 import { RefreshCw } from 'lucide-react';
 import { attendanceApi, type AttendanceDetails } from './api';
 import { statusLabels } from './rules';
+import { formatDateTime as formatTime } from '../../utils/datetime';
 
 export function AttendanceDetailDrawer({ id, onClose, onAccessError }: { id: string; onClose: () => void; onAccessError: (e: unknown) => void }) {
   const [details, setDetails] = useState<AttendanceDetails>();
@@ -19,7 +20,7 @@ export function AttendanceDetailDrawer({ id, onClose, onAccessError }: { id: str
     return () => { active = false; };
   }, [id, revision, onAccessError]);
   const record = details?.record;
-  return <Drawer title="考勤详情" open width={880} onClose={onClose}>
+  return <Drawer title="考勤详情" open width="min(1100px, 92vw)" onClose={onClose}>
     <div className="page-stack">
       {loading && <Spin />}
       {error && <Alert type="error" showIcon message={error} action={<Button actionKey="attendance-records.attendance-detail-drawer.1" icon={<RefreshCw size={16} />} onClick={() => setRevision((value) => value + 1)}>重试</Button>} />}
@@ -45,4 +46,3 @@ export function AttendanceDetailDrawer({ id, onClose, onAccessError }: { id: str
     </div>
   </Drawer>;
 }
-function formatTime(value: string): string { return value.replace('T', ' ').slice(0, 19); }

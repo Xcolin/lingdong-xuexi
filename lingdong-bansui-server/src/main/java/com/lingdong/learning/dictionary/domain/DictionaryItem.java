@@ -13,7 +13,7 @@ public record DictionaryItem(
         DictionaryStatus status,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
-) {
+) implements java.io.Serializable {
     public static DictionaryItem enabled(
             Long id,
             Long typeId,

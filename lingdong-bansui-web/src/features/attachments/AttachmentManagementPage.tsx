@@ -3,6 +3,7 @@ import { ViewportTable as Table } from '../../components/ViewportTable';
 import { Alert, DatePicker, Drawer, Form, Input, InputNumber, message, Modal, Select, Space, Switch, Tabs, Tag, Tooltip } from 'antd';
 import { CircleCheck, CircleOff, Link2, Pencil, Plus, RotateCw, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { formatDateTime as formatTime } from '../../utils/datetime';
 import {
   attachmentManagementApi,
   type AttachmentFileLedgerRecord,
@@ -259,7 +260,7 @@ export function AttachmentManagementPage({ canReadRules, canManage, canReadFiles
   return <div className="page-stack">
     <div className="page-heading">
       <h1>附件管理</h1>
-      {canManage && activeTab === 'rules' && <Button actionKey="attachment-management.attachment-management-page.6" type="primary" icon={<Plus size={16} />} onClick={openCreateRule}>新增附件规则</Button>}
+      {canManage && activeTab === 'rules' && <Button actionKey="ATTACHMENT_RULE_MANAGE" type="primary" icon={<Plus size={16} />} onClick={openCreateRule}>新增附件规则</Button>}
     </div>
     {errorMessage && <Alert type="error" showIcon message={errorMessage} action={<Button actionKey="attachment-management.attachment-management-page.7" size="small" icon={<RotateCw size={14} />} onClick={() => void (activeTab === 'rules' ? loadRules() : loadFiles())}>重试</Button>} />}
     <Tabs activeKey={activeTab} onChange={setActiveTab} items={[
@@ -268,7 +269,7 @@ export function AttachmentManagementPage({ canReadRules, canManage, canReadFiles
     ].filter((item): item is NonNullable<typeof item> => item !== null)} />
 
     <Modal title={editingRule ? '编辑附件规则' : '新增附件规则'} open={ruleModalOpen} footer={null}
-      onCancel={() => setRuleModalOpen(false)} destroyOnHidden width={680}>
+      onCancel={() => setRuleModalOpen(false)} destroyOnHidden width="min(880px, 92vw)" styles={{ body: { maxHeight: 'calc(100vh - 220px)', overflowY: 'auto' } }}>
       <Form name="attachment-rule-editor" form={ruleForm} layout="vertical" onFinish={saveRule}>
         {!editingRule && <div className="responsive-form-grid">
           <Form.Item label="模块编码" name="moduleCode" rules={[{ required: true, message: '请输入模块编码' }, { max: 64 }]}><Input maxLength={64} /></Form.Item>
@@ -285,7 +286,7 @@ export function AttachmentManagementPage({ canReadRules, canManage, canReadFiles
       </Form>
     </Modal>
 
-    <Drawer title={relationFile ? `业务关系 · ${relationFile.originalName}` : '业务关系'} width={720}
+    <Drawer title={relationFile ? `业务关系 · ${relationFile.originalName}` : '业务关系'} width="min(1100px, 92vw)"
       open={Boolean(relationFile)} onClose={() => setRelationFile(undefined)}>
       <Table<AttachmentRelationLedgerRecord> rowKey="id" size="small" loading={relationLoading} dataSource={relations}
         scroll={{ x: 880 }} pagination={false} locale={{ emptyText: '暂无业务关系记录' }} columns={[
@@ -326,10 +327,6 @@ function formatSize(value: number): string {
   if (value >= 1024 * 1024) return `${(value / 1024 / 1024).toFixed(value % (1024 * 1024) === 0 ? 0 : 2)} MB`;
   if (value >= 1024) return `${(value / 1024).toFixed(value % 1024 === 0 ? 0 : 1)} KB`;
   return `${value} B`;
-}
-
-function formatTime(value?: string | null): string {
-  return value ? value.replace('T', ' ').slice(0, 19) : '-';
 }
 
 function toMessage(error: unknown): string {

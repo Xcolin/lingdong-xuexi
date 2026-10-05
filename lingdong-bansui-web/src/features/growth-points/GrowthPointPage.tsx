@@ -3,9 +3,10 @@ import { ViewportTable as Table } from '../../components/ViewportTable';
 import { useEffect, useState } from 'react';
 import { Alert, App as AntdApp, Empty, Form, Input, Modal, Select, Space, Statistic, Tag, Tooltip } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
-import { Download, RefreshCw, RotateCcw } from 'lucide-react';
+import { Download, RotateCcw } from 'lucide-react';
 import { CreateExportJobModal } from '../export-jobs/CreateExportJobModal';
 import { growthPointApi } from './api';
+import { formatDateTime } from '../../utils/datetime';
 import type {
   GrowthPointAccount,
   GrowthPointChangeType,
@@ -166,15 +167,6 @@ export function GrowthPointPage({
               onClick={() => setExportOpen(true)}
             >导出</Button>
           </Tooltip> : null}
-          <Tooltip title="刷新积分">
-            <Button actionKey="growth-points.growth-point-page.2"
-              aria-label="刷新积分"
-              icon={<RefreshCw size={16} />}
-              loading={loading}
-              disabled={!selectedStudentId}
-              onClick={() => selectedStudentId && void loadStudent(selectedStudentId, ledgerPage.page)}
-            />
-          </Tooltip>
         </Space>
       </div>
 
@@ -275,6 +267,7 @@ export function GrowthPointPage({
         title="积分纠错"
         open={correctingLedger !== null}
         footer={null}
+        width="min(640px, 92vw)"
         destroyOnHidden
         maskClosable={!correctionSubmitting}
         onCancel={closeCorrection}
@@ -333,12 +326,6 @@ function decaySummary(ledger: GrowthPointLedger): string | null {
     return null;
   }
   return `连续第 ${ledger.streakDays} 天，基础 ${ledger.basePointsSnapshot} 分，衰减 ${ledger.decayPercent ?? 0}%`;
-}
-
-function formatDateTime(value: string): string {
-  return new Intl.DateTimeFormat('zh-CN', {
-    dateStyle: 'medium', timeStyle: 'short'
-  }).format(new Date(value));
 }
 
 function toMessage(error: unknown): string {

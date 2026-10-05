@@ -97,4 +97,12 @@
             #{permission.client}, #{permission.parentId,jdbcType=BIGINT}, #{permission.status}
         )
     </insert>
+
+    <update id="updateNameAndStatus">
+        UPDATE sys_permission SET permission_name = #{name}, status = #{status} WHERE id = #{id}
+    </update>
+
+    <update id="updateCode">
+        UPDATE sys_permission SET permission_code = #{code} WHERE id = #{id}
+    </update>
 </mapper>

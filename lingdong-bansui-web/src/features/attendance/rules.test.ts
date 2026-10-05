@@ -10,7 +10,7 @@ describe('考勤权限、筛选和原子载荷', () => {
     expect(canAccessAttendance(user, true)).toBe(true);
     expect(canAccessAttendance(user, undefined)).toBe(false);
     expect(canAccessAttendance({ ...user, permissionCodes: [] }, true)).toBe(false);
-    expect(canAccessAttendance({ ...user, roleCodes: ['SYS_AUDITOR'] }, true)).toBe(false);
+    expect(canAccessAttendance({ ...user, roleCodes: ['SYS_AUDITOR'] }, true)).toBe(true);
   });
   it.each(['PARENT', 'STUDENT'])('%s 即使误授写权限也只读', (role) => {
     expect(canAccessAttendance({ ...user, roleCodes: [role] }, true)).toBe(true);
@@ -18,6 +18,9 @@ describe('考勤权限、筛选和原子载荷', () => {
   });
   it('写入依据权限而非固定业务角色', () => {
     expect(canRecordAttendance(user)).toBe(true);
+    expect(canRecordAttendance({ ...user, roleCodes: ['PARENT', 'TEACHER'] })).toBe(true);
+    expect(canRecordAttendance({ ...user, roleCodes: ['STUDENT', 'ORG_ADMIN'] })).toBe(true);
+    expect(canRecordAttendance({ ...user, roleCodes: ['ALL_ROLE_TEST', 'SYS_AUDITOR'] })).toBe(true);
     expect(canRecordAttendance({ ...user, permissionCodes: ['ATTENDANCE_READ'] })).toBe(false);
   });
   it('组合筛选保留字符串雪花标识并校验成对日期', () => {

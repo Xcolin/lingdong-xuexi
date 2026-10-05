@@ -50,6 +50,26 @@ class ManagedTaskProgressServiceTest {
     }
 
     @Test
+    void webTeacherWithProgressPermissionKeepsClassFilterUnlessSourceOrganizationIsInScope() {
+        long taskId = 8910000000000000941L;
+        var teacher = new AuthenticatedUser(8910000000000000942L, 1L, "teacher", "教师",
+                AuthClientType.WEB, List.of("TEACHER"));
+        LearningTask task = mock(LearningTask.class);
+        when(task.id()).thenReturn(taskId);
+        when(taskMapper.findById(taskId)).thenReturn(task);
+        when(progressMapper.findPage(any())).thenReturn(List.of());
+        // A task can span several classes; READ permission alone must not remove the teacher's class predicate.
+        when(scopeService.hasOrganizationPermission(teacher, "LEARNING_TASK_PROGRESS_READ")).thenReturn(true);
+        when(scopeService.canReadOrganizationProgress(teacher, task)).thenReturn(false);
+        service.findPage(teacher, taskId, 1, 20);
+        verify(progressMapper).findPage(new ManagedTaskProgressQuery(taskId, teacher.userId(), 20, 0));
+
+        when(scopeService.canReadOrganizationProgress(teacher, task)).thenReturn(true);
+        service.findPage(teacher, taskId, 2, 20);
+        verify(progressMapper).findPage(new ManagedTaskProgressQuery(taskId, null, 20, 20));
+    }
+
+    @Test
     void organizationAdministratorUsesTaskScopeWithoutTeacherClassFilter() {
         long taskId = 8910000000000000931L;
         AuthenticatedUser administrator = new AuthenticatedUser(

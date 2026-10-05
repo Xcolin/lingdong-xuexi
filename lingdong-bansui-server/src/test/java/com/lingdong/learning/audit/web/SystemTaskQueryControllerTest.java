@@ -49,7 +49,7 @@ class SystemTaskQueryControllerTest {
                 .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(2))
                 .andExpect(jsonPath("$.items.length()").value(1)).andExpect(jsonPath("$.items[0].id").isString());
         mvc.perform(get("/api/v1/system-tasks/{id}",own.id()).header("Authorization",admin.token()))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.submittedBy").value(admin.user().id().toString()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.submittedBy").value(admin.user().displayName()))
                 .andExpect(jsonPath("$.description").value("合成任务说明"));
         mvc.perform(get("/api/v1/system-tasks/{id}",hidden.id()).header("Authorization",admin.token()))
                 .andExpect(status().isNotFound());
@@ -66,7 +66,7 @@ class SystemTaskQueryControllerTest {
         tasks.reject(submitted.id(),auditor.user().id(),"请补充影响说明");
         mvc.perform(get("/api/v1/system-tasks/{id}",submitted.id()).header("Authorization",auditor.token()))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("REJECTED"))
-                .andExpect(jsonPath("$.reviewedBy").value(auditor.user().id().toString()))
+                .andExpect(jsonPath("$.reviewedBy").value(auditor.user().displayName()))
                 .andExpect(jsonPath("$.reviewComment").value("请补充影响说明"));
         mvc.perform(get("/api/v1/system-tasks?page=0").header("Authorization",auditor.token())).andExpect(status().isBadRequest());
         mvc.perform(get("/api/v1/system-tasks?status=INVALID").header("Authorization",auditor.token())).andExpect(status().isBadRequest());

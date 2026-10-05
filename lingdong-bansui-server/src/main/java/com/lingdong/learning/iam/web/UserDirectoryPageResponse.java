@@ -7,7 +7,8 @@ import java.util.List;
 /** 用户目录接口响应，统一复用安全用户资料。 */
 public record UserDirectoryPageResponse(List<UserResponse> items, int page, int pageSize, long total) {
     static UserDirectoryPageResponse from(UserDirectoryPage page) {
-        return new UserDirectoryPageResponse(page.items().stream().map(UserResponse::from).toList(),
+        return new UserDirectoryPageResponse(page.items().stream().map(user -> UserResponse.from(user,
+                page.organizationNames().getOrDefault(user.id(), List.of()))).toList(),
                 page.page(), page.pageSize(), page.total());
     }
 }

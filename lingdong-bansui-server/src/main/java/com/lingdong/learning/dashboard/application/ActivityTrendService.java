@@ -6,6 +6,9 @@ import com.lingdong.learning.dashboard.infrastructure.persistence.ActivityTrendM
 import com.lingdong.learning.dashboard.infrastructure.persistence.ActivityTrendRow;
 import com.lingdong.learning.datascope.application.OrganizationDataScopeService;
 import com.lingdong.learning.feature.application.FeatureAccessService;
+import com.lingdong.learning.permission.application.PermissionDecisionService;
+import com.lingdong.learning.permission.domain.PermissionClient;
+import com.lingdong.learning.auth.domain.AuthClientType;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
@@ -15,13 +18,16 @@ import java.util.List;
 /** 学员活跃度服务端聚合（R-002）：仅机构管理员按授权组织树读取，看板接线属角色看板任务。 */
 @Service
 public class ActivityTrendService {
+    private final PermissionDecisionService operationPermissions;
     private final ActivityTrendMapper mapper;
     private final FeatureAccessService features;
     private final OrganizationDataScopeService scopes;
     private final Clock clock;
 
     public ActivityTrendService(ActivityTrendMapper mapper, FeatureAccessService features,
-            OrganizationDataScopeService scopes, Clock clock) {
+            OrganizationDataScopeService scopes, Clock clock, PermissionDecisionService operationPermissions
+    ) {
+        this.operationPermissions = operationPermissions;
         this.mapper = mapper;
         this.features = features;
         this.scopes = scopes;
@@ -40,7 +46,10 @@ public class ActivityTrendService {
     /** 缺省区间为近 30 天；行为事实与授权范围口径见 docs/design/09 第 2.7 节。 */
     public Trends activityTrends(AuthenticatedUser user, LocalDate start, LocalDate end) {
         features.requireEnabled("LEARNING_TASK_MANAGEMENT", null);
-        if (user == null || !user.roleCodes().contains("ORG_ADMIN")) {
+        if (user == null || user.clientType() == null
+                || (user.clientType() == AuthClientType.WEB
+                    ? !operationPermissions.isAllowed(user.userId(), PermissionClient.WEB, "LEARNING_TASK_PROGRESS_READ")
+                    : !user.roleCodes().contains("ORG_ADMIN"))) {
             throw denied();
         }
         var scope = scopes.resolve(user.userId());

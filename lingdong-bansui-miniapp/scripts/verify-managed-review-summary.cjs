@@ -31,7 +31,7 @@ const assert=require('node:assert/strict');
   await page.getByText('下一页',{exact:true}).click();await page.getByText('第二页阅读',{exact:true}).waitFor();
   await page.getByText('驳回',{exact:true}).click();await page.locator('textarea').fill('请补充阅读内容');await page.getByText('确认驳回',{exact:true}).click();
   await page.getByText('暂无审核待办',{exact:true}).waitFor();assert.equal(writes,1);
-  count=1;await page.getByText('刷新',{exact:true}).click();await page.getByText('本班阅读',{exact:true}).waitFor();
+  count=1;await page.reload();await page.getByText('本班阅读',{exact:true}).waitFor();
   permission=false;await page.getByText('通过',{exact:true}).click();await page.getByText('确定',{exact:true}).click();
   await page.getByText('审核内容或权限已变化，请刷新',{exact:true}).first().waitFor();assert.equal(writes,1);assert.equal(await page.getByText('本班阅读',{exact:true}).count(),0);
   permission=true;mixed=true;const before=reads;await page.reload();await page.getByText('任务功能未开启或无操作权限',{exact:true}).waitFor();assert.equal(reads,before);

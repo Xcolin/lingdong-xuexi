@@ -3,11 +3,12 @@ import { ViewportTable as Table } from '../../components/ViewportTable';
 import { useEffect, useState } from 'react';
 import { Alert, Descriptions, Popconfirm, Space, Tabs, Tag, message } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
-import { ClipboardCheck, LogOut, MonitorX, RefreshCw } from 'lucide-react';
+import { ClipboardCheck, LogOut, MonitorX } from 'lucide-react';
 import { authApi, type AccountSecurityEvent, type CurrentUser, type DeviceSession } from '../../api/auth';
 import { ParentAccountLifecyclePanel } from './ParentAccountLifecyclePanel';
 import { DashboardTaskReviews } from './DashboardTaskReviews';
 import { OrganizationActivityTrend } from './OrganizationActivityTrend';
+import { formatDateTime as formatTime } from '../../utils/datetime';
 
 interface DashboardPageProps {
   currentUser: CurrentUser;
@@ -92,7 +93,6 @@ export function DashboardPage({ currentUser, accountSecurityManagementEnabled, p
       <div className="page-heading">
         <h1>工作台</h1>
         {attendanceAvailable && <Button actionKey="dashboard.dashboard-page.1" icon={<ClipboardCheck size={16} />} onClick={onOpenAttendance}>考勤台账</Button>}
-        {accountSecurityManagementEnabled && <Button actionKey="dashboard.dashboard-page.2" icon={<RefreshCw size={16} />} onClick={() => void loadSecurityData()}>刷新</Button>}
       </div>
       {errorMessage && <Alert type="error" showIcon message={errorMessage} />}
       <ProCard className="content-panel" bordered={false}>
@@ -109,11 +109,10 @@ export function DashboardPage({ currentUser, accountSecurityManagementEnabled, p
         </div>
       </ProCard>
       <Tabs className="page-sections" items={[
-        ...(learningTaskManagementEnabled && !currentUser.roleCodes.includes('SYS_AUDITOR')
-          && currentUser.roleCodes.some(role => ['PARENT', 'TEACHER', 'ORG_ADMIN'].includes(role))
+        ...(learningTaskManagementEnabled
           && currentUser.permissionCodes.includes('TASK_ASSIGNMENT_REVIEW')
           ? [{ key: 'reviews', label: '待审核任务', children: <DashboardTaskReviews key={currentUser.userId} userId={currentUser.userId} /> }] : []),
-        ...(learningTaskManagementEnabled && !currentUser.roleCodes.includes('SYS_AUDITOR') && currentUser.roleCodes.includes('ORG_ADMIN')
+        ...(learningTaskManagementEnabled && currentUser.permissionCodes.includes('LEARNING_TASK_PROGRESS_READ')
           ? [{ key: 'activity', label: '活跃趋势', children: <OrganizationActivityTrend key={currentUser.userId} userId={currentUser.userId} /> }] : []),
         ...(accountSecurityManagementEnabled ? [
           { key: 'events', label: '安全事件', children: (<ProCard className="content-panel" title="账号安全事件" bordered={false}>
@@ -170,10 +169,6 @@ function eventTitle(event: AccountSecurityEvent): string {
   if (event.eventType === 'NEW_DEVICE_LOGIN') return `新设备登录（${event.clientType === 'WEB' ? 'Web' : '小程序'}）`;
   if (event.eventType === 'DEVICE_REVOKED') return '设备已下线';
   return '全部设备已下线';
-}
-
-function formatTime(value: string): string {
-  return new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
 }
 
 function toMessage(error: unknown): string {

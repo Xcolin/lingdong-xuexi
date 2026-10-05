@@ -19,10 +19,11 @@
     <update id="markEffective">UPDATE sys_system_task SET status = 'EFFECTIVE', updated_at = CURRENT_TIMESTAMP WHERE id = #{id} AND status = 'APPROVED'</update>
     <!-- 列表和详情共用同一行范围，审核员不读取草稿。 -->
     <sql id="visibleScope">
-        <choose>
-            <when test="auditor">status != 'DRAFT' AND submitted_at IS NOT NULL</when>
-            <otherwise>submitted_by = #{userId}</otherwise>
-        </choose>
+        (submitted_by = #{userId}
+        <if test="reviewableTypes != null and !reviewableTypes.isEmpty()">
+            OR (status != 'DRAFT' AND submitted_at IS NOT NULL
+                AND task_type IN <foreach collection="reviewableTypes" item="type" open="(" separator="," close=")">#{type}</foreach>)
+        </if>)
         AND task_type IN <foreach collection="types" item="type" open="(" separator="," close=")">#{type}</foreach>
     </sql>
     <select id="findVisiblePage" resultMap="TaskMap">

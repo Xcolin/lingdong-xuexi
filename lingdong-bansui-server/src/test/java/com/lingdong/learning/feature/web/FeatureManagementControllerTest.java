@@ -93,16 +93,18 @@ class FeatureManagementControllerTest {
         mockMvc.perform(get("/api/v1/feature-management/toggles").header("Authorization",bearer(token))).andExpect(status().isForbidden());
     }
     @Test
-    void restrictsHistoryAndRejectsMixedRoleSubmissionAndSelfReview() throws Exception {
+    void showsReviewableHistoryButRejectsExplicitDeniedSubmissionAndSelfReview() throws Exception {
         String admin=tokenWithRole("ft_scope_admin","SYS_ADMIN"), other=tokenWithRole("ft_scope_other","SYS_ADMIN");
         String id=submit(admin); submit(other);
         mockMvc.perform(get("/api/v1/feature-management/changes?pageSize=1").header("Authorization",bearer(admin)))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(1)).andExpect(jsonPath("$.items[0].taskId").value(id));
+                .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(2));
         mockMvc.perform(post("/api/v1/feature-management/review-queue/{id}/approve",id)
                 .header("Authorization",bearer(admin)).contentType(MediaType.APPLICATION_JSON).content("{}"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isConflict());
         Long adminId=jdbcTemplate.queryForObject("select submitted_by from sys_system_task where id=?",Long.class,Long.valueOf(id));
         userAccessApplicationService.assignRole(new AssignRoleToUserCommand(adminId,roleMapper.findByCode("SYS_AUDITOR").id(),null));
+        jdbcTemplate.update("INSERT INTO sys_user_permission (id,user_id,permission_id,effect) SELECT ?,?,id,'DENY' FROM sys_permission WHERE permission_code='FEATURE_TOGGLE_MANAGE'", permissionIds.nextId(), adminId);
+        sqlSession.clearCache();
         mockMvc.perform(post("/api/v1/feature-management/review-submissions").header("Authorization",bearer(admin))
                 .contentType(MediaType.APPLICATION_JSON).content("{\"featureCode\":\"STUDENT_CODE_LOGIN\",\"targetStatus\":\"DISABLED\",\"expectedVersion\":\"0\",\"title\":\"测试\",\"description\":\"测试\",\"confirmed\":true}"))
                 .andExpect(status().isForbidden());
@@ -124,6 +126,7 @@ class FeatureManagementControllerTest {
                 .andExpect(status().isNotFound());
     }
     @Autowired private org.mybatis.spring.SqlSessionTemplate sqlSession;
+    @Autowired private com.lingdong.learning.common.id.IdGenerator permissionIds;
     private String submit(String token) throws Exception {
         Long version=jdbcTemplate.queryForObject("select version_no from sys_feature_toggle where feature_code='STUDENT_CODE_LOGIN'",Long.class);
         return body(mockMvc.perform(post("/api/v1/feature-management/review-submissions")

@@ -64,6 +64,7 @@ public class LearningTaskPublishService {
 
     @Transactional
     public PublishLearningTaskResult publish(AuthenticatedUser currentUser, Long taskId) {
+        scopeService.requireWebPermission(currentUser, "LEARNING_TASK_PUBLISH");
         featureAccessService.requireEnabled(FEATURE_CODE, null);
         LearningTask task = taskMapper.findByIdForUpdate(taskId);
         if (task == null) {

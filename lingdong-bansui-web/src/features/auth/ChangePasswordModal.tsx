@@ -32,7 +32,7 @@ export function ChangePasswordModal({ onCancel, onSuccess }: { onCancel: () => v
     }
   }
 
-  return <Modal open title="修改密码" width={440} closable={!busy} maskClosable={false} keyboard={!busy}
+  return <Modal open title="修改密码" width="min(440px, 92vw)" closable={!busy} maskClosable={false} keyboard={!busy}
     onCancel={() => { if (!submitting.current) onCancel(); }}
     footer={<><Button aria-label="取消" disabled={busy} onClick={onCancel}>取消</Button><Button aria-label="确认修改" type="primary" form={formId} htmlType="submit" loading={busy} disabled={busy}>确认修改</Button></>}>
     {error && <Alert type="error" showIcon message={error} style={{ marginBottom: 16 }} />}

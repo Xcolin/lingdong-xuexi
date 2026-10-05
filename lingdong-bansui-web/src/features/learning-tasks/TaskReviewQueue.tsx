@@ -7,6 +7,7 @@ import { Eye } from 'lucide-react';
 import { taskReviewApi } from './reviewApi';
 import { TaskReviewDrawer } from './TaskReviewDrawer';
 import type { LearningTaskSourceType, TaskReview, TaskReviewPage } from './types';
+import { formatDateTime as formatTime } from '../../utils/datetime';
 
 const PAGE_SIZE = 20;
 const sourceLabels: Record<LearningTaskSourceType, string> = {
@@ -103,12 +104,6 @@ export function TaskReviewQueue() {
       />
     </>
   );
-}
-
-function formatTime(value: string): string {
-  return new Intl.DateTimeFormat('zh-CN', {
-    dateStyle: 'medium', timeStyle: 'short'
-  }).format(new Date(value));
 }
 
 function toMessage(error: unknown): string {

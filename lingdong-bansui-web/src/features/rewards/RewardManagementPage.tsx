@@ -3,8 +3,9 @@ import { ViewportTable as Table } from '../../components/ViewportTable';
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, App as AntdApp, Empty, Form, Input, InputNumber, Modal, Select, Space, Tabs, Tag, Tooltip } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
-import { Check, Eye, EyeOff, Pencil, Plus, RefreshCw, Trash2, X } from 'lucide-react';
+import { Check, Eye, EyeOff, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { rewardApi } from './api';
+import { formatDateTime } from '../../utils/datetime';
 import type {
   GrowthReward,
   GrowthRewardExchange,
@@ -252,15 +253,6 @@ export function RewardManagementPage() {
             options={students.map((student) => ({ value: student.id, label: student.studentName }))}
             onChange={changeStudent}
           />
-          <Tooltip title="刷新奖励数据">
-            <Button actionKey="rewards.reward-management-page.1"
-              aria-label="刷新奖励数据"
-              icon={<RefreshCw size={16} />}
-              loading={loading}
-              disabled={!selectedStudentId}
-              onClick={() => selectedStudentId && void loadStudentData(selectedStudentId)}
-            />
-          </Tooltip>
           <Button actionKey="rewards.reward-management-page.2"
             type="primary"
             icon={<Plus size={16} />}
@@ -407,7 +399,7 @@ export function RewardManagementPage() {
                           title: '操作', key: 'actions', width: 190, fixed: 'right',
                           render: (_, exchange) => exchange.status === 'PENDING_APPROVAL' ? (
                             <Space size={4}>
-                              <Button actionKey="rewards.reward-management-page.7"
+                              <Button actionKey="REWARD_EXCHANGE_REVIEW"
                                 type="link"
                                 size="small"
                                 icon={<Check size={15} />}
@@ -447,6 +439,8 @@ export function RewardManagementPage() {
         title={editingReward === 'NEW' ? '新建奖励' : '编辑奖励'}
         open={editingReward !== null}
         footer={null}
+        width="min(880px, 92vw)"
+        styles={{ body: { maxHeight: 'calc(100vh - 220px)', overflowY: 'auto' } }}
         destroyOnHidden
         maskClosable={!rewardSubmitting}
         onCancel={() => !rewardSubmitting && setEditingReward(null)}
@@ -508,6 +502,7 @@ export function RewardManagementPage() {
         title="驳回奖励兑换"
         open={rejectingExchange !== null}
         footer={null}
+        width="min(520px, 92vw)"
         destroyOnHidden
         maskClosable={!exchangeSubmitting}
         onCancel={() => !exchangeSubmitting && setRejectingExchange(null)}
@@ -531,12 +526,6 @@ export function RewardManagementPage() {
       </Modal>
     </div>
   );
-}
-
-function formatDateTime(value: string): string {
-  return new Intl.DateTimeFormat('zh-CN', {
-    dateStyle: 'medium', timeStyle: 'short'
-  }).format(new Date(value));
 }
 
 function toMessage(error: unknown): string {

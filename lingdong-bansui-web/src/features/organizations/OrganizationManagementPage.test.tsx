@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { OrganizationManagementPage } from './OrganizationManagementPage';
 
@@ -23,12 +23,21 @@ const classApi = vi.hoisted(() => ({
 
 vi.mock('../../api/organization', () => ({ organizationApi }));
 vi.mock('../../api/classes', () => ({ classApi }));
+vi.mock('./OrganizationMembersDrawer',()=>({OrganizationMembersDrawer:({organization,embedded}:{organization:{id:string};embedded?:boolean})=><div data-testid="organization-members" data-organization-id={organization.id} data-embedded={String(embedded)}/> }));
 
 describe('组织管理页面', () => {
+  it('成员面板直接嵌入选中组织，新增下级自动选择当前上级', async () => {
+    render(<OrganizationManagementPage currentUser={systemAdministrator} organizationManagementEnabled />);
+    expect(await screen.findByTestId('organization-members')).toHaveAttribute('data-embedded','true');
+    expect(screen.queryByRole('button', {name:'组织用户'})).not.toBeInTheDocument();
+    expect(screen.getByRole('tab', {name:'组织用户'})).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button',{name:'新增下级'}));
+    expect(screen.getByRole('dialog')).toHaveTextContent('东部区域');
+  });
   const systemAdministrator = {
     userId: '1874244142494646207', sessionId: '1874244142494646208',
     username: 'system_admin', displayName: '系统管理员', clientType: 'WEB' as const,
-    roleCodes: ['SYS_ADMIN'], permissionCodes: []
+    roleCodes: ['ALL_ROLE_TEST'], permissionCodes: ['ORG_NODE_READ', 'ORG_TYPE_READ']
   };
 
   beforeEach(() => {
@@ -102,10 +111,11 @@ describe('组织管理页面', () => {
     render(<OrganizationManagementPage currentUser={systemAdministrator} organizationManagementEnabled />);
 
     await user.click(screen.getByRole('tab', { name: '组织类型' }));
-    expect(await screen.findByText('区域')).toBeVisible();
+    expect(await within(screen.getByRole('tabpanel',{name:'组织类型'})).findByText('区域')).toBeVisible();
     await user.click(screen.getByRole('tab', { name: '组织架构' }));
     expect(await screen.findByText('测试学校')).toBeInTheDocument();
 
+    await user.click(screen.getByRole('tab',{name:'组织类型'}));
     await user.click(screen.getByRole('button', { name: '新增组织类型' }));
     await user.type(screen.getByLabelText('类型编码'), 'COMMUNITY');
     await user.type(screen.getByLabelText('类型名称'), '社区');
@@ -166,8 +176,8 @@ describe('组织管理页面', () => {
         username: 'school_admin',
         displayName: '学校管理员',
         clientType: 'WEB',
-        roleCodes: ['ORG_ADMIN'],
-        permissionCodes: []
+        roleCodes: ['ALL_ROLE_TEST'],
+        permissionCodes: ['CLASS_READ']
       }}
       parentMobileManualRecoveryEnabled
     />);
@@ -181,8 +191,8 @@ describe('组织管理页面', () => {
       username: 'school_admin',
       displayName: '学校管理员',
       clientType: 'WEB' as const,
-      roleCodes: ['ORG_ADMIN'],
-      permissionCodes: []
+      roleCodes: ['ALL_ROLE_TEST'],
+      permissionCodes: ['CLASS_READ']
     };
     const { rerender } = render(
       <OrganizationManagementPage currentUser={organizationAdministrator} />
@@ -201,7 +211,7 @@ describe('组织管理页面', () => {
 
     rerender(
       <OrganizationManagementPage
-        currentUser={{ ...organizationAdministrator, roleCodes: ['TEACHER'] }}
+        currentUser={{ ...organizationAdministrator, roleCodes: ['TEACHER'], permissionCodes: [] }}
         studentAccountCancellationEnabled
       />
     );
@@ -219,7 +229,7 @@ describe('组织管理页面', () => {
   it('系统审核员只加载组织变更审核列表', async () => {
     organizationApi.listChanges.mockResolvedValue([{ changeId: '1874244142494646298', taskId: '1874244142494646299', organizationNameSnapshot: '待审核学校', changeType: 'DISABLE', executionStatus: 'PENDING', taskStatus: 'PENDING_REVIEW', submittedAt: '2026-08-15T10:00:00' }]);
     render(<OrganizationManagementPage
-      currentUser={{ ...systemAdministrator, username: 'auditor', displayName: '系统审核员', roleCodes: ['SYS_AUDITOR'] }}
+      currentUser={{ ...systemAdministrator, username: 'auditor', displayName: '系统审核员', roleCodes: ['ALL_ROLE_TEST'], permissionCodes: ['ORG_NODE_CHANGE_REVIEW'] }}
       organizationManagementEnabled
     />);
 
@@ -241,7 +251,7 @@ describe('组织管理页面', () => {
   it('班级开关仅控制机构管理员班级面板且不影响平台组织视图', async () => {
     const organizationAdministrator = {
       ...systemAdministrator,
-      username: 'school_admin', displayName: '学校管理员', roleCodes: ['ORG_ADMIN']
+      username: 'school_admin', displayName: '学校管理员', roleCodes: ['ALL_ROLE_TEST'], permissionCodes: ['CLASS_READ']
     };
     const { rerender } = render(
       <OrganizationManagementPage currentUser={organizationAdministrator} />
@@ -266,7 +276,7 @@ describe('组织管理页面', () => {
         classManagementEnabled
       />
     );
-    expect(await screen.findByRole('heading', { name: '组织管理' })).toBeInTheDocument();
+    expect(await screen.findByRole('tab', { name: '组织架构' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: '班级管理' })).not.toBeInTheDocument();
   });
 });

@@ -4,6 +4,7 @@ import { Alert, Descriptions, Input, Modal, Popconfirm, Space, Tag, message } fr
 import { ProCard } from '@ant-design/pro-components';
 import { KeyRound, Send, Smartphone, UserRoundX } from 'lucide-react';
 import { authApi, type ParentAccountLifecycleState } from '../../api/auth';
+import { formatDateTime } from '../../utils/datetime';
 
 interface ParentAccountLifecyclePanelProps {
   onSessionEnded: () => void;
@@ -125,7 +126,7 @@ export function ParentAccountLifecyclePanel({ onSessionEnded }: ParentAccountLif
       </>}
     </ProCard>
 
-    <Modal title="更换手机号" open={mobileModalOpen} footer={null}
+    <Modal title="更换手机号" open={mobileModalOpen} footer={null} width="min(520px, 92vw)"
       onCancel={() => setMobileModalOpen(false)} destroyOnHidden>
       {mobileStage === 'CURRENT' ? <Space direction="vertical" size="middle" style={{ width: '100%' }}>
         <Alert type="info" showIcon message={`验证码将发送至 ${state?.maskedMobile ?? '当前手机号'}`} />
@@ -152,7 +153,7 @@ export function ParentAccountLifecyclePanel({ onSessionEnded }: ParentAccountLif
       </Space>}
     </Modal>
 
-    <Modal title="申请账号注销" open={cancellationModalOpen} footer={null}
+    <Modal title="申请账号注销" open={cancellationModalOpen} footer={null} width="min(520px, 92vw)"
       onCancel={() => setCancellationModalOpen(false)} destroyOnHidden>
       <Space direction="vertical" size="middle" style={{ width: '100%' }}>
         <Alert type="warning" showIcon message="申请后进入 7 天冷静期，期间账号仍可登录并撤销申请" />
@@ -179,7 +180,7 @@ function cancellationLabel(status: ParentAccountLifecycleState['cancellationStat
 }
 
 function formatTime(value: string | null): string {
-  return value ? `冷静期截止 ${new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))}` : '';
+  return value ? `冷静期截止 ${formatDateTime(value)}` : '';
 }
 
 function toMessage(error: unknown): string {

@@ -4,7 +4,7 @@ import { ViewportTable as Table } from '../../components/ViewportTable';
 import { useEffect, useState } from 'react';
 import { Alert, DatePicker, Space, Tag, message } from 'antd';
 import dayjs, { type Dayjs } from 'dayjs';
-import { CalendarClock, RefreshCw } from 'lucide-react';
+import { CalendarClock } from 'lucide-react';
 import { taskDeferApi } from './taskDeferApi';
 import type { ManagedDeferCandidate, ManagedDeferCandidatePage } from './types';
 
@@ -74,7 +74,6 @@ export function TaskDeferQueue() {
       )}
       <div className="table-toolbar">
         <span>待优化任务和尚未认领的自动顺延任务</span>
-        <Button actionKey="learning-tasks.task-defer-queue.2" icon={<RefreshCw size={16} />} onClick={() => void load(page.page)}>刷新</Button>
       </div>
       <Table<ManagedDeferCandidate>
         rowKey="assignmentId"
@@ -110,7 +109,7 @@ export function TaskDeferQueue() {
           {
             title: '操作', width: 100, fixed: 'right',
             render: (_, item) => (
-              <Button actionKey="learning-tasks.task-defer-queue.3"
+              <Button actionKey="TASK_ASSIGNMENT_DEFER"
                 type="link"
                 icon={<CalendarClock size={16} />}
                 onClick={() => openDefer(item)}
@@ -122,6 +121,7 @@ export function TaskDeferQueue() {
       <Modal actionPrefix="learning-tasks.task-defer-queue.modal.1"
         title="顺延任务"
         open={selected !== null}
+        width="min(520px, 92vw)"
         okText="确认顺延"
         cancelText="取消"
         confirmLoading={submitting}

@@ -35,6 +35,7 @@ public class StudentQrTicketApplicationService {
     private final FeatureAccessService featureAccessService;
     private final IdGenerator idGenerator;
     private final Clock clock;
+    private final com.lingdong.learning.student.application.StudentManagementAccessService managementAccess;
 
     public StudentQrTicketApplicationService(
             StudentMapper studentMapper,
@@ -44,7 +45,8 @@ public class StudentQrTicketApplicationService {
             SessionTokenService tokenService,
             FeatureAccessService featureAccessService,
             IdGenerator idGenerator,
-            Clock clock
+            Clock clock,
+            com.lingdong.learning.student.application.StudentManagementAccessService managementAccess
     ) {
         this.studentMapper = studentMapper;
         this.parentStudentMapper = parentStudentMapper;
@@ -54,12 +56,15 @@ public class StudentQrTicketApplicationService {
         this.featureAccessService = featureAccessService;
         this.idGenerator = idGenerator;
         this.clock = clock;
+        this.managementAccess = managementAccess;
     }
 
     @Transactional
     public IssuedStudentQrTicket issue(AuthenticatedUser currentUser, Long studentId) {
         featureAccessService.requireEnabled(FEATURE_CODE, null);
         Objects.requireNonNull(currentUser, "当前登录用户不能为空");
+        if (currentUser.clientType() == com.lingdong.learning.auth.domain.AuthClientType.WEB)
+            managementAccess.require(currentUser, "STUDENT_LOGIN_QR_CREATE");
         if (studentId == null) {
             throw new IllegalArgumentException("学生标识不能为空");
         }
@@ -126,6 +131,11 @@ public class StudentQrTicketApplicationService {
     private boolean hasObjectScope(AuthenticatedUser currentUser, Long studentId) {
         boolean primaryParent = currentUser.roleCodes().contains(PARENT_ROLE)
                 && parentStudentMapper.existsActivePrimaryByParentAndStudent(currentUser.userId(), studentId);
+        if (currentUser.clientType() == com.lingdong.learning.auth.domain.AuthClientType.WEB)
+            return primaryParent || (managementAccess.studentAllowed(currentUser, studentId)
+                    && studentOrganizationMapper.findActiveEnrollmentOrganizationIds(studentId).stream()
+                    .anyMatch(organizationId -> managementAccess.organizationAllowed(currentUser, organizationId)
+                            && studentOrganizationMapper.existsActiveByStudentAndOrganization(studentId, organizationId)));
         boolean directOrganizationAdministrator = currentUser.roleCodes().contains(ORGANIZATION_ADMIN_ROLE)
                 && studentOrganizationMapper.existsActiveByOrganizationAdministratorAndStudent(
                 currentUser.userId(), studentId);

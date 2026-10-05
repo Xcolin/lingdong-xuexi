@@ -51,7 +51,7 @@ export function StudentClassAssignmentDrawer({ open, onClose }: StudentClassAssi
   }
 
   return (
-    <Drawer title="配置学生当前班级" open={open} onClose={onClose} width={520} destroyOnClose>
+    <Drawer title="配置学生当前班级" open={open} onClose={onClose} width="min(520px, 92vw)" destroyOnClose>
       <Spin spinning={loading}>
         <Form form={form} layout="vertical" onFinish={submit}>
           <Form.Item label="学生" name="studentId" rules={[{ required: true, message: '请选择学生' }]}>
@@ -73,7 +73,7 @@ export function StudentClassAssignmentDrawer({ open, onClose }: StudentClassAssi
           </Form.Item>
           <div className="form-actions">
             <Button actionKey="organizations.student-class-assignment-drawer.1" onClick={onClose}>取消</Button>
-            <Button actionKey="organizations.student-class-assignment-drawer.2" type="primary" htmlType="submit" loading={submitting}>确认配置</Button>
+            <Button actionKey="STUDENT_CLASS_ASSIGN" type="primary" htmlType="submit" loading={submitting}>确认配置</Button>
           </div>
         </Form>
       </Spin>

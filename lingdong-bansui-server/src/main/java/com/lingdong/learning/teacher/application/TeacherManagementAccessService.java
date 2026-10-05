@@ -9,6 +9,8 @@ import com.lingdong.learning.feature.application.FeatureAccessService;
 import com.lingdong.learning.organization.application.OrganizationOperationalStatusService;
 import com.lingdong.learning.organization.domain.Organization;
 import com.lingdong.learning.organization.infrastructure.persistence.OrganizationMapper;
+import com.lingdong.learning.permission.application.PermissionDecisionService;
+import com.lingdong.learning.permission.domain.PermissionClient;
 import org.springframework.stereotype.Service;
 
 import java.util.Objects;
@@ -16,6 +18,7 @@ import java.util.Objects;
 /** 集中执行教师管理的客户端、角色、开关和组织范围校验。 */
 @Service
 public class TeacherManagementAccessService {
+    private final PermissionDecisionService operationPermissions;
     public static final String FEATURE_CODE = "TEACHER_MANAGEMENT";
     private static final String ORGANIZATION_ADMIN_ROLE = "ORG_ADMIN";
 
@@ -26,8 +29,9 @@ public class TeacherManagementAccessService {
     public TeacherManagementAccessService(
             FeatureAccessService featureAccessService,
             OrganizationDataScopeService organizationDataScopeService,
-            OrganizationMapper organizationMapper
+            OrganizationMapper organizationMapper, PermissionDecisionService operationPermissions
     ) {
+        this.operationPermissions = operationPermissions;
         this.featureAccessService = featureAccessService;
         this.organizationDataScopeService = organizationDataScopeService;
         this.organizationMapper = organizationMapper;
@@ -40,8 +44,11 @@ public class TeacherManagementAccessService {
                 && currentUser.clientType() != AuthClientType.MINIAPP) {
             throw new SystemOperationAccessDeniedException("当前客户端不支持教师管理");
         }
-        if (!currentUser.roleCodes().contains(ORGANIZATION_ADMIN_ROLE)) {
-            throw new SystemOperationAccessDeniedException("仅机构管理员可维护教师账号");
+        if (currentUser.clientType() == AuthClientType.WEB
+                ? java.util.stream.Stream.of("TEACHER_READ", "TEACHER_CREATE", "TEACHER_UPDATE", "TEACHER_STATUS_CHANGE", "TEACHER_PASSWORD_RESET", "TEACHER_BATCH_MANAGE")
+                    .noneMatch(code -> operationPermissions.isAllowed(currentUser.userId(), PermissionClient.WEB, code))
+                : !currentUser.roleCodes().contains(ORGANIZATION_ADMIN_ROLE)) {
+            throw new SystemOperationAccessDeniedException("当前账号缺少教师管理权限");
         }
     }
 

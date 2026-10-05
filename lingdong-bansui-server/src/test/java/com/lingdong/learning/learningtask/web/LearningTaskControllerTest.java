@@ -76,6 +76,40 @@ class LearningTaskControllerTest {
     @Autowired private org.apache.ibatis.session.SqlSession sqlSession;
 
     @Test
+    void customRoleUsesPermissionsAndActualOrganizationScope() throws Exception {
+        Fixture fixture = createFixture();
+        long roleId = 1874990000000000101L;
+        jdbcTemplate.update("INSERT INTO sys_role(id,role_code,role_name,role_type,data_scope,built_in,status) VALUES(?,?,?,'CUSTOM','ALL',false,'ENABLED')",
+                roleId, "TASK_CUSTOM_PERMISSION", "自定义任务管理");
+        User custom = createUser("task_custom_permission", "自定义任务用户");
+        jdbcTemplate.update("INSERT INTO sys_user_role(id,user_id,role_id,organization_scope_key) VALUES(?,?,?,'GLOBAL')", roleId + 1, custom.id(), roleId);
+        jdbcTemplate.update("INSERT INTO sys_role_permission(id,role_id,permission_id,effect) SELECT ? + ROW_NUMBER() OVER(ORDER BY id), ?, id, 'ALLOW' FROM sys_permission WHERE permission_code LIKE 'LEARNING_TASK_%' OR permission_code = 'TEACHER_CLASS_ASSIGN'", roleId + 100, roleId);
+        setPassword(fixture.systemAdministrator(), custom);
+        String token = platformLoginToken(custom.username());
+        MvcResult created = mockMvc.perform(post("/api/v1/learning-tasks")
+                .header("Authorization", "Bearer " + token).contentType(MediaType.APPLICATION_JSON)
+                .content(taskBody("ORGANIZATION", fixture.school().id(), "自定义角色任务", 2,
+                        LocalDate.now(ZoneId.of("Asia/Shanghai")).plusDays(1), null,
+                        target("ORGANIZATION", fixture.classOrganization().id()))))
+                .andExpect(status().isCreated()).andReturn();
+        Long taskId = responseId(created, "id");
+        mockMvc.perform(get("/api/v1/learning-tasks").param("keyword", "自定义角色任务")
+                .header("Authorization", "Bearer " + token)).andExpect(status().isOk()).andExpect(jsonPath("$.total").value(1));
+        mockMvc.perform(get("/api/v1/learning-task-options/organizations").param("sourceType", "ORGANIZATION")
+                .header("Authorization", "Bearer " + token)).andExpect(status().isOk()).andExpect(jsonPath("$[0].id").exists());
+        mockMvc.perform(get("/api/v1/learning-task-options/students").param("sourceType", "ORGANIZATION")
+                .header("Authorization", "Bearer " + token)).andExpect(status().isOk()).andExpect(jsonPath("$[0].id").exists());
+        jdbcTemplate.update("UPDATE sys_role SET data_scope='SELF' WHERE id=?", roleId);
+        sqlSession.clearCache();
+        mockMvc.perform(get("/api/v1/learning-tasks").param("keyword", "自定义角色任务")
+                .header("Authorization", "Bearer " + token)).andExpect(status().isOk()).andExpect(jsonPath("$.total").value(0));
+        mockMvc.perform(get("/api/v1/learning-tasks/{id}", taskId).header("Authorization", "Bearer " + token)).andExpect(status().isNotFound());
+        jdbcTemplate.update("DELETE FROM sys_role_permission WHERE role_id=? AND permission_id=(SELECT id FROM sys_permission WHERE permission_code='LEARNING_TASK_READ_MANAGED')", roleId);
+        sqlSession.clearCache();
+        mockMvc.perform(get("/api/v1/learning-tasks").header("Authorization", "Bearer " + token)).andExpect(status().isForbidden());
+    }
+
+    @Test
     void createsEditsPublishesAndReadsFamilyOrganizationAndTeacherTasks() throws Exception {
         Fixture fixture = createFixture();
         LocalDate scheduledDate = LocalDate.now(ZoneId.of("Asia/Shanghai")).plusDays(1);
@@ -1501,3 +1535,4 @@ class LearningTaskControllerTest {
     ) {
     }
 }
+

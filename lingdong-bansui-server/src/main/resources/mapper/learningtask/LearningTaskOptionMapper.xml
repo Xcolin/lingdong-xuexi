@@ -251,4 +251,41 @@
         </if>
         ORDER BY teacher.display_name, teacher.id, teacher_class.class_organization_id
     </select>
+    <select id="findScopedStudentOptions" resultMap="StudentOptionRowMap">
+        SELECT DISTINCT <include refid="studentOptionColumns"/>, NULL AS relationship_role
+        FROM edu_student student <include refid="studentOptionCurrentClassJoins"/>
+        WHERE student.status = 'ENABLED' AND EXISTS (
+            SELECT 1 FROM edu_student_organization scoped_relation
+            JOIN sys_organization scoped_organization ON scoped_organization.id = scoped_relation.organization_id
+            WHERE scoped_relation.student_id = student.id AND scoped_relation.status = 'ACTIVE'
+              AND scoped_organization.status = 'ENABLED' AND scoped_organization.effective_status = 'ENABLED'
+              AND scoped_relation.organization_id IN
+              <foreach collection="organizationIds" item="id" open="(" separator="," close=")">#{id}</foreach>
+        )
+        <if test="organizationId != null">AND EXISTS (
+            SELECT 1 FROM edu_student_organization filtered_relation
+            JOIN sys_organization filtered_organization ON filtered_organization.id = filtered_relation.organization_id
+            JOIN sys_organization filter_root ON filter_root.id = #{organizationId}
+            WHERE filtered_relation.student_id = student.id AND filtered_relation.status = 'ACTIVE'
+            AND filtered_organization.organization_path LIKE CONCAT(filter_root.organization_path, '%')
+        )</if>
+        <if test="keyword != null">AND student.student_name LIKE CONCAT('%', #{keyword}, '%')</if>
+        ORDER BY student.student_name, student.id
+    </select>
+    <select id="findScopedTeacherOptions" resultMap="TeacherOptionRowMap">
+        SELECT DISTINCT teacher.id AS user_id, teacher.display_name, teacher_class.class_organization_id
+        FROM sys_user teacher
+        LEFT JOIN edu_teacher_class teacher_class ON teacher_class.teacher_user_id = teacher.id
+          AND teacher_class.status = 'ACTIVE' AND teacher_class.class_organization_id IN
+          <foreach collection="organizationIds" item="id" open="(" separator="," close=")">#{id}</foreach>
+        WHERE teacher.status = 'ENABLED'
+          AND EXISTS (SELECT 1 FROM sys_user_role ur JOIN sys_role r ON r.id = ur.role_id
+            WHERE ur.user_id = teacher.id AND r.role_code = 'TEACHER' AND r.status = 'ENABLED')
+          AND EXISTS (SELECT 1 FROM sys_user_organization membership
+            WHERE membership.user_id = teacher.id AND membership.organization_id IN
+            <foreach collection="organizationIds" item="id" open="(" separator="," close=")">#{id}</foreach>)
+        <if test="classId != null">AND teacher_class.class_organization_id = #{classId}</if>
+        <if test="keyword != null">AND teacher.display_name LIKE CONCAT('%', #{keyword}, '%')</if>
+        ORDER BY teacher.display_name, teacher.id, teacher_class.class_organization_id
+    </select>
 </mapper>

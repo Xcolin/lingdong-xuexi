@@ -2,9 +2,10 @@ import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { ViewportTable as Table } from '../../components/ViewportTable';
 import { useEffect, useRef, useState } from 'react';
 import { Alert, App, Descriptions, Drawer, Select, Space, Tag, Tooltip } from 'antd';
-import { Download, Eye, History, RefreshCw } from 'lucide-react';
+import { Download, Eye, History } from 'lucide-react';
 import { growthReviewExportApi as api, type GrowthReviewExportPage, type GrowthReviewExportRecord } from './exportApi';
 import type { ExportJobStatus } from '../../api/export-jobs';
+import { formatDateTime } from '../../utils/datetime';
 
 const labels: Record<ExportJobStatus, string> = {
   QUEUED: '排队中', EXPORTING: '生成中', SUCCEEDED: '已完成', FAILED: '失败', PENDING_REVIEW: '待审核', REJECTED: '已拒绝'
@@ -67,13 +68,11 @@ export function GrowthReviewExportHistory({ studentId, initialOpen = false }: { 
   }
   return <>
     <Button actionKey="growth-reviews.growth-review-export-history.1" icon={<History size={16} />} onClick={() => { setPage(1); setOpen(true); }}>导出历史</Button>
-    <Drawer title="复盘导出历史" open={open} onClose={close} width={800}>
+    <Drawer title="复盘导出历史" open={open} onClose={close} width="min(1100px, 92vw)">
       <Space wrap style={{ marginBottom: 16 }}>
         <Select aria-label="导出状态" placeholder="全部状态" allowClear value={status} style={{ width: 140 }}
           options={(['QUEUED', 'EXPORTING', 'SUCCEEDED', 'FAILED'] as const).map(value => ({ value, label: labels[value] }))}
           onChange={value => { epoch.current++; setStatus(value); setPage(1); }} />
-        <Tooltip title="刷新导出历史"><Button actionKey="growth-reviews.growth-review-export-history.2" aria-label="刷新导出历史" icon={<RefreshCw size={16} />} loading={loading}
-          onClick={() => { epoch.current++; setRefresh(value => value + 1); }} /></Tooltip>
       </Space>
       {error && <Alert type="error" showIcon message={error} />}
       <Table rowKey="id" size="small" loading={loading} dataSource={data.items} scroll={{ x: 650 }}
@@ -82,7 +81,7 @@ export function GrowthReviewExportHistory({ studentId, initialOpen = false }: { 
           { title: '作业编码', dataIndex: 'jobCode', width: 240 },
           { title: '状态', dataIndex: 'status', width: 90, render: (value: ExportJobStatus) => <Tag>{labels[value]}</Tag> },
           { title: '完成份数', width: 90, render: (_, row) => `${row.processedRows}/${row.totalRows}` },
-          { title: '申请时间', dataIndex: 'requestedAt', width: 170, render: (value: string) => value.replace('T', ' ') },
+          { title: '申请时间', dataIndex: 'requestedAt', width: 170, render: (value: string) => formatDateTime(value) },
           { title: '操作', fixed: 'right', width: 90, render: (_, row) => <Space size={0}>
             <Tooltip title="查看详情"><Button actionKey="growth-reviews.growth-review-export-history.3" type="text" aria-label={`详情-${row.jobCode}`} icon={<Eye size={16} />} onClick={() => void showDetail(row.id)} /></Tooltip>
             <Tooltip title="下载结果"><Button actionKey="growth-reviews.growth-review-export-history.4" type="text" aria-label={`下载-${row.jobCode}`} icon={<Download size={16} />}
@@ -90,7 +89,7 @@ export function GrowthReviewExportHistory({ studentId, initialOpen = false }: { 
           </Space> }
         ]} />
       {detail && <section aria-label="导出作业详情" style={{ marginTop: 24, overflowWrap: 'anywhere' }}>
-        <Descriptions column={1} title="作业详情" items={[
+        <Descriptions column={{ xs: 1, sm: 2 }} title="作业详情" items={[
           { key: 'code', label: '作业编码', children: detail.jobCode },
           { key: 'template', label: '模板', children: detail.templateName },
           { key: 'version', label: '版本', children: detail.templateVersion },

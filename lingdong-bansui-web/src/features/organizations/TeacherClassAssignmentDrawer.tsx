@@ -65,7 +65,7 @@ export function TeacherClassAssignmentDrawer({ open, onClose }: TeacherClassAssi
   }
 
   return (
-    <Drawer title="配置教师班级" open={open} onClose={onClose} width={520} destroyOnClose>
+    <Drawer title="配置教师班级" open={open} onClose={onClose} width="min(520px, 92vw)" destroyOnClose>
       <Spin spinning={loading}>
         <Form form={form} layout="vertical">
           <Form.Item label="班级" name="classOrganizationId" rules={[{ required: true, message: '请选择班级' }]}>

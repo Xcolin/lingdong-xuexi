@@ -1,7 +1,6 @@
 <template>
  <view class="page">
   <text class="title">家庭奖励与兑换</text>
-  <button :disabled="busy" @tap="reload">刷新</button>
   <text v-if="busy">正在加载或处理</text><text v-if="error" class="error">{{ error }}</text>
   <picker v-if="children.length" :range="children" range-key="studentName" :value="childIndex" :disabled="busy" @change="changeChild"><view class="field">当前孩子：{{ child?.studentName }}（{{ primary?'主家长':'副家长，只读' }}）</view></picker>
   <text v-if="ready&&!children.length">暂无可查看的孩子</text>

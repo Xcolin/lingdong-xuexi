@@ -9,8 +9,9 @@ import com.lingdong.learning.cache.domain.CacheOperationStatus;
 import com.lingdong.learning.cache.domain.CacheOperationType;
 
 import java.time.LocalDateTime;
+import java.util.function.Function;
 
-/** 高风险缓存任务审核队列响应。 */
+/** 高风险缓存任务审核队列响应；提交人展示为姓名。 */
 public record CacheReviewQueueResponse(
         @JsonSerialize(using = ToStringSerializer.class) Long operationId,
         @JsonSerialize(using = ToStringSerializer.class) Long taskId,
@@ -20,10 +21,10 @@ public record CacheReviewQueueResponse(
         String impactDescription,
         SystemTaskStatus taskStatus,
         String taskTitle,
-        @JsonSerialize(using = ToStringSerializer.class) Long submittedBy,
+        String submittedBy,
         LocalDateTime submittedAt
 ) {
-    public static CacheReviewQueueResponse from(CacheReviewQueueItem item) {
+    public static CacheReviewQueueResponse from(CacheReviewQueueItem item, Function<Long, String> nameOf) {
         return new CacheReviewQueueResponse(
                 item.operationId(),
                 item.taskId(),
@@ -33,7 +34,7 @@ public record CacheReviewQueueResponse(
                 item.impactDescription(),
                 item.taskStatus(),
                 item.taskTitle(),
-                item.submittedBy(),
+                nameOf.apply(item.submittedBy()),
                 item.submittedAt()
         );
     }

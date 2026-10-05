@@ -23,13 +23,14 @@ public record OrganizationTreeNodeResponse(
         Integer versionNo,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
+        String adminDivisionCode,
         List<OrganizationTreeNodeResponse> children
 ) {
-    static OrganizationTreeNodeResponse from(Organization organization) {
+    public static OrganizationTreeNodeResponse from(Organization organization) {
         return from(organization, List.of());
     }
 
-    static OrganizationTreeNodeResponse from(
+    public static OrganizationTreeNodeResponse from(
             Organization organization,
             List<OrganizationTreeNodeResponse> children
     ) {
@@ -37,7 +38,7 @@ public record OrganizationTreeNodeResponse(
                 organization.id(), organization.parentId(), organization.code(), organization.name(), organization.typeCode(),
                 organization.path(), organization.sortOrder(), organization.status(), organization.effectiveStatus(),
                 organization.versionNo(), organization.createdAt(), organization.updatedAt(),
-                children
+                organization.adminDivisionCode(), children
         );
     }
 }

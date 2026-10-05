@@ -19,7 +19,7 @@ import com.lingdong.learning.feature.infrastructure.persistence.FeatureManagemen
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** 全局开关管理门面，实时校验 Web 权限、固定职责和提交版本。 */
+/** 全局开关管理门面，实时校验 Web 权限和提交版本。 */
 @Service
 public class FeatureManagementService {
     private final FeatureManagementMapper mapper;
@@ -39,14 +39,13 @@ public class FeatureManagementService {
     @Transactional(readOnly=true)
     public Page listChanges(AuthenticatedUser user,SystemTaskStatus status,int page,int pageSize,boolean queue) {
         boolean auditor=access(user,"FEATURE_TOGGLE_READ");
-        if(queue) { access(user,"FEATURE_TOGGLE_REVIEW"); if(!auditor)throw denied(); status=SystemTaskStatus.PENDING_REVIEW; }
+        if(queue) { access(user,"FEATURE_TOGGLE_REVIEW"); auditor=true; status=SystemTaskStatus.PENDING_REVIEW; }
         if(page<1||page>1_000_000||pageSize<1||pageSize>100)throw new IllegalArgumentException("分页参数不合法");
         return new Page(mapper.findPage(user.userId(),auditor,status,pageSize,(page-1)*pageSize),page,pageSize,mapper.count(user.userId(),auditor,status));
     }
     @Transactional
     public ChangeView submit(AuthenticatedUser user,String code,FeatureStatus target,Long expectedVersion,String title,String description,boolean confirmed) {
-        access(user,"FEATURE_TOGGLE_READ"); boolean auditor=access(user,"FEATURE_TOGGLE_MANAGE");
-        if(auditor||!roles.hasRoleCode(user.userId(),"SYS_ADMIN"))throw denied();
+        access(user,"FEATURE_TOGGLE_READ"); access(user,"FEATURE_TOGGLE_MANAGE");
         if(!confirmed||target==null||expectedVersion==null||expectedVersion<0)throw new IllegalArgumentException("请确认变更及当前版本");
         var toggle=toggles.findGlobalForUpdate(code);
         if(toggle==null)throw new IllegalArgumentException("全局开关不存在");
@@ -59,7 +58,7 @@ public class FeatureManagementService {
     @Transactional
     public ChangeView review(AuthenticatedUser user,Long taskId,String comment,boolean approve) {
         access(user,"FEATURE_TOGGLE_READ");
-        if(!access(user,"FEATURE_TOGGLE_REVIEW"))throw denied();
+        access(user,"FEATURE_TOGGLE_REVIEW");
         details(taskId); // 先限定领域，不能审核其他类型系统任务。
         if(comment!=null&&comment.trim().length()>500)throw new IllegalArgumentException("审批意见最长500字");
         if(approve)changes.approveAndApply(taskId,user.userId(),comment);
@@ -73,12 +72,10 @@ public class FeatureManagementService {
     }
     private boolean access(AuthenticatedUser user,String permission) {
         if(user==null||user.clientType()!=AuthClientType.WEB||!permissions.isAllowed(user.userId(),PermissionClient.WEB,permission))throw denied();
-        boolean auditor=roles.hasRoleCode(user.userId(),"SYS_AUDITOR");
-        if(!auditor&&!roles.hasRoleCode(user.userId(),"SYS_ADMIN"))throw denied();
-        return auditor;
+        return permissions.isAllowed(user.userId(),PermissionClient.WEB,"FEATURE_TOGGLE_REVIEW");
     }
     private SystemOperationAccessDeniedException denied(){return new SystemOperationAccessDeniedException("无权执行功能开关管理操作");}
     public record ToggleView(String id,String featureCode,String featureName,String status,String versionNo,String description,boolean enableAllowed){}
-    public record ChangeView(String id,String taskId,String featureCode,String featureName,String beforeStatus,String targetStatus,String currentStatus,String baseVersion,String currentVersion,String taskStatus,String title,String description,String submittedBy,String submittedAt,String reviewedBy,String reviewedAt,String reviewComment,String createdAt,boolean enableAllowed){}
+    public record ChangeView(String id,String taskId,String featureCode,String featureName,String beforeStatus,String targetStatus,String currentStatus,String baseVersion,String currentVersion,String taskStatus,String title,String description,String submittedBy,String submittedByUserId,String submittedAt,String reviewedBy,String reviewedAt,String reviewComment,String createdAt,boolean enableAllowed){}
     public record Page(List<ChangeView> items,int page,int pageSize,long total){}
 }

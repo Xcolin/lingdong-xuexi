@@ -18,7 +18,8 @@ export function BatchPublishResultModal({ result, onClose }: BatchPublishResultM
       onOk={onClose}
       cancelButtonProps={{ style: { display: 'none' } }}
       okText="关闭"
-      width={680}
+      width="min(880px, 92vw)"
+      styles={{ body: { maxHeight: 'calc(100vh - 220px)', overflowY: 'auto' } }}
     >
       {result && (
         <>

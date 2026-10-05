@@ -26,12 +26,20 @@ import com.lingdong.learning.user.domain.User;
 import com.lingdong.learning.user.domain.UserStatus;
 import com.lingdong.learning.user.domain.UserType;
 import com.lingdong.learning.iam.audit.infrastructure.persistence.IamChangeAuditMapper;
+import com.lingdong.learning.menu.application.MenuApplicationService;
+import com.lingdong.learning.menu.application.MenuOrderCommand;
+import com.lingdong.learning.menu.application.MenuWriteCommand;
+import com.lingdong.learning.menu.domain.MenuStatus;
+import com.lingdong.learning.menu.domain.MenuType;
+import com.lingdong.learning.auth.application.AuthenticatedUser;
+import com.lingdong.learning.auth.domain.AuthClientType;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -48,6 +56,7 @@ class IamChangeAuditPersistenceTest {
     @Autowired private OrganizationApplicationService organizationService;
     @Autowired private RoleMapper roleMapper;
     @Autowired private IamChangeAuditService auditService;
+    @Autowired private MenuApplicationService menuService;
 
     @Test
     void appendsEverySupportedEventWithoutCreatingLogsForNoopOperations() {
@@ -91,11 +100,27 @@ class IamChangeAuditPersistenceTest {
         auditService.record(IamChangeAuditEventType.USER_PASSWORD_RESET, operator.id(),
                 IamChangeTargetType.USER, target.id(), null, school.id(), null, "会话已撤销");
 
+        // 菜单管理操作：产生 MENU_CREATE / MENU_UPDATE / MENU_REORDER 审计，覆盖全部审计事件类型
+        AuthenticatedUser menuOperator = new AuthenticatedUser(
+                operator.id(), 1L, operator.username(), operator.displayName(), AuthClientType.WEB, List.of("SYS_ADMIN"));
+        var menuPage = menuService.create(menuOperator, new MenuWriteCommand(
+                "AUDIT_PERSIST_PAGE", "审计页面", MenuType.PAGE, null, "/audit-persist", null, false, 0, MenuStatus.ENABLED, null));
+        var buttonA = menuService.create(menuOperator, new MenuWriteCommand(
+                "AUDIT_PERSIST_BTN_A", "审计按钮甲", MenuType.BUTTON, menuPage.id(), null, null, true, 0, MenuStatus.ENABLED, null));
+        var buttonB = menuService.create(menuOperator, new MenuWriteCommand(
+                "AUDIT_PERSIST_BTN_B", "审计按钮乙", MenuType.BUTTON, menuPage.id(), null, null, true, 10, MenuStatus.ENABLED, null));
+        menuService.update(menuOperator, menuPage.id(), new MenuWriteCommand(
+                "AUDIT_PERSIST_PAGE", "审计页面改名", MenuType.PAGE, null, "/audit-persist", null, false, 0, MenuStatus.ENABLED, menuPage.version()));
+        menuService.order(menuOperator, new MenuOrderCommand(menuPage.id(),
+                List.of(buttonB.id(), buttonA.id()),
+                java.util.Map.of(buttonA.id(), buttonA.version(), buttonB.id(), buttonB.version())));
+
         IamChangeAuditPage page = auditService.query(null, null, operator.id(), null, null, null, 1, 100);
         Set<IamChangeAuditEventType> eventTypes = page.items().stream()
                 .map(IamChangeAudit::eventType).collect(Collectors.toSet());
 
-        assertThat(page.total()).isEqualTo(15);
+        // 15 条既有事件 + 3 条 MENU_CREATE + 1 条 MENU_UPDATE + 2 条 MENU_REORDER = 21
+        assertThat(page.total()).isEqualTo(21);
         assertThat(eventTypes).containsExactlyInAnyOrder(IamChangeAuditEventType.values());
     }
 

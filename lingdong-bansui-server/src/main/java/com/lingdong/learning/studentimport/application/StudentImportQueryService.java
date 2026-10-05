@@ -34,11 +34,12 @@ public class StudentImportQueryService {
         validatePage(page, pageSize);
         requireId(operatorId, "操作人");
         accessService.requireListRead(operatorId);
+        var scope = accessService.currentScope(operatorId);
         int offset = Math.multiplyExact(page - 1, pageSize);
         return new StudentImportPage(
-                executionMapper.findPageByRequester(operatorId, status, offset, pageSize)
+                executionMapper.findPageByRequesterScope(operatorId, status, scope, offset, pageSize)
                         .stream().map(StudentImportView::from).toList(),
-                page, pageSize, executionMapper.countByRequester(operatorId, status));
+                page, pageSize, executionMapper.countByRequesterScope(operatorId, status, scope));
     }
 
     public StudentImportView findDetail(Long operatorId, Long executionId) {

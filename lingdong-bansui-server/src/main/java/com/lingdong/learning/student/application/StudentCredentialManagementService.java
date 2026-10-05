@@ -20,6 +20,7 @@ import java.util.Objects;
 /** 按主家长或直接机构管理员范围初始化、重置学生登录凭证。 */
 @Service
 public class StudentCredentialManagementService {
+    private final StudentManagementAccessService managementAccess;
     private static final String PARENT_ROLE = "PARENT";
     private static final String ORGANIZATION_ADMIN_ROLE = "ORG_ADMIN";
 
@@ -36,8 +37,9 @@ public class StudentCredentialManagementService {
             StudentOrganizationMapper studentOrganizationMapper,
             StudentIdentityProvisioningService identityProvisioningService,
             AuthenticationApplicationService authenticationApplicationService,
-            UserMapper userMapper
+            UserMapper userMapper, StudentManagementAccessService managementAccess
     ) {
+        this.managementAccess = managementAccess;
         this.studentMapper = studentMapper;
         this.parentStudentMapper = parentStudentMapper;
         this.studentOrganizationMapper = studentOrganizationMapper;
@@ -48,6 +50,7 @@ public class StudentCredentialManagementService {
 
     @Transactional
     public StudentCredentialIssueResult initialize(AuthenticatedUser currentUser, Long studentId) {
+        managementAccess.require(currentUser, "STUDENT_CREDENTIAL_INITIALIZE");
         Student student = requireScopedEnabledStudent(currentUser, studentId);
         if (student.studentUserId() != null) {
             throw new IllegalStateException("学生登录凭证已经初始化");
@@ -61,6 +64,7 @@ public class StudentCredentialManagementService {
 
     @Transactional
     public StudentCredentialIssueResult resetLoginCode(AuthenticatedUser currentUser, Long studentId) {
+        managementAccess.require(currentUser, "STUDENT_LOGIN_CODE_RESET");
         Student student = requireScopedEnabledStudent(currentUser, studentId);
         if (student.studentUserId() == null) {
             throw new IllegalStateException("学生登录凭证尚未初始化");
@@ -92,7 +96,9 @@ public class StudentCredentialManagementService {
     private boolean hasObjectScope(AuthenticatedUser currentUser, Long studentId) {
         boolean primaryParent = currentUser.roleCodes().contains(PARENT_ROLE)
                 && parentStudentMapper.existsActivePrimaryByParentAndStudent(currentUser.userId(), studentId);
-        boolean directOrganizationAdministrator = currentUser.roleCodes().contains(ORGANIZATION_ADMIN_ROLE)
+        boolean directOrganizationAdministrator = managementAccess.webAllowed(currentUser, "STUDENT_CREDENTIAL_INITIALIZE") || managementAccess.webAllowed(currentUser, "STUDENT_LOGIN_CODE_RESET")
+                ? managementAccess.studentAllowed(currentUser, studentId)
+                : currentUser.roleCodes().contains(ORGANIZATION_ADMIN_ROLE)
                 && studentOrganizationMapper.existsActiveByOrganizationAdministratorAndStudent(
                 currentUser.userId(), studentId);
         return primaryParent || directOrganizationAdministrator;

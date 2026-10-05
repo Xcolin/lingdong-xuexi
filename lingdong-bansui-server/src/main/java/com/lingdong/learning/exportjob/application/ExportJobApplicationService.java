@@ -197,7 +197,8 @@ public class ExportJobApplicationService {
                 systemTaskType, systemTaskStatus, taskScope == null ? null : taskScope.auditor(),
                 taskScope == null ? null : taskScope.types(), rewardExchangeStatus, exceptionType, exceptionStatus,
                 exceptionScope == null ? null : exceptionScope.teacherOnly(), exceptionClassIds, attachmentModule, attachmentUploader, attachmentCategory, studentTaskSource, studentTaskStatus, studentTaskScope == null ? null : studentTaskScope.ids(),
-                orgStatScope == null ? null : orgStatScope.ids(), attScope == null ? null : attScope.ids());
+                orgStatScope == null ? null : orgStatScope.ids(), attScope == null ? null : attScope.ids(),
+                taskScope == null ? null : taskScope.reviewableTypes());
         long upperBound = adapter.captureUpperBound(request);
         LocalDateTime now = LocalDateTime.now(clock);
         long jobId = idGenerator.nextId();
@@ -216,7 +217,8 @@ public class ExportJobApplicationService {
                 json(new ExportScopeSnapshot(command.studentId(), upperBound, taskScope == null ? null : taskScope.auditor(),
                         taskScope == null ? null : taskScope.types(), exceptionScope == null ? null : exceptionScope.teacherOnly(), exceptionClassIds, studentTaskScope == null ? null : studentTaskScope.role(), studentTaskScope == null ? null : studentTaskScope.ids(),
                         orgStatScope == null ? null : orgStatScope.role(), orgStatScope == null ? null : orgStatScope.ids(),
-                        attScope == null ? null : attScope.role(), attScope == null ? null : attScope.ids())),
+                        attScope == null ? null : attScope.role(), attScope == null ? null : attScope.ids(),
+                        taskScope == null ? null : taskScope.reviewableTypes())),
                 json(new ExportMaskPolicySnapshot("FAMILY_NAME_STAR", 1)),
                 reason, adapter.sensitive(), status, 0L, null, 0L, 0L, null, null,
                 sourceHasher.hash(command.requestSource()), now, null,

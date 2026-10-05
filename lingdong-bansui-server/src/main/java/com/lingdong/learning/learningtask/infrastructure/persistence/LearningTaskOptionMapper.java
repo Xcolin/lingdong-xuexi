@@ -9,6 +9,10 @@ import java.util.List;
 /** 按关系和组织路径裁剪任务表单候选项。 */
 @Mapper
 public interface LearningTaskOptionMapper {
+    List<StudentOptionRow> findScopedStudentOptions(@Param("organizationIds") List<Long> organizationIds,
+            @Param("organizationId") Long organizationId, @Param("keyword") String keyword);
+    List<TeacherOptionRow> findScopedTeacherOptions(@Param("organizationIds") List<Long> organizationIds,
+            @Param("classId") Long classId, @Param("keyword") String keyword);
     List<OrganizationOption> findOrganizationOptionsForAdministrator(
             @Param("userId") Long userId,
             @Param("organizationType") String organizationType

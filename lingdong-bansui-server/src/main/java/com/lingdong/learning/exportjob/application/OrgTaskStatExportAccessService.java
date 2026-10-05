@@ -43,11 +43,12 @@ public class OrgTaskStatExportAccessService {
         for (String feature : List.of("DATA_EXPORT", "IMPORT_EXPORT_TEMPLATE_MANAGEMENT", "ATTACHMENT_SERVICE", "LEARNING_TASK_MANAGEMENT")) features.requireEnabled(feature, null);
         var roleCodes = roles.findEnabledRoleCodesByUserId(userId);
         // 审核员仅处理系统审批，兼任机构管理员也不能导出机构统计。
-        if (roleCodes.contains("SYS_AUDITOR") || !roleCodes.contains("ORG_ADMIN")) throw denied();
+        // Operation permissions below authorize organization statistics; no built-in role is required.
         for (String permission : List.of("ORGANIZATION_TASK_STATISTICS_EXPORT", "LEARNING_TASK_PROGRESS_READ")) {
             if (!permissions.isAllowed(userId, PermissionClient.WEB, permission)) throw denied();
         }
         var scope = organizations.resolve(userId);
+        if (!scope.allOrganizations() && scope.rootPaths().isEmpty()) throw denied();
         return new StudentTaskVisibility(userId, "ORG_ADMIN", scope.allOrganizations(), scope.rootPaths());
     }
 

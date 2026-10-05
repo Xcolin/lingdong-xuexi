@@ -36,6 +36,7 @@ public class LearningTaskScopeService {
     private final UserMapper userMapper;
     private final UserRoleMapper userRoleMapper;
     private final LearningTaskAssignmentMapper assignmentMapper;
+    private final com.lingdong.learning.permission.application.PermissionDecisionService permissions;
 
     public LearningTaskScopeService(
             OrganizationMapper organizationMapper,
@@ -45,7 +46,8 @@ public class LearningTaskScopeService {
             TeacherClassMapper teacherClassMapper,
             UserMapper userMapper,
             UserRoleMapper userRoleMapper,
-            LearningTaskAssignmentMapper assignmentMapper
+            LearningTaskAssignmentMapper assignmentMapper,
+            com.lingdong.learning.permission.application.PermissionDecisionService permissions
     ) {
         this.organizationMapper = organizationMapper;
         this.organizationDataScopeService = organizationDataScopeService;
@@ -55,6 +57,7 @@ public class LearningTaskScopeService {
         this.userMapper = userMapper;
         this.userRoleMapper = userRoleMapper;
         this.assignmentMapper = assignmentMapper;
+        this.permissions = permissions;
     }
 
     public Long validateAndResolveReviewer(
@@ -114,7 +117,7 @@ public class LearningTaskScopeService {
         if (currentUser == null || task == null || task.sourceType() == LearningTaskSourceType.FAMILY) {
             throw notFound();
         }
-        if (hasRole(currentUser, "ORG_ADMIN") && task.sourceType() == LearningTaskSourceType.ORGANIZATION
+        if (hasOrganizationAccess(currentUser, "LEARNING_TASK_PROGRESS_READ") && task.sourceType() == LearningTaskSourceType.ORGANIZATION
                 && task.sourceOrganizationId() != null
                 && organizationDataScopeService.canAccess(currentUser.userId(), task.sourceOrganizationId())) {
             return;
@@ -162,7 +165,9 @@ public class LearningTaskScopeService {
             Long requestedReviewerUserId,
             ValidatedLearningTaskDraft draft
     ) {
-        requireRole(currentUser, "ORG_ADMIN");
+        if (currentUser != null && currentUser.clientType() == com.lingdong.learning.auth.domain.AuthClientType.WEB) {
+            if (!hasAnyTaskPermission(currentUser)) throw notFound();
+        } else requireRole(currentUser, "ORG_ADMIN");
         Organization source = requireEnabledAccessibleOrganization(currentUser, sourceOrganizationId);
         Long reviewerUserId = requestedReviewerUserId == null
                 ? currentUser.userId() : requestedReviewerUserId;
@@ -265,12 +270,51 @@ public class LearningTaskScopeService {
     }
 
     private boolean hasRole(AuthenticatedUser currentUser, String roleCode) {
+        if ("ORG_ADMIN".equals(roleCode) && currentUser != null
+                && currentUser.clientType() == com.lingdong.learning.auth.domain.AuthClientType.WEB) {
+            return hasAnyTaskPermission(currentUser);
+        }
         // 审核员仅处理系统审批，兼任业务角色也不能进入任务业务范围。
-        return currentUser != null && !currentUser.roleCodes().contains("SYS_AUDITOR")
+        return currentUser != null && (currentUser.clientType() == com.lingdong.learning.auth.domain.AuthClientType.WEB
+                || !currentUser.roleCodes().contains("SYS_AUDITOR"))
+                && (currentUser.clientType() != com.lingdong.learning.auth.domain.AuthClientType.WEB
+                    || hasAnyTaskPermission(currentUser))
                 && currentUser.roleCodes().contains(roleCode);
+    }
+
+    public boolean hasOrganizationPermission(AuthenticatedUser user, String code) {
+        return user != null && user.clientType() == com.lingdong.learning.auth.domain.AuthClientType.WEB
+                && permissions.isAllowed(user.userId(), com.lingdong.learning.permission.domain.PermissionClient.WEB, code);
+    }
+
+    public boolean hasOrganizationAccess(AuthenticatedUser user, String code) {
+        return hasOrganizationPermission(user, code) || user != null
+                && user.clientType() == com.lingdong.learning.auth.domain.AuthClientType.MINIAPP
+                && user.roleCodes().contains("ORG_ADMIN") && !user.roleCodes().contains("SYS_AUDITOR");
+    }
+
+    public boolean canReadOrganizationProgress(AuthenticatedUser user, LearningTask task) {
+        return task != null && task.sourceType() == LearningTaskSourceType.ORGANIZATION
+                && task.sourceOrganizationId() != null && hasOrganizationAccess(user, "LEARNING_TASK_PROGRESS_READ")
+                && organizationDataScopeService.canAccess(user.userId(), task.sourceOrganizationId());
+    }
+
+    private boolean hasAnyTaskPermission(AuthenticatedUser user) {
+        return java.util.List.of("LEARNING_TASK_READ_MANAGED", "LEARNING_TASK_CREATE", "LEARNING_TASK_PUBLISH",
+                "LEARNING_TASK_PROGRESS_READ").stream().anyMatch(code -> hasOrganizationPermission(user, code));
+    }
+
+    public void requireWebPermission(AuthenticatedUser user, String code) {
+        if (user == null || user.clientType() == com.lingdong.learning.auth.domain.AuthClientType.WEB
+                && !hasOrganizationPermission(user, code)) throw new SystemOperationAccessDeniedException("当前账号无操作权限：" + code);
+    }
+
+    public com.lingdong.learning.datascope.application.OrganizationDataScope organizationScope(AuthenticatedUser user) {
+        return organizationDataScopeService.resolve(user.userId());
     }
 
     private ResourceNotFoundException notFound() {
         return new ResourceNotFoundException("任务资源不存在或不可访问");
     }
 }
+

@@ -4,6 +4,7 @@ import { Alert, Checkbox, Form, Input, message, Modal, Select, Space, Tabs, Tag,
 import { ProCard } from '@ant-design/pro-components';
 import { Check, RefreshCw, Send, Trash2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { formatDateTime as formatTime } from '../../utils/datetime';
 import {
   cacheManagementApi,
   type CacheDomain,
@@ -210,7 +211,7 @@ export function CacheManagementPage({ canManage, canReview }: CacheManagementPag
             render: (_, item) => (
               <Space size={4}>
                 <Tooltip title="批准并执行">
-                  <Button actionKey="cache-management.cache-management-page.1" type="text" icon={<Check size={16} />} aria-label={`批准-${item.taskTitle}`} onClick={() => openReviewModal(item, 'approve')} />
+                  <Button actionKey="CACHE_REVIEW" type="text" icon={<Check size={16} />} aria-label={`批准-${item.taskTitle}`} onClick={() => openReviewModal(item, 'approve')} />
                 </Tooltip>
                 <Tooltip title="驳回">
                   <Button actionKey="cache-management.cache-management-page.2" danger type="text" icon={<X size={16} />} aria-label={`驳回-${item.taskTitle}`} onClick={() => openReviewModal(item, 'reject')} />
@@ -229,7 +230,7 @@ export function CacheManagementPage({ canManage, canReview }: CacheManagementPag
         <h1>缓存管理</h1>
         {canManage && (
           <Space wrap>
-            <Button actionKey="cache-management.cache-management-page.3" icon={<RefreshCw size={16} />} onClick={openDirectModal}>执行缓存操作</Button>
+            <Button actionKey="CACHE_MANAGE" icon={<RefreshCw size={16} />} onClick={openDirectModal}>执行缓存操作</Button>
             <Button actionKey="cache-management.cache-management-page.4" danger icon={<Send size={16} />} onClick={openHighRiskModal}>提交高风险操作</Button>
           </Space>
         )}
@@ -244,7 +245,7 @@ export function CacheManagementPage({ canManage, canReview }: CacheManagementPag
         ].filter((item): item is NonNullable<typeof item> => item !== null)}
       />
 
-      <Modal title="执行缓存操作" open={directModalOpen} footer={null} onCancel={() => setDirectModalOpen(false)} destroyOnHidden>
+      <Modal title="执行缓存操作" open={directModalOpen} footer={null} onCancel={() => setDirectModalOpen(false)} destroyOnHidden width="min(640px, 92vw)">
         <Form form={directForm} layout="vertical" onFinish={executeDirect}>
           <Form.Item label="缓存域" name="cacheDomain" rules={[{ required: true }]}>
             <Select options={[{ value: 'DICTIONARY', label: '数据字典' }]} />
@@ -259,7 +260,7 @@ export function CacheManagementPage({ canManage, canReview }: CacheManagementPag
         </Form>
       </Modal>
 
-      <Modal title="提交高风险操作" open={highRiskModalOpen} footer={null} onCancel={() => setHighRiskModalOpen(false)} destroyOnHidden>
+      <Modal title="提交高风险操作" open={highRiskModalOpen} footer={null} onCancel={() => setHighRiskModalOpen(false)} destroyOnHidden width="min(680px, 92vw)" styles={{ body: { maxHeight: 'calc(100vh - 220px)', overflowY: 'auto' } }}>
         <Alert type="warning" showIcon message="该操作提交后必须由系统审核员审批，批准后立即执行。" />
         <Alert type="error" showIcon message="真实执行范围：全部已注册缓存；用户会话清除会强制退出所有活动设备会话，包括当前审核会话。" />
         <Form form={highRiskForm} layout="vertical" onFinish={submitHighRisk} className="cache-risk-form">
@@ -283,6 +284,7 @@ export function CacheManagementPage({ canManage, canReview }: CacheManagementPag
         title={reviewAction === 'approve' ? '批准高风险任务' : '驳回高风险任务'}
         open={Boolean(reviewAction && selectedReview)}
         footer={null}
+        width="min(520px, 92vw)"
         onCancel={closeReviewModal}
         destroyOnHidden
       >
@@ -340,10 +342,6 @@ function domainLabel(value: CacheDomain): string {
 
 function operationTypeLabel(value: CacheOperationType): string {
   return value === 'CLEAR' ? '清除' : '刷新';
-}
-
-function formatTime(value?: string): string {
-  return value ? value.replace('T', ' ').slice(0, 19) : '-';
 }
 
 function toMessage(error: unknown): string {

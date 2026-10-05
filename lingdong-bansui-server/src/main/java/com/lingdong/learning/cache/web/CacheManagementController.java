@@ -2,10 +2,13 @@ package com.lingdong.learning.cache.web;
 
 import com.lingdong.learning.auth.application.AuthenticatedUser;
 import com.lingdong.learning.cache.application.CacheOperationApplicationService;
+import com.lingdong.learning.cache.application.CacheReviewQueueItem;
 import com.lingdong.learning.cache.application.CreateHighRiskCacheOperationCommand;
 import com.lingdong.learning.cache.application.ExecuteCacheOperationCommand;
+import com.lingdong.learning.cache.domain.CacheOperation;
 import com.lingdong.learning.common.security.RequirePermission;
 import com.lingdong.learning.feature.application.FeatureAccessService;
+import com.lingdong.learning.user.application.UserDisplayNameResolver;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -18,6 +21,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 /** 提供受功能开关和动态 RBAC 共同保护的缓存管理 Web 接口。 */
 @RestController
@@ -27,13 +31,16 @@ public class CacheManagementController {
 
     private final CacheOperationApplicationService cacheOperationApplicationService;
     private final FeatureAccessService featureAccessService;
+    private final UserDisplayNameResolver userNames;
 
     public CacheManagementController(
             CacheOperationApplicationService cacheOperationApplicationService,
-            FeatureAccessService featureAccessService
+            FeatureAccessService featureAccessService,
+            UserDisplayNameResolver userNames
     ) {
         this.cacheOperationApplicationService = cacheOperationApplicationService;
         this.featureAccessService = featureAccessService;
+        this.userNames = userNames;
     }
 
     @RequirePermission("CACHE_READ")
@@ -42,8 +49,10 @@ public class CacheManagementController {
             @AuthenticationPrincipal AuthenticatedUser currentUser
     ) {
         requireFeature();
-        return cacheOperationApplicationService.listRecent(currentUser.userId()).stream()
-                .map(CacheOperationResponse::from)
+        List<CacheOperation> operations = cacheOperationApplicationService.listRecent(currentUser.userId());
+        Map<Long, String> names = userNames.resolveAll(operations.stream().map(CacheOperation::requestedBy).toList());
+        return operations.stream()
+                .map(operation -> CacheOperationResponse.from(operation, id -> userNames.nameOf(names, id)))
                 .toList();
     }
 
@@ -60,7 +69,7 @@ public class CacheManagementController {
                         request.cacheDomain(),
                         request.operationType(),
                         request.impactDescription()
-                )));
+                )), userNames::resolve);
     }
 
     @RequirePermission("CACHE_MANAGE")
@@ -79,7 +88,7 @@ public class CacheManagementController {
                         request.title(),
                         request.description(),
                         request.confirmed()
-                )));
+                )), userNames::resolve);
     }
 
     @RequirePermission("CACHE_REVIEW")
@@ -88,8 +97,10 @@ public class CacheManagementController {
             @AuthenticationPrincipal AuthenticatedUser currentUser
     ) {
         requireFeature();
-        return cacheOperationApplicationService.listPendingReviews(currentUser.userId()).stream()
-                .map(CacheReviewQueueResponse::from)
+        List<CacheReviewQueueItem> items = cacheOperationApplicationService.listPendingReviews(currentUser.userId());
+        Map<Long, String> names = userNames.resolveAll(items.stream().map(CacheReviewQueueItem::submittedBy).toList());
+        return items.stream()
+                .map(item -> CacheReviewQueueResponse.from(item, id -> userNames.nameOf(names, id)))
                 .toList();
     }
 
@@ -102,7 +113,7 @@ public class CacheManagementController {
     ) {
         requireFeature();
         return CacheOperationResponse.from(cacheOperationApplicationService.approveAndExecute(
-                taskId, currentUser.userId(), request.comment()));
+                taskId, currentUser.userId(), request.comment()), userNames::resolve);
     }
 
     @RequirePermission("CACHE_REVIEW")
@@ -114,7 +125,7 @@ public class CacheManagementController {
     ) {
         requireFeature();
         return CacheOperationResponse.from(cacheOperationApplicationService.reject(
-                taskId, currentUser.userId(), request.comment()));
+                taskId, currentUser.userId(), request.comment()), userNames::resolve);
     }
 
     private void requireFeature() {

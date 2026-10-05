@@ -28,14 +28,18 @@ it('切换孩子后卸载历史，迟到响应不能展示旧孩子数据', asyn
   resolve({ items: [job], total: 1, page: 1, pageSize: 20 });
   await waitFor(() => expect(screen.queryByText('EXP-测试')).not.toBeInTheDocument());
 });
-it('失败作业不可下载，查询失败显示错误且不保留旧列表', async () => {
+it('失败作业不可下载', async () => {
   api.list.mockResolvedValue({ items: [{ ...job, status: 'FAILED' }], total: 1, page: 1, pageSize: 20 });
   const user = userEvent.setup();
   render(<App><GrowthReviewExportHistory studentId="a" /></App>);
   await user.click(screen.getByRole('button', { name: '导出历史' }));
   expect(await screen.findByRole('button', { name: '下载-EXP-测试' })).toBeDisabled();
+});
+it('查询失败显示错误且不保留旧列表', async () => {
   api.list.mockRejectedValue(new Error('读取权限已撤销'));
-  await user.click(screen.getByRole('button', { name: '刷新导出历史' }));
+  const user = userEvent.setup();
+  render(<App><GrowthReviewExportHistory studentId="a" /></App>);
+  await user.click(screen.getByRole('button', { name: '导出历史' }));
   await screen.findByText('读取权限已撤销');
   expect(screen.queryByText('EXP-测试')).not.toBeInTheDocument();
 });

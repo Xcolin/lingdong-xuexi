@@ -147,16 +147,16 @@ export function ParentRelationshipPage({ currentUser }: ParentRelationshipPagePr
         {!selectedStudentId && !loading ? <Empty description="暂无关联学生" /> : <>
           {canManage && <Space className="parent-relationship-actions" wrap>
             <Tooltip title={relationship?.secondaryParent ? '需先解除现有副家长关系' : undefined}>
-              <Button actionKey="parent-relationships.parent-relationship-page.1"
+              <Button actionKey="SECONDARY_PARENT_INVITE_CREATE"
                 type="primary" icon={<UserPlus size={16} />}
                 disabled={Boolean(relationship?.secondaryParent)}
                 onClick={() => setInvitationMode('SECONDARY')}
               >邀请副家长</Button>
             </Tooltip>
-            <Button actionKey="parent-relationships.parent-relationship-page.2" icon={<ArrowRightLeft size={16} />} onClick={() => setInvitationMode('TRANSFER')}>
+            <Button actionKey="PRIMARY_PARENT_TRANSFER_CREATE" icon={<ArrowRightLeft size={16} />} onClick={() => setInvitationMode('TRANSFER')}>
               转移监护权
             </Button>
-            <Button actionKey="parent-relationships.parent-relationship-page.3" danger icon={<UserMinus size={16} />} onClick={confirmUnbindPrimary}>
+            <Button actionKey="PRIMARY_PARENT_SELF_UNBIND" danger icon={<UserMinus size={16} />} onClick={confirmUnbindPrimary}>
               解除我的主家长关系
             </Button>
           </Space>}
@@ -177,7 +177,7 @@ export function ParentRelationshipPage({ currentUser }: ParentRelationshipPagePr
               { title: '状态', key: 'status', width: 110, render: () => <Tag color="green">有效</Tag> },
               { title: '操作', key: 'action', width: 140, render: (_, member) => (
                 canManage && member.relationshipRole === 'SECONDARY_GUARDIAN'
-                  ? <Button actionKey="parent-relationships.parent-relationship-page.4" danger type="text" icon={<Link2 size={16} />}
+                  ? <Button actionKey="SECONDARY_PARENT_UNBIND" danger type="text" icon={<Link2 size={16} />}
                       onClick={() => confirmUnbindSecondary(member)}>解除副家长</Button>
                   : null
               ) }
@@ -191,6 +191,7 @@ export function ParentRelationshipPage({ currentUser }: ParentRelationshipPagePr
         open={Boolean(invitationMode)}
         okText="发送邀请"
         cancelText="取消"
+        width="min(520px, 92vw)"
         confirmLoading={submitting}
         onOk={() => form.submit()}
         onCancel={() => { setInvitationMode(null); form.resetFields(); }}

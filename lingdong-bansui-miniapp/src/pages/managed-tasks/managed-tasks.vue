@@ -11,7 +11,6 @@
       </view>
     </view>
 
-    <button :disabled="loading || reviewing" @tap="initialize">刷新</button>
     <view v-if="loading" class="state-text">正在加载</view>
     <view v-else-if="errorMessage" class="state-text error">{{ errorMessage }}</view>
     <view v-else-if="reviewMode && reviews.length === 0" class="state-text">暂无审核待办</view>

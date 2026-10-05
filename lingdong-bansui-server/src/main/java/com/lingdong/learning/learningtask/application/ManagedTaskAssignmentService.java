@@ -35,6 +35,7 @@ public class ManagedTaskAssignmentService {
     private final FeatureAccessService featureAccessService;
     private final IdGenerator idGenerator;
     private final Clock clock;
+    private final LearningTaskScopeService permissionScope;
 
     public ManagedTaskAssignmentService(
             ManagedTaskAssignmentMapper managedMapper,
@@ -45,7 +46,7 @@ public class ManagedTaskAssignmentService {
             OrganizationDataScopeService organizationDataScopeService,
             FeatureAccessService featureAccessService,
             IdGenerator idGenerator,
-            Clock clock
+            Clock clock, LearningTaskScopeService permissionScope
     ) {
         this.managedMapper = managedMapper;
         this.assignmentMapper = assignmentMapper;
@@ -55,7 +56,7 @@ public class ManagedTaskAssignmentService {
         this.organizationDataScopeService = organizationDataScopeService;
         this.featureAccessService = featureAccessService;
         this.idGenerator = idGenerator;
-        this.clock = clock;
+        this.clock = clock; this.permissionScope = permissionScope;
     }
 
     @Transactional
@@ -65,6 +66,7 @@ public class ManagedTaskAssignmentService {
             ExemptTaskAssignmentCommand command
     ) {
         featureAccessService.requireEnabled(FEATURE_CODE, null);
+        permissionScope.requireWebPermission(currentUser, "TASK_ASSIGNMENT_EXEMPT");
         Long normalizedId = requireId(assignmentId);
         String reason = normalizeReason(command == null ? null : command.reason());
         ManagedTaskAssignmentStateRow state = managedMapper.findStateForUpdate(normalizedId);
@@ -100,7 +102,7 @@ public class ManagedTaskAssignmentService {
         boolean creatorTeacher = state.sourceType() == LearningTaskSourceType.TEACHER
                 && currentUser.roleCodes().contains("TEACHER")
                 && currentUser.userId().equals(state.creatorUserId());
-        boolean scopedOrganizationAdministrator = currentUser.roleCodes().contains("ORG_ADMIN")
+        boolean scopedOrganizationAdministrator = permissionScope.hasOrganizationAccess(currentUser, "TASK_ASSIGNMENT_EXEMPT")
                 && organizationDataScopeService.canAccess(
                 currentUser.userId(), state.sourceOrganizationId());
         return creatorTeacher || scopedOrganizationAdministrator;
@@ -127,3 +129,4 @@ public class ManagedTaskAssignmentService {
         }
     }
 }
+

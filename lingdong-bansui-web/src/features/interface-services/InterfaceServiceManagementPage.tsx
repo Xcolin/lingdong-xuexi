@@ -4,6 +4,7 @@ import { Alert, Form, Input, message, Modal, Select, Space, Tabs, Tag, Tooltip }
 import { ProCard } from '@ant-design/pro-components';
 import { Check, Pencil, Plus, Power, PowerOff, Search, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { formatDateTime as formatTime } from '../../utils/datetime';
 import {
   interfaceServiceManagementApi,
   type InterfaceAuthorizationScope,
@@ -283,7 +284,7 @@ export function InterfaceServiceManagementPage({ canManage, canReview }: Interfa
             render: (_, item) => (
               <Space size={4}>
                 <Tooltip title="批准并执行">
-                  <Button actionKey="interface-services.interface-service-management-page.4" type="text" icon={<Check size={16} />} aria-label={`批准-${item.taskTitle}`} onClick={() => openReview(item, 'approve')} />
+                  <Button actionKey="INTERFACE_SERVICE_REVIEW" type="text" icon={<Check size={16} />} aria-label={`批准-${item.taskTitle}`} onClick={() => openReview(item, 'approve')} />
                 </Tooltip>
                 <Tooltip title="驳回">
                   <Button actionKey="interface-services.interface-service-management-page.5" danger type="text" icon={<X size={16} />} aria-label={`驳回-${item.taskTitle}`} onClick={() => openReview(item, 'reject')} />
@@ -317,7 +318,7 @@ export function InterfaceServiceManagementPage({ canManage, canReview }: Interfa
     <div className="page-stack">
       <div className="page-heading">
         <h1>接口服务管理</h1>
-        {canManage && <Button actionKey="interface-services.interface-service-management-page.6" type="primary" icon={<Plus size={16} />} onClick={openRegistration}>登记接口服务</Button>}
+        {canManage && <Button actionKey="INTERFACE_SERVICE_MANAGE" type="primary" icon={<Plus size={16} />} onClick={openRegistration}>登记接口服务</Button>}
       </div>
       {errorMessage && <Alert type="error" showIcon message={errorMessage} action={<Button actionKey="interface-services.interface-service-management-page.7" size="small" onClick={() => void reloadActiveTab()}>重试</Button>} />}
       <Tabs activeKey={activeTab} onChange={setActiveTab} items={[
@@ -327,7 +328,7 @@ export function InterfaceServiceManagementPage({ canManage, canReview }: Interfa
         { key: 'calls', label: '调用台账', children: callsPanel }
       ].filter((item): item is NonNullable<typeof item> => item !== null)} />
 
-      <Modal title="登记接口服务" open={registrationOpen} footer={null} onCancel={() => setRegistrationOpen(false)} destroyOnHidden width={680}>
+      <Modal title="登记接口服务" open={registrationOpen} footer={null} onCancel={() => setRegistrationOpen(false)} destroyOnHidden width="min(880px, 92vw)" styles={{ body: { maxHeight: 'calc(100vh - 220px)', overflowY: 'auto' } }}>
         <Alert type="warning" showIcon message="登记提交后必须由系统审核员审批，审批通过后服务才会生效。" />
         <Form name="interface-service-registration" form={registrationForm} layout="vertical" onFinish={submitRegistration} className="cache-risk-form">
           <div className="responsive-form-grid">
@@ -349,7 +350,7 @@ export function InterfaceServiceManagementPage({ canManage, canReview }: Interfa
         </Form>
       </Modal>
 
-      <Modal title={statusTarget?.status === 'ENABLED' ? '提交停用审核' : '提交启用审核'} open={Boolean(statusTarget)} footer={null} onCancel={() => setStatusTarget(undefined)} destroyOnHidden>
+      <Modal title={statusTarget?.status === 'ENABLED' ? '提交停用审核' : '提交启用审核'} open={Boolean(statusTarget)} footer={null} onCancel={() => setStatusTarget(undefined)} destroyOnHidden width="min(880px, 92vw)">
         <Form name="interface-service-status" form={statusForm} layout="vertical" onFinish={submitStatus}>
           <Form.Item label="任务标题" name="title" rules={[required('请输入任务标题'), { max: 100 }]}><Input maxLength={100} /></Form.Item>
           <Form.Item label="任务说明" name="description" rules={[required('请输入任务说明'), { max: 1000 }]}><Input.TextArea rows={4} maxLength={1000} showCount /></Form.Item>
@@ -357,7 +358,7 @@ export function InterfaceServiceManagementPage({ canManage, canReview }: Interfa
         </Form>
       </Modal>
 
-      <Modal title="调整授权范围" open={Boolean(authorizationTarget)} footer={null} onCancel={() => setAuthorizationTarget(undefined)} destroyOnHidden>
+      <Modal title="调整授权范围" open={Boolean(authorizationTarget)} footer={null} onCancel={() => setAuthorizationTarget(undefined)} destroyOnHidden width="min(880px, 92vw)">
         <Form name="interface-service-authorization" form={authorizationForm} layout="vertical" onFinish={submitAuthorization}>
           <Form.Item label="授权范围" name="authorizationScope" rules={[{ required: true }]}><Select options={scopeOptions} /></Form.Item>
           <Form.Item noStyle shouldUpdate={(previous, current) => previous.authorizationScope !== current.authorizationScope}>
@@ -371,7 +372,7 @@ export function InterfaceServiceManagementPage({ canManage, canReview }: Interfa
         </Form>
       </Modal>
 
-      <Modal title={reviewAction === 'approve' ? '批准接口服务变更' : '驳回接口服务变更'} open={Boolean(reviewTarget && reviewAction)} footer={null} onCancel={closeReview} destroyOnHidden>
+      <Modal title={reviewAction === 'approve' ? '批准接口服务变更' : '驳回接口服务变更'} open={Boolean(reviewTarget && reviewAction)} footer={null} onCancel={closeReview} destroyOnHidden width="min(520px, 92vw)">
         <Form name="interface-service-review" form={reviewForm} layout="vertical" onFinish={submitReview}>
           <Form.Item label="审核意见" name="comment" rules={reviewAction === 'reject' ? [required('驳回时必须填写审核意见'), { max: 500 }] : [{ max: 500 }]}>
             <Input.TextArea rows={4} maxLength={500} showCount />
@@ -442,7 +443,6 @@ function directionLabel(value: string): string { return value === 'INBOUND' ? '�
 function purposeLabel(value: InterfacePurpose): string { return ({ WECHAT: '微信', MAP: '地图', SMS: '短信', SCHOOL: '学校系统', DATA_SYNC: '数据同步', OTHER: '其他' } as Record<InterfacePurpose, string>)[value]; }
 function changeTypeLabel(value: InterfaceServiceChangeType): string { return ({ CREATE: '登记', ENABLE: '启用', DISABLE: '停用', CHANGE_AUTHORIZATION: '调整授权' } as Record<InterfaceServiceChangeType, string>)[value]; }
 function scopeLabel(scope: InterfaceAuthorizationScope, value?: string | null): string { const label = ({ GLOBAL: '全局', REGION: '区域', SCHOOL: '学校', INSTITUTION: '机构', SPECIFIED_CALLER: '指定调用方' } as Record<InterfaceAuthorizationScope, string>)[scope]; return value ? `${label}：${value}` : label; }
-function formatTime(value?: string | null): string { return value ? value.replace('T', ' ').slice(0, 19) : '-'; }
 function toMessage(error: unknown): string { return error instanceof Error ? error.message : '请求未能完成'; }
 function required(message: string) { return { required: true, message }; }
 function cleanQuery(values: InterfaceServiceQuery): InterfaceServiceQuery { return Object.fromEntries(Object.entries(values).filter(([, value]) => value !== undefined && value !== '')) as InterfaceServiceQuery; }

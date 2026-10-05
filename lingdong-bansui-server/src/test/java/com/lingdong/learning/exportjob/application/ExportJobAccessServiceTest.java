@@ -70,7 +70,7 @@ class ExportJobAccessServiceTest {
     }
 
     @Test
-    void allowsOnlyFixedSystemRolesForSensitiveSubmitAndReview() {
+    void sensitiveSubmitAndReviewUsePermissionsWithoutFixedSystemRoles() {
         allow("EXPORT_SENSITIVE_SUBMIT");
         allow("IAM_AUDIT_READ");
         when(userRoleMapper.hasRoleCode(USER_ID, "SYS_ADMIN")).thenReturn(true);
@@ -81,6 +81,8 @@ class ExportJobAccessServiceTest {
         when(userRoleMapper.hasRoleCode(USER_ID, "SYS_AUDITOR")).thenReturn(true);
         allow("EXPORT_SENSITIVE_REVIEW");
         assertThatCode(() -> service.requireSensitiveReview(USER_ID)).doesNotThrowAnyException();
+        assertThatCode(() -> service.requireSensitiveSubmit(USER_ID)).doesNotThrowAnyException();
+        when(permissionDecisionService.isAllowed(USER_ID, PermissionClient.WEB, "EXPORT_SENSITIVE_SUBMIT")).thenReturn(false);
         assertThatThrownBy(() -> service.requireSensitiveSubmit(USER_ID))
                 .isInstanceOf(SystemOperationAccessDeniedException.class);
     }
@@ -209,7 +211,7 @@ class ExportJobAccessServiceTest {
     }
 
     @Test
-    void taskSnapshotRejectsNarrowingRoleChangesAndMissingScopeButAllowsAdditionalDomains() throws Exception {
+    void taskSnapshotRejectsNarrowedDomainsAndMissingScopeButDoesNotExpandOldRequesterSnapshot() throws Exception {
         var query=mock(com.lingdong.learning.audit.application.SystemTaskQueryService.class);
         var json=new com.fasterxml.jackson.databind.ObjectMapper();
         service=new ExportJobAccessService(featureAccessService,permissionDecisionService,userRoleMapper,
@@ -228,12 +230,35 @@ class ExportJobAccessServiceTest {
         assertThatThrownBy(()->service.requireExecution(export)).isInstanceOf(SystemOperationAccessDeniedException.class);
         assertThatThrownBy(()->service.requireOwnerDownload(USER_ID,export)).isInstanceOf(SystemOperationAccessDeniedException.class);
         when(query.resolveScope(USER_ID)).thenReturn(new com.lingdong.learning.audit.application.SystemTaskQueryService.VisibilityScope(true,List.of(cache)));
-        assertThatThrownBy(()->service.requireExecution(export)).isInstanceOf(SystemOperationAccessDeniedException.class);
+        assertThatCode(()->service.requireExecution(export)).doesNotThrowAnyException();
         when(query.resolveScope(USER_ID)).thenReturn(new com.lingdong.learning.audit.application.SystemTaskQueryService.VisibilityScope(false,List.of(cache)));
         org.mockito.Mockito.doReturn("{\"studentId\":null,\"upperBound\":100}").when(export).scopeSnapshot();
         assertThatThrownBy(()->service.requireOwnerRead(USER_ID,export)).isInstanceOf(SystemOperationAccessDeniedException.class);
         org.assertj.core.api.Assertions.assertThat(json.readValue("{\"studentId\":null,\"upperBound\":100}",ExportScopeSnapshot.class))
                 .isEqualTo(new ExportScopeSnapshot(null,100));
+    }
+
+    @Test
+    void mixedSystemTaskSnapshotRequiresFrozenReviewPermissionsEvenWhenReadDomainRemains() throws Exception {
+        var query = mock(com.lingdong.learning.audit.application.SystemTaskQueryService.class);
+        var json = new com.fasterxml.jackson.databind.ObjectMapper();
+        service = new ExportJobAccessService(featureAccessService, permissionDecisionService, userRoleMapper,
+                userMapper, growthPointQueryMapper, query, json);
+        allow("SYSTEM_TASK_EXPORT"); allow("EXPORT_JOB_READ");
+        var cache = com.lingdong.learning.audit.application.SystemTaskType.CACHE_CLEAR;
+        var organization = com.lingdong.learning.audit.application.SystemTaskType.ORGANIZATION_MOVE;
+        var frozen = new ExportScopeSnapshot(null, 100L, true, List.of(cache, organization),
+                null, null, null, null, null, null, null, null, List.of(organization));
+        var export = mock(ExportJobRecord.class, org.mockito.AdditionalAnswers.delegatesTo(
+                job(ExportJobType.SYSTEM_TASK_LEDGER, USER_ID, null, ExportJobStatus.SUCCEEDED, 1874244142494646913L)));
+        org.mockito.Mockito.doReturn(json.writeValueAsString(frozen)).when(export).scopeSnapshot();
+        when(query.resolveScope(USER_ID)).thenReturn(new com.lingdong.learning.audit.application.SystemTaskQueryService.VisibilityScope(
+                true, List.of(cache, organization), List.of(organization)));
+        assertThatCode(() -> service.requireExecution(export)).doesNotThrowAnyException();
+        when(query.resolveScope(USER_ID)).thenReturn(new com.lingdong.learning.audit.application.SystemTaskQueryService.VisibilityScope(
+                true, List.of(cache, organization), List.of(cache)));
+        assertThatThrownBy(() -> service.requireExecution(export)).isInstanceOf(SystemOperationAccessDeniedException.class);
+        assertThatThrownBy(() -> service.requireOwnerDownload(USER_ID, export)).isInstanceOf(SystemOperationAccessDeniedException.class);
     }
 
     private void allow(String code) {

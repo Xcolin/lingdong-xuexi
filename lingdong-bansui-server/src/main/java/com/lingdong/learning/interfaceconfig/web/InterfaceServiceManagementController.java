@@ -8,9 +8,12 @@ import com.lingdong.learning.interfaceconfig.application.CreateInterfaceServiceC
 import com.lingdong.learning.interfaceconfig.application.CreateInterfaceServiceDisableCommand;
 import com.lingdong.learning.interfaceconfig.application.CreateInterfaceServiceEnableCommand;
 import com.lingdong.learning.interfaceconfig.application.InterfaceServiceApplicationService;
+import com.lingdong.learning.interfaceconfig.application.InterfaceServiceChangeView;
 import com.lingdong.learning.interfaceconfig.domain.InterfaceCallResult;
 import com.lingdong.learning.interfaceconfig.domain.InterfacePurpose;
+import com.lingdong.learning.interfaceconfig.domain.InterfaceService;
 import com.lingdong.learning.interfaceconfig.domain.InterfaceServiceStatus;
+import com.lingdong.learning.user.application.UserDisplayNameResolver;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -23,7 +26,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /** 提供受功能开关、动态 RBAC 和固定职责分离共同保护的接口服务管理 API。 */
 @RestController
@@ -33,13 +38,16 @@ public class InterfaceServiceManagementController {
 
     private final InterfaceServiceApplicationService applicationService;
     private final FeatureAccessService featureAccessService;
+    private final UserDisplayNameResolver userNames;
 
     public InterfaceServiceManagementController(
             InterfaceServiceApplicationService applicationService,
-            FeatureAccessService featureAccessService
+            FeatureAccessService featureAccessService,
+            UserDisplayNameResolver userNames
     ) {
         this.applicationService = applicationService;
         this.featureAccessService = featureAccessService;
+        this.userNames = userNames;
     }
 
     @RequirePermission("INTERFACE_SERVICE_READ")
@@ -54,9 +62,12 @@ public class InterfaceServiceManagementController {
             @RequestParam(required = false) Integer limit
     ) {
         requireFeature();
-        return applicationService.listServices(
-                        currentUser.userId(), serviceName, callerName, status, purpose, ownerId, limit)
-                .stream().map(InterfaceServiceResponse::from).toList();
+        List<InterfaceService> services = applicationService.listServices(
+                currentUser.userId(), serviceName, callerName, status, purpose, ownerId, limit);
+        Map<Long, String> names = userNames.resolveAll(services.stream().map(InterfaceService::ownerId).toList());
+        return services.stream()
+                .map(service -> InterfaceServiceResponse.from(service, id -> userNames.nameOf(names, id)))
+                .toList();
     }
 
     @RequirePermission("INTERFACE_SERVICE_READ")
@@ -66,8 +77,7 @@ public class InterfaceServiceManagementController {
             @RequestParam(required = false) Integer limit
     ) {
         requireFeature();
-        return applicationService.listChanges(currentUser.userId(), limit).stream()
-                .map(InterfaceServiceChangeResponse::from).toList();
+        return toChangeResponses(applicationService.listChanges(currentUser.userId(), limit));
     }
 
     @RequirePermission("INTERFACE_SERVICE_READ")
@@ -90,8 +100,7 @@ public class InterfaceServiceManagementController {
             @RequestParam(required = false) Integer limit
     ) {
         requireFeature();
-        return applicationService.listPendingReviews(currentUser.userId(), limit).stream()
-                .map(InterfaceServiceChangeResponse::from).toList();
+        return toChangeResponses(applicationService.listPendingReviews(currentUser.userId(), limit));
     }
 
     @RequirePermission("INTERFACE_SERVICE_MANAGE")
@@ -165,7 +174,7 @@ public class InterfaceServiceManagementController {
     ) {
         requireFeature();
         return InterfaceServiceTaskResponse.from(
-                applicationService.approveAndApply(taskId, currentUser.userId(), request.comment()));
+                applicationService.approveAndApply(taskId, currentUser.userId(), request.comment()), userNames::resolve);
     }
 
     @RequirePermission("INTERFACE_SERVICE_REVIEW")
@@ -177,7 +186,20 @@ public class InterfaceServiceManagementController {
     ) {
         requireFeature();
         return InterfaceServiceTaskResponse.from(
-                applicationService.reject(taskId, currentUser.userId(), request.comment()));
+                applicationService.reject(taskId, currentUser.userId(), request.comment()), userNames::resolve);
+    }
+
+    private List<InterfaceServiceChangeResponse> toChangeResponses(List<InterfaceServiceChangeView> views) {
+        List<Long> ids = new ArrayList<>();
+        for (InterfaceServiceChangeView view : views) {
+            ids.add(view.ownerId());
+            ids.add(view.submittedBy());
+            ids.add(view.reviewedBy());
+        }
+        Map<Long, String> names = userNames.resolveAll(ids);
+        return views.stream()
+                .map(view -> InterfaceServiceChangeResponse.from(view, id -> userNames.nameOf(names, id)))
+                .toList();
     }
 
     private void requireFeature() {

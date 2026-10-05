@@ -31,7 +31,7 @@ export function AnonymousRankWithdrawalPage() {
     finally { writing.current = false; if (version === sequence.current) setBusy(false); }
   }
   return <div className="page-stack">
-    <header className="page-heading"><h1>排行查看授权</h1><Button actionKey="rank-preferences.anonymous-rank-withdrawal-page.1" disabled={busy} onClick={() => void load()}>刷新授权</Button></header>
+    <header className="page-heading"><h1>排行查看授权</h1></header>
     {error && <Alert type="error" message={error} />}
     <List loading={busy} dataSource={items} locale={{ emptyText: <Empty description="没有已开启的查看授权" /> }}
       renderItem={(item, index) => <List.Item><Space wrap><span>查看授权 {index + 1}</span>

@@ -43,12 +43,11 @@ class AuthenticationApplicationServiceTest {
         assertThat(passwordHash).startsWith("$2").isNotEqualTo("Password123");
         assertThatThrownBy(() -> authenticationApplicationService.setPlatformUserPassword(
                 new SetPlatformUserPasswordCommand(ordinaryUser.id(), platformUser.id(), "Password456")
-        )).isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("系统管理员");
-        assertThatThrownBy(() -> authenticationApplicationService.setPlatformUserPassword(
-                new SetPlatformUserPasswordCommand(administrator.id(), organizationUser.id(), "Password456")
-        )).isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("平台账号");
+        )).isInstanceOf(com.lingdong.learning.common.security.SystemOperationAccessDeniedException.class)
+                .hasMessageContaining("权限");
+        authenticationApplicationService.setPlatformUserPassword(
+                new SetPlatformUserPasswordCommand(administrator.id(), organizationUser.id(), "Password456"));
+        assertThat(passwordEncoder.matches("Password456", userMapper.findById(organizationUser.id()).passwordHash())).isTrue();
         assertThatThrownBy(() -> authenticationApplicationService.setPlatformUserPassword(
                 new SetPlatformUserPasswordCommand(administrator.id(), platformUser.id(), "weakpass")
         )).isInstanceOf(IllegalArgumentException.class)

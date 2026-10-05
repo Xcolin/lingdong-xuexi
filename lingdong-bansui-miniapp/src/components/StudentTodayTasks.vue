@@ -2,7 +2,6 @@
   <view class="today">
     <view class="head-row">
       <text class="heading">今日任务</text>
-      <button class="refresh-button" :disabled="busy" @tap="load">{{ busy ? '加载中' : '刷新' }}</button>
     </view>
     <view v-if="busy" class="state">正在加载今日任务</view>
     <view v-else-if="error" class="state error">{{ error }}</view>
@@ -70,19 +69,6 @@ onShow(load); onHide(hide); onUnload(hide);
 }
 .head-row { display: flex; align-items: center; justify-content: space-between; }
 .heading { font-size: 34rpx; font-weight: 700; color: #1c2b28; }
-.refresh-button {
-  height: 56rpx;
-  display: flex;
-  align-items: center;
-  margin: 0;
-  padding: 0 24rpx;
-  border-radius: 999rpx;
-  background: #e7f2ed;
-  color: #167c5a;
-  font-size: 24rpx;
-  font-weight: 600;
-}
-.refresh-button::after { border: 0; }
 .summary-row { display: flex; align-items: baseline; gap: 16rpx; margin-top: 20rpx; }
 .summary-count { color: #4b5c55; font-size: 26rpx; }
 .summary-hint { color: #8a9992; font-size: 24rpx; }

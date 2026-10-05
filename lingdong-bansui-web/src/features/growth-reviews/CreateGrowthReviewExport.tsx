@@ -59,7 +59,7 @@ export function CreateGrowthReviewExport({ studentId, reviewId, onCreated }: {
     <Button actionKey="growth-reviews.create-growth-review-export.1" icon={<FileDown size={16} />} onClick={() => {
       setSelectedReviewId(reviewId); setSelection(reviewId ? 'SINGLE' : 'RANGE'); setOpen(true);
     }}>导出 PDF</Button>
-    <Modal title="导出复盘 PDF" open={open} footer={null} destroyOnHidden
+    <Modal title="导出复盘 PDF" open={open} footer={null} destroyOnHidden width="min(640px, 92vw)"
       closable={!submitting} maskClosable={!submitting} keyboard={!submitting}
       onCancel={() => { if (!submitting) setOpen(false); }}>
       <Form form={form} layout="vertical" preserve={false} initialValues={{ periodType: 'DAY' }} onFinish={submit}>
@@ -98,7 +98,7 @@ export function CreateGrowthReviewExport({ studentId, reviewId, onCreated }: {
           <Input.TextArea rows={3} maxLength={500} showCount disabled={submitting} />
         </Form.Item>
         <div className="form-actions"><Button actionKey="growth-reviews.create-growth-review-export.3" disabled={submitting} onClick={() => setOpen(false)}>取消</Button>
-          <Button actionKey="growth-reviews.create-growth-review-export.4" type="primary" htmlType="submit" loading={submitting} disabled={loading || !template}>提交导出</Button></div>
+          <Button actionKey="GROWTH_REVIEW_PDF_EXPORT" type="primary" htmlType="submit" loading={submitting} disabled={loading || !template}>提交导出</Button></div>
       </Form>
     </Modal>
   </>;

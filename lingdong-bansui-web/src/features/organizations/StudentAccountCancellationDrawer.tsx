@@ -75,7 +75,7 @@ export function StudentAccountCancellationDrawer({
   }
 
   return (
-    <Drawer title="学生账号注销" width={520} open={open} onClose={onClose} destroyOnHidden>
+    <Drawer title="学生账号注销" width="min(520px, 92vw)" open={open} onClose={onClose} destroyOnHidden>
       <Alert
         type="error"
         showIcon

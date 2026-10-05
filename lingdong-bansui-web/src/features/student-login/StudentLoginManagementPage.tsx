@@ -11,11 +11,13 @@ const PAGE_SIZE = 20;
 
 /** 主家长和直接机构管理员生成其数据范围内学生的一次性登录二维码。 */
 interface StudentLoginManagementPageProps {
+  studentQrLoginEnabled?: boolean;
   studentWechatAuthEnabled?: boolean;
   canManageStudentWechat?: boolean;
 }
 
 export function StudentLoginManagementPage({
+  studentQrLoginEnabled = true,
   studentWechatAuthEnabled = false,
   canManageStudentWechat = false
 }: StudentLoginManagementPageProps) {
@@ -147,18 +149,18 @@ export function StudentLoginManagementPage({
               title: '操作', key: 'action', width: 128,
               render: (_, student) => (
                 <Space size={2}>
-                  <Tooltip title="登录二维码">
-                    <Button actionKey="student-login.student-login-management-page.3"
+                  {studentQrLoginEnabled && <Tooltip title="登录二维码">
+                    <Button actionKey="STUDENT_LOGIN_QR_CREATE"
                       type="text"
                       icon={<QrCode size={18} />}
                       aria-label={`生成 ${student.studentName} 的登录二维码`}
                       disabled={student.status !== 'ENABLED'}
                       onClick={() => openQr(student)}
                     />
-                  </Tooltip>
+                  </Tooltip>}
                   {studentWechatAuthEnabled && canManageStudentWechat && wechatBindings[student.id]?.bound && (
                     <Tooltip title="解绑微信">
-                      <Button actionKey="student-login.student-login-management-page.4"
+                      <Button actionKey="STUDENT_WECHAT_UNBIND"
                         danger
                         type="text"
                         icon={<Unlink size={18} />}
@@ -179,6 +181,7 @@ export function StudentLoginManagementPage({
         open={Boolean(selectedStudent)}
         onCancel={closeQr}
         footer={<Button actionKey="student-login.student-login-management-page.5" onClick={closeQr}>关闭</Button>}
+        width="min(520px, 92vw)"
         destroyOnHidden
       >
         <div className="student-login-qr">

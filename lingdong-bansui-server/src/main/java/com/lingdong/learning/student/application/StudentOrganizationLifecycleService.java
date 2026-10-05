@@ -62,7 +62,7 @@ public class StudentOrganizationLifecycleService {
     public List<StudentOrganizationRelationshipSummary> list(AuthenticatedUser currentUser) {
         requireUser(currentUser);
         featureAccessService.requireEnabled(FEATURE_CODE, null);
-        return relationshipMapper.findActiveSummariesByOrganizationAdministrator(currentUser.userId())
+        return relationshipMapper.findActiveSummariesByOrganizationAdministratorScope(dataScopeService.resolve(currentUser.userId()))
                 .stream()
                 .map(this::summary)
                 .toList();
@@ -72,8 +72,8 @@ public class StudentOrganizationLifecycleService {
     public List<StudentOrganizationClassOption> listClassOptions(AuthenticatedUser currentUser) {
         requireUser(currentUser);
         featureAccessService.requireEnabled(FEATURE_CODE, null);
-        return relationshipMapper.findEnabledClassOptionsByOrganizationAdministrator(
-                        currentUser.userId())
+        return relationshipMapper.findEnabledClassOptionsByOrganizationAdministratorScope(
+                        dataScopeService.resolve(currentUser.userId()))
                 .stream()
                 .map(row -> new StudentOrganizationClassOption(row.id(), row.name()))
                 .toList();

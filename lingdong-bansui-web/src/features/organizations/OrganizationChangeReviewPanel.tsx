@@ -2,8 +2,9 @@ import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { ViewportTable as Table } from '../../components/ViewportTable';
 import { useEffect, useState } from 'react';
 import { Alert, Form, Input, Modal, Space, Tag, message } from 'antd';
-import { Check, RefreshCw, X } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import { organizationApi, type OrganizationChange } from '../../api/organization';
+import { formatDateTime } from '../../utils/datetime';
 
 interface OrganizationChangeReviewPanelProps {
   canReview: boolean;
@@ -92,7 +93,7 @@ export function OrganizationChangeReviewPanel({ canReview, refreshKey = 0 }: Org
       title: '操作', key: 'actions', width: 154,
       render: (_: unknown, item: OrganizationChange) => item.taskStatus === 'PENDING_REVIEW' ? (
         <Space size={4}>
-          <Button actionKey="organizations.organization-change-review-panel.1" size="small" type="primary" icon={<Check size={14} />} onClick={() => openReview(item, 'APPROVE')}>批准</Button>
+          <Button actionKey="ORG_NODE_CHANGE_REVIEW" size="small" type="primary" icon={<Check size={14} />} onClick={() => openReview(item, 'APPROVE')}>批准</Button>
           <Button actionKey="organizations.organization-change-review-panel.2" size="small" danger icon={<X size={14} />} onClick={() => openReview(item, 'REJECT')}>驳回</Button>
         </Space>
       ) : null
@@ -103,7 +104,6 @@ export function OrganizationChangeReviewPanel({ canReview, refreshKey = 0 }: Org
     <section className="organization-change-panel">
       <div className="section-heading">
         <h2>{canReview ? '组织变更审核' : '我的变更申请'}</h2>
-        <Button actionKey="organizations.organization-change-review-panel.3" icon={<RefreshCw size={16} />} onClick={() => void load()} loading={loading}>刷新</Button>
       </div>
       {errorMessage && <Alert type="error" showIcon message={errorMessage} />}
       <Table<OrganizationChange>
@@ -114,7 +114,7 @@ export function OrganizationChangeReviewPanel({ canReview, refreshKey = 0 }: Org
 
       <Modal
         title={reviewing?.action === 'APPROVE' ? '批准组织变更' : '驳回组织变更'}
-        open={reviewing !== null} footer={null} onCancel={() => setReviewing(null)} destroyOnHidden
+        open={reviewing !== null} footer={null} width="min(520px, 92vw)" onCancel={() => setReviewing(null)} destroyOnHidden
       >
         <Form form={form} layout="vertical" onFinish={submitReview}>
           <Form.Item
@@ -135,11 +135,6 @@ export function OrganizationChangeReviewPanel({ canReview, refreshKey = 0 }: Org
       </Modal>
     </section>
   );
-}
-
-function formatDateTime(value?: string): string {
-  if (!value) return '-';
-  return value.replace('T', ' ').slice(0, 19);
 }
 
 function toMessage(error: unknown): string {

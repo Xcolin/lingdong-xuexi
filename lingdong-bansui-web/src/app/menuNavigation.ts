@@ -11,7 +11,7 @@ export function buildMenuNavigation(nodes: MenuNode[], registered: { path: strin
     const parent = byId.get(node.parentId);
     return !!parent && enabled(parent, seen);
   };
-  const sorted = nodes.filter(node => enabled(node)).sort((a, b) => a.sortOrder - b.sortOrder || a.code.localeCompare(b.code));
+  const sorted = nodes.filter(node => enabled(node)).sort((a, b) => a.sortOrder - b.sortOrder || (a.code < b.code ? -1 : a.code > b.code ? 1 : 0));
   const pages: { path: string; label: string }[] = [];
   const used = new Set<string>();
   const render = (parentId: string | null): NonNullable<MenuProps['items']> => sorted.filter(node => node.parentId === parentId && node.type !== 'BUTTON').flatMap(node => {

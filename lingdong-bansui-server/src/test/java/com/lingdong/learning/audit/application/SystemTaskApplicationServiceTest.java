@@ -70,8 +70,8 @@ class SystemTaskApplicationServiceTest {
 
         assertThatThrownBy(() -> systemTaskApplicationService.createDraft(new CreateSystemTaskCommand(
                 parent.id(), SystemTaskType.CACHE_CLEAR, "清除缓存", "清除指定缓存", ImpactScope.GLOBAL
-        ))).isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("系统管理员");
+        ))).isInstanceOf(com.lingdong.learning.common.security.SystemOperationAccessDeniedException.class)
+                .hasMessageContaining("权限");
     }
 
     private User createUserWithRole(String username, String displayName, String roleCode) {

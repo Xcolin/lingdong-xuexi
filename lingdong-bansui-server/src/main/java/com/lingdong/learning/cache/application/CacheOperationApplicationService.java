@@ -65,7 +65,6 @@ public class CacheOperationApplicationService {
     @Transactional
     public CacheOperation execute(ExecuteCacheOperationCommand command) {
         Objects.requireNonNull(command, "缓存操作请求不能为空");
-        requireNotSystemAuditor(command.operatorId());
         requirePermission(command.operatorId(), "CACHE_MANAGE");
         CacheDomain domain = requireDomain(command.cacheDomain());
         CacheOperationType operationType = requireOperationType(command.operationType());
@@ -83,9 +82,7 @@ public class CacheOperationApplicationService {
     @Transactional
     public CacheOperation createHighRiskDraft(CreateHighRiskCacheOperationCommand command) {
         Objects.requireNonNull(command, "高风险缓存操作请求不能为空");
-        requireNotSystemAuditor(command.submitterId());
         requirePermission(command.submitterId(), "CACHE_MANAGE");
-        requireSystemAdministrator(command.submitterId());
         CacheDomain domain = requireDomain(command.cacheDomain());
         CacheOperationType operationType = requireOperationType(command.operationType());
         requireHighRiskOperation(domain, operationType, command.confirmed());
@@ -264,18 +261,6 @@ public class CacheOperationApplicationService {
 
     private CacheOperationType requireOperationType(CacheOperationType operationType) {
         return Objects.requireNonNull(operationType, "缓存操作类型不能为空");
-    }
-
-    private void requireSystemAdministrator(Long operatorId) {
-        if (operatorId == null || !userRoleMapper.hasRoleCode(operatorId, "SYS_ADMIN")) {
-            throw new SystemOperationAccessDeniedException("仅系统管理员可提交高风险缓存任务");
-        }
-    }
-
-    private void requireNotSystemAuditor(Long operatorId) {
-        if (operatorId != null && userRoleMapper.hasRoleCode(operatorId, "SYS_AUDITOR")) {
-            throw new SystemOperationAccessDeniedException("系统审核员不能执行或提交缓存变更");
-        }
     }
 
     private void requirePermission(Long operatorId, String permissionCode) {

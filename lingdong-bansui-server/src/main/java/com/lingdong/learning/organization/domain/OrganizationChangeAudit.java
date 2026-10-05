@@ -50,6 +50,38 @@ public record OrganizationChangeAudit(
         );
     }
 
+    /** 拖拽同级排序直接生效：记录前后顺序。 */
+    public static OrganizationChangeAudit directReorder(
+            Long id,
+            Organization before,
+            Integer afterSortOrder,
+            Long operatorUserId,
+            LocalDateTime occurredAt
+    ) {
+        return new OrganizationChangeAudit(
+                id, before.id(), null, OrganizationChangeAuditEvent.DIRECT_REORDER, null,
+                before.name(), before.name(), before.sortOrder(), afterSortOrder,
+                before.parentId(), before.parentId(), before.status(), before.status(),
+                operatorUserId, null, occurredAt
+        );
+    }
+
+    /** 拖拽改父级直接生效：记录前后父级与顺序。 */
+    public static OrganizationChangeAudit directMove(
+            Long id,
+            Organization before,
+            Organization after,
+            Long operatorUserId,
+            LocalDateTime occurredAt
+    ) {
+        return new OrganizationChangeAudit(
+                id, before.id(), null, OrganizationChangeAuditEvent.DIRECT_MOVE, null,
+                before.name(), after.name(), before.sortOrder(), after.sortOrder(),
+                before.parentId(), after.parentId(), before.status(), after.status(),
+                operatorUserId, null, occurredAt
+        );
+    }
+
     public static OrganizationChangeAudit enable(
             Long id,
             Organization before,

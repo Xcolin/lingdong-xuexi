@@ -1,10 +1,17 @@
 import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { ViewportTable as Table } from '../../components/ViewportTable';
-import { useEffect, useState, type ReactNode } from 'react';
-import { Alert, Form, Input, Modal, Popconfirm, Select, Space, Tag, Tooltip, message } from 'antd';
+import { useEffect, useState } from 'react';
+import { Alert, Form, Input, Popconfirm, Select, Space, Tag, TreeSelect, message } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
-import { CircleCheck, CircleOff, LockKeyhole, Search, UserPlus } from 'lucide-react';
-import { usersApi, type CreateUserInput, type ManagedUser, type MutableUserStatus, type UserDirectoryPage, type UserStatus, type UserType } from '../../api/users';
+import { KeyRound, Search, UserPlus } from 'lucide-react';
+import type { CurrentUser } from '../../api/auth';
+import {organizationApi,type OrganizationNode} from '../../api/organization';
+import {ResetUserPasswordModal} from './ResetUserPasswordModal';
+import { usersApi, type ManagedUser, type MutableUserStatus, type UserDirectoryPage, type UserStatus, type UserType } from '../../api/users';
+import { formatDateTime as formatTime } from '../../utils/datetime';
+
+import {CreateUserDrawer} from './CreateUserDrawer';
+import {UserPermissionTreeModal} from '../iam/UserPermissionTreeModal';
 
 const PAGE_SIZE = 20;
 
@@ -23,23 +30,34 @@ const statusOptions: Array<{ value: UserStatus; label: string }> = [
 ];
 
 interface FilterValues {
+  organizationId?:string;
   keyword?: string;
   type?: UserType;
   status?: UserStatus;
 }
 
-export function UserManagementPage() {
+function organizationFilters(nodes:OrganizationNode[]):{title:string;value:string;children:ReturnType<typeof organizationFilters>}[]{return nodes.map(n=>({title:n.name,value:n.id,children:organizationFilters(n.children??[])}));}
+export function UserManagementPage({currentUser}:{currentUser:Pick<CurrentUser,'roleCodes'|'permissionCodes'>}) {
+  const canResetPassword=currentUser.permissionCodes.includes('IAM_USER_PASSWORD_SET');
+  const [passwordUser,setPasswordUser]=useState<ManagedUser>();
+  const [organizationNodes,setOrganizationNodes]=useState<OrganizationNode[]>([]);
+  const [organizationError,setOrganizationError]=useState<string>();
   const [directory, setDirectory] = useState<UserDirectoryPage>({ items: [], page: 1, pageSize: PAGE_SIZE, total: 0 });
   const [filters, setFilters] = useState<FilterValues>({});
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  const [permissionUser,setPermissionUser]=useState<ManagedUser>();
   const [filterForm] = Form.useForm<FilterValues>();
-  const [createForm] = Form.useForm<CreateUserInput>();
+
+  async function reloadOrganizations(){setOrganizationError(undefined);try{setOrganizationNodes(await organizationApi.listTree());}catch(error){setOrganizationError(toMessage(error));}}
+
 
   useEffect(() => {
     void loadUsers({}, 1);
+    let active=true;
+    void organizationApi.listTree().then(nodes=>{if(active)setOrganizationNodes(nodes);}).catch(error=>{if(active)setOrganizationError(toMessage(error));});
+    return()=>{active=false;};
   }, []);
 
   async function loadUsers(nextFilters: FilterValues, page: number): Promise<void> {
@@ -59,25 +77,11 @@ export function UserManagementPage() {
     const nextFilters = {
       keyword: values.keyword?.trim() || undefined,
       type: values.type,
-      status: values.status
+      status: values.status,
+      organizationId:values.organizationId
     };
     setFilters(nextFilters);
     await loadUsers(nextFilters, 1);
-  }
-
-  async function createUser(values: CreateUserInput): Promise<void> {
-    setSubmitting(true);
-    try {
-      await usersApi.create({ ...values, mobile: values.mobile?.trim() || undefined });
-      message.success('用户已创建');
-      setCreateModalOpen(false);
-      createForm.resetFields();
-      await loadUsers(filters, directory.page);
-    } catch (error) {
-      message.error(toMessage(error));
-    } finally {
-      setSubmitting(false);
-    }
   }
 
   async function updateStatus(user: ManagedUser, status: MutableUserStatus): Promise<void> {
@@ -91,22 +95,22 @@ export function UserManagementPage() {
   }
 
   return (
-    <div className="page-stack">
-      <div className="page-heading">
-        <h1>用户管理</h1>
-        <Button actionKey="users.user-management-page.1" type="primary" icon={<UserPlus size={16} />} onClick={() => setCreateModalOpen(true)}>新增用户</Button>
-      </div>
-
+    <div className="page-stack management-page user-management-page">
+      {organizationError&&<Alert type="error" showIcon message={`组织机构加载失败：${organizationError}`} action={<Button actionKey="users.user-management-page.2" size="small" onClick={()=>void reloadOrganizations()}>重试</Button>}/>}
       {errorMessage && <Alert type="error" showIcon message={errorMessage} action={<Button actionKey="users.user-management-page.2" size="small" onClick={() => void loadUsers(filters, directory.page)}>重试</Button>} />}
 
-      <ProCard className="content-panel" bordered={false}>
-        <Form form={filterForm} layout="inline" className="directory-filters" onFinish={search}>
+      <ProCard className="content-panel management-query" bordered={false}>
+        <Form name="user-directory" form={filterForm} layout="inline" className="directory-filters management-query-form" onFinish={search}>
           <Form.Item label="账号或名称" name="keyword"><Input allowClear /></Form.Item>
           <Form.Item label="用户类型" name="type"><Select allowClear options={userTypeOptions} className="filter-select" /></Form.Item>
           <Form.Item label="账号状态" name="status"><Select allowClear options={statusOptions} className="filter-select" /></Form.Item>
-          <Form.Item><Button actionKey="users.user-management-page.3" type="primary" htmlType="submit" icon={<Search size={16} />}>查询</Button></Form.Item>
+          <Form.Item label="所属组织机构" name="organizationId"><TreeSelect allowClear showSearch treeNodeFilterProp="title" treeData={organizationFilters(organizationNodes)} className="filter-select" /></Form.Item>
+          <Form.Item><Space><Button actionKey="users.user-management-page.3" type="primary" htmlType="submit" icon={<Search size={16} />}>查询</Button>
+          <Button actionKey="users.directory.reset" onClick={() => { filterForm.resetFields(); void search({}); }}>重置</Button></Space></Form.Item>
         </Form>
-
+      </ProCard>
+      <div className="management-toolbar"><Button actionKey="IAM_USER_CREATE" type="primary" icon={<UserPlus size={16} />} onClick={() => setCreateModalOpen(true)}>新增用户</Button></div>
+      <ProCard className="content-panel management-list" bordered={false}>
         <Table<ManagedUser>
           rowKey="id"
           loading={loading}
@@ -120,44 +124,40 @@ export function UserManagementPage() {
             onChange: (page) => void loadUsers(filters, page)
           }}
           columns={[
-            { title: '账号', dataIndex: 'username', key: 'username', width: 170 },
-            { title: '名称', dataIndex: 'displayName', key: 'displayName', width: 150 },
-            { title: '手机号', dataIndex: 'mobile', key: 'mobile', width: 140, render: (mobile: string | null) => mobile ?? '-' },
-            { title: '类型', dataIndex: 'type', key: 'type', width: 120, render: (type: UserType) => userTypeLabel(type) },
-            { title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (status: UserStatus) => <Tag color={statusColor(status)}>{statusLabel(status)}</Tag> },
-            { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', width: 170, render: formatTime },
+            { title: '账号', dataIndex: 'username', key: 'username', width: 120, ellipsis: true },
+            { title: '名称', dataIndex: 'displayName', key: 'displayName', width: 120, ellipsis: true },
+            { title: '机构名称', dataIndex: 'organizationNames', key: 'organizationNames', width: 200, ellipsis: true, render: (names?: string[]) => names?.length ? names.join('、') : '—' },
+            { title: '手机号', dataIndex: 'mobile', key: 'mobile', width: 130, render: (mobile: string | null) => mobile ?? '-' },
+            { title: '类型', dataIndex: 'type', key: 'type', width: 100, render: (type: UserType) => userTypeLabel(type) },
+            { title: '状态', dataIndex: 'status', key: 'status', width: 80, render: (status: UserStatus) => <Tag color={statusColor(status)}>{statusLabel(status)}</Tag> },
+            { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', width: 160, render: formatTime },
             {
-              title: '操作', key: 'actions', width: 128,
-              render: (_, user) => user.status === 'CANCELLED' ? null : <Space size={2}>
-                {user.status !== 'ENABLED' && <StatusAction user={user} status="ENABLED" icon={<CircleCheck size={16} />} />}
-                {user.status !== 'DISABLED' && <StatusAction user={user} status="DISABLED" icon={<CircleOff size={16} />} />}
-                {user.status !== 'LOCKED' && <StatusAction user={user} status="LOCKED" icon={<LockKeyhole size={16} />} />}
+              title: '操作', key: 'actions', width: 340, fixed: 'right',
+              render: (_, user) => user.status === 'CANCELLED' ? null : <Space size={8} className="management-row-actions">
+                <Button actionKey="users.row.authorize" size="small" onClick={()=>setPermissionUser(user)}>授权</Button>
+                {canResetPassword&&user.type!=='STUDENT'&&<Button actionKey="IAM_USER_PASSWORD_SET" size="small" icon={<KeyRound size={14}/>} onClick={()=>setPasswordUser(user)}>重置密码</Button>}
+                {user.status !== 'ENABLED' && <StatusAction user={user} status="ENABLED" />}
+                {user.status !== 'DISABLED' && <StatusAction user={user} status="DISABLED" />}
+                {user.status !== 'LOCKED' && <StatusAction user={user} status="LOCKED" />}
               </Space>
             }
           ]}
         />
       </ProCard>
 
-      <Modal title="新增用户" open={createModalOpen} footer={null} onCancel={() => setCreateModalOpen(false)} destroyOnHidden>
-        <Form form={createForm} layout="vertical" initialValues={{ type: 'PLATFORM' }} onFinish={createUser}>
-          <Form.Item label="用户账号" name="username" rules={[{ required: true, message: '请输入用户账号' }, { max: 64, message: '用户账号不能超过 64 个字符' }]}><Input autoComplete="off" /></Form.Item>
-          <Form.Item label="用户名称" name="displayName" rules={[{ required: true, message: '请输入用户名称' }, { max: 64, message: '用户名称不能超过 64 个字符' }]}><Input autoComplete="off" /></Form.Item>
-          <Form.Item label="手机号" name="mobile" rules={[{ max: 32, message: '手机号不能超过 32 个字符' }]}><Input autoComplete="off" /></Form.Item>
-          <Form.Item label="用户类型" name="type" rules={[{ required: true, message: '请选择用户类型' }]}><Select options={userTypeOptions} /></Form.Item>
-          <div className="form-actions"><Button actionKey="users.user-management-page.4" onClick={() => setCreateModalOpen(false)}>取消</Button><Button actionKey="users.user-management-page.5" type="primary" htmlType="submit" loading={submitting}>创建用户</Button></div>
-        </Form>
-      </Modal>
+      <CreateUserDrawer open={createModalOpen} onClose={()=>setCreateModalOpen(false)} onSaved={()=>loadUsers(filters,directory.page)}/>
+      {permissionUser&&<UserPermissionTreeModal open user={permissionUser} onClose={()=>setPermissionUser(undefined)}/>}
+      {passwordUser&&canResetPassword&&<ResetUserPasswordModal user={passwordUser} onClose={()=>setPasswordUser(undefined)}/>}
+
     </div>
   );
 
-  function StatusAction({ user, status, icon }: { user: ManagedUser; status: MutableUserStatus; icon: ReactNode }) {
+  function StatusAction({ user, status }: { user: ManagedUser; status: MutableUserStatus }) {
     const label = statusLabel(status);
     return (
-      <Tooltip title={label}>
         <Popconfirm title={`确认${label}该用户？`} onConfirm={() => void updateStatus(user, status)}>
-          <Button actionKey={`users.status.${status.toLowerCase()}`} type="text" icon={icon} aria-label={`${label} ${user.displayName}`} />
+          <Button actionKey={`users.status.${status.toLowerCase()}`} size="small" danger={status !== 'ENABLED'} aria-label={`${label} ${user.displayName}`}>{label}</Button>
         </Popconfirm>
-      </Tooltip>
     );
   }
 }
@@ -172,10 +172,6 @@ function statusLabel(status: UserStatus): string {
 
 function statusColor(status: UserStatus): string {
   return status === 'ENABLED' ? 'green' : status === 'LOCKED' ? 'orange' : status === 'CANCELLED' ? 'red' : 'default';
-}
-
-function formatTime(value: string): string {
-  return new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
 }
 
 function toMessage(error: unknown): string {

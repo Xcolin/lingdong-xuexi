@@ -45,6 +45,7 @@ public class TaskDeferService {
     private final FeatureAccessService featureAccessService;
     private final IdGenerator idGenerator;
     private final Clock clock;
+    private final LearningTaskScopeService permissionScope;
 
     public TaskDeferService(
             TaskDeferMapper deferMapper,
@@ -56,7 +57,7 @@ public class TaskDeferService {
             OrganizationDataScopeService organizationDataScopeService,
             FeatureAccessService featureAccessService,
             IdGenerator idGenerator,
-            Clock clock
+            Clock clock, LearningTaskScopeService permissionScope
     ) {
         this.deferMapper = deferMapper;
         this.taskMapper = taskMapper;
@@ -67,13 +68,14 @@ public class TaskDeferService {
         this.organizationDataScopeService = organizationDataScopeService;
         this.featureAccessService = featureAccessService;
         this.idGenerator = idGenerator;
-        this.clock = clock;
+        this.clock = clock; this.permissionScope = permissionScope;
     }
 
     @Transactional
     public TaskDeferResult deferManually(
             AuthenticatedUser currentUser, Long assignmentId, LocalDate targetDate
     ) {
+        permissionScope.requireWebPermission(currentUser, "TASK_ASSIGNMENT_DEFER");
         featureAccessService.requireEnabled(FEATURE_CODE, null);
         LocalDate today = LocalDate.now(clock.withZone(BUSINESS_ZONE));
         validateManualTargetDate(targetDate, today);
@@ -107,6 +109,7 @@ public class TaskDeferService {
     public ManagedDeferCandidatePage findManagedCandidates(
             AuthenticatedUser currentUser, int page, int pageSize
     ) {
+        permissionScope.requireWebPermission(currentUser, "TASK_ASSIGNMENT_DEFER");
         featureAccessService.requireEnabled(FEATURE_CODE, null);
         if (currentUser == null || currentUser.clientType() != AuthClientType.WEB) {
             throw new IllegalArgumentException("仅支持 Web 管理端查询可顺延任务");
@@ -117,8 +120,8 @@ public class TaskDeferService {
         ManagedDeferCandidateQuery query = new ManagedDeferCandidateQuery(
                 currentUser.userId(), currentUser.roleCodes().contains("PARENT"),
                 currentUser.roleCodes().contains("TEACHER"),
-                currentUser.roleCodes().contains("ORG_ADMIN"),
-                pageSize, (long) (page - 1) * pageSize);
+                permissionScope.hasOrganizationPermission(currentUser, "TASK_ASSIGNMENT_DEFER"),
+                pageSize, (long) (page - 1) * pageSize, permissionScope.organizationScope(currentUser).allOrganizations(), permissionScope.organizationScope(currentUser).rootPaths());
         return new ManagedDeferCandidatePage(
                 deferMapper.findManagedPage(query), page, pageSize, deferMapper.countManaged(query));
     }
@@ -174,7 +177,7 @@ public class TaskDeferService {
         boolean creatorTeacher = state.sourceType() == LearningTaskSourceType.TEACHER
                 && currentUser.roleCodes().contains("TEACHER")
                 && currentUser.userId().equals(state.creatorUserId());
-        boolean scopedOrganizationAdministrator = currentUser.roleCodes().contains("ORG_ADMIN")
+        boolean scopedOrganizationAdministrator = permissionScope.hasOrganizationPermission(currentUser, "TASK_ASSIGNMENT_DEFER")
                 && organizationDataScopeService.canAccess(
                 currentUser.userId(), state.sourceOrganizationId());
         return creatorTeacher || scopedOrganizationAdministrator;
@@ -193,3 +196,4 @@ public class TaskDeferService {
         return value;
     }
 }
+

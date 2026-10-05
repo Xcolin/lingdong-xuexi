@@ -3,6 +3,7 @@ import { Alert, Modal, Tag } from 'antd';
 import { useEffect, useState } from 'react';
 import { learningTaskApi } from './api';
 import type { ManagedTaskProgressPage, TaskAssignmentStatus } from './types';
+import { formatDateTime as formatTime } from '../../utils/datetime';
 
 interface TaskProgressModalProps {
   taskId: string | null;
@@ -48,7 +49,8 @@ export function TaskProgressModal({ taskId, taskTitle, onClose }: TaskProgressMo
     <Modal
       title={`${taskTitle || '学习任务'} · 学生进度`}
       open={Boolean(taskId)}
-      width={920}
+      width="min(1200px, 92vw)"
+      styles={{ body: { maxHeight: 'calc(100vh - 220px)', overflowY: 'auto' } }}
       footer={null}
       onCancel={onClose}
       destroyOnHidden
@@ -82,8 +84,4 @@ export function TaskProgressModal({ taskId, taskTitle, onClose }: TaskProgressMo
       />
     </Modal>
   );
-}
-
-function formatTime(value: string | null): string {
-  return value ? value.replace('T', ' ').slice(0, 16) : '-';
 }

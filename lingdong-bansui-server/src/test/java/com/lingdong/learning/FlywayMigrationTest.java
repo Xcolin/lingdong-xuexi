@@ -110,11 +110,12 @@ class FlywayMigrationTest {
 
     @Test
     void createsFiveBuiltInOrganizationTypesThroughFlyway() {
+        // V90 新增城市/国家/家庭三种内置组织类型（原 5 种 + 3 种 = 8 种）
         Integer organizationTypeCount = jdbcTemplate.queryForObject(
                 "select count(*) from sys_organization_type where built_in = 1 and status = 'ENABLED'",
                 Integer.class);
 
-        assertThat(organizationTypeCount).isEqualTo(5);
+        assertThat(organizationTypeCount).isEqualTo(8);
     }
 
     @Test
@@ -2443,7 +2444,8 @@ class FlywayMigrationTest {
         assertThat(migrationCount).isEqualTo(1);
         assertThat(auditTableCount).isEqualTo(1);
         assertThat(auditIdColumnCount).isEqualTo(1);
-        assertThat(primaryKeyTableCount).isEqualTo(94);
+        // V87 新增 sys_menu（含 id 主键），带 id 主键的表由 94 张增至 95 张
+        assertThat(primaryKeyTableCount).isEqualTo(95);
         assertThat(featureCount).isEqualTo(1);
         assertThat(permissionCount).isEqualTo(6);
         assertThat(organizationAdministratorGrantCount).isEqualTo(6);
@@ -2519,5 +2521,53 @@ class FlywayMigrationTest {
         assertThat(roleCount).isEqualTo(6);
         assertThat(organizationTypeCount).isEqualTo(5);
         assertThat(featureToggleCount).isEqualTo(2);
+    }
+
+    @Test
+    void addsAdminDivisionAndChongqingOrganizationThroughV90() {
+        assertThat(jdbcTemplate.queryForObject(
+                "select count(*) from flyway_schema_history where version = '90' and success = true",
+                Integer.class)).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject(""
+                + "select count(*) from sys_organization_type where type_code in ('CITY', 'COUNTRY', 'FAMILY') "
+                + "and built_in = 1 and id >= 1000000000000000000", Integer.class)).isEqualTo(3);
+        assertThat(jdbcTemplate.queryForObject(""
+                + "select count(*) from sys_dictionary_item item "
+                + "join sys_dictionary_type type on type.id = item.type_id "
+                + "where type.type_code = 'ADMIN_DIVISION' and item.status = 'ENABLED'", Integer.class)).isEqualTo(38);
+        assertThat(jdbcTemplate.queryForObject(""
+                + "select count(*) from sys_organization where organization_type = 'REGION' "
+                + "and parent_id = (select id from sys_organization where organization_code = '500000') "
+                + "and admin_division_code is not null", Integer.class)).isEqualTo(38);
+        assertThat(jdbcTemplate.queryForObject(""
+                + "select organization_path from sys_organization where organization_code = '500101'", String.class))
+                .isEqualTo("500000/500101/");
+    }
+
+    @Test
+    void unifiesMenuPermissionCodesThroughV91() {
+        assertThat(jdbcTemplate.queryForObject(
+                "select count(*) from flyway_schema_history where version = '91' and success = true",
+                Integer.class)).isEqualTo(1);
+        // 页面编码与权限编码一致且可授权
+        assertThat(jdbcTemplate.queryForObject(""
+                + "select count(*) from sys_menu where type = 'PAGE' and grantable = 1 "
+                + "and code = permission_code", Integer.class)).isEqualTo(25);
+        // 页面编码不再保留旧 slug 形式
+        assertThat(jdbcTemplate.queryForObject(""
+                + "select count(*) from sys_menu where code in ('dashboard', 'menu-management', 'organizations') "
+                + "and type = 'PAGE'", Integer.class)).isZero();
+        // 权限按钮编码均为大写权限码且与权限目录一致
+        assertThat(jdbcTemplate.queryForObject(""
+                + "select count(*) from sys_menu m where m.type = 'BUTTON' and m.grantable = 1 "
+                + "and not exists (select 1 from sys_permission p where p.permission_code = m.code)",
+                Integer.class)).isZero();
+        // 重编码后既有角色授权关系保留：导出中心页面读取权限已授予启用角色
+        assertThat(jdbcTemplate.queryForObject(""
+                + "select count(distinct r.role_code) from sys_role_permission rp "
+                + "join sys_role r on r.id = rp.role_id and r.status = 'ENABLED' "
+                + "join sys_permission p on p.id = rp.permission_id "
+                + "where p.permission_code = 'EXPORT_JOB_READ' and rp.effect = 'ALLOW'", Integer.class))
+                .isGreaterThanOrEqualTo(4);
     }
 }

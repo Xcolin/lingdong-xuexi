@@ -92,4 +92,9 @@ public interface StudentOrganizationMapper {
             @Param("studentId") Long studentId,
             @Param("classOrganizationId") Long classOrganizationId
     );
+    List<StudentOrganizationSummaryRow> findActiveSummariesByOrganizationAdministratorScope(
+            @Param("scope") com.lingdong.learning.datascope.application.OrganizationDataScope scope);
+    List<StudentOrganizationClassOptionRow> findEnabledClassOptionsByOrganizationAdministratorScope(
+            @Param("scope") com.lingdong.learning.datascope.application.OrganizationDataScope scope);
 }
+

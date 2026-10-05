@@ -24,5 +24,14 @@ public interface StudentAccountCancellationMapper {
     );
 
     int insert(@Param("record") StudentAccountCancellationRecord record);
+    List<StudentAccountCancellationCandidateRow> findCandidatesByOrganizationScope(
+            @Param("scope") com.lingdong.learning.datascope.application.OrganizationDataScope scope);
+    StudentAccountCancellationCandidateRow findAccessibleCandidateByScope(
+            @Param("scope") com.lingdong.learning.datascope.application.OrganizationDataScope scope,
+            @Param("studentId") Long studentId);
+    Long findAccessibleLatestInactiveEnrollmentOrganizationIdByScope(
+            @Param("scope") com.lingdong.learning.datascope.application.OrganizationDataScope scope,
+            @Param("studentId") Long studentId);
 }
+
 

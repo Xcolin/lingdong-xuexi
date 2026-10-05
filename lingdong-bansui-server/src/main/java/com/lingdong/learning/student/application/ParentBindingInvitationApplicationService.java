@@ -28,6 +28,7 @@ import java.util.Objects;
  */
 @Service
 public class ParentBindingInvitationApplicationService {
+    private final StudentManagementAccessService managementAccess;
     private static final String PARENT_ROLE = "PARENT";
     private static final String ORGANIZATION_ADMIN_ROLE = "ORG_ADMIN";
     private static final int INVITATION_VALID_DAYS = 7;
@@ -49,8 +50,9 @@ public class ParentBindingInvitationApplicationService {
             ParentStudentMapper parentStudentMapper,
             ParentBindingInvitationMapper parentBindingInvitationMapper,
             InvitationTokenService invitationTokenService,
-            IdGenerator idGenerator
+            IdGenerator idGenerator, StudentManagementAccessService managementAccess
     ) {
+        this.managementAccess = managementAccess;
         this.studentMapper = studentMapper;
         this.organizationMapper = organizationMapper;
         this.organizationAdminMapper = organizationAdminMapper;
@@ -68,7 +70,9 @@ public class ParentBindingInvitationApplicationService {
     ) {
         Objects.requireNonNull(currentUser, "当前登录用户不能为空");
         Objects.requireNonNull(command, "创建邀请请求不能为空");
-        requireRole(currentUser, ORGANIZATION_ADMIN_ROLE, "仅机构管理员可创建家长绑定邀请");
+        managementAccess.require(currentUser, "STUDENT_PARENT_INVITE_CREATE");
+        if (currentUser.clientType() != com.lingdong.learning.auth.domain.AuthClientType.WEB)
+            requireRole(currentUser, ORGANIZATION_ADMIN_ROLE, "当前身份不能创建机构家长邀请");
         if (studentId == null) {
             throw new IllegalArgumentException("学生标识不能为空");
         }
@@ -87,7 +91,9 @@ public class ParentBindingInvitationApplicationService {
         if (!OrganizationOperationalStatusService.isOperational(organization)) {
             throw new IllegalStateException("机构已停用，不能创建家长绑定邀请");
         }
-        if (!organizationAdminMapper.exists(currentUser.userId(), organizationId)
+        if (!(currentUser.clientType() == com.lingdong.learning.auth.domain.AuthClientType.WEB
+                ? managementAccess.organizationAllowed(currentUser, organizationId)
+                : organizationAdminMapper.exists(currentUser.userId(), organizationId))
                 || !studentOrganizationMapper.existsActiveByStudentAndOrganization(studentId, organizationId)) {
             throw new SystemOperationAccessDeniedException("当前机构管理员无权为该学生创建家长绑定邀请");
         }

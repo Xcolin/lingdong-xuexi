@@ -109,4 +109,76 @@
             #{record.clientType}, #{record.cancelledAt}
         )
     </insert>
+    <sql id="candidateScopeJoins">
+        FROM edu_student student
+        JOIN sys_user student_user
+          ON student_user.id = student.student_user_id
+         AND student_user.user_type = 'STUDENT'
+         AND student_user.status = 'ENABLED'
+        JOIN sys_user_role student_user_role
+          ON student_user_role.user_id = student_user.id
+        JOIN sys_role student_role
+          ON student_role.id = student_user_role.role_id
+         AND student_role.role_code = 'STUDENT'
+         AND student_role.status = 'ENABLED'
+        JOIN edu_student_organization enrollment
+          ON enrollment.student_id = student.id
+         AND enrollment.relation_type = 'ENROLLMENT'
+         AND enrollment.status = 'INACTIVE'
+         AND enrollment.id = (
+             SELECT latest_enrollment.id
+             FROM edu_student_organization latest_enrollment
+             WHERE latest_enrollment.student_id = student.id
+               AND latest_enrollment.relation_type = 'ENROLLMENT'
+             ORDER BY latest_enrollment.updated_at DESC, latest_enrollment.id DESC
+             LIMIT 1
+         )
+        JOIN sys_organization enrollment_organization
+         ON enrollment_organization.id = enrollment.organization_id
+         AND enrollment_organization.status = 'ENABLED'
+         AND enrollment_organization.effective_status = 'ENABLED'
+        WHERE student.status = 'ENABLED'
+          <if test="!scope.allOrganizations">
+            AND <choose>
+              <when test="scope.rootPaths != null and scope.rootPaths.size() > 0">
+                <foreach collection="scope.rootPaths" item="path" open="(" close=")" separator=" OR ">
+                  enrollment_organization.organization_path LIKE CONCAT(#{path}, '%')
+                </foreach>
+              </when>
+              <otherwise>1 = 0</otherwise>
+            </choose>
+          </if>
+          AND NOT EXISTS (
+              SELECT 1 FROM edu_student_organization active_organization
+              WHERE active_organization.student_id = student.id
+                AND active_organization.status = 'ACTIVE'
+          )
+          AND NOT EXISTS (
+              SELECT 1 FROM edu_parent_student active_parent
+              WHERE active_parent.student_id = student.id
+                AND active_parent.status = 'ACTIVE'
+          )
+    </sql>
+    <select id="findCandidatesByOrganizationScope" resultMap="candidateMap">
+        SELECT DISTINCT <include refid="candidateColumns"/>
+        <include refid="candidateScopeJoins"/>
+        ORDER BY student.student_name, student.id
+    </select>
+    <select id="findAccessibleCandidateByScope" resultMap="candidateMap">
+        SELECT DISTINCT <include refid="candidateColumns"/>
+        <include refid="candidateScopeJoins"/>
+          AND student.id = #{studentId}
+        ORDER BY enrollment_organization.id
+        LIMIT 1
+    </select>
+    <select id="findAccessibleLatestInactiveEnrollmentOrganizationIdByScope" resultType="long">
+        SELECT candidate.organization_id
+        FROM (
+            SELECT DISTINCT enrollment_organization.id AS organization_id
+            <include refid="candidateScopeJoins"/>
+              AND student.id = #{studentId}
+        ) candidate
+        ORDER BY candidate.organization_id
+        LIMIT 1
+    </select>
 </mapper>

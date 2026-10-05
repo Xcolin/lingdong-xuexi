@@ -8,6 +8,14 @@ public record StudentDirectoryQuery(
         boolean parent,
         boolean organizationAdministrator,
         int offset,
-        int limit
+        int limit,
+        boolean webManagement,
+        boolean allOrganizations,
+        java.util.List<String> rootPaths
 ) {
+    public StudentDirectoryQuery(String keyword, Long currentUserId, boolean systemAdministrator,
+            boolean parent, boolean organizationAdministrator, int offset, int limit) {
+        this(keyword, currentUserId, systemAdministrator, parent, organizationAdministrator, offset, limit,
+                false, false, java.util.List.of());
+    }
 }

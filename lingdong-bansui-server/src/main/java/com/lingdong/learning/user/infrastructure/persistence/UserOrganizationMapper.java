@@ -9,6 +9,10 @@ import java.util.List;
  */
 @Mapper
 public interface UserOrganizationMapper {
+    record OrganizationName(Long userId, String name) { }
+    List<OrganizationName> findNamesByUserIds(@Param("userIds") List<Long> userIds);
+    Long lockRelation(@Param("userId") Long userId, @Param("organizationId") Long organizationId);
+
     boolean exists(@Param("userId") Long userId, @Param("organizationId") Long organizationId);
 
     int insert(@Param("id") Long id, @Param("userId") Long userId, @Param("organizationId") Long organizationId);

@@ -11,5 +11,6 @@ public record CreateOrganizationRequest(
         @NotBlank @Size(max = 100) String name,
         @NotBlank @Size(max = 32) String typeCode,
         @Positive Long parentId,
-        @Min(0) Integer sortOrder
+        @Min(0) Integer sortOrder,
+        @Size(max = 32) String adminDivisionCode
 ) { }

@@ -40,6 +40,7 @@ public class TeacherClassAssignmentService {
     private final FeatureAccessService featureAccessService;
     private final IdGenerator idGenerator;
     private final TeacherReviewAutoTransferService reviewAutoTransferService;
+    private final LearningTaskScopeService permissionScope;
 
     public TeacherClassAssignmentService(
             TeacherClassMapper teacherClassMapper,
@@ -49,7 +50,8 @@ public class TeacherClassAssignmentService {
             OrganizationDataScopeService organizationDataScopeService,
             FeatureAccessService featureAccessService,
             IdGenerator idGenerator,
-            TeacherReviewAutoTransferService reviewAutoTransferService
+            TeacherReviewAutoTransferService reviewAutoTransferService,
+            LearningTaskScopeService permissionScope
     ) {
         this.teacherClassMapper = teacherClassMapper;
         this.userMapper = userMapper;
@@ -59,6 +61,7 @@ public class TeacherClassAssignmentService {
         this.featureAccessService = featureAccessService;
         this.idGenerator = idGenerator;
         this.reviewAutoTransferService = reviewAutoTransferService;
+        this.permissionScope = permissionScope;
     }
 
     /** 建立或恢复教师班级关系；锁定教师用户行，避免并发首次绑定。 */
@@ -131,6 +134,7 @@ public class TeacherClassAssignmentService {
 
     /** 教师读取本人班级，机构管理员读取其授权范围内的目标教师班级。 */
     public List<TeacherClassRelation> list(AuthenticatedUser currentUser, Long teacherUserId) {
+        permissionScope.requireWebPermission(currentUser, "LEARNING_TASK_CREATE");
         Objects.requireNonNull(currentUser, "当前登录用户不能为空");
         Long normalizedTeacherId = requiredId(teacherUserId, "教师用户标识");
         featureAccessService.requireEnabled(LEARNING_TASK_FEATURE, null);
@@ -143,7 +147,8 @@ public class TeacherClassAssignmentService {
                 && currentUser.roleCodes().contains(TEACHER_ROLE)) {
             return relations;
         }
-        if (!currentUser.roleCodes().contains(ORGANIZATION_ADMIN_ROLE)) {
+        if (!permissionScope.hasOrganizationPermission(currentUser, "LEARNING_TASK_CREATE")
+                && !currentUser.roleCodes().contains(ORGANIZATION_ADMIN_ROLE)) {
             throw new SystemOperationAccessDeniedException("仅教师本人或机构管理员可查询教师班级");
         }
         return relations.stream()
@@ -153,7 +158,9 @@ public class TeacherClassAssignmentService {
     }
 
     private Organization requireManageableClass(AuthenticatedUser currentUser, Long classId) {
-        if (!currentUser.roleCodes().contains(ORGANIZATION_ADMIN_ROLE)) {
+        permissionScope.requireWebPermission(currentUser, "TEACHER_CLASS_ASSIGN");
+        if (!permissionScope.hasOrganizationPermission(currentUser, "TEACHER_CLASS_ASSIGN")
+                && !currentUser.roleCodes().contains(ORGANIZATION_ADMIN_ROLE)) {
             throw new SystemOperationAccessDeniedException("仅机构管理员可维护教师班级");
         }
         Organization organization = organizationMapper.findById(classId);

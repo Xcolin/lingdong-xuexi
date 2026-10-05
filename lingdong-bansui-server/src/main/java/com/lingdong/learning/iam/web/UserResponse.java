@@ -17,11 +17,16 @@ public record UserResponse(
         UserType type,
         UserStatus status,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        java.util.List<String> organizationNames
 ) {
     static UserResponse from(User user) {
+        return from(user, java.util.List.of());
+    }
+
+    static UserResponse from(User user, java.util.List<String> organizationNames) {
         return new UserResponse(user.id(), user.username(), user.displayName(), maskMobile(user.mobile()), user.type(), user.status(),
-                user.createdAt(), user.updatedAt());
+                user.createdAt(), user.updatedAt(), organizationNames);
     }
 
     private static String maskMobile(String mobile) {

@@ -55,6 +55,7 @@ public class LearningTaskManagementService {
     public LearningTaskDetails create(
             AuthenticatedUser currentUser, CreateLearningTaskCommand command
     ) {
+        scopeService.requireWebPermission(currentUser, "LEARNING_TASK_CREATE");
         featureAccessService.requireEnabled(FEATURE_CODE, null);
         Objects.requireNonNull(command, "创建任务命令不能为空");
         ValidatedLearningTaskDraft draft = validator.validate(command.draft());
@@ -73,6 +74,7 @@ public class LearningTaskManagementService {
     public LearningTaskDetails update(
             AuthenticatedUser currentUser, Long taskId, CreateLearningTaskCommand command
     ) {
+        scopeService.requireWebPermission(currentUser, "LEARNING_TASK_CREATE");
         featureAccessService.requireEnabled(FEATURE_CODE, null);
         Objects.requireNonNull(command, "更新任务命令不能为空");
         LearningTask existing = taskMapper.findByIdForUpdate(taskId);
@@ -102,6 +104,7 @@ public class LearningTaskManagementService {
 
     @Transactional(readOnly = true)
     public LearningTaskDetails findById(AuthenticatedUser currentUser, Long taskId) {
+        scopeService.requireWebPermission(currentUser, "LEARNING_TASK_READ_MANAGED");
         featureAccessService.requireEnabled(FEATURE_CODE, null);
         LearningTask task = taskMapper.findById(taskId);
         if (task == null) {
@@ -128,10 +131,12 @@ public class LearningTaskManagementService {
         String normalizedKeyword = optionalText(keyword, 50);
         LearningTaskQuery query = new LearningTaskQuery(
                 currentUser.userId(), currentUser.roleCodes().contains("PARENT"),
-                currentUser.roleCodes().contains("ORG_ADMIN"),
+                scopeService.hasOrganizationPermission(currentUser, "LEARNING_TASK_READ_MANAGED")
+                        || currentUser.roleCodes().contains("ORG_ADMIN"),
                 currentUser.roleCodes().contains("TEACHER"), sourceType, status,
                 scheduledDate, normalizedKeyword,
-                Math.multiplyExact(validatedPage - 1, validatedPageSize), validatedPageSize);
+                Math.multiplyExact(validatedPage - 1, validatedPageSize), validatedPageSize,
+                scopeService.organizationScope(currentUser).allOrganizations(), scopeService.organizationScope(currentUser).rootPaths());
         return new LearningTaskPage(
                 taskMapper.findPage(query), validatedPage, validatedPageSize, taskMapper.count(query));
     }
@@ -167,6 +172,9 @@ public class LearningTaskManagementService {
     }
 
     private void requireManagementRole(AuthenticatedUser currentUser) {
+        if (scopeService.hasOrganizationPermission(currentUser, "LEARNING_TASK_READ_MANAGED")) return;
+        if (currentUser != null && currentUser.clientType() == com.lingdong.learning.auth.domain.AuthClientType.WEB)
+            throw new SystemOperationAccessDeniedException("当前账号无学习任务读取权限");
         if (currentUser == null || currentUser.roleCodes().contains("SYS_AUDITOR")
                 || currentUser.roleCodes().stream().noneMatch(
                 role -> role.equals("PARENT") || role.equals("ORG_ADMIN") || role.equals("TEACHER"))) {
@@ -196,3 +204,4 @@ public class LearningTaskManagementService {
         return new ResourceNotFoundException("任务不存在或不可访问");
     }
 }
+

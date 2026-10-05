@@ -24,6 +24,8 @@ import java.util.regex.Pattern;
 @Service
 public class DictionaryApplicationService {
     private static final Pattern CODE_PATTERN = Pattern.compile("[A-Z][A-Z0-9_]{2,63}");
+    /** 字典项编码允许数字开头，字典类型编码仍必须字母开头。 */
+    private static final Pattern ITEM_CODE_PATTERN = Pattern.compile("[A-Z0-9][A-Z0-9_]{2,63}");
     /** 关键平台字典必须通过可审计的系统任务审批路径变更。 */
     private static final Set<String> KEY_DICTIONARY_TYPE_CODES = Set.of(
             "TASK_STATUS",
@@ -122,7 +124,7 @@ public class DictionaryApplicationService {
         }
         requireDirectMutationAllowed(type.code());
 
-        String code = normalizeCode(command.code(), "字典项编码");
+        String code = normalizeItemCode(command.code(), "字典项编码");
         String name = requiredText(command.name(), "字典项名称", 50);
         int sortOrder = normalizeSortOrder(command.sortOrder());
         if (dictionaryItemMapper.existsByTypeIdAndCode(type.id(), code)) {
@@ -225,6 +227,14 @@ public class DictionaryApplicationService {
         String code = requiredText(value, fieldName, 64).toUpperCase(Locale.ROOT);
         if (!CODE_PATTERN.matcher(code).matches()) {
             throw new IllegalArgumentException(fieldName + "仅允许3至64位大写字母、数字和下划线，且必须以字母开头");
+        }
+        return code;
+    }
+
+    private String normalizeItemCode(String value, String fieldName) {
+        String code = requiredText(value, fieldName, 64).toUpperCase(Locale.ROOT);
+        if (!ITEM_CODE_PATTERN.matcher(code).matches()) {
+            throw new IllegalArgumentException(fieldName + "仅允许3至64位大写字母、数字和下划线");
         }
         return code;
     }

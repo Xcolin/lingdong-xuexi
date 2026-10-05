@@ -19,6 +19,7 @@
             <arg column="version_no" javaType="java.lang.Integer"/>
             <arg column="created_at" javaType="java.time.LocalDateTime"/>
             <arg column="updated_at" javaType="java.time.LocalDateTime"/>
+            <arg column="admin_division_code" javaType="java.lang.String"/>
         </constructor>
     </resultMap>
 
@@ -36,7 +37,8 @@
             effective_status,
             version_no,
             created_at,
-            updated_at
+            updated_at,
+            admin_division_code
         FROM sys_organization
         WHERE id = #{id}
     </select>
@@ -45,7 +47,7 @@
         SELECT
             id, parent_id, parent_scope_key, organization_code, organization_name,
             organization_type, organization_path, sort_order, status,
-            effective_status, version_no, created_at, updated_at
+            effective_status, version_no, created_at, updated_at, admin_division_code
         FROM sys_organization
         WHERE id = #{id}
         FOR UPDATE
@@ -65,7 +67,8 @@
             effective_status,
             version_no,
             created_at,
-            updated_at
+            updated_at,
+            admin_division_code
         FROM sys_organization
         WHERE organization_code = #{code}
     </select>
@@ -110,6 +113,7 @@
             status
             , effective_status
             , version_no
+            , admin_division_code
         ) VALUES (
             #{organization.id},
             #{organization.parentId, jdbcType=BIGINT},
@@ -122,6 +126,7 @@
             #{organization.status}
             , #{organization.effectiveStatus}
             , #{organization.versionNo}
+            , #{organization.adminDivisionCode, jdbcType=VARCHAR}
         )
     </insert>
 
@@ -129,6 +134,7 @@
         UPDATE sys_organization
         SET organization_name = #{name},
             sort_order = #{sortOrder},
+            admin_division_code = #{adminDivisionCode, jdbcType=VARCHAR},
             version_no = version_no + 1,
             updated_at = CURRENT_TIMESTAMP
         WHERE id = #{id}
@@ -139,7 +145,7 @@
         SELECT
             id, parent_id, parent_scope_key, organization_code, organization_name,
             organization_type, organization_path, sort_order, status,
-            effective_status, version_no, created_at, updated_at
+            effective_status, version_no, created_at, updated_at, admin_division_code
         FROM sys_organization
         WHERE organization_path LIKE CONCAT(#{path}, '%')
         ORDER BY organization_path ASC
@@ -197,6 +203,31 @@
           AND version_no = #{expectedVersion}
     </update>
 
+    <update id="updateSortOrder">
+        UPDATE sys_organization
+        SET sort_order = #{sortOrder},
+            version_no = version_no + 1,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+          AND version_no = #{expectedVersion}
+    </update>
+
+    <select id="findChildrenForUpdate" resultMap="OrganizationResultMap">
+        SELECT
+            id, parent_id, parent_scope_key, organization_code, organization_name,
+            organization_type, organization_path, sort_order, status,
+            effective_status, version_no, created_at, updated_at, admin_division_code
+        FROM sys_organization
+        <where>
+            <choose>
+                <when test="parentId == null">parent_id IS NULL</when>
+                <otherwise>parent_id = #{parentId}</otherwise>
+            </choose>
+        </where>
+        ORDER BY sort_order ASC, organization_code ASC
+        FOR UPDATE
+    </select>
+
     <select id="countDeleteReferences" resultType="long">
         SELECT
             (SELECT COUNT(*) FROM sys_organization WHERE parent_id = #{id})
@@ -240,7 +271,8 @@
             organization.organization_code, organization.organization_name,
             organization.organization_type, organization.organization_path,
             organization.sort_order, organization.status, organization.effective_status,
-            organization.version_no, organization.created_at, organization.updated_at
+            organization.version_no, organization.created_at, organization.updated_at,
+            organization.admin_division_code
         FROM sys_organization_admin organization_admin
         JOIN sys_organization administrator_root
           ON administrator_root.id = organization_admin.organization_id
@@ -261,7 +293,8 @@
             organization.organization_code, organization.organization_name,
             organization.organization_type, organization.organization_path,
             organization.sort_order, organization.status, organization.effective_status,
-            organization.version_no, organization.created_at, organization.updated_at
+            organization.version_no, organization.created_at, organization.updated_at,
+            organization.admin_division_code
         FROM sys_organization_admin organization_admin
         JOIN sys_organization administrator_root
           ON administrator_root.id = organization_admin.organization_id
@@ -288,7 +321,8 @@
             effective_status,
             version_no,
             created_at,
-            updated_at
+            updated_at,
+            admin_division_code
         FROM sys_organization
         ORDER BY organization_path ASC, sort_order ASC, organization_code ASC
     </select>
@@ -297,7 +331,7 @@
         SELECT
             id, parent_id, parent_scope_key, organization_code, organization_name,
             organization_type, organization_path, sort_order, status,
-            effective_status, version_no, created_at, updated_at
+            effective_status, version_no, created_at, updated_at, admin_division_code
         FROM sys_organization
         WHERE id IN
         <foreach collection="ids" item="id" open="(" separator="," close=")">
@@ -310,7 +344,7 @@
         SELECT
             id, parent_id, parent_scope_key, organization_code, organization_name,
             organization_type, organization_path, sort_order, status,
-            effective_status, version_no, created_at, updated_at
+            effective_status, version_no, created_at, updated_at, admin_division_code
         FROM sys_organization
         WHERE
         <foreach collection="rootPaths" item="rootPath" open="(" separator=" OR " close=")">

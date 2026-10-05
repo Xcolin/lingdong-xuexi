@@ -34,6 +34,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @SpringBootTest
 @ActiveProfiles("test")
 class InterfaceServiceApplicationServiceTest {
+    @Autowired private com.lingdong.learning.permission.infrastructure.persistence.UserPermissionMapper explicitPermissions;
+    @Autowired private com.lingdong.learning.permission.infrastructure.persistence.PermissionMapper permissionCatalog;
+    @Autowired private com.lingdong.learning.common.id.IdGenerator permissionIds;
     @Autowired private InterfaceServiceApplicationService interfaceServiceApplicationService;
     @Autowired private InterfaceServiceMapper interfaceServiceMapper;
     @Autowired private InterfaceServiceCallLogMapper interfaceServiceCallLogMapper;
@@ -151,15 +154,16 @@ class InterfaceServiceApplicationServiceTest {
                         "notification-adapter", InterfaceAuthorizationScope.GLOBAL, null, owner.id(),
                         "登记短信接口", "登记短信通知调用服务"
                 )
-        )).isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("系统管理员");
+        )).isInstanceOf(com.lingdong.learning.common.security.SystemOperationAccessDeniedException.class)
+                .hasMessageContaining("无权");
     }
 
     @Test
-    void mixedSystemAuditorCannotSubmitInterfaceServiceChanges() {
+    void explicitDenyBlocksMixedRoleInterfaceChanges() {
         User mixed = createUserWithRole("interface_mixed_auditor", "兼任接口审核员", "SYS_ADMIN");
         userAccessApplicationService.assignRole(new AssignRoleToUserCommand(
                 mixed.id(), roleMapper.findByCode("SYS_AUDITOR").id(), null));
+        explicitPermissions.insert(permissionIds.nextId(), mixed.id(), permissionCatalog.findByCode("INTERFACE_SERVICE_MANAGE").id(), com.lingdong.learning.permission.domain.PermissionEffect.DENY);
         User owner = createUser("interface_mixed_owner", "接口责任人");
 
         assertThatThrownBy(() -> interfaceServiceApplicationService.createAndSubmitRegistration(

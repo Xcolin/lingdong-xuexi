@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.lingdong.learning.menu.infrastructure.persistence.MenuMapper">
-  <sql id="columns">id,code,name,type,parent_id,route,icon,permission_code,sort_order,status,version</sql>
+  <sql id="columns">id,code,name,type,parent_id,route,icon,permission_code,grantable,sort_order,status,version</sql>
   <select id="findAll" resultType="com.lingdong.learning.menu.domain.MenuNode">SELECT <include refid="columns"/> FROM sys_menu ORDER BY sort_order,id</select>
   <select id="lockAll" resultType="com.lingdong.learning.menu.domain.MenuNode">SELECT <include refid="columns"/> FROM sys_menu ORDER BY id FOR UPDATE</select>
-  <insert id="insert">INSERT INTO sys_menu (<include refid="columns"/>) VALUES (#{node.id},#{node.code},#{node.name},#{node.type},#{node.parentId},#{node.route},#{node.icon},#{node.permissionCode},#{node.sortOrder},#{node.status},#{node.version})</insert>
-  <update id="update">UPDATE sys_menu SET name=#{node.name},type=#{node.type},parent_id=#{node.parentId},route=#{node.route},icon=#{node.icon},permission_code=#{node.permissionCode},sort_order=#{node.sortOrder},status=#{node.status},version=version+1 WHERE id=#{node.id} AND version=#{node.version}</update>
+  <insert id="insert">INSERT INTO sys_menu (<include refid="columns"/>) VALUES (#{node.id},#{node.code},#{node.name},#{node.type},#{node.parentId},#{node.route},#{node.icon},#{node.permissionCode},#{node.grantable},#{node.sortOrder},#{node.status},#{node.version})</insert>
+  <update id="update">UPDATE sys_menu SET code=#{node.code},name=#{node.name},type=#{node.type},parent_id=#{node.parentId},route=#{node.route},icon=#{node.icon},permission_code=#{node.permissionCode},grantable=#{node.grantable},sort_order=#{node.sortOrder},status=#{node.status},version=version+1 WHERE id=#{node.id} AND version=#{node.version}</update>
   <update id="reorder">UPDATE sys_menu SET sort_order=#{sortOrder},version=version+1 WHERE id=#{id} AND version=#{version}</update>
 </mapper>

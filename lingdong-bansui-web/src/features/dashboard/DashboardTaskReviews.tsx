@@ -17,8 +17,7 @@ export function DashboardTaskReviews({ userId }: { userId: string }) {
     void Promise.all([authApi.currentUser(), capabilityApi.web()]).then(([user, capability]) => {
       if (!active) return;
       setAllowed(user.userId === userId && user.clientType === 'WEB'
-        && capability.learningTaskManagementEnabled && !user.roleCodes.includes('SYS_AUDITOR')
-        && user.roleCodes.some(role => ['PARENT', 'TEACHER', 'ORG_ADMIN'].includes(role))
+        && capability.learningTaskManagementEnabled
         && user.permissionCodes.includes('TASK_ASSIGNMENT_REVIEW'));
     }).catch(cause => { if (active) setError(cause instanceof Error ? cause.message : '待审核权限核验失败'); })
       .finally(() => { if (active) setBusy(false); });

@@ -12,7 +12,8 @@ public interface TeacherManagementMapper {
 
     long count(@Param("criteria") TeacherDirectoryCriteria criteria);
 
-    List<TeacherClassIdRow> findActiveClassIds(@Param("teacherUserIds") List<Long> teacherUserIds);
+    List<TeacherClassIdRow> findActiveClassIds(@Param("teacherUserIds") List<Long> teacherUserIds,
+            @Param("allOrganizations") boolean allOrganizations, @Param("rootPaths") List<String> rootPaths);
 
     TeacherDirectoryRow findAccessibleById(
             @Param("teacherUserId") Long teacherUserId,

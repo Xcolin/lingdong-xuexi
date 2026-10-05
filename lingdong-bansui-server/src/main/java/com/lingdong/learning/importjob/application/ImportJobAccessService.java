@@ -46,9 +46,7 @@ public class ImportJobAccessService {
     public void requireRead(Long userId, ImportJobRecord job) {
         requireFeatures(job.organizationId());
         requirePermission(userId, "IMPORT_JOB_READ");
-        if (userRoleMapper.hasRoleCode(userId, "SYS_ADMIN")) {
-            return;
-        }
+        
         boolean owner = Objects.equals(job.requesterId(), userId);
         boolean currentScope = job.organizationId() == null
                 || dataScopeService.canAccess(userId, job.organizationId());
@@ -58,7 +56,7 @@ public class ImportJobAccessService {
     }
 
     public boolean isSystemAdministrator(Long userId) {
-        return userRoleMapper.hasRoleCode(userId, "SYS_ADMIN");
+        return false;
     }
 
     public void requireReadPermission(Long userId) {

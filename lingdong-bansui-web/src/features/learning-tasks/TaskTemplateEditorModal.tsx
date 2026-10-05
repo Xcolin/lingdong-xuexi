@@ -67,11 +67,12 @@ export function TaskTemplateEditorModal({
     <Modal
       title={template ? '编辑个人模板' : '新建个人模板'}
       open={open}
+      width="min(640px, 92vw)"
       onCancel={onClose}
       destroyOnHidden
       footer={[
         <Button actionKey="learning-tasks.task-template-editor-modal.1" key="cancel" onClick={onClose}>取消</Button>,
-        <Button actionKey="learning-tasks.task-template-editor-modal.2"
+        <Button actionKey="LEARNING_TASK_TEMPLATE_MANAGE_PERSONAL"
           key="save"
           type="primary"
           loading={submitting}

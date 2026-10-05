@@ -22,7 +22,7 @@ const assert = require('node:assert/strict');
   await page.goto((process.env.MINI_URL || 'http://127.0.0.1:5176') + '/#/pages/student-home/student-home');
   await page.getByText('今日共 8 项任务', { exact: true }).waitFor();
   await page.getByText('家庭阅读', { exact: true }).waitFor();
-  fail = true; await page.getByText('刷新今日任务', { exact: true }).click();
+  fail = true; await page.reload();
   await page.getByText('今日任务查询失败', { exact: true }).waitFor();
   assert.equal(await page.getByText('家庭阅读', { exact: true }).count(), 0);
   assert.equal(await page.getByText('今日暂无任务', { exact: true }).count(), 0);

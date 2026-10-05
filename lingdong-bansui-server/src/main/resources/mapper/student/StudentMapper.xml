@@ -33,11 +33,30 @@
                     <if test="query.parent and query.organizationAdministrator"> OR </if>
                     <if test="query.organizationAdministrator">
                         EXISTS (SELECT 1 FROM edu_student_organization student_organization
-                        JOIN sys_organization_admin organization_admin
-                          ON organization_admin.organization_id = student_organization.organization_id
+                        JOIN sys_organization organization ON organization.id = student_organization.organization_id
                         WHERE student_organization.student_id = edu_student.id
+                          AND student_organization.relation_type = 'ENROLLMENT'
                           AND student_organization.status = 'ACTIVE'
-                          AND organization_admin.user_id = #{query.currentUserId})
+                          <choose>
+                            <when test="query.webManagement">
+                              AND organization.status = 'ENABLED' AND organization.effective_status = 'ENABLED'
+                              <if test="!query.allOrganizations">
+                                AND <choose>
+                                  <when test="query.rootPaths != null and query.rootPaths.size() > 0">
+                                    <foreach collection="query.rootPaths" item="path" open="(" close=")" separator=" OR ">
+                                      organization.organization_path LIKE CONCAT(#{path}, '%')
+                                    </foreach>
+                                  </when>
+                                  <otherwise>1 = 0</otherwise>
+                                </choose>
+                              </if>
+                            </when>
+                            <otherwise>
+                              AND EXISTS (SELECT 1 FROM sys_organization_admin administrator
+                                WHERE administrator.user_id = #{query.currentUserId}
+                                  AND administrator.organization_id = organization.id)
+                            </otherwise>
+                          </choose>)
                     </if>
                 )
             </if>

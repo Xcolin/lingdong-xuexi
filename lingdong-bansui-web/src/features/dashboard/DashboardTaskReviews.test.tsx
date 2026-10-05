@@ -21,7 +21,7 @@ it('实时核验后复用真实本人待审核查询，零数据才显示空态'
   expect(taskReviewApi.list).toHaveBeenCalledWith(1,20);
 });
 it('系统审核员混合家长角色也不加载业务队列', async () => {
-  vi.mocked(authApi.currentUser).mockResolvedValue({ ...user, roleCodes: ['PARENT', 'SYS_AUDITOR'] });
+  vi.mocked(authApi.currentUser).mockResolvedValue({ ...user, roleCodes: ['ALL_ROLE_TEST'], permissionCodes: [] });
   render(<DashboardTaskReviews userId={user.userId} />);
   await screen.findByText('当前无任务审核权限或功能未开启。');
   expect(taskReviewApi.list).not.toHaveBeenCalled();

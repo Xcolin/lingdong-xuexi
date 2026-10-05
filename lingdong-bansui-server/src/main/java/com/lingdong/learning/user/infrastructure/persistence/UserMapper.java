@@ -6,6 +6,7 @@ import com.lingdong.learning.user.domain.UserStatus;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -13,6 +14,10 @@ import java.util.List;
  */
 @Mapper
 public interface UserMapper {
+    List<User> findOrganizationMembers(@Param("organizationId") Long organizationId, @Param("keyword") String keyword, @Param("offset") int offset, @Param("limit") int limit);
+
+    long countOrganizationMembers(@Param("organizationId") Long organizationId, @Param("keyword") String keyword);
+
     User findById(@Param("id") Long id);
 
     User findByIdForUpdate(@Param("id") Long id);
@@ -24,6 +29,8 @@ public interface UserMapper {
     User findByMobileForUpdate(@Param("mobile") String mobile);
 
     List<User> findPage(@Param("query") UserDirectoryQuery query);
+
+    List<UserNameRow> findNamesByIds(@Param("ids") Collection<Long> ids);
 
     long count(@Param("query") UserDirectoryQuery query);
 

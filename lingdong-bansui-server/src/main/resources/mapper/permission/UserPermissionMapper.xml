@@ -20,6 +20,10 @@
         ORDER BY permission_id
     </select>
 
+    <select id="lockByUserId" resultMap="PermissionAssignmentMap">
+        SELECT permission_id, effect FROM sys_user_permission WHERE user_id = #{userId} ORDER BY permission_id FOR UPDATE
+    </select>
+
     <insert id="insert">
         INSERT INTO sys_user_permission (id, user_id, permission_id, effect)
         VALUES (#{id}, #{userId}, #{permissionId}, #{effect})

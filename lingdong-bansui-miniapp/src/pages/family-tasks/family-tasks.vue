@@ -1,7 +1,6 @@
 <template>
   <view class="page has-tabbar">
     <text class="title">家庭任务</text>
-    <button :disabled="busy" @tap="load(1)">刷新任务</button>
     <button v-if="canCreate" :disabled="busy" @tap="edit()">新建家庭任务</button>
     <text v-if="busy">正在处理任务</text><text v-if="error" class="error">{{ error }}</text>
     <view v-if="editing" class="card">

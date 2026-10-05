@@ -28,7 +28,7 @@ class StudentImportRowProcessorTest {
         StudentCredentialCipher cipher = mock(StudentCredentialCipher.class);
         StudentImportRowMapper rowMapper = mock(StudentImportRowMapper.class);
         StudentImportRowProcessor processor = new StudentImportRowProcessor(
-                studentService, classService, cipher, rowMapper);
+                studentService, classService, cipher, rowMapper, org.mockito.Mockito.mock(com.lingdong.learning.user.infrastructure.persistence.UserRoleMapper.class), org.mockito.Mockito.mock(com.lingdong.learning.studentimport.application.StudentImportAccessService.class));
         Student student = Student.create(1874244142494647051L, "张同学", "G3",
                 1874244142494647052L);
         when(studentService.createStudent(any(), any())).thenReturn(
@@ -53,7 +53,7 @@ class StudentImportRowProcessorTest {
         StudentCredentialCipher cipher = mock(StudentCredentialCipher.class);
         StudentImportRowMapper rowMapper = mock(StudentImportRowMapper.class);
         StudentImportRowProcessor processor = new StudentImportRowProcessor(
-                studentService, classService, cipher, rowMapper);
+                studentService, classService, cipher, rowMapper, org.mockito.Mockito.mock(com.lingdong.learning.user.infrastructure.persistence.UserRoleMapper.class), org.mockito.Mockito.mock(com.lingdong.learning.studentimport.application.StudentImportAccessService.class));
         Student student = Student.create(1874244142494647051L, "张同学", null,
                 1874244142494647052L);
         when(studentService.createStudent(any(), any())).thenReturn(

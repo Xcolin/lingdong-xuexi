@@ -112,7 +112,7 @@ export function StudentOrganizationLifecycleDrawer({
   }
 
   return (
-    <Drawer title="学员机构关系" open={open} onClose={onClose} width={560} destroyOnClose>
+    <Drawer title="学员机构关系" open={open} onClose={onClose} width="min(560px, 92vw)" destroyOnClose>
       <Spin spinning={loading}>
         <Segmented
           block

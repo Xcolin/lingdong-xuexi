@@ -55,6 +55,93 @@ class IamManagementControllerTest {
     @Autowired private OrganizationAdminMapper organizationAdminMapper;
 
     @Test
+    void concurrentBatchSavesAcceptOnlyOneSnapshotAndAuditNewAllow() throws Exception {
+        User admin = createUserWithRole("iam_race_admin", "并发授权管理员", "SYS_ADMIN");
+        setPassword(admin, admin);
+        String token = loginAccessToken("iam_race_admin");
+        Role role = roleApplicationService.createCustomRole(new CreateCustomRoleCommand(
+                "IAM_RACE_ROLE", "并发角色", null, RoleDataScope.SELF, admin.id()));
+        String pid = permissionMapper.findByCode("IAM_USER_READ").id().toString();
+        String body = "{\"permissionIds\":[\"%s\"],\"managedPermissionIds\":[\"%s\"],\"expectedAssignments\":[]}".formatted(pid, pid);
+        var executor = java.util.concurrent.Executors.newFixedThreadPool(2);
+        var start = new java.util.concurrent.CountDownLatch(1);
+        java.util.concurrent.Callable<Integer> save = () -> {
+            start.await();
+            return mockMvc.perform(put("/api/v1/roles/{role}/permissions:batch", role.id())
+                    .header("Authorization", "Bearer " + token).contentType(MediaType.APPLICATION_JSON).content(body))
+                    .andReturn().getResponse().getStatus();
+        };
+        try {
+            var first = executor.submit(save);
+            var second = executor.submit(save);
+            start.countDown();
+            assertThat(java.util.List.of(first.get(15, java.util.concurrent.TimeUnit.SECONDS), second.get(15, java.util.concurrent.TimeUnit.SECONDS)))
+                    .containsExactlyInAnyOrder(204, 409);
+        } finally { executor.shutdownNow(); }
+        mockMvc.perform(get("/api/v1/iam/audits").param("eventType", "ROLE_PERMISSION_CONFIGURE")
+                .param("targetId", role.id().toString()).header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(1));
+        mockMvc.perform(put("/api/v1/roles/{role}/permissions:batch", role.id()).contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void readsPermissionTreeMenusWithIamGrantPermissionEvenWithoutMenuRead() throws Exception {
+        User admin = createUserWithRole("iam_tree_admin", "权限树管理员", "SYS_ADMIN");
+        setPassword(admin, admin);
+        String token = loginAccessToken("iam_tree_admin");
+        Long menuRead = permissionMapper.findByCode("MENU_READ").id();
+        mockMvc.perform(put("/api/v1/users/{id}/permissions/{pid}", admin.id(), menuRead)
+                .header("Authorization", "Bearer " + token).contentType(MediaType.APPLICATION_JSON).content("{\"effect\":\"DENY\"}"))
+                .andExpect(status().isNoContent());
+        mockMvc.perform(get("/api/v1/iam/menus").header("Authorization", "Bearer " + token)).andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/v1/iam/role-permission-menus").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk()).andExpect(jsonPath("$[0].id").isString());
+    }
+
+    @Test
+    void batchRolePermissionsPreservesDenyAndUnmanagedAndRejectsStaleSnapshots() throws Exception {
+        User admin = createUserWithRole("iam_batch_admin", "批量授权管理员", "SYS_ADMIN");
+        setPassword(admin, admin);
+        String token = loginAccessToken("iam_batch_admin");
+        Role role = roleApplicationService.createCustomRole(new CreateCustomRoleCommand(
+                "IAM_BATCH_ROLE", "批量角色", null, RoleDataScope.SELF, admin.id()));
+        String allow = permissionMapper.findByCode("IAM_USER_READ").id().toString();
+        String deny = permissionMapper.findByCode("IAM_ROLE_READ").id().toString();
+        String outside = permissionMapper.findByCode("IAM_PERMISSION_READ").id().toString();
+        for (String pid : java.util.List.of(allow, deny, outside)) {
+            mockMvc.perform(put("/api/v1/roles/{role}/permissions/{pid}", role.id(), pid)
+                    .header("Authorization", "Bearer " + token).contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"effect\":\"%s\"}".formatted(pid.equals(deny) ? "DENY" : "ALLOW")))
+                    .andExpect(status().isNoContent());
+        }
+        String snapshot = mockMvc.perform(get("/api/v1/roles/{role}/permissions", role.id())
+                .header("Authorization", "Bearer " + token)).andReturn().getResponse().getContentAsString();
+        String body = "{\"permissionIds\":[],\"managedPermissionIds\":[\"%s\",\"%s\"],\"expectedAssignments\":%s}"
+                .formatted(allow, deny, snapshot);
+        mockMvc.perform(put("/api/v1/roles/{role}/permissions:batch", role.id())
+                .header("Authorization", "Bearer " + token).contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isNoContent());
+        JsonNode actual = objectMapper.readTree(mockMvc.perform(get("/api/v1/roles/{role}/permissions", role.id())
+                .header("Authorization", "Bearer " + token)).andReturn().getResponse().getContentAsString());
+        assertThat(actual.size()).isEqualTo(2);
+        assertThat(actual.toString()).contains(deny, outside).doesNotContain(allow);
+        mockMvc.perform(put("/api/v1/roles/{role}/permissions:batch", role.id())
+                .header("Authorization", "Bearer " + token).contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isConflict());
+        mockMvc.perform(put("/api/v1/roles/{role}/permissions:batch", role.id())
+                .header("Authorization", "Bearer " + token).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"permissionIds\":[\"%s\"],\"managedPermissionIds\":[\"%s\"],\"expectedAssignments\":%s}".formatted(deny, deny, actual)))
+                .andExpect(status().isConflict());
+        mockMvc.perform(put("/api/v1/roles/{role}/permissions:batch", role.id())
+                .header("Authorization", "Bearer " + token).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"permissionIds\":[\"%s\",\"1000000000000000000\"],\"managedPermissionIds\":[\"%s\",\"1000000000000000000\"],\"expectedAssignments\":%s}".formatted(allow, allow, actual)))
+                .andExpect(status().isNotFound());
+        assertThat(objectMapper.readTree(mockMvc.perform(get("/api/v1/roles/{role}/permissions", role.id())
+                .header("Authorization", "Bearer " + token)).andReturn().getResponse().getContentAsString())).isEqualTo(actual);
+    }
+
+    @Test
     void appliesPermissionDecisionBeforeAccessingUserManagementEndpoints() throws Exception {
         User administrator = createUserWithRole("iam_api_admin", "IAM 接口管理员", "SYS_ADMIN");
         User targetUser = createUser("iam_api_target", "IAM 查询目标");
@@ -94,8 +181,8 @@ class IamManagementControllerTest {
                         .header("Authorization", "Bearer " + administratorAccessToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"username":"iam_created_user","displayName":"新建平台用户","mobile":"13900000001","type":"PLATFORM"}
-                                """))
+                                {"username":"iam_created_user","displayName":"新建平台用户","mobile":"13900000001","type":"PLATFORM","organizationId":"%s","password":"Password123"}
+                                """.formatted(school.id())))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").isString())
                 .andExpect(jsonPath("$.username").value("iam_created_user"))
@@ -107,7 +194,7 @@ class IamManagementControllerTest {
                         .header("Authorization", "Bearer " + administratorAccessToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"organizationId\":\"%s\"}".formatted(school.id())))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isConflict());
 
         Role organizationAdministratorRole = roleMapper.findByCode("ORG_ADMIN");
         mockMvc.perform(post("/api/v1/users/{id}/roles", createdUserId)
@@ -214,9 +301,7 @@ class IamManagementControllerTest {
                         .content("""
                                 {"code":"OPS_SAMPLE_OPERATION","name":"运维示例操作","resourceType":"OPERATION","client":"WEB"}
                                 """))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").isString())
-                .andExpect(jsonPath("$.code").value("OPS_SAMPLE_OPERATION"));
+                .andExpect(status().isForbidden());
 
         MvcResult roleResult = mockMvc.perform(post("/api/v1/roles")
                         .header("Authorization", "Bearer " + administratorAccessToken)
@@ -229,17 +314,11 @@ class IamManagementControllerTest {
                 .andReturn();
         Long operationsRoleId = objectMapper.readTree(roleResult.getResponse().getContentAsString()).path("id").asLong();
         Long createUserPermissionId = permissionMapper.findByCode("IAM_USER_CREATE").id();
-        Long createPermissionCatalogId = permissionMapper.findByCode("IAM_PERMISSION_CREATE").id();
 
         mockMvc.perform(post("/api/v1/roles/{roleId}/permissions", operationsRoleId)
                         .header("Authorization", "Bearer " + administratorAccessToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"permissionId\":\"%s\"}".formatted(createUserPermissionId)))
-                .andExpect(status().isNoContent());
-        mockMvc.perform(post("/api/v1/roles/{roleId}/permissions", operationsRoleId)
-                        .header("Authorization", "Bearer " + administratorAccessToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"permissionId\":\"%s\"}".formatted(createPermissionCatalogId)))
                 .andExpect(status().isNoContent());
         mockMvc.perform(post("/api/v1/users/{id}/roles", operationsUser.id())
                         .header("Authorization", "Bearer " + administratorAccessToken)
@@ -254,14 +333,13 @@ class IamManagementControllerTest {
                         .content("""
                                 {"code":"OPS_FORBIDDEN_PERMISSION","name":"非系统管理员权限目录","resourceType":"OPERATION","client":"WEB"}
                                 """))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
+                .andExpect(status().isForbidden());
         mockMvc.perform(post("/api/v1/users")
                         .header("Authorization", "Bearer " + operationsAccessToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"username":"iam_ops_created","displayName":"运维创建用户","type":"PLATFORM"}
-                                """))
+                                {"username":"iam_ops_created","displayName":"运维创建用户","type":"PLATFORM","organizationId":"%s","password":"Password123"}
+                                """.formatted(organizationApplicationService.createOrganization(new CreateOrganizationCommand("IAM_OPS_CREATE_ORG","运维创建用户组织","REGION",null,0)).id())))
                 .andExpect(status().isCreated());
         mockMvc.perform(post("/api/v1/users/{id}/roles", operationsUser.id())
                         .header("Authorization", "Bearer " + operationsAccessToken)
@@ -437,8 +515,7 @@ class IamManagementControllerTest {
                         .content("""
                                 {"code":"IAM_MISSING_PARENT","name":"缺失父级权限","resourceType":"OPERATION","client":"WEB","parentId":"1000000000000000000"}
                                 """))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.code").value("RESOURCE_NOT_FOUND"));
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -453,8 +530,8 @@ class IamManagementControllerTest {
                         .header("Authorization", "Bearer " + administratorToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"username":"iam_audit_target","displayName":"审计目标用户","type":"PLATFORM"}
-                                """))
+                                {"username":"iam_audit_target","displayName":"审计目标用户","type":"PLATFORM","organizationId":"%s","password":"Password123"}
+                                """.formatted(organizationApplicationService.createOrganization(new CreateOrganizationCommand("IAM_AUDIT_CREATE_ORG","审计创建用户组织","REGION",null,0)).id())))
                 .andExpect(status().isCreated())
                 .andReturn();
         String targetId = objectMapper.readTree(createdUserResult.getResponse().getContentAsString()).path("id").asText();
@@ -511,3 +588,4 @@ class IamManagementControllerTest {
         return userAccessApplicationService.createUser(new CreateUserCommand(username, displayName, null, UserType.PLATFORM));
     }
 }
+

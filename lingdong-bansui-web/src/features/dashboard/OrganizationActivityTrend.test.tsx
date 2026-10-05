@@ -17,7 +17,7 @@ const userId = '1000000000000000001';
 function granted() {
   mocks.currentUser.mockResolvedValue({
     userId, username: 'org_admin', displayName: '机构管理员', clientType: 'WEB',
-    roleCodes: ['ORG_ADMIN'], permissionCodes: []
+    roleCodes: ['ALL_ROLE_TEST'], permissionCodes: ['LEARNING_TASK_PROGRESS_READ']
   });
   mocks.web.mockResolvedValue({ client: 'WEB', learningTaskManagementEnabled: true });
 }

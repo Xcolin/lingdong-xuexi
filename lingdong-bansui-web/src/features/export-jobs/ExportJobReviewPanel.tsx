@@ -2,9 +2,10 @@ import { ConfiguredModal as Modal } from '../../components/ConfiguredModal';
 import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { ViewportTable as Table } from '../../components/ViewportTable';
 import { Alert, Form, Input, Space, Tag, Tooltip, message } from 'antd';
-import { Check, RefreshCw, X } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { exportJobApi, type ExportJobReview, type ExportJobReviewPage } from '../../api/export-jobs';
+import { formatDateTime as formatTime } from '../../utils/datetime';
 
 const emptyPage: ExportJobReviewPage = { items: [], page: 1, pageSize: 20, total: 0 };
 
@@ -47,7 +48,6 @@ export function ExportJobReviewPanel() {
   return <section className="export-table-panel" aria-label="敏感导出审核">
     <div className="export-panel-toolbar">
       <span>仅展示等待当前系统审核员处理的申请</span>
-      <Tooltip title="刷新待审任务"><Button actionKey="export-jobs.export-job-review-panel.1" aria-label="刷新待审任务" icon={<RefreshCw size={16} />} loading={loading} onClick={() => void loadPage(page.page, page.pageSize)} /></Tooltip>
     </div>
     {error ? <Alert type="error" showIcon message={error} /> : null}
     <Table<ExportJobReview>
@@ -71,6 +71,7 @@ export function ExportJobReviewPanel() {
       title={decision?.action === 'approve' ? '批准敏感导出' : '驳回敏感导出'}
       okText={decision?.action === 'approve' ? '确认批准' : '确认驳回'}
       okButtonProps={{ danger: decision?.action === 'reject' }}
+      width="min(520px, 92vw)"
       confirmLoading={submitting}
       onOk={() => form.submit()}
       onCancel={() => setDecision(undefined)}
@@ -85,5 +86,4 @@ export function ExportJobReviewPanel() {
   </section>;
 }
 
-const formatTime = (value: string) => new Date(value).toLocaleString('zh-CN', { hour12: false });
 const toMessage = (error: unknown) => error instanceof Error ? error.message : '待审任务加载失败';

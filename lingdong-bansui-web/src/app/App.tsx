@@ -119,15 +119,14 @@ function ProtectedManagementApp() {
   const learningTasksAvailable = canAccessLearningTasks(currentUser, capabilities);
   const systemTasksAvailable = canAccessSystemTasks(currentUser, capabilities);
   const featureManagementAvailable = currentUser.clientType === 'WEB' && capabilities.client === 'WEB'
-    && currentUser.roleCodes.some(role => ['SYS_ADMIN', 'SYS_AUDITOR'].includes(role))
     && currentUser.permissionCodes.includes('FEATURE_TOGGLE_READ');
   const growthPointsAvailable = canAccessGrowthPoints(currentUser, capabilities);
   const rewardsAvailable = canAccessRewards(currentUser, capabilities);
   const growthReviewsAvailable = canAccessGrowthReviews(currentUser, capabilities);
   const anonymousRankAvailable = capabilities.anonymousClassRankEnabled === true
-    && currentUser.roleCodes.includes('PARENT') && !currentUser.roleCodes.includes('SYS_AUDITOR')
+    && currentUser.roleCodes.includes('PARENT')
     && currentUser.permissionCodes.includes('ANONYMOUS_CLASS_RANK_READ');
-  const rankWithdrawalAvailable = currentUser.roleCodes.includes('PARENT') && !currentUser.roleCodes.includes('SYS_AUDITOR');
+  const rankWithdrawalAvailable = currentUser.roleCodes.includes('PARENT');
   const studentQrLoginAvailable = canAccessStudentQrLogin(currentUser, capabilities);
   const parentRelationshipsAvailable = canAccessParentRelationships(currentUser, capabilities);
   const organizationPageAvailable = canAccessOrganizationPage(currentUser, capabilities);
@@ -203,9 +202,9 @@ function ProtectedManagementApp() {
             teacherManagementAvailable
               ? { key: 'teachers', icon: <GraduationCap size={18} />, label: '教师管理' }
               : null,
-            { key: 'users', icon: <UsersRound size={18} />, label: '用户管理' },
-            { key: 'iam', icon: <ShieldCheck size={18} />, label: '角色与权限' },
-            currentUser.roleCodes.some(role => ['SYS_ADMIN', 'SYS_AUDITOR'].includes(role)) && currentUser.permissionCodes.includes('MENU_READ')
+            currentUser.permissionCodes.includes('IAM_USER_LIST') ? { key: 'users', icon: <UsersRound size={18} />, label: '用户管理' } : null,
+            currentUser.permissionCodes.some(code => ['IAM_ROLE_READ', 'IAM_PERMISSION_READ'].includes(code)) ? { key: 'iam', icon: <ShieldCheck size={18} />, label: '角色与权限' } : null,
+            currentUser.permissionCodes.includes('MENU_READ')
               ? { key: 'menu-management', icon: <NavigationIcons.ListTree size={18} />, label: '菜单管理' } : null,
             dictionaryManagementAvailable
               ? { key: 'dictionaries', icon: <Database size={18} />, label: '数据字典' }
@@ -285,9 +284,9 @@ function ProtectedManagementApp() {
                   onSessionEnded={endSession}
                 />
               )} />
-              <Route path="/users" element={<UserManagementPage />} />
-              <Route path="/iam" element={<IamManagementPage />} />
-              <Route path="/menu-management" element={currentUser.permissionCodes.includes('MENU_READ') && currentUser.roleCodes.some(role => ['SYS_ADMIN', 'SYS_AUDITOR'].includes(role))
+              <Route path="/users" element={currentUser.permissionCodes.includes('IAM_USER_LIST') ? <UserManagementPage currentUser={currentUser} /> : <Navigate to="/dashboard" replace />} />
+              <Route path="/iam" element={currentUser.permissionCodes.some(code => ['IAM_ROLE_READ', 'IAM_PERMISSION_READ'].includes(code)) ? <IamManagementPage permissionCodes={currentUser.permissionCodes} /> : <Navigate to="/dashboard" replace />} />
+              <Route path="/menu-management" element={currentUser.permissionCodes.includes('MENU_READ')
                 ? <MenuManagementPage currentUser={currentUser} /> : <Navigate to="/dashboard" replace />} />
               <Route path="/attendance-records" element={attendanceAvailable
                 ? <AttendancePage currentUser={currentUser} onAccessUpdated={updateAttendanceAccess} />
@@ -361,13 +360,9 @@ function ProtectedManagementApp() {
                       canRead={currentUser.permissionCodes.includes('EXPORT_JOB_READ')}
                       canCreateOrdinary={currentUser.permissionCodes.includes('EXPORT_JOB_CREATE')}
                       canExportDictionary={capabilities.dictionaryManagementEnabled === true
-                        && currentUser.roleCodes.includes('SYS_ADMIN')
-                        && !currentUser.roleCodes.includes('SYS_AUDITOR')
                         && currentUser.permissionCodes.includes('DICTIONARY_READ')
                         && currentUser.permissionCodes.includes('DICTIONARY_EXPORT')}
                       canExportTemplate={capabilities.importExportTemplateManagementEnabled === true
-                        && currentUser.roleCodes.includes('SYS_ADMIN')
-                        && !currentUser.roleCodes.includes('SYS_AUDITOR')
                         && currentUser.permissionCodes.includes('IMPORT_EXPORT_TEMPLATE_READ')
                         && currentUser.permissionCodes.includes('IMPORT_EXPORT_TEMPLATE_EXPORT')}
                       canExportInterface={canExportInterfaceLedger(currentUser, capabilities)}
@@ -430,15 +425,13 @@ function ProtectedManagementApp() {
                 path="/growth-reviews"
                 element={growthReviewsAvailable
                   ? <GrowthReviewPage subscriptionEnabled={capabilities.growthReviewSubscriptionEnabled === true
-                      && currentUser.roleCodes.includes('PARENT') && !currentUser.roleCodes.includes('SYS_AUDITOR')}
+                      && currentUser.roleCodes.includes('PARENT')}
                     canEnableSubscription={currentUser.permissionCodes.includes('GROWTH_REVIEW_SUBSCRIBE_CHILD')
                       && currentUser.permissionCodes.includes('GROWTH_REVIEW_READ_CHILD')}
                     canCreateExport={capabilities.growthReviewPdfExportEnabled === true
-                      && !currentUser.roleCodes.includes('SYS_AUDITOR')
                       && currentUser.permissionCodes.includes('EXPORT_JOB_CREATE')
                       && currentUser.permissionCodes.includes('GROWTH_REVIEW_READ_CHILD')}
                     canReadExportHistory={capabilities.attachmentServiceEnabled === true
-                      && !currentUser.roleCodes.includes('SYS_AUDITOR')
                       && currentUser.permissionCodes.includes('EXPORT_JOB_READ')
                       && currentUser.permissionCodes.includes('GROWTH_REVIEW_READ_CHILD')} />
                   : <Navigate to="/dashboard" replace />}
@@ -451,8 +444,9 @@ function ProtectedManagementApp() {
                 path="/student-login"
                 element={studentQrLoginAvailable
                   ? <StudentLoginManagementPage
+                      studentQrLoginEnabled={capabilities.studentQrLoginEnabled === true}
                       studentWechatAuthEnabled={capabilities.studentWechatAuthEnabled === true}
-                      canManageStudentWechat={currentUser.roleCodes.includes('PARENT')}
+                      canManageStudentWechat={currentUser.roleCodes.includes('PARENT') && currentUser.permissionCodes.includes('STUDENT_WECHAT_UNBIND')}
                     />
                   : <Navigate to="/dashboard" replace />}
               />
@@ -482,38 +476,38 @@ export function canAccessLearningTasks(
   capabilities: ClientCapabilities
 ): boolean {
   return capabilities.learningTaskManagementEnabled
-    && currentUser.roleCodes.some((role) => ['PARENT', 'ORG_ADMIN', 'TEACHER'].includes(role));
+    && currentUser.permissionCodes.includes('LEARNING_TASK_READ_MANAGED');
 }
 
 export function canAccessGrowthPoints(
   currentUser: CurrentUser,
   capabilities: ClientCapabilities
 ): boolean {
-  return capabilities.growthPointQueryEnabled && currentUser.roleCodes.includes('PARENT');
+  return capabilities.growthPointQueryEnabled && currentUser.permissionCodes.includes('GROWTH_POINT_READ_CHILD');
 }
 
 export function canAccessRewards(
   currentUser: CurrentUser,
   capabilities: ClientCapabilities
 ): boolean {
-  return capabilities.rewardExchangeEnabled && currentUser.roleCodes.includes('PARENT');
+  return capabilities.rewardExchangeEnabled && currentUser.permissionCodes.some(code => ['REWARD_MANAGE_CHILD', 'REWARD_EXCHANGE_REVIEW_CHILD'].includes(code));
 }
 
 export function canAccessGrowthReviews(
   currentUser: CurrentUser,
   capabilities: ClientCapabilities
 ): boolean {
-  return (capabilities.dailyGrowthReviewEnabled || capabilities.periodicGrowthReportEnabled)
-    && currentUser.roleCodes.includes('PARENT');
+  return (capabilities.dailyGrowthReviewEnabled === true || capabilities.periodicGrowthReportEnabled === true)
+    && currentUser.permissionCodes.includes('GROWTH_REVIEW_READ_CHILD');
 }
 
 export function canAccessStudentQrLogin(
   currentUser: CurrentUser,
   capabilities: ClientCapabilities
 ): boolean {
-  return (capabilities.studentQrLoginEnabled
-      && currentUser.roleCodes.some((role) => ['PARENT', 'ORG_ADMIN'].includes(role)))
-    || (capabilities.studentWechatAuthEnabled === true && currentUser.roleCodes.includes('PARENT'));
+  return currentUser.permissionCodes.includes('STUDENT_READ')
+    && (capabilities.studentQrLoginEnabled === true
+      || (capabilities.studentWechatAuthEnabled === true && currentUser.roleCodes.includes('PARENT')));
 }
 
 export function canAccessParentRelationships(
@@ -528,11 +522,7 @@ export function canAccessOrganizationPage(
   currentUser: CurrentUser,
   capabilities: ClientCapabilities
 ): boolean {
-  if (currentUser.roleCodes.includes('ORG_ADMIN')) {
-    return true;
-  }
-  return capabilities.organizationManagementEnabled === true
-    && currentUser.roleCodes.some((role) => ['SYS_ADMIN', 'SYS_AUDITOR'].includes(role));
+  return (capabilities.organizationManagementEnabled === true && currentUser.permissionCodes.some(code => ['ORG_NODE_READ', 'ORG_NODE_CHANGE_REVIEW'].includes(code))) || currentUser.permissionCodes.includes('CLASS_READ');
 }
 
 export function canAccessDictionaryManagement(
@@ -598,8 +588,6 @@ export function canExportInterfaceLedger(currentUser: CurrentUser, capabilities:
     && capabilities.attachmentServiceEnabled === true
     && capabilities.interfaceServiceManagementEnabled === true
     && capabilities.importExportTemplateManagementEnabled === true
-    && currentUser.roleCodes.includes('SYS_ADMIN')
-    && !currentUser.roleCodes.includes('SYS_AUDITOR')
     && currentUser.permissionCodes.includes('INTERFACE_SERVICE_READ')
     && currentUser.permissionCodes.includes('INTERFACE_SERVICE_EXPORT');
 }
@@ -609,7 +597,7 @@ export function canAccessTeacherManagement(
   capabilities: ClientCapabilities
 ): boolean {
   return capabilities.teacherManagementEnabled === true
-    && currentUser.roleCodes.includes('ORG_ADMIN')
+
     && currentUser.permissionCodes.includes('TEACHER_READ');
 }
 
@@ -619,27 +607,25 @@ export function canAccessExceptionReports(
 ): boolean {
   return capabilities.studentExceptionReportEnabled === true
     && currentUser.permissionCodes.includes('EXCEPTION_REPORT_READ')
-    && currentUser.roleCodes.some((role) => ['TEACHER', 'ORG_ADMIN'].includes(role));
+;
 }
 
 export function canExportCache(currentUser: CurrentUser, capabilities: ClientCapabilities): boolean {
   return capabilities.dataExportEnabled === true && capabilities.attachmentServiceEnabled === true
     && capabilities.importExportTemplateManagementEnabled === true && capabilities.cacheManagementEnabled === true
-    && currentUser.roleCodes.includes('SYS_ADMIN') && !currentUser.roleCodes.includes('SYS_AUDITOR')
     && currentUser.permissionCodes.includes('CACHE_READ') && currentUser.permissionCodes.includes('CACHE_EXPORT');
 }
 
 export function canExportSystemTasks(currentUser: CurrentUser, capabilities: ClientCapabilities): boolean {
   return capabilities.dataExportEnabled === true && capabilities.attachmentServiceEnabled === true
     && capabilities.importExportTemplateManagementEnabled === true
-    && currentUser.roleCodes.some(role => role === 'SYS_ADMIN' || role === 'SYS_AUDITOR')
+
     && currentUser.permissionCodes.includes('SYSTEM_TASK_READ') && currentUser.permissionCodes.includes('SYSTEM_TASK_EXPORT');
 }
 
 export function canExportRewards(currentUser: CurrentUser, capabilities: ClientCapabilities): boolean {
   return capabilities.dataExportEnabled === true && capabilities.attachmentServiceEnabled === true
     && capabilities.importExportTemplateManagementEnabled === true && capabilities.rewardExchangeEnabled === true
-    && currentUser.roleCodes.includes('PARENT') && !currentUser.roleCodes.includes('SYS_AUDITOR')
     && currentUser.permissionCodes.includes('REWARD_EXCHANGE_REVIEW_CHILD')
     && currentUser.permissionCodes.includes('REWARD_EXCHANGE_EXPORT');
 }
@@ -647,8 +633,7 @@ export function canExportRewards(currentUser: CurrentUser, capabilities: ClientC
 export function canExportExceptions(currentUser: CurrentUser, capabilities: ClientCapabilities): boolean {
   return capabilities.dataExportEnabled === true && capabilities.attachmentServiceEnabled === true
     && capabilities.importExportTemplateManagementEnabled === true && capabilities.studentExceptionReportEnabled === true
-    && currentUser.roleCodes.some(role => role === 'TEACHER' || role === 'ORG_ADMIN')
-    && !currentUser.roleCodes.includes('SYS_AUDITOR')
+
     && currentUser.permissionCodes.includes('EXCEPTION_REPORT_READ')
     && currentUser.permissionCodes.includes('EXCEPTION_REPORT_EXPORT');
 }
@@ -660,34 +645,28 @@ export function canExportAttachments(currentUser: CurrentUser, capabilities: Cli
     && currentUser.permissionCodes.includes('ATTACHMENT_FILE_LEDGER_EXPORT');
 }
 
-/** 按服务端角色优先级选择任务读取权限，不允许高优先级身份回退到家长范围。 */
+/** 任务读取范围由服务端授权数据范围决定。 */
 export function canExportStudentTasks(currentUser: CurrentUser, capabilities: ClientCapabilities): boolean {
-  const roles = currentUser.roleCodes;
-  const readPermission = roles.includes('ORG_ADMIN') || roles.includes('TEACHER')
-    ? 'LEARNING_TASK_PROGRESS_READ' : roles.includes('PARENT') ? 'LEARNING_TASK_READ_MANAGED' : undefined;
   return capabilities.dataExportEnabled === true && capabilities.attachmentServiceEnabled === true
     && capabilities.importExportTemplateManagementEnabled === true && capabilities.learningTaskManagementEnabled === true
-    && !roles.includes('SYS_AUDITOR') && readPermission !== undefined
-    && currentUser.permissionCodes.includes(readPermission)
+    && currentUser.permissionCodes.some(code => ['LEARNING_TASK_PROGRESS_READ', 'LEARNING_TASK_READ_MANAGED'].includes(code))
     && currentUser.permissionCodes.includes('STUDENT_TASK_REPORT_EXPORT');
 }
 
-/** 机构任务统计仅机构管理员可导出，兼任审核员排除。 */
+/** 机构任务统计要求读取及导出权限。 */
 export function canExportOrgTaskStatistics(currentUser: CurrentUser, capabilities: ClientCapabilities): boolean {
   return capabilities.dataExportEnabled === true && capabilities.attachmentServiceEnabled === true
     && capabilities.importExportTemplateManagementEnabled === true && capabilities.learningTaskManagementEnabled === true
-    && currentUser.roleCodes.includes('ORG_ADMIN') && !currentUser.roleCodes.includes('SYS_AUDITOR')
+
     && currentUser.permissionCodes.includes('ORGANIZATION_TASK_STATISTICS_EXPORT')
     && currentUser.permissionCodes.includes('LEARNING_TASK_PROGRESS_READ');
 }
 
-/** 考勤台账四身份可导出（机构/教师/家长/学生），兼任审核员排除，沿用考勤管理开关。 */
+/** 考勤台账要求读取、导出权限及考勤开关。 */
 export function canExportAttendanceLedger(currentUser: CurrentUser, capabilities: ClientCapabilities): boolean {
-  const roles = currentUser.roleCodes;
   return capabilities.dataExportEnabled === true && capabilities.attachmentServiceEnabled === true
     && capabilities.importExportTemplateManagementEnabled === true && capabilities.attendanceManagementEnabled === true
-    && !roles.includes('SYS_AUDITOR')
-    && roles.some(role => ['ORG_ADMIN', 'TEACHER', 'PARENT', 'STUDENT'].includes(role))
+
     && currentUser.permissionCodes.includes('ATTENDANCE_LEDGER_EXPORT')
     && currentUser.permissionCodes.includes('ATTENDANCE_READ');
 }

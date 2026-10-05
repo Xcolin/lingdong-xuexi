@@ -22,10 +22,16 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.regex.Pattern;
 import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.Map;
+import java.util.HashMap;
+import com.lingdong.learning.permission.domain.PermissionEffect;
 
 /** 管理 RBAC 权限目录、角色权限效果和用户显式权限效果。 */
 @Service
 public class PermissionAdministrationService {
+    private final com.lingdong.learning.permission.application.PermissionDecisionService decisions;
     private static final Pattern CODE_PATTERN = Pattern.compile("[A-Z][A-Z0-9_]{2,127}");
 
     private final PermissionMapper permissionMapper;
@@ -36,6 +42,7 @@ public class PermissionAdministrationService {
     private final UserPermissionMapper userPermissionMapper;
     private final IdGenerator idGenerator;
     private final IamChangeAuditService auditService;
+    private final com.lingdong.learning.menu.infrastructure.persistence.MenuMapper menuMapper;
 
     public PermissionAdministrationService(
             PermissionMapper permissionMapper,
@@ -45,8 +52,9 @@ public class PermissionAdministrationService {
             RolePermissionMapper rolePermissionMapper,
             UserPermissionMapper userPermissionMapper,
             IdGenerator idGenerator,
-            IamChangeAuditService auditService
-    ) {
+            IamChangeAuditService auditService,
+            com.lingdong.learning.menu.infrastructure.persistence.MenuMapper menuMapper, com.lingdong.learning.permission.application.PermissionDecisionService decisions) {
+        this.decisions = decisions;
         this.permissionMapper = permissionMapper;
         this.roleMapper = roleMapper;
         this.userMapper = userMapper;
@@ -55,11 +63,12 @@ public class PermissionAdministrationService {
         this.userPermissionMapper = userPermissionMapper;
         this.idGenerator = idGenerator;
         this.auditService = auditService;
+        this.menuMapper = menuMapper;
     }
 
     @Transactional
     public Permission createPermission(CreatePermissionCommand command) {
-        requireSystemAdministrator(command.operatorId());
+        requirePermission(command.operatorId(), "IAM_ROLE_PERMISSION_GRANT");
         String code = validatePermissionCode(command.code());
         String name = requiredText(command.name(), "权限名称", 128);
         if (command.resourceType() == null || command.client() == null) {
@@ -89,7 +98,8 @@ public class PermissionAdministrationService {
 
     @Transactional
     public void grantRolePermission(GrantRolePermissionCommand command) {
-        requireSystemAdministrator(command.operatorId());
+        requirePermission(command.operatorId(), "IAM_ROLE_PERMISSION_GRANT");
+        rolePermissionMapper.lockRole(command.roleId());
         if (roleMapper.findById(command.roleId()) == null) {
             throw new ResourceNotFoundException("角色不存在：" + command.roleId());
         }
@@ -107,7 +117,8 @@ public class PermissionAdministrationService {
 
     @Transactional
     public void configureRolePermission(ConfigureRolePermissionCommand command) {
-        requireSystemAdministrator(command.operatorId());
+        requirePermission(command.operatorId(), "IAM_ROLE_PERMISSION_GRANT");
+        rolePermissionMapper.lockRole(command.roleId());
         if (roleMapper.findById(command.roleId()) == null) {
             throw new ResourceNotFoundException("角色不存在：" + command.roleId());
         }
@@ -129,16 +140,22 @@ public class PermissionAdministrationService {
     }
 
     public List<PermissionAssignment> listRolePermissions(Long operatorId, Long roleId) {
-        requireSystemAdministrator(operatorId);
+        requirePermission(operatorId, "IAM_ROLE_PERMISSION_GRANT");
         if (roleMapper.findById(roleId) == null) {
             throw new ResourceNotFoundException("角色不存在：" + roleId);
         }
         return rolePermissionMapper.findByRoleId(roleId);
     }
 
+    public List<com.lingdong.learning.menu.domain.MenuNode> listRolePermissionMenus(Long operatorId) {
+        requirePermission(operatorId, "IAM_ROLE_PERMISSION_GRANT");
+        return menuMapper.findAll();
+    }
+
     @Transactional
     public void removeRolePermission(Long operatorId, Long roleId, Long permissionId) {
-        requireSystemAdministrator(operatorId);
+        requirePermission(operatorId, "IAM_ROLE_PERMISSION_GRANT");
+        rolePermissionMapper.lockRole(roleId);
         if (roleMapper.findById(roleId) == null) {
             throw new ResourceNotFoundException("角色不存在：" + roleId);
         }
@@ -153,10 +170,112 @@ public class PermissionAdministrationService {
         }
     }
 
+    /** Replace only explicit ALLOWs within the displayed scope; all validation precedes mutations. */
+    @Transactional
+    public void batchRolePermissions(BatchRolePermissionsCommand command) {
+        requirePermission(command.operatorId(), "IAM_ROLE_PERMISSION_GRANT");
+        if (command.roleId() == null || rolePermissionMapper.lockRole(command.roleId()) == null) {
+            throw new ResourceNotFoundException("角色不存在：" + command.roleId());
+        }
+        Set<Long> selected = uniqueIds(command.permissionIds());
+        Set<Long> managed = uniqueIds(command.managedPermissionIds());
+        if (!managed.containsAll(selected)) throw new IllegalArgumentException("选中权限必须属于本次管理范围");
+        for (Long id : managed) {
+            if (permissionMapper.findById(id) == null) throw new ResourceNotFoundException("权限不存在：" + id);
+        }
+        selected.forEach(this::requireEnabledPermission);
+        Map<Long, PermissionEffect> expected = assignmentEffects(command.expectedAssignments());
+        // Locking reads see the latest committed assignments even on MySQL REPEATABLE READ.
+        Map<Long, PermissionEffect> current = assignmentEffects(rolePermissionMapper.lockByRoleId(command.roleId()));
+        if (!expected.equals(current)) throw new IllegalStateException("角色权限已变更，请重新选择角色并加载后再保存");
+        for (Long id : selected) {
+            if (current.get(id) == PermissionEffect.DENY) throw new IllegalStateException("已有禁止权限不能通过树形授权修改：" + id);
+        }
+        for (Long id : managed) {
+            PermissionEffect before = current.get(id);
+            if (before == PermissionEffect.ALLOW && !selected.contains(id)) {
+                rolePermissionMapper.delete(command.roleId(), id);
+                auditService.record(IamChangeAuditEventType.ROLE_PERMISSION_REMOVE, command.operatorId(),
+                        IamChangeTargetType.ROLE_PERMISSION, command.roleId(), id, null, "ALLOW", null);
+            } else if (before == null && selected.contains(id)) {
+                rolePermissionMapper.insert(idGenerator.nextId(), command.roleId(), id, PermissionEffect.ALLOW);
+                auditService.record(IamChangeAuditEventType.ROLE_PERMISSION_CONFIGURE, command.operatorId(),
+                        IamChangeTargetType.ROLE_PERMISSION, command.roleId(), id, null, null, "ALLOW");
+            }
+        }
+    }
+
+    public UserPermissionTree userPermissionTree(Long operatorId, Long userId) {
+        requirePermission(operatorId, "IAM_USER_PERMISSION_CONFIGURE");
+        if (userMapper.findById(userId) == null) throw new ResourceNotFoundException("用户不存在：" + userId);
+        List<PermissionAssignment> inherited = rolePermissionMapper.findInheritedByUserId(userId);
+        Set<Long> denied = inherited.stream().filter(a -> a.effect() == PermissionEffect.DENY)
+                .map(PermissionAssignment::permissionId).collect(java.util.stream.Collectors.toSet());
+        List<Long> allowed = inherited.stream().filter(a -> a.effect() == PermissionEffect.ALLOW && !denied.contains(a.permissionId()))
+                .map(PermissionAssignment::permissionId).distinct().sorted().toList();
+        return new UserPermissionTree(menuMapper.findAll(), allowed, denied.stream().sorted().toList());
+    }
+
+    @Transactional
+    public void batchUserPermissions(BatchUserPermissionsCommand command) {
+        requirePermission(command.operatorId(), "IAM_USER_PERMISSION_CONFIGURE");
+        if (command.userId() == null || userMapper.findByIdForUpdate(command.userId()) == null)
+            throw new ResourceNotFoundException("用户不存在：" + command.userId());
+        Set<Long> selected = uniqueIds(command.permissionIds());
+        Set<Long> managed = uniqueIds(command.managedPermissionIds());
+        if (!managed.containsAll(selected)) throw new IllegalArgumentException("选中权限必须属于本次管理范围");
+        for (Long id : managed) {
+            if (permissionMapper.findById(id) == null) throw new ResourceNotFoundException("权限不存在：" + id);
+        }
+        selected.forEach(this::requireEnabledPermission);
+        Map<Long, PermissionEffect> expected = assignmentEffects(command.expectedAssignments());
+        Map<Long, PermissionEffect> current = assignmentEffects(userPermissionMapper.lockByUserId(command.userId()));
+        if (!expected.equals(current)) throw new IllegalStateException("用户权限已变更，请重新加载后再保存");
+        Set<Long> inherited = rolePermissionMapper.lockInheritedByUserId(command.userId()).stream()
+                .map(PermissionAssignment::permissionId).collect(java.util.stream.Collectors.toSet());
+        if (managed.stream().anyMatch(inherited::contains)) throw new IllegalStateException("继承权限为只读，不能通过用户授权修改");
+        if (!selected.isEmpty() && !userRoleMapper.hasAnyEnabledRole(command.userId()))
+            throw new IllegalStateException("用户补充允许必须建立在活动角色基础上");
+        for (Long id : selected) {
+            if (current.get(id) == PermissionEffect.DENY) throw new IllegalStateException("已有禁止权限不能通过树形授权修改：" + id);
+        }
+        for (Long id : managed) {
+            PermissionEffect before = current.get(id);
+            if (before == PermissionEffect.ALLOW && !selected.contains(id)) {
+                userPermissionMapper.delete(command.userId(), id);
+                auditService.record(IamChangeAuditEventType.USER_PERMISSION_REMOVE, command.operatorId(),
+                        IamChangeTargetType.USER_PERMISSION, command.userId(), id, null, "ALLOW", null);
+            } else if (before == null && selected.contains(id)) {
+                userPermissionMapper.insert(idGenerator.nextId(), command.userId(), id, PermissionEffect.ALLOW);
+                auditService.record(IamChangeAuditEventType.USER_PERMISSION_CONFIGURE, command.operatorId(),
+                        IamChangeTargetType.USER_PERMISSION, command.userId(), id, null, null, "ALLOW");
+            }
+        }
+    }
+
+    private Set<Long> uniqueIds(List<Long> ids) {
+        if (ids == null || ids.stream().anyMatch(java.util.Objects::isNull)) throw new IllegalArgumentException("权限集合不能为空或包含空项");
+        Set<Long> unique = new HashSet<>(ids);
+        if (unique.size() != ids.size()) throw new IllegalArgumentException("权限集合不能包含重复项");
+        return unique;
+    }
+
+    private Map<Long, PermissionEffect> assignmentEffects(List<PermissionAssignment> assignments) {
+        if (assignments == null) throw new IllegalArgumentException("权限快照不能为空");
+        Map<Long, PermissionEffect> result = new HashMap<>();
+        for (PermissionAssignment assignment : assignments) {
+            if (assignment == null || assignment.permissionId() == null || assignment.effect() == null
+                    || result.putIfAbsent(assignment.permissionId(), assignment.effect()) != null) {
+                throw new IllegalArgumentException("权限快照格式无效");
+            }
+        }
+        return result;
+    }
+
     @Transactional
     public void configureUserPermission(ConfigureUserPermissionCommand command) {
-        requireSystemAdministrator(command.operatorId());
-        if (userMapper.findById(command.userId()) == null) {
+        requirePermission(command.operatorId(), "IAM_USER_PERMISSION_CONFIGURE");
+        if (userMapper.findByIdForUpdate(command.userId()) == null) {
             throw new ResourceNotFoundException("用户不存在：" + command.userId());
         }
         requireEnabledPermission(command.permissionId());
@@ -167,7 +286,7 @@ public class PermissionAdministrationService {
                 && !userRoleMapper.hasAnyEnabledRole(command.userId())) {
             throw new IllegalStateException("用户补充允许必须建立在活动角色基础上");
         }
-        var previousEffect = userPermissionMapper.findEffect(command.userId(), command.permissionId());
+        var previousEffect = assignmentEffects(userPermissionMapper.lockByUserId(command.userId())).get(command.permissionId());
         if (previousEffect == command.effect()) return;
         if (previousEffect == null) {
             userPermissionMapper.insert(idGenerator.nextId(), command.userId(), command.permissionId(), command.effect());
@@ -180,7 +299,7 @@ public class PermissionAdministrationService {
     }
 
     public List<PermissionAssignment> listUserPermissions(Long operatorId, Long userId) {
-        requireSystemAdministrator(operatorId);
+        requirePermission(operatorId, "IAM_USER_PERMISSION_CONFIGURE");
         if (userMapper.findById(userId) == null) {
             throw new ResourceNotFoundException("用户不存在：" + userId);
         }
@@ -189,14 +308,14 @@ public class PermissionAdministrationService {
 
     @Transactional
     public void removeUserPermission(Long operatorId, Long userId, Long permissionId) {
-        requireSystemAdministrator(operatorId);
-        if (userMapper.findById(userId) == null) {
+        requirePermission(operatorId, "IAM_USER_PERMISSION_CONFIGURE");
+        if (userMapper.findByIdForUpdate(userId) == null) {
             throw new ResourceNotFoundException("用户不存在：" + userId);
         }
         if (permissionMapper.findById(permissionId) == null) {
             throw new ResourceNotFoundException("权限不存在：" + permissionId);
         }
-        var previousEffect = userPermissionMapper.findEffect(userId, permissionId);
+        var previousEffect = assignmentEffects(userPermissionMapper.lockByUserId(userId)).get(permissionId);
         if (previousEffect != null && userPermissionMapper.delete(userId, permissionId) == 1) {
             auditService.record(IamChangeAuditEventType.USER_PERMISSION_REMOVE, operatorId,
                     IamChangeTargetType.USER_PERMISSION, userId, permissionId, null,
@@ -212,11 +331,11 @@ public class PermissionAdministrationService {
         return normalized;
     }
 
-    private void requireSystemAdministrator(Long operatorId) {
+    private void requirePermission(Long operatorId, String permissionCode) {
         User operator = operatorId == null ? null : userMapper.findById(operatorId);
         if (operator == null || operator.status() != UserStatus.ENABLED
-                || !userRoleMapper.hasRoleCode(operatorId, "SYS_ADMIN")) {
-            throw new SystemOperationAccessDeniedException("仅启用中的系统管理员可管理权限");
+                || !decisions.isAllowed(operatorId, com.lingdong.learning.permission.domain.PermissionClient.WEB, permissionCode)) {
+            throw new SystemOperationAccessDeniedException("当前账号无管理权限授权资格");
         }
     }
 

@@ -35,7 +35,7 @@ class ExceptionReportApplicationServiceTest {
     private final IdGenerator idGenerator = mock(IdGenerator.class);
     private final Clock clock = Clock.fixed(Instant.parse("2026-09-06T09:30:00Z"), ZoneId.of("Asia/Shanghai"));
     private final ExceptionReportApplicationService service = new ExceptionReportApplicationService(
-            mapper, dataScopeService, featureAccessService, idGenerator, clock);
+            mapper, dataScopeService, featureAccessService, idGenerator, clock, org.mockito.Mockito.mock(com.lingdong.learning.permission.application.PermissionDecisionService.class, invocation -> invocation.getMethod().getName().equals("isAllowed") ? true : org.mockito.Answers.RETURNS_DEFAULTS.answer(invocation)));
 
     @Test
     void createsReportHistoryAndOrganizationEventForAuthorizedTeacherStudent() {
@@ -115,9 +115,9 @@ class ExceptionReportApplicationServiceTest {
     void returnsOnlyAccessibleClassesForOrganizationAdministrator() {
         AuthenticatedUser administrator = user(8910000000000001041L, "ORG_ADMIN", AuthClientType.WEB);
         Organization school = Organization.create(8910000000000001042L, null, null,
-                "SCHOOL-1042", "示例学校", "SCHOOL", "/SCHOOL-1042/", 1);
+                "SCHOOL-1042", "示例学校", "SCHOOL", "/SCHOOL-1042/", 1, null);
         Organization classOrganization = Organization.create(8910000000000001043L, school.id(), null,
-                "CLASS-1043", "一年级一班", "CLASS", "/SCHOOL-1042/CLASS-1043/", 1);
+                "CLASS-1043", "一年级一班", "CLASS", "/SCHOOL-1042/CLASS-1043/", 1, null);
         when(dataScopeService.findAccessibleOrganizations(administrator.userId()))
                 .thenReturn(List.of(school, classOrganization));
 

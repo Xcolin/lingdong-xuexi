@@ -53,6 +53,7 @@ public class TaskReviewService {
     private final TaskAttachmentApplicationService attachmentService;
     private final IdGenerator idGenerator;
     private final Clock clock;
+    private final LearningTaskScopeService permissionScope;
 
     public TaskReviewService(
             TaskReviewMapper reviewMapper,
@@ -67,7 +68,7 @@ public class TaskReviewService {
             FeatureAccessService featureAccessService,
             TaskAttachmentApplicationService attachmentService,
             IdGenerator idGenerator,
-            Clock clock
+            Clock clock, LearningTaskScopeService permissionScope
     ) {
         this.reviewMapper = reviewMapper;
         this.checkInMapper = checkInMapper;
@@ -81,7 +82,7 @@ public class TaskReviewService {
         this.featureAccessService = featureAccessService;
         this.attachmentService = attachmentService;
         this.idGenerator = idGenerator;
-        this.clock = clock;
+        this.clock = clock; this.permissionScope = permissionScope;
     }
 
     @Transactional(readOnly = true)
@@ -261,6 +262,9 @@ public class TaskReviewService {
 
     private void requireReviewer(AuthenticatedUser currentUser) {
         featureAccessService.requireEnabled(FEATURE_CODE, null);
+        if (permissionScope.hasOrganizationPermission(currentUser, "TASK_ASSIGNMENT_REVIEW")) return;
+        if (currentUser != null && currentUser.clientType() == com.lingdong.learning.auth.domain.AuthClientType.WEB)
+            throw new SystemOperationAccessDeniedException("当前账号无任务审核权限");
         if (currentUser == null || currentUser.roleCodes().contains("SYS_AUDITOR")
                 || currentUser.roleCodes().stream().noneMatch(REVIEW_ROLES::contains)) {
             throw new SystemOperationAccessDeniedException("当前用户不是业务审核角色");
@@ -329,3 +333,4 @@ public class TaskReviewService {
         }
     }
 }
+

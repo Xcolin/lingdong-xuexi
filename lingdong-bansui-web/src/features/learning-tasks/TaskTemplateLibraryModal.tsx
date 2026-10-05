@@ -160,7 +160,8 @@ export function TaskTemplateLibraryModal({ open, onClose, onSelect }: TaskTempla
         open={open}
         onCancel={onClose}
         footer={<Button actionKey="learning-tasks.task-template-library-modal.1" onClick={onClose}>关闭</Button>}
-        width={760}
+        width="min(1100px, 92vw)"
+        styles={{ body: { maxHeight: 'calc(100vh - 220px)', overflowY: 'auto' } }}
         destroyOnHidden
       >
         <Tabs items={[

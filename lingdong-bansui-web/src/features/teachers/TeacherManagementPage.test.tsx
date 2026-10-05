@@ -40,11 +40,11 @@ describe('教师管理页面', () => {
     vi.mocked(organizationApi.listTree).mockResolvedValue([{
       id: '1874244142494647101', parentId: null, code: 'SCHOOL_1', name: '第一学校',
       typeCode: 'SCHOOL', path: '/1874244142494647101/', sortOrder: 10,
-      status: 'ENABLED', effectiveStatus: 'ENABLED', versionNo: 1,
+      status: 'ENABLED', effectiveStatus: 'ENABLED', versionNo: 1, adminDivisionCode: null,
       children: [{
         id: '1874244142494647201', parentId: '1874244142494647101', code: 'CLASS_1', name: '一班',
         typeCode: 'CLASS', path: '/1874244142494647101/1874244142494647201/', sortOrder: 10,
-        status: 'ENABLED', effectiveStatus: 'ENABLED', versionNo: 1, children: []
+        status: 'ENABLED', effectiveStatus: 'ENABLED', versionNo: 1, adminDivisionCode: null, children: []
       }]
     }]);
   });

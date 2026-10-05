@@ -18,7 +18,8 @@ public record Organization(
         OrganizationEffectiveStatus effectiveStatus,
         Integer versionNo,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        String adminDivisionCode
 ) {
     public static Organization create(
             Long id,
@@ -28,7 +29,8 @@ public record Organization(
             String name,
             String typeCode,
             String path,
-            Integer sortOrder
+            Integer sortOrder,
+            String adminDivisionCode
     ) {
         return new Organization(
                 id,
@@ -43,7 +45,8 @@ public record Organization(
                 OrganizationEffectiveStatus.ENABLED,
                 1,
                 null,
-                null
+                null,
+                adminDivisionCode
         );
     }
 }

@@ -143,7 +143,7 @@ public class ExportJobExecutionService {
                     filter.interfaceOwnerId() == null ? null : Long.valueOf(filter.interfaceOwnerId()), filter.cacheDomain(), filter.cacheStatus(),
                     filter.systemTaskType(), filter.systemTaskStatus(), scope.systemTaskAuditor(), scope.systemTaskTypes(), filter.rewardExchangeStatus(), filter.exceptionType(), filter.exceptionStatus(),
                     scope.exceptionTeacherOnly(), scope.exceptionClassIds(), filter.attachmentModuleCode(), filter.attachmentUploaderId(), filter.attachmentFileCategory(), filter.studentTaskSource(), filter.studentTaskStatus(), scope.studentTaskAssignmentIds(),
-                    scope.orgStatOrgIds(), scope.attClassIds());
+                    scope.orgStatOrgIds(), scope.attClassIds(), scope.systemTaskReviewableTypes());
             long totalRows = adapter.count(request, scope.upperBound());
             rows = new PageIterator(
                     adapter, request, scope.upperBound(), totalRows,

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Form, Input, Select, Space, Tag, message } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
 import { RotateCcw, Search } from 'lucide-react';
+import { formatDateTime as formatTime } from '../../utils/datetime';
 import {
   iamApi,
   type IamAuditEventType,
@@ -78,7 +79,7 @@ export function IamAuditPanel() {
         <Form.Item label="结束时间" name="endedAt"><Input type="datetime-local" /></Form.Item>
         <Form.Item>
           <Space>
-            <Button actionKey="iam.iam-audit-panel.1" type="primary" htmlType="submit" icon={<Search size={16} />}>查询审计日志</Button>
+            <Button actionKey="IAM_AUDIT_READ" type="primary" htmlType="submit" icon={<Search size={16} />}>查询审计日志</Button>
             <Button actionKey="iam.iam-audit-panel.2" icon={<RotateCcw size={16} />} onClick={reset}>重置</Button>
           </Space>
         </Form.Item>
@@ -116,8 +117,4 @@ function normalized(values: AuditFilter): AuditFilter {
 
 function emptyText(value: string | null): string {
   return value ?? '-';
-}
-
-function formatTime(value: string): string {
-  return value ? value.replace('T', ' ') : '-';
 }

@@ -11,6 +11,8 @@ import java.util.List;
 public interface OrganizationAdminMapper {
     List<Long> findOrganizationIds(@Param("userId") Long userId);
 
+    Long lockRelation(@Param("userId") Long userId, @Param("organizationId") Long organizationId);
+
     boolean exists(@Param("userId") Long userId, @Param("organizationId") Long organizationId);
 
     boolean existsEnabledManagedOrganization(@Param("userId") Long userId);

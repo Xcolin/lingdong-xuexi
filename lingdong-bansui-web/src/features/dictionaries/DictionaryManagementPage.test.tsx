@@ -119,6 +119,40 @@ describe('数据字典管理页面', () => {
     }));
   }, 180_000);
 
+  it('非法编码在提交前被拦截并提示格式规则', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByText('学习场景');
+
+    await user.click(screen.getByRole('button', { name: '新增字典项' }));
+    const itemDialog = screen.getByRole('dialog', { name: '新增字典项' });
+    await user.type(within(itemDialog).getByLabelText('字典项编码'), '类型-1');
+    await user.type(within(itemDialog).getByLabelText('字典项名称'), '学校');
+    await user.click(within(itemDialog).getByRole('button', { name: /保\s*存/ }));
+
+    expect(await screen.findByText('编码仅允许3至64位字母、数字和下划线')).toBeInTheDocument();
+    expect(dictionaryApi.createItem).not.toHaveBeenCalled();
+  }, 180_000);
+
+  it('数字开头的字典项编码可正常提交', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByText('学习场景');
+
+    await user.click(screen.getByRole('button', { name: '新增字典项' }));
+    const itemDialog = screen.getByRole('dialog', { name: '新增字典项' });
+    await user.type(within(itemDialog).getByLabelText('字典项编码'), '1ST_PRIZE');
+    await user.type(within(itemDialog).getByLabelText('字典项名称'), '一等奖');
+    await user.click(within(itemDialog).getByRole('button', { name: /保\s*存/ }));
+
+    await waitFor(() => expect(dictionaryApi.createItem).toHaveBeenCalledWith(types[0].id, {
+      code: '1ST_PRIZE',
+      name: '一等奖',
+      sortOrder: 0,
+      defaultItem: false
+    }));
+  }, 180_000);
+
   it('修改字典类型的名称、排序和状态', async () => {
     renderPage();
     await screen.findByText('学习场景');

@@ -4,7 +4,7 @@ import { ViewportTable as Table } from '../../components/ViewportTable';
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, Form, Input, InputNumber, Select, Space, Tag, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { Edit3, Plus, Power, PowerOff, RefreshCw } from 'lucide-react';
+import { Edit3, Plus, Power, PowerOff } from 'lucide-react';
 import {
   classApi, type ClassOrganization, type CreateClassInput, type UpdateClassInput
 } from '../../api/classes';
@@ -145,8 +145,7 @@ export function ClassManagementPanel() {
     <div className="section-heading">
       <h2 id="class-management-heading">班级管理</h2>
       <Space>
-        <Button actionKey="organizations.class-management-panel.3" icon={<RefreshCw size={15} />} onClick={() => void loadData()} loading={loading}>刷新</Button>
-        <Button actionKey="organizations.class-management-panel.4" type="primary" icon={<Plus size={15} />} onClick={openCreate}>新增班级</Button>
+        <Button actionKey="CLASS_CREATE" type="primary" icon={<Plus size={15} />} onClick={openCreate}>新增班级</Button>
       </Space>
     </div>
     {errorMessage && <Alert type="error" showIcon message={errorMessage} action={<Button actionKey="organizations.class-management-panel.5" size="small" onClick={() => void loadData()}>重试</Button>} />}
@@ -157,6 +156,7 @@ export function ClassManagementPanel() {
     />
     <Modal
       title={editing ? '编辑班级' : '新增班级'} open={modalOpen} footer={null}
+      width="min(640px, 92vw)"
       onCancel={() => setModalOpen(false)} destroyOnHidden
     >
       <Form form={form} layout="vertical" initialValues={{ sortOrder: 100 }} onFinish={submit}>

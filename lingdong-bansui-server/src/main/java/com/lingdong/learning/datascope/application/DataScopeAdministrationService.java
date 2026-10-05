@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 /** Configures explicit organization-based data boundaries under system-administrator control. */
 @Service
 public class DataScopeAdministrationService {
+    private final com.lingdong.learning.permission.application.PermissionDecisionService decisions;
     private final UserRoleMapper userRoleMapper;
     private final UserMapper userMapper;
     private final OrganizationMapper organizationMapper;
@@ -33,7 +34,8 @@ public class DataScopeAdministrationService {
     public DataScopeAdministrationService(UserRoleMapper userRoleMapper, UserMapper userMapper, OrganizationMapper organizationMapper,
                                           UserOrganizationMapper userOrganizationMapper, OrganizationAdminMapper organizationAdminMapper,
                                           RoleMapper roleMapper, RoleDataScopeMapper roleDataScopeMapper, IdGenerator idGenerator,
-                                          IamChangeAuditService auditService) {
+                                          IamChangeAuditService auditService, com.lingdong.learning.permission.application.PermissionDecisionService decisions) {
+        this.decisions = decisions;
         this.userRoleMapper = userRoleMapper; this.userMapper = userMapper; this.organizationMapper = organizationMapper;
         this.userOrganizationMapper = userOrganizationMapper; this.organizationAdminMapper = organizationAdminMapper;
         this.roleMapper = roleMapper; this.roleDataScopeMapper = roleDataScopeMapper; this.idGenerator = idGenerator;
@@ -80,8 +82,8 @@ public class DataScopeAdministrationService {
     }
 
     private void requireSystemAdministrator(Long operatorId) {
-        if (operatorId == null || !userRoleMapper.hasRoleCode(operatorId, "SYS_ADMIN")) {
-            throw new SystemOperationAccessDeniedException("仅系统管理员可配置数据范围");
+        if (operatorId == null || !decisions.isAllowed(operatorId, com.lingdong.learning.permission.domain.PermissionClient.WEB, "IAM_DATA_SCOPE_CONFIGURE")) {
+            throw new SystemOperationAccessDeniedException("当前账号无配置数据范围权限");
         }
     }
 }

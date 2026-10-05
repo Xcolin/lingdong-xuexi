@@ -29,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +38,8 @@ import java.util.Objects;
 /** 协调高风险组织变更申请与系统任务审核状态机。 */
 @Service
 public class OrganizationChangeApplicationService {
+    private final com.lingdong.learning.datascope.application.OrganizationDataScopeService scopes;
+    private final com.lingdong.learning.permission.application.PermissionDecisionService decisions;
     private final OrganizationMapper organizationMapper;
     private final OrganizationChangeMapper organizationChangeMapper;
     private final OrganizationChangeAuditMapper organizationChangeAuditMapper;
@@ -59,8 +62,9 @@ public class OrganizationChangeApplicationService {
             FeatureAccessService featureAccessService,
             ClassTaskInvalidationService classTaskInvalidationService,
             IdGenerator idGenerator,
-            PlatformTransactionManager transactionManager
-    ) {
+            PlatformTransactionManager transactionManager, com.lingdong.learning.permission.application.PermissionDecisionService decisions, com.lingdong.learning.datascope.application.OrganizationDataScopeService scopes) {
+        this.scopes = scopes;
+        this.decisions = decisions;
         this.organizationMapper = organizationMapper;
         this.organizationChangeMapper = organizationChangeMapper;
         this.organizationChangeAuditMapper = organizationChangeAuditMapper;
@@ -81,7 +85,9 @@ public class OrganizationChangeApplicationService {
         requireFeatureEnabled();
         Objects.requireNonNull(command, "组织变更申请不能为空");
         Objects.requireNonNull(command.submitterId(), "提交人不能为空");
-        requireSystemAdmin(command.submitterId());
+        requirePermission(command.submitterId(), "ORG_NODE_CHANGE_SUBMIT");
+        requireScope(command.submitterId(), command.organizationId());
+        if (command.targetParentId() != null) requireScope(command.submitterId(), command.targetParentId());
         Objects.requireNonNull(command.organizationId(), "组织ID不能为空");
         Objects.requireNonNull(command.changeType(), "组织变更类型不能为空");
         Objects.requireNonNull(command.expectedVersion(), "组织版本号不能为空");
@@ -127,14 +133,87 @@ public class OrganizationChangeApplicationService {
         return toReviewItem(change);
     }
 
+    /**
+     * 拖拽同级排序直接生效：完整提交同级兄弟集合与乐观锁版本，按提交顺序重排（步长 10），逐节点记 DIRECT_REORDER 审计。
+     */
+    @Transactional
+    public List<Organization> directReorder(ReorderOrganizationsCommand command) {
+        requireFeatureEnabled();
+        Objects.requireNonNull(command, "排序命令不能为空");
+        requirePermission(command.operatorId(), "ORG_NODE_UPDATE");
+        requireScope(command.operatorId(), command.parentId());
+        List<OrganizationOrderItem> items = command.items() == null ? List.of() : command.items();
+        if (items.isEmpty() || items.stream().anyMatch(Objects::isNull)
+                || items.stream().anyMatch(item -> item.organizationId() == null || item.expectedVersion() == null)) {
+            throw new IllegalArgumentException("排序参数无效");
+        }
+
+        List<Organization> siblings = organizationMapper.findChildrenForUpdate(command.parentId());
+        Map<Long, Integer> requestedOrder = new java.util.LinkedHashMap<>();
+        for (OrganizationOrderItem item : items) {
+            if (requestedOrder.put(item.organizationId(), item.expectedVersion()) != null) {
+                throw new IllegalArgumentException("排序条目重复：" + item.organizationId());
+            }
+        }
+        if (requestedOrder.size() != siblings.size()
+                || !requestedOrder.keySet().equals(siblings.stream().map(Organization::id).collect(java.util.stream.Collectors.toSet()))) {
+            throw new IllegalStateException("同级节点集合已变化，请刷新后重试");
+        }
+        List<Long> requestedIds = new ArrayList<>(requestedOrder.keySet());
+        for (Organization sibling : siblings) {
+            Integer expectedVersion = requestedOrder.get(sibling.id());
+            int sortOrder = requestedIds.indexOf(sibling.id()) * 10;
+            if (organizationMapper.updateSortOrder(sibling.id(), sortOrder, expectedVersion) != 1) {
+                throw new OrganizationVersionConflictException();
+            }
+            organizationChangeAuditMapper.insert(OrganizationChangeAudit.directReorder(
+                    idGenerator.nextId(), sibling, sortOrder, command.operatorId(), LocalDateTime.now()));
+        }
+        return organizationMapper.findChildrenForUpdate(command.parentId());
+    }
+
+    /**
+     * 拖拽改父级直接生效：复用申请-审核执行器中的路径重建与唯一名校验，记 DIRECT_MOVE 审计。
+     */
+    @Transactional
+    public Organization directMove(MoveOrganizationCommand command) {
+        requireFeatureEnabled();
+        Objects.requireNonNull(command, "移动命令不能为空");
+        requirePermission(command.operatorId(), "ORG_NODE_UPDATE");
+        requireScope(command.operatorId(), command.organizationId());
+        requireScope(command.operatorId(), command.targetParentId());
+        Objects.requireNonNull(command.organizationId(), "组织ID不能为空");
+        Objects.requireNonNull(command.targetParentId(), "目标父级不能为空");
+        Objects.requireNonNull(command.expectedVersion(), "组织版本号不能为空");
+
+        Organization before = organizationMapper.findByIdForUpdate(command.organizationId());
+        if (before == null) {
+            throw new ResourceNotFoundException("组织不存在：" + command.organizationId());
+        }
+        if (!before.versionNo().equals(command.expectedVersion())) {
+            throw new OrganizationVersionConflictException();
+        }
+        if (Objects.equals(before.parentId(), command.targetParentId())) {
+            throw new IllegalStateException("组织已属于目标父级，同级顺序请使用排序接口");
+        }
+        OrganizationChange pendingMove = OrganizationChange.pending(
+                idGenerator.nextId(), null, before, OrganizationChangeType.MOVE,
+                command.targetParentId(), null);
+        Organization after = applyMove(before, pendingMove);
+        organizationChangeAuditMapper.insert(OrganizationChangeAudit.directMove(
+                idGenerator.nextId(), before, after, command.operatorId(), LocalDateTime.now()));
+        return after;
+    }
+
     @Transactional(readOnly = true)
     public List<OrganizationChangeReviewItem> listChanges(Long operatorId) {
         requireFeatureEnabled();
         requireAdministratorOrAuditor(operatorId);
-        boolean auditor = userRoleMapper.hasRoleCode(operatorId, "SYS_AUDITOR");
+        boolean auditor = decisions.isAllowed(operatorId, com.lingdong.learning.permission.domain.PermissionClient.WEB, "ORG_NODE_CHANGE_REVIEW");
         return organizationChangeMapper.findAll().stream()
                 .map(this::toReviewItem)
                 .filter(item -> auditor || item.task().submittedBy().equals(operatorId))
+                .filter(item -> scopes.canAccess(operatorId, item.change().organizationId()))
                 .toList();
     }
 
@@ -142,8 +221,10 @@ public class OrganizationChangeApplicationService {
     public OrganizationChangeReviewItem getChange(Long operatorId, Long taskId) {
         requireFeatureEnabled();
         requireAdministratorOrAuditor(operatorId);
-        OrganizationChangeReviewItem item = toReviewItem(requireChange(taskId));
-        if (!userRoleMapper.hasRoleCode(operatorId, "SYS_AUDITOR")
+        OrganizationChange change = requireChange(taskId);
+        requireScope(operatorId, change.organizationId());
+        OrganizationChangeReviewItem item = toReviewItem(change);
+        if (!decisions.isAllowed(operatorId, com.lingdong.learning.permission.domain.PermissionClient.WEB, "ORG_NODE_CHANGE_REVIEW")
                 && !item.task().submittedBy().equals(operatorId)) {
             throw new SystemOperationAccessDeniedException("无权查看其他系统管理员提交的组织变更");
         }
@@ -154,7 +235,9 @@ public class OrganizationChangeApplicationService {
     @Transactional
     public SystemTask reject(Long taskId, Long auditorId, String comment) {
         requireFeatureEnabled();
+        requirePermission(auditorId, "ORG_NODE_CHANGE_REVIEW");
         OrganizationChange change = requireChange(taskId);
+        requireChangeScope(auditorId, change);
         SystemTask rejected = systemTaskApplicationService.reject(taskId, auditorId, comment);
         organizationChangeAuditMapper.insert(OrganizationChangeAudit.review(
                 idGenerator.nextId(), change, OrganizationChangeAuditEvent.REJECT,
@@ -167,7 +250,9 @@ public class OrganizationChangeApplicationService {
      */
     public SystemTask approveAndApply(Long taskId, Long auditorId, String comment) {
         requireFeatureEnabled();
+        requirePermission(auditorId, "ORG_NODE_CHANGE_REVIEW");
         OrganizationChange change = requireChange(taskId);
+        requireChangeScope(auditorId, change);
         systemTaskApplicationService.approve(taskId, auditorId, comment);
         try {
             SystemTask effective = applyTransaction.execute(status -> applyApprovedChange(change, auditorId));
@@ -367,19 +452,24 @@ public class OrganizationChangeApplicationService {
         }
     }
 
-    private void requireSystemAdmin(Long userId) {
-        if (!userRoleMapper.hasRoleCode(userId, "SYS_ADMIN")) {
-            throw new IllegalStateException("仅系统管理员可发起组织变更");
-        }
+    private void requirePermission(Long userId, String code) {
+        if (!decisions.isAllowed(userId, com.lingdong.learning.permission.domain.PermissionClient.WEB, code))
+            throw new SystemOperationAccessDeniedException("当前账号无组织变更操作权限");
     }
-
     private void requireAdministratorOrAuditor(Long userId) {
-        if (userId == null || (!userRoleMapper.hasRoleCode(userId, "SYS_ADMIN")
-                && !userRoleMapper.hasRoleCode(userId, "SYS_AUDITOR"))) {
-            throw new SystemOperationAccessDeniedException("仅系统管理员或系统审核员可查看组织变更");
-        }
+        if (!decisions.isAllowed(userId, com.lingdong.learning.permission.domain.PermissionClient.WEB, "ORG_NODE_CHANGE_SUBMIT")
+                && !decisions.isAllowed(userId, com.lingdong.learning.permission.domain.PermissionClient.WEB, "ORG_NODE_CHANGE_REVIEW"))
+            throw new SystemOperationAccessDeniedException("当前账号无组织变更读取权限");
     }
-
+    private void requireScope(Long userId, Long organizationId) {
+        if (scopes.resolve(userId).allOrganizations()) return;
+        boolean allowed = organizationId == null ? scopes.resolve(userId).allOrganizations() : scopes.canAccess(userId, organizationId);
+        if (!allowed) throw new SystemOperationAccessDeniedException("组织不在可管理数据范围内");
+    }
+    private void requireChangeScope(Long userId, OrganizationChange change) {
+        requireScope(userId, change.organizationId());
+        if (change.targetParentId() != null) requireScope(userId, change.targetParentId());
+    }
     private void requireFeatureEnabled() {
         featureAccessService.requireEnabled("ORGANIZATION_MANAGEMENT", null);
     }

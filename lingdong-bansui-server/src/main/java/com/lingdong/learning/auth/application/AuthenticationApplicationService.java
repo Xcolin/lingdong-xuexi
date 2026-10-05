@@ -8,6 +8,9 @@ import com.lingdong.learning.auth.infrastructure.persistence.DeviceSessionMapper
 import com.lingdong.learning.auth.infrastructure.persistence.ParentAuthenticationMapper;
 import com.lingdong.learning.auth.infrastructure.security.SessionTokenService;
 import com.lingdong.learning.common.id.IdGenerator;
+import com.lingdong.learning.iam.audit.application.IamChangeAuditService;
+import com.lingdong.learning.iam.audit.application.IamChangeAuditEventType;
+import com.lingdong.learning.iam.audit.application.IamChangeTargetType;
 import com.lingdong.learning.common.security.SystemOperationAccessDeniedException;
 import com.lingdong.learning.common.web.ResourceNotFoundException;
 import com.lingdong.learning.datascope.infrastructure.persistence.OrganizationAdminMapper;
@@ -32,6 +35,7 @@ import java.util.Objects;
 /** 管理平台账号密码和可撤销的 Web 设备会话。 */
 @Service
 public class AuthenticationApplicationService {
+    private final com.lingdong.learning.permission.application.PermissionDecisionService decisions;
     private static final String SYSTEM_ADMIN_ROLE = "SYS_ADMIN";
     private static final String ORGANIZATION_ADMIN_ROLE = "ORG_ADMIN";
     private static final String TEACHER_ROLE = "TEACHER";
@@ -54,6 +58,7 @@ public class AuthenticationApplicationService {
     private final IdGenerator idGenerator;
     private final AccountSecurityEventService securityEventService;
     private final FeatureAccessService featureAccessService;
+    private final IamChangeAuditService iamAuditService;
 
     public AuthenticationApplicationService(
             UserMapper userMapper,
@@ -70,8 +75,9 @@ public class AuthenticationApplicationService {
             AuthenticationProperties properties,
             IdGenerator idGenerator,
             AccountSecurityEventService securityEventService,
-            FeatureAccessService featureAccessService
-    ) {
+            FeatureAccessService featureAccessService,
+            IamChangeAuditService iamAuditService, com.lingdong.learning.permission.application.PermissionDecisionService decisions) {
+        this.decisions = decisions;
         this.userMapper = userMapper;
         this.userRoleMapper = userRoleMapper;
         this.studentMapper = studentMapper;
@@ -88,21 +94,38 @@ public class AuthenticationApplicationService {
         this.idGenerator = idGenerator;
         this.securityEventService = securityEventService;
         this.featureAccessService = featureAccessService;
+        this.iamAuditService = iamAuditService;
     }
 
-    /** 仅系统管理员可以为现有平台账号设置或重置密码。 */
+    /** 仅系统管理员可以为平台、机构或家长账号设置或重置密码。 */
     @Transactional
     public void setPlatformUserPassword(SetPlatformUserPasswordCommand command) {
-        Objects.requireNonNull(command, "设置平台账号密码请求不能为空");
+        Objects.requireNonNull(command, "设置账号密码请求不能为空");
         requireSystemAdmin(command.operatorId());
-        User user = requireUser(command.userId());
-        if (user.type() != UserType.PLATFORM) {
-            throw new IllegalArgumentException("仅平台账号可以设置此密码");
+        User user = userMapper.findByIdForUpdate(command.userId());
+        if (user == null) throw new ResourceNotFoundException("用户不存在");
+        if (user.type() == UserType.STUDENT || user.status() == UserStatus.CANCELLED) {
+            throw new IllegalArgumentException("仅未注销的平台、机构或家长账号支持重置密码");
         }
         passwordPolicy.validate(command.password());
         if (userMapper.updatePasswordHash(user.id(), passwordEncoder.encode(command.password())) != 1) {
-            throw new IllegalStateException("平台账号密码保存失败");
+            throw new IllegalStateException("账号密码保存失败");
         }
+        LocalDateTime now = LocalDateTime.now();
+        List<DeviceSessionRecord> previousSessions = sessionMapper.findActiveByUserId(user.id(), now);
+        sessionMapper.revokeAllActiveByUserId(user.id(), now);
+        if (!previousSessions.isEmpty()) {
+            securityEventService.recordAllSessionsRevoked(user.id(), previousSessions.get(0), now);
+        }
+        iamAuditService.record(IamChangeAuditEventType.USER_PASSWORD_RESET,
+                command.operatorId(), IamChangeTargetType.USER,
+                user.id(), null, null, null, "PASSWORD_RESET");
+    }
+
+    /** Validates and hashes an initial managed credential without reset authorization. */
+    public String encodeManagedUserPassword(String password) {
+        passwordPolicy.validate(password);
+        return passwordEncoder.encode(password);
     }
 
     /** 验证当前 Web 身份与旧密码，原子保存新密码并撤销全部设备凭证。 */
@@ -394,8 +417,8 @@ public class AuthenticationApplicationService {
     }
 
     private void requireSystemAdmin(Long operatorId) {
-        if (operatorId == null || !userRoleMapper.hasRoleCode(operatorId, SYSTEM_ADMIN_ROLE)) {
-            throw new SystemOperationAccessDeniedException("仅系统管理员可设置平台账号密码");
+        if (operatorId == null || !decisions.isAllowed(operatorId, com.lingdong.learning.permission.domain.PermissionClient.WEB, "IAM_USER_PASSWORD_SET")) {
+            throw new SystemOperationAccessDeniedException("当前账号无设置账号密码权限");
         }
     }
 

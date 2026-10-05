@@ -26,7 +26,7 @@ public class AttendanceAccessService {
 
     public AttendanceScope require(AuthenticatedUser user, boolean write) {
         features.requireEnabled("ATTENDANCE_MANAGEMENT", null);
-        if (user == null || user.clientType() == null || user.roleCodes().contains("SYS_AUDITOR")
+        if (user == null || user.clientType() == null
                 || !permissions.isAllowed(user.userId(), PermissionClient.valueOf(user.clientType().name()),
                         write ? "ATTENDANCE_RECORD" : "ATTENDANCE_READ")) throw denied();
         var roles = user.roleCodes();

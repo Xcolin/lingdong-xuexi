@@ -10,5 +10,12 @@ public record CreateUserRequest(
         @NotBlank @Size(max = 64) String username,
         @NotBlank @Size(max = 64) String displayName,
         @Size(max = 32) String mobile,
-        @NotNull UserType type
-) { }
+        @NotNull UserType type,
+        @NotNull Long organizationId,
+        @Size(max = 64) String password
+) {
+    public CreateUserRequest(String username, String displayName, String mobile, UserType type, Long organizationId) {
+        this(username, displayName, mobile, type, organizationId, null);
+    }
+    @Override public String toString() { return "CreateUserRequest[password=REDACTED]"; }
+}

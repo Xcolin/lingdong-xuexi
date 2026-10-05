@@ -45,20 +45,22 @@ public class UserManagementController {
 
     @RequirePermission("IAM_USER_READ")
     @GetMapping("/{id}")
-    public UserResponse findUser(@PathVariable Long id) {
-        return UserResponse.from(iamQueryApplicationService.findUser(id));
+    public UserResponse findUser(@AuthenticationPrincipal AuthenticatedUser currentUser, @PathVariable Long id) {
+        return UserResponse.from(iamQueryApplicationService.findUser(currentUser.userId(), id));
     }
 
     @RequirePermission("IAM_USER_LIST")
     @GetMapping
     public UserDirectoryPageResponse listUsers(
+            @AuthenticationPrincipal AuthenticatedUser currentUser,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) UserType type,
             @RequestParam(required = false) UserStatus status,
+            @RequestParam(required = false) Long organizationId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int pageSize
     ) {
-        return UserDirectoryPageResponse.from(iamQueryApplicationService.listUsers(keyword, type, status, page, pageSize));
+        return UserDirectoryPageResponse.from(iamQueryApplicationService.listUsers(currentUser.userId(), keyword, type, status, organizationId, page, pageSize));
     }
 
     @RequirePermission("IAM_USER_CREATE")
@@ -66,9 +68,9 @@ public class UserManagementController {
     @ResponseStatus(HttpStatus.CREATED)
     public UserResponse createUser(@AuthenticationPrincipal AuthenticatedUser currentUser,
                                    @Valid @RequestBody CreateUserRequest request) {
-        return UserResponse.from(userAccessApplicationService.createUser(new CreateUserCommand(
+        return UserResponse.from(userAccessApplicationService.createManagedUserInOrganization(new CreateUserCommand(
                 request.username(), request.displayName(), request.mobile(), request.type(), currentUser.userId()
-        )));
+        ), request.organizationId(), request.password()));
     }
 
     @RequirePermission("IAM_USER_STATUS_CHANGE")

@@ -122,7 +122,7 @@ class OrganizationManagementControllerTest {
     }
 
     @Test
-    void keepsFullOrganizationTreeAccessLimitedToSystemAdministrators() throws Exception {
+    void allowsCustomAllScopeRoleToReadOrganizationTree() throws Exception {
         User administrator = createSystemAdministrator("org_scope_admin", "组织范围管理员");
         User ordinaryUser = createUser("org_scope_user", "组织范围普通用户");
         setPassword(administrator, administrator);
@@ -144,8 +144,7 @@ class OrganizationManagementControllerTest {
 
         mockMvc.perform(get("/api/v1/organizations")
                         .header("Authorization", "Bearer " + loginAccessToken("org_scope_user")))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
+                .andExpect(status().isOk());
     }
 
     private User createSystemAdministrator(String username, String displayName) {

@@ -102,8 +102,8 @@ class OrganizationChangeApplicationServiceTest {
                         auditor.id(), organization.id(), OrganizationChangeType.DELETE,
                         null, organization.versionNo(), "审核员不能发起"
                 )
-        )).isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("系统管理员");
+        )).isInstanceOf(com.lingdong.learning.common.security.SystemOperationAccessDeniedException.class)
+                .hasMessageContaining("权限");
     }
 
     @Test
@@ -152,8 +152,8 @@ class OrganizationChangeApplicationServiceTest {
 
         assertThatThrownBy(() -> organizationChangeApplicationService.approveAndApply(
                 change.taskId(), ordinaryUser.id(), "无权审核"))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("系统审核员");
+                .isInstanceOf(com.lingdong.learning.common.security.SystemOperationAccessDeniedException.class)
+                .hasMessageContaining("权限");
         assertThatThrownBy(() -> organizationChangeApplicationService.reject(
                 change.taskId(), auditor.id(), " "))
                 .isInstanceOf(IllegalArgumentException.class)

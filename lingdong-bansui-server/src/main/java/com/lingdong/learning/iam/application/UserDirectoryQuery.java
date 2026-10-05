@@ -8,6 +8,11 @@ public record UserDirectoryQuery(
         String keyword,
         UserType type,
         UserStatus status,
+        Long organizationId,
         int offset,
         int limit
-) { }
+) {
+    public UserDirectoryQuery(String keyword, UserType type, UserStatus status, int offset, int limit) {
+        this(keyword, type, status, null, offset, limit);
+    }
+}

@@ -16,6 +16,8 @@ public record LearningTaskQuery(
         LocalDate scheduledDate,
         String keyword,
         int offset,
-        int limit
+        int limit,
+        boolean allOrganizations,
+        java.util.List<String> rootPaths
 ) {
 }

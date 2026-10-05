@@ -576,3 +576,87 @@ button, input, textarea { font: inherit; }
   .workspace-page .page-stack :is(.directory-filters, form.ant-form-inline) { grid-template-columns: minmax(0, 1fr); }
   .workspace-page .page-stack :is(.directory-filters, form.ant-form-inline) > .ant-form-item:has(.ant-picker-range) { grid-column: auto; }
 }
+.menu-tree-panel { padding: 16px; min-width: 0; overflow: hidden; }
+.menu-tree-panel .ant-tree-node-content-wrapper { flex: 1; min-width: 0; }
+.menu-tree-panel .ant-tree-title { display: block; width: 100%; }
+.menu-tree-row { display: grid; grid-template-columns: minmax(140px, 1fr) minmax(160px, 1fr) 60px 60px auto; align-items: center; gap: 10px; min-height: 38px; }
+.menu-tree-name, .menu-tree-code { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.menu-tree-code { color: #64748b; font-size: 12px; }
+.menu-button-batch-row { display: grid; grid-template-columns: minmax(100px, 1fr) minmax(160px, 1.5fr) 100px auto; align-items: start; gap: 12px; }
+.menu-button-batch-row > button { margin-top: 30px; }
+@media (max-width: 1000px) { .menu-tree-row { grid-template-columns: minmax(100px, 1fr) 50px 50px auto; } .menu-tree-code { display: none; } }
+@media (max-width: 600px) { .menu-button-batch-row { grid-template-columns: minmax(0, 1fr); border-bottom: 1px solid #e2e8f0; margin-bottom: 16px; padding-bottom: 12px; } .menu-button-batch-row > button { margin-top: 0; } }
+
+/* Four management workspaces share clear query, action and data surfaces. */
+.management-page { gap: 14px; }
+.management-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 12px 16px; border: 1px solid #dce6e0; border-radius: 8px; background: #fff; }
+.management-query.ant-pro-card .ant-pro-card-body { padding: 0; }
+.management-query > form.ant-form-inline { margin: 0 !important; }
+.workspace-page .management-page :is(.management-query-form, .management-query > form.ant-form-inline) { display: flex; flex-wrap: wrap; gap: 12px; padding: 14px 16px; margin: 0; }
+.workspace-page .management-page :is(.management-query-form, .management-query > form.ant-form-inline) > .ant-form-item { flex: 1 1 180px; max-width: 240px; }
+.workspace-page .management-page :is(.management-query-form, .management-query > form.ant-form-inline) > .ant-form-item:not(:has(.ant-form-item-label)):has(button) { flex: 0 0 auto; max-width: none; }
+.management-list .ant-pro-card-body { padding: 12px 16px; }
+.management-page .ant-table-thead > tr > th { background: #f5f8f6; color: #42574c; font-weight: 600; }
+.workspace-page .management-page .management-row-actions { flex-wrap: nowrap; white-space: nowrap; }
+.management-row-actions .ant-btn { padding-inline: 10px; }
+.management-split { display: grid; grid-template-columns: minmax(280px, 34%) minmax(0, 1fr); gap: 16px; align-items: start; }
+.menu-split { grid-template-columns: minmax(320px, 46%) minmax(0, 1fr); }
+.management-tree-pane { padding: 12px; min-width: 0; overflow: hidden; }
+.management-tree-search { margin-bottom: 12px; }
+.management-tree-pane .ant-tree-node-content-wrapper { flex: 1; min-width: 0; }
+.management-tree-pane .ant-tree-title { display: block; width: 100%; }
+.management-tree-label { display: flex; align-items: center; gap: 8px; min-width: 0; min-height: 34px; white-space: nowrap; }
+.management-tree-label > span:not(.ant-tag) { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.management-tree-label > svg, .management-tree-label > .ant-tag { flex: 0 0 auto; }
+.management-tree-label .ant-tag { margin-inline-end: 0; font-size: 11px; }
+.management-detail-pane { min-width: 0; padding: 16px; min-height: 260px; }
+.management-detail-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid #e6ede9; }
+.management-detail-heading > div { min-width: 0; }
+.management-detail-heading strong { display: block; font-size: 17px; color: #243e30; line-height: 26px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.management-context-code { display: block; margin-top: 3px; font-size: 12px; color: #72837a; overflow-wrap: anywhere; }
+.management-context-actions { display: flex; width: 100%; padding: 14px 0; gap: 8px !important; }
+.management-detail-pane .ant-descriptions-item-content { overflow-wrap: anywhere; }
+.management-detail-tabs .ant-tabs-nav { margin-bottom: 12px; }
+.organization-members > .content-panel { padding: 10px 12px !important; border-radius: 6px; }
+.workspace-page .management-page .organization-members form.ant-form-inline { display: flex; flex-wrap: wrap; gap: 10px; padding: 0; margin: 0; border: 0; background: transparent; }
+.workspace-page .management-page .organization-members form.ant-form-inline > .ant-form-item:first-child { flex: 1 1 180px; max-width: 240px; }
+.workspace-page .management-page .organization-members form.ant-form-inline > .ant-form-item:has(button) { flex: 0 0 auto; }
+.organization-members .viewport-table { min-width: 0; }
+@media (max-width: 1000px) {
+  .management-split { grid-template-columns: minmax(220px, 31%) minmax(0, 1fr); gap: 12px; }
+  .menu-split { grid-template-columns: minmax(240px, 43%) minmax(0, 1fr); }
+  .management-detail-pane { padding: 12px; }
+  .management-tree-label { gap: 5px; }
+}
+@media (max-width: 700px) {
+  .management-split { grid-template-columns: minmax(0, 1fr); }
+  .management-tree-pane .ant-tree-list-holder { max-height: 220px; }
+  .management-detail-heading strong { white-space: normal; }
+  .workspace-page .management-page :is(.management-query-form, .management-query > form.ant-form-inline) > .ant-form-item { max-width: none; }
+}
+.management-tree-pane, .management-detail-pane { background: #fff; border: 1px solid #dce6e0; border-radius: 8px; }
+.organization-management-page > .page-sections > .ant-tabs-nav { padding: 0 14px; min-height: 54px; margin-bottom: 12px; background: #fff; border: 1px solid #dce6e0; border-radius: 8px; }
+.workspace-page .management-page .organization-members form.ant-form-inline .ant-form-item-row { flex-direction: row; align-items: center; }
+.workspace-page .management-page .organization-members form.ant-form-inline .ant-form-item-label { padding: 0 8px 0 0; }
+.workspace-page .management-page .organization-members form.ant-form-inline > .ant-form-item:first-child { max-width: 340px; }
+.organization-members .ant-form-item-control { min-width: 140px; }
+@media(max-width:700px) {
+  .organization-management-page > .page-sections > .ant-tabs-nav { padding-inline: 8px; }
+  .workspace-page .management-page .organization-members form.ant-form-inline .ant-form-item-row { flex-direction: column; align-items: stretch; }
+  .workspace-page .management-page .organization-members form.ant-form-inline .ant-form-item-label { padding-bottom: 5px; }
+}
+.management-context-actions .ant-btn { padding-inline: 8px; height: 32px; }
+.organization-split .management-detail-heading { padding-bottom: 8px; }
+.organization-split .management-detail-heading .management-context-code { display: none; }
+.organization-split .management-context-actions { padding-block: 8px; }
+.organization-split .management-detail-tabs > .ant-tabs-nav .ant-tabs-tab { padding-block: 8px; }
+.organization-members > .content-panel { padding: 8px 10px !important; margin-bottom: 10px !important; }
+
+/* Meaningful action colors preserve explicit primary/danger styles and disabled state. */
+.configured-action.action-tone-authorize { --action-color: #7252b6; --action-background: #f6f1fc; --action-border: #d9c9ef; }
+.configured-action.action-tone-associate, .configured-action.action-tone-view { --action-color: #1673b8; --action-background: #eff7fd; --action-border: #b9d9f1; }
+.configured-action.action-tone-edit { --action-color: #956300; --action-background: #fff9e8; --action-border: #e7d39a; }
+.configured-action.action-tone-success { --action-color: #147b5c; --action-background: #eff9f4; --action-border: #b3ddcb; }
+.configured-action.action-tone-danger { --action-color: #c53c42; --action-background: #fff3f3; --action-border: #efbfc1; }
+.configured-action[class*='action-tone-']:not(.ant-btn-primary):not(.ant-btn-dangerous):not(:disabled) { color: var(--action-color); border-color: var(--action-border); background: var(--action-background); }
+.configured-action[class*='action-tone-']:not(.ant-btn-primary):not(.ant-btn-dangerous):not(:disabled):hover { color: var(--action-color); border-color: var(--action-color); filter: brightness(.97); }

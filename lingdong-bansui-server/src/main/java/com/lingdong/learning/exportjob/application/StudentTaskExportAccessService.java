@@ -22,17 +22,18 @@ public class StudentTaskExportAccessService {
   this.users=users; this.roles=roles; this.permissions=permissions; this.features=features; this.organizations=organizations; this.mapper=mapper; this.properties=properties;
  }
  public static String role(List<String> roles) {
-  if (roles.contains("SYS_AUDITOR")) throw denied();
   for (String role : List.of("ORG_ADMIN","TEACHER","PARENT")) if (roles.contains(role)) return role;
-  throw denied();
+  // Legacy SQL uses ORG_ADMIN as the organization visibility mode, not as a granted role.
+  return "ORG_ADMIN";
  }
  public StudentTaskVisibility require(long userId) {
   var user=users.findById(userId); if(user==null || user.status()!=UserStatus.ENABLED) throw denied();
   for (String feature:List.of("DATA_EXPORT","IMPORT_EXPORT_TEMPLATE_MANAGEMENT","ATTACHMENT_SERVICE","LEARNING_TASK_MANAGEMENT")) features.requireEnabled(feature,null);
-  String role=role(roles.findEnabledRoleCodesByUserId(userId));
+  String role = role(roles.findEnabledRoleCodesByUserId(userId));
   for(String permission:List.of("STUDENT_TASK_REPORT_EXPORT",role.equals("PARENT")?"LEARNING_TASK_READ_MANAGED":"LEARNING_TASK_PROGRESS_READ"))
    if(!permissions.isAllowed(userId,PermissionClient.WEB,permission)) throw denied();
   var scope=organizations.resolve(userId);
+  if (role.equals("ORG_ADMIN") && !scope.allOrganizations() && scope.rootPaths().isEmpty()) throw denied();
   return new StudentTaskVisibility(userId,role,role.equals("ORG_ADMIN") && scope.allOrganizations(),role.equals("ORG_ADMIN")?scope.rootPaths():List.of());
  }
  public List<com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthPointStudentOptionRow> students(long userId) {return mapper.findStudents(require(userId));}

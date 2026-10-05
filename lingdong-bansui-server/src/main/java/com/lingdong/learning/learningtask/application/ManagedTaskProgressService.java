@@ -35,6 +35,7 @@ public class ManagedTaskProgressService {
     public ManagedTaskProgressPage findPage(
             AuthenticatedUser currentUser, Long taskId, int page, int pageSize
     ) {
+        scopeService.requireWebPermission(currentUser, "LEARNING_TASK_PROGRESS_READ");
         featureAccessService.requireEnabled(FEATURE_CODE, null);
         if (taskId == null || taskId <= 0) {
             throw new IllegalArgumentException("任务标识不合法");
@@ -47,7 +48,7 @@ public class ManagedTaskProgressService {
         }
         scopeService.requireProgressReadable(currentUser, task);
         Long teacherUserId = currentUser.roleCodes().contains("TEACHER")
-                && !currentUser.roleCodes().contains("ORG_ADMIN") ? currentUser.userId() : null;
+                && !scopeService.canReadOrganizationProgress(currentUser, task) ? currentUser.userId() : null;
         ManagedTaskProgressQuery query = new ManagedTaskProgressQuery(
                 task.id(), teacherUserId, normalizedPageSize,
                 Math.multiplyExact(normalizedPage - 1, normalizedPageSize));

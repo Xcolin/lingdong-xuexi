@@ -19,13 +19,15 @@ import java.util.regex.Pattern;
  */
 @Service
 public class RoleApplicationService {
+    private final com.lingdong.learning.permission.application.PermissionDecisionService decisions;
     private static final Pattern ROLE_CODE_PATTERN = Pattern.compile("[A-Z][A-Z0-9_]{2,63}");
 
     private final RoleMapper roleMapper;
     private final IdGenerator idGenerator;
     private final IamChangeAuditService auditService;
 
-    public RoleApplicationService(RoleMapper roleMapper, IdGenerator idGenerator, IamChangeAuditService auditService) {
+    public RoleApplicationService(RoleMapper roleMapper, IdGenerator idGenerator, IamChangeAuditService auditService, com.lingdong.learning.permission.application.PermissionDecisionService decisions) {
+        this.decisions = decisions;
         this.roleMapper = roleMapper;
         this.idGenerator = idGenerator;
         this.auditService = auditService;
@@ -38,6 +40,9 @@ public class RoleApplicationService {
     @Transactional
     public Role createCustomRole(CreateCustomRoleCommand command) {
         Objects.requireNonNull(command, "创建角色请求不能为空");
+        if (command.operatorId() != null && !decisions.isAllowed(command.operatorId(),
+                com.lingdong.learning.permission.domain.PermissionClient.WEB, "IAM_ROLE_CREATE"))
+            throw new com.lingdong.learning.common.security.SystemOperationAccessDeniedException("当前账号无创建角色权限");
 
         String code = requiredText(command.code(), "角色编码", 64);
         String name = requiredText(command.name(), "角色名称", 64);

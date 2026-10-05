@@ -5,6 +5,7 @@ import { Alert, Checkbox, Drawer, Form, Input, InputNumber, message, Select, Spa
 import { FormInstance, TableProps } from 'antd';
 import { ArrowDown, ArrowUp, Columns3, Download, FilePlus2, Plus, Power, PowerOff, RotateCcw, Search, Star, Trash2, Upload as UploadIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { formatDateTime as formatTime } from '../../utils/datetime';
 import {
   importExportTemplateApi,
   type CreateImportExportTemplateInput,
@@ -314,7 +315,7 @@ export function ImportExportTemplateManagementPage({ canManage }: ImportExportTe
       <div className="page-heading">
         <h1>导入导出模板</h1>
         {canManage ? (
-          <Button actionKey="import-export-templates.import-export-template-management-page.5" type="primary" icon={<FilePlus2 size={16} />} onClick={openCreate}>
+          <Button actionKey="IMPORT_EXPORT_TEMPLATE_MANAGE" type="primary" icon={<FilePlus2 size={16} />} onClick={openCreate}>
             新增模板版本
           </Button>
         ) : null}
@@ -357,7 +358,7 @@ export function ImportExportTemplateManagementPage({ canManage }: ImportExportTe
       </section>
 
       <Modal actionPrefix="import-export-templates.import-export-template-management-page.modal.1"
-        open={createOpen} title="新增模板版本" width={620} className="template-create-modal"
+        open={createOpen} title="新增模板版本" width="min(880px, 92vw)" styles={{ body: { maxHeight: 'calc(100vh - 220px)', overflowY: 'auto' } }} className="template-create-modal"
         okText="保存模板" cancelText="取消" confirmLoading={submitting}
         onOk={() => createForm.submit()} onCancel={closeCreate} destroyOnHidden
       >
@@ -403,7 +404,7 @@ export function ImportExportTemplateManagementPage({ canManage }: ImportExportTe
       <Drawer
         open={Boolean(fieldTemplate)}
         title={fieldTemplate ? `${fieldTemplate.templateName}字段映射` : '字段映射'}
-        width={760}
+        width="min(880px, 92vw)"
         loading={fieldLoading}
         destroyOnHidden
         onClose={closeFields}
@@ -514,10 +515,6 @@ function formatSize(sizeBytes: number): string {
   if (sizeBytes < 1024) return `${sizeBytes} B`;
   if (sizeBytes < 1024 * 1024) return `${(sizeBytes / 1024).toFixed(1)} KB`;
   return `${(sizeBytes / 1024 / 1024).toFixed(1)} MB`;
-}
-
-function formatTime(value: string): string {
-  return new Date(value).toLocaleString('zh-CN', { hour12: false });
 }
 
 function toMessage(error: unknown): string {

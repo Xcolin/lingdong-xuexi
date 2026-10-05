@@ -4,6 +4,8 @@ package com.lingdong.learning.organization.domain;
 public enum OrganizationChangeAuditEvent {
     CREATE,
     DIRECT_UPDATE,
+    DIRECT_REORDER,
+    DIRECT_MOVE,
     ENABLE,
     DISABLE,
     REQUEST,

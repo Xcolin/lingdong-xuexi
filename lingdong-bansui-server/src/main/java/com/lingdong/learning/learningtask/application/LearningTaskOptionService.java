@@ -35,19 +35,22 @@ public class LearningTaskOptionService {
     private final OrganizationMapper organizationMapper;
     private final OrganizationDataScopeService organizationDataScopeService;
     private final FeatureAccessService featureAccessService;
+    private final LearningTaskScopeService scopes;
 
     public LearningTaskOptionService(
             LearningTaskOptionMapper optionMapper,
             TeacherClassMapper teacherClassMapper,
             OrganizationMapper organizationMapper,
             OrganizationDataScopeService organizationDataScopeService,
-            FeatureAccessService featureAccessService
+            FeatureAccessService featureAccessService,
+            LearningTaskScopeService scopes
     ) {
         this.optionMapper = optionMapper;
         this.teacherClassMapper = teacherClassMapper;
         this.organizationMapper = organizationMapper;
         this.organizationDataScopeService = organizationDataScopeService;
         this.featureAccessService = featureAccessService;
+        this.scopes = scopes;
     }
 
     public List<OrganizationOption> organizations(
@@ -55,9 +58,16 @@ public class LearningTaskOptionService {
             LearningTaskSourceType sourceType,
             String organizationType
     ) {
+        scopes.requireWebPermission(currentUser, "LEARNING_TASK_CREATE");
         featureAccessService.requireEnabled(FEATURE_CODE, null);
         requireSourceRole(currentUser, sourceType);
         String normalizedType = optionalText(organizationType, "组织类型", 32);
+        if (sourceType == LearningTaskSourceType.ORGANIZATION && isWeb(currentUser)) {
+            return organizationDataScopeService.findAccessibleOrganizations(currentUser.userId()).stream()
+                    .filter(OrganizationOperationalStatusService::isOperational)
+                    .filter(node -> normalizedType == null || normalizedType.equals(node.typeCode()))
+                    .map(node -> new OrganizationOption(node.id(), node.name(), node.typeCode(), node.parentId(), node.path())).toList();
+        }
         return switch (sourceType) {
             case FAMILY -> List.of();
             case ORGANIZATION -> optionMapper.findOrganizationOptionsForAdministrator(
@@ -73,6 +83,7 @@ public class LearningTaskOptionService {
             Long organizationId,
             String keyword
     ) {
+        scopes.requireWebPermission(currentUser, "LEARNING_TASK_CREATE");
         featureAccessService.requireEnabled(FEATURE_CODE, null);
         requireSourceRole(currentUser, sourceType);
         String normalizedKeyword = optionalText(keyword, "学生关键字", 64);
@@ -85,6 +96,10 @@ public class LearningTaskOptionService {
             }
             case ORGANIZATION -> {
                 validateOrganizationScope(currentUser, organizationId, false);
+                if (isWeb(currentUser)) {
+                    var ids = accessibleIds(currentUser);
+                    yield ids.isEmpty() ? List.<StudentOptionRow>of() : optionMapper.findScopedStudentOptions(ids, organizationId, normalizedKeyword);
+                }
                 yield optionMapper.findOrganizationStudentOptions(
                         currentUser.userId(), organizationId, normalizedKeyword);
             }
@@ -100,10 +115,14 @@ public class LearningTaskOptionService {
     public List<TeacherOption> teachers(
             AuthenticatedUser currentUser, Long classId, String keyword
     ) {
+        scopes.requireWebPermission(currentUser, "TEACHER_CLASS_ASSIGN");
         featureAccessService.requireEnabled(FEATURE_CODE, null);
         requireRole(currentUser, "ORG_ADMIN", "仅机构管理员可查询教师候选项");
         validateOrganizationScope(currentUser, classId, true);
-        List<TeacherOptionRow> rows = optionMapper.findTeacherOptionsForAdministrator(
+        List<TeacherOptionRow> rows = isWeb(currentUser)
+                ? (accessibleIds(currentUser).isEmpty() ? List.of() : optionMapper.findScopedTeacherOptions(
+                    accessibleIds(currentUser), classId, optionalText(keyword, "教师关键字", 64)))
+                : optionMapper.findTeacherOptionsForAdministrator(
                 currentUser.userId(), classId, optionalText(keyword, "教师关键字", 64));
 
         Map<Long, TeacherOptionAccumulator> grouped = new LinkedHashMap<>();
@@ -177,10 +196,21 @@ public class LearningTaskOptionService {
     }
 
     private void requireRole(AuthenticatedUser currentUser, String roleCode, String message) {
+        if ("ORG_ADMIN".equals(roleCode) && isWeb(currentUser)) {
+            if (!scopes.hasOrganizationPermission(currentUser, "LEARNING_TASK_CREATE")
+                    && !scopes.hasOrganizationPermission(currentUser, "TEACHER_CLASS_ASSIGN")) throw new SystemOperationAccessDeniedException(message);
+            return;
+        }
         if (currentUser == null || currentUser.roleCodes().contains("SYS_AUDITOR")
                 || !currentUser.roleCodes().contains(roleCode)) {
             throw new SystemOperationAccessDeniedException(message);
         }
+    }
+
+    private boolean isWeb(AuthenticatedUser user) { return user != null && user.clientType() == com.lingdong.learning.auth.domain.AuthClientType.WEB; }
+    private List<Long> accessibleIds(AuthenticatedUser user) {
+        return organizationDataScopeService.findAccessibleOrganizations(user.userId()).stream()
+                .filter(OrganizationOperationalStatusService::isOperational).map(Organization::id).toList();
     }
 
     private String optionalText(String value, String fieldName, int maxLength) {

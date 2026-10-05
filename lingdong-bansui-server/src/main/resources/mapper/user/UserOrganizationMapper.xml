@@ -3,7 +3,16 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.lingdong.learning.user.infrastructure.persistence.UserOrganizationMapper">
+    <select id="findNamesByUserIds" resultType="com.lingdong.learning.user.infrastructure.persistence.UserOrganizationMapper$OrganizationName">
+        SELECT membership.user_id, organization.organization_name AS name
+        FROM sys_user_organization membership
+        JOIN sys_organization organization ON organization.id = membership.organization_id
+        WHERE membership.user_id IN
+        <foreach collection="userIds" item="userId" open="(" separator="," close=")">#{userId}</foreach>
+        ORDER BY membership.user_id, organization.organization_name, organization.id
+    </select>
 
+    <select id="lockRelation" resultType="java.lang.Long">SELECT id FROM sys_user_organization WHERE user_id = #{userId} AND organization_id = #{organizationId} FOR UPDATE</select>
     <select id="exists" resultType="boolean">
         SELECT EXISTS(
             SELECT 1

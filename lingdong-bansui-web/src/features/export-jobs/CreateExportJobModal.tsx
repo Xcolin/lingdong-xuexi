@@ -178,6 +178,8 @@ export function CreateExportJobModal(props: CreateExportJobModalProps) {
     open={props.open}
     title="新建数据导出"
     className="export-job-create-modal"
+    width="min(880px, 92vw)"
+    styles={{ body: { maxHeight: 'calc(100vh - 220px)', overflowY: 'auto' } }}
     okText="提交导出"
     confirmLoading={submitting}
     okButtonProps={{ disabled: loading || !options || !allowedTypes.some(item => item.value === exportType) }}

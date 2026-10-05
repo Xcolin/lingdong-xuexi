@@ -71,7 +71,6 @@ public class InterfaceServiceApplicationService {
     @Transactional
     public InterfaceServiceChange createDraft(CreateInterfaceServiceChangeCommand command) {
         Objects.requireNonNull(command, "接口服务登记请求不能为空");
-        requireSystemAdmin(command.submitterId());
         requirePermission(command.submitterId(), "INTERFACE_SERVICE_MANAGE");
         String serviceName = requiredText(command.serviceName(), "服务名称", 100);
         String callerName = requiredText(command.callerName(), "调用方", 100);
@@ -94,7 +93,6 @@ public class InterfaceServiceApplicationService {
     @Transactional
     public InterfaceServiceChange createDisableDraft(CreateInterfaceServiceDisableCommand command) {
         Objects.requireNonNull(command, "接口服务停用请求不能为空");
-        requireSystemAdmin(command.submitterId());
         requirePermission(command.submitterId(), "INTERFACE_SERVICE_MANAGE");
         InterfaceService service = requireService(command.serviceId());
         if (service.status() != InterfaceServiceStatus.ENABLED) {
@@ -111,7 +109,6 @@ public class InterfaceServiceApplicationService {
     @Transactional
     public InterfaceServiceChange createEnableDraft(CreateInterfaceServiceEnableCommand command) {
         Objects.requireNonNull(command, "接口服务启用请求不能为空");
-        requireSystemAdmin(command.submitterId());
         requirePermission(command.submitterId(), "INTERFACE_SERVICE_MANAGE");
         InterfaceService service = requireService(command.serviceId());
         if (service.status() != InterfaceServiceStatus.DISABLED) {
@@ -128,7 +125,6 @@ public class InterfaceServiceApplicationService {
     @Transactional
     public InterfaceServiceChange createAuthorizationChangeDraft(CreateInterfaceServiceAuthorizationChangeCommand command) {
         Objects.requireNonNull(command, "接口服务授权范围变更请求不能为空");
-        requireSystemAdmin(command.submitterId());
         requirePermission(command.submitterId(), "INTERFACE_SERVICE_MANAGE");
         InterfaceService service = requireService(command.serviceId());
         Scope scope = normalizeScope(command.authorizationScope(), command.authorizationScopeValue());
@@ -330,13 +326,6 @@ public class InterfaceServiceApplicationService {
     private void requireOwner(Long ownerId) {
         if (ownerId == null || userMapper.findById(ownerId) == null) {
             throw new IllegalArgumentException("接口服务责任人不存在：" + ownerId);
-        }
-    }
-
-    private void requireSystemAdmin(Long userId) {
-        if (userId == null || userRoleMapper.hasRoleCode(userId, "SYS_AUDITOR")
-                || !userRoleMapper.hasRoleCode(userId, SYSTEM_ADMIN_ROLE)) {
-            throw new SystemOperationAccessDeniedException("仅非审核员的系统管理员可发起接口服务变更");
         }
     }
 

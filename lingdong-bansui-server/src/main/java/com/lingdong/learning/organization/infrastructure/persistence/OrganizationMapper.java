@@ -38,7 +38,8 @@ public interface OrganizationMapper {
             @Param("id") Long id,
             @Param("name") String name,
             @Param("sortOrder") Integer sortOrder,
-            @Param("expectedVersion") Integer expectedVersion
+            @Param("expectedVersion") Integer expectedVersion,
+            @Param("adminDivisionCode") String adminDivisionCode
     );
 
     List<Organization> findSubtreeByPathForUpdate(@Param("path") String path);
@@ -76,6 +77,16 @@ public interface OrganizationMapper {
             @Param("effectiveStatus") OrganizationEffectiveStatus effectiveStatus,
             @Param("expectedVersion") Integer expectedVersion
     );
+
+    /** 拖拽同级排序：仅更新顺序与乐观锁版本。 */
+    int updateSortOrder(
+            @Param("id") Long id,
+            @Param("sortOrder") Integer sortOrder,
+            @Param("expectedVersion") Integer expectedVersion
+    );
+
+    /** 锁定某父级下全部子节点（parentId 为空表示根层级），供同级排序串行化。 */
+    List<Organization> findChildrenForUpdate(@Param("parentId") Long parentId);
 
     long countDeleteReferences(@Param("id") Long id);
 

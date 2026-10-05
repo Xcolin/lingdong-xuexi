@@ -195,11 +195,11 @@ export function LearningTaskEditorDrawer({
       title={initialTask ? '编辑学习任务' : '新建学习任务'}
       open={open}
       onClose={onClose}
-      width={720}
+      width="min(880px, 92vw)"
       destroyOnClose
       extra={
         <Space>
-          {taskTemplateEnabled && currentUser.roleCodes.includes('PARENT') && (
+          {taskTemplateEnabled && currentUser.permissionCodes.includes('LEARNING_TASK_TEMPLATE_READ') && (
             <Button actionKey="learning-tasks.learning-task-editor-drawer.1" onClick={() => void openTemplateEditor()}>保存为个人模板</Button>
           )}
           <Button actionKey="learning-tasks.learning-task-editor-drawer.2" type="primary" loading={submitting} onClick={() => form.submit()}>保存草稿</Button>
@@ -380,7 +380,7 @@ function sourceOptions(currentUser: CurrentUser): Array<{ value: LearningTaskSou
     ['TEACHER', 'TEACHER']
   ];
   return roleSources
-    .filter(([role]) => currentUser.roleCodes.includes(role))
+    .filter(([role, source]) => currentUser.permissionCodes.includes('LEARNING_TASK_CREATE') && (source === 'ORGANIZATION' || currentUser.roleCodes.includes(role)))
     .map(([, source]) => ({ value: source, label: sourceLabels[source] }));
 }
 

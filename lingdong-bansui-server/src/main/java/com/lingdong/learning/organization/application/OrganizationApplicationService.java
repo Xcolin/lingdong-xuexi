@@ -2,6 +2,7 @@ package com.lingdong.learning.organization.application;
 
 import com.lingdong.learning.common.id.IdGenerator;
 import com.lingdong.learning.common.web.ResourceNotFoundException;
+import com.lingdong.learning.dictionary.application.DictionaryQueryService;
 import com.lingdong.learning.organization.domain.Organization;
 import com.lingdong.learning.organization.domain.OrganizationChangeAudit;
 import com.lingdong.learning.organization.domain.OrganizationStatus;
@@ -30,6 +31,7 @@ public class OrganizationApplicationService {
     private final OrganizationTypeMapper organizationTypeMapper;
     private final OrganizationChangeAuditMapper organizationChangeAuditMapper;
     private final OrganizationOperationalStatusService organizationOperationalStatusService;
+    private final DictionaryQueryService dictionaryQueryService;
     private final IdGenerator idGenerator;
 
     public OrganizationApplicationService(
@@ -37,12 +39,14 @@ public class OrganizationApplicationService {
             OrganizationTypeMapper organizationTypeMapper,
             OrganizationChangeAuditMapper organizationChangeAuditMapper,
             OrganizationOperationalStatusService organizationOperationalStatusService,
+            DictionaryQueryService dictionaryQueryService,
             IdGenerator idGenerator
     ) {
         this.organizationMapper = organizationMapper;
         this.organizationTypeMapper = organizationTypeMapper;
         this.organizationChangeAuditMapper = organizationChangeAuditMapper;
         this.organizationOperationalStatusService = organizationOperationalStatusService;
+        this.dictionaryQueryService = dictionaryQueryService;
         this.idGenerator = idGenerator;
     }
 
@@ -94,6 +98,7 @@ public class OrganizationApplicationService {
 
         String name = requiredText(command.name(), "组织名称", maximumNameLength(typeCode));
         Integer sortOrder = normalizeSortOrder(command.sortOrder());
+        String adminDivisionCode = normalizeAdminDivisionCode(command.adminDivisionCode());
         ParentContext parentContext = resolveParent(command.parentId());
 
         if (organizationMapper.existsByCode(code)) {
@@ -116,7 +121,8 @@ public class OrganizationApplicationService {
                 name,
                 typeCode,
                 path,
-                sortOrder
+                sortOrder,
+                adminDivisionCode
         );
         try {
             organizationMapper.insert(organization);
@@ -149,13 +155,17 @@ public class OrganizationApplicationService {
 
         String name = requiredText(command.name(), "组织名称", maximumNameLength(current.typeCode()));
         Integer sortOrder = normalizeSortOrder(command.sortOrder());
+        // 传 null 表示保持既有行政区划不变；显式传入空串则清除该字段。
+        String adminDivisionCode = command.adminDivisionCode() == null
+                ? current.adminDivisionCode()
+                : normalizeAdminDivisionCode(command.adminDivisionCode());
         if (organizationMapper.existsByParentScopeAndNameExcludingId(
                 current.parentScopeKey(), name, current.id())) {
             throw new DuplicateOrganizationNameException(name);
         }
 
         int affectedRows = organizationMapper.updateDetails(
-                current.id(), name, sortOrder, command.versionNo());
+                current.id(), name, sortOrder, command.versionNo(), adminDivisionCode);
         if (affectedRows != 1) {
             throw new OrganizationVersionConflictException();
         }
@@ -208,6 +218,26 @@ public class OrganizationApplicationService {
             case "REGION", "CLASS" -> 50;
             default -> 100;
         };
+    }
+
+    /** 行政区划仅做逻辑引用：必须命中 ADMIN_DIVISION 字典的启用条目，不建外键。 */
+    private String normalizeAdminDivisionCode(String adminDivisionCode) {
+        if (adminDivisionCode == null) {
+            return null;
+        }
+        String normalized = adminDivisionCode.trim();
+        if (normalized.isEmpty()) {
+            return null;
+        }
+        if (normalized.length() > 32) {
+            throw new IllegalArgumentException("行政区划代码长度不能超过32个字符");
+        }
+        boolean known = dictionaryQueryService.findEnabledItems("ADMIN_DIVISION").stream()
+                .anyMatch(item -> normalized.equals(item.code()));
+        if (!known) {
+            throw new IllegalArgumentException("行政区划代码不存在或已停用：" + normalized);
+        }
+        return normalized;
     }
 
     private Integer normalizeSortOrder(Integer sortOrder) {

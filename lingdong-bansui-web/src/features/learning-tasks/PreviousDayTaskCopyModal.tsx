@@ -102,11 +102,12 @@ export function PreviousDayTaskCopyModal({
     <Modal
       title="复制昨日任务"
       open={open}
-      width={680}
+      width="min(880px, 92vw)"
+      styles={{ body: { maxHeight: 'calc(100vh - 220px)', overflowY: 'auto' } }}
       onCancel={onClose}
       footer={[
         <Button actionKey="learning-tasks.previous-day-task-copy-modal.1" key="close" onClick={onClose}>关闭</Button>,
-        <Button actionKey="learning-tasks.previous-day-task-copy-modal.2"
+        <Button actionKey="LEARNING_TASK_COPY_PREVIOUS_DAY"
           key="copy"
           type="primary"
           loading={submitting}

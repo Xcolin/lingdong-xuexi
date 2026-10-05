@@ -14,6 +14,9 @@ import com.lingdong.learning.organization.domain.OrganizationStatus;
 import com.lingdong.learning.organization.infrastructure.persistence.OrganizationChangeAuditMapper;
 import com.lingdong.learning.organization.infrastructure.persistence.OrganizationMapper;
 import org.springframework.dao.DuplicateKeyException;
+import com.lingdong.learning.permission.application.PermissionDecisionService;
+import com.lingdong.learning.permission.domain.PermissionClient;
+import com.lingdong.learning.auth.domain.AuthClientType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +27,7 @@ import java.util.Objects;
 /** 在机构管理员授权学校范围内维护班级基础信息。 */
 @Service
 public class ClassManagementApplicationService {
+    private final PermissionDecisionService operationPermissions;
     private static final String FEATURE_CODE = "CLASS_MANAGEMENT";
     private static final String ORGANIZATION_ADMIN_ROLE = "ORG_ADMIN";
     private static final String SCHOOL_TYPE = "SCHOOL";
@@ -44,8 +48,9 @@ public class ClassManagementApplicationService {
             OrganizationApplicationService organizationApplicationService,
             FeatureAccessService featureAccessService,
             ClassTaskInvalidationService classTaskInvalidationService,
-            IdGenerator idGenerator
+            IdGenerator idGenerator, PermissionDecisionService operationPermissions
     ) {
+        this.operationPermissions = operationPermissions;
         this.organizationMapper = organizationMapper;
         this.auditMapper = auditMapper;
         this.dataScopeService = dataScopeService;
@@ -57,20 +62,27 @@ public class ClassManagementApplicationService {
 
     /** 返回当前机构管理员可创建班级的有效学校。 */
     public List<Organization> listManageableSchools(AuthenticatedUser currentUser) {
-        requireAccess(currentUser);
-        return organizationMapper.findOperationalSchoolsByOrganizationAdministrator(currentUser.userId());
+        requireAccess(currentUser, "CLASS_READ");
+        if (currentUser.clientType() != AuthClientType.WEB)
+            return organizationMapper.findOperationalSchoolsByOrganizationAdministrator(currentUser.userId());
+        return dataScopeService.findAccessibleOrganizations(currentUser.userId()).stream()
+                .filter(org -> SCHOOL_TYPE.equals(org.typeCode()))
+                .filter(OrganizationOperationalStatusService::isOperational).toList();
     }
 
     /** 返回授权范围内全部班级，包含自身或上级已停用的历史班级。 */
     public List<Organization> listClasses(AuthenticatedUser currentUser) {
-        requireAccess(currentUser);
-        return organizationMapper.findClassesByOrganizationAdministrator(currentUser.userId());
+        requireAccess(currentUser, "CLASS_READ");
+        if (currentUser.clientType() != AuthClientType.WEB)
+            return organizationMapper.findClassesByOrganizationAdministrator(currentUser.userId());
+        return dataScopeService.findAccessibleOrganizations(currentUser.userId()).stream()
+                .filter(org -> CLASS_TYPE.equals(org.typeCode())).toList();
     }
 
     /** 直接在学校下创建班级，编码由服务端雪花标识生成。 */
     @Transactional
     public Organization createClass(AuthenticatedUser currentUser, CreateClassCommand command) {
-        requireAccess(currentUser);
+        requireAccess(currentUser, "CLASS_CREATE");
         Objects.requireNonNull(command, "新增班级请求不能为空");
         Long schoolId = requiredId(command.schoolOrganizationId(), "学校组织标识");
         Organization school = requireManageableOrganization(currentUser.userId(), schoolId);
@@ -89,7 +101,7 @@ public class ClassManagementApplicationService {
         String code = "CLS_" + id;
         Organization organization = Organization.create(
                 id, school.id(), parentScopeKey, code, name, CLASS_TYPE,
-                school.path() + code + "/", sortOrder);
+                school.path() + code + "/", sortOrder, null);
         try {
             organizationMapper.insert(organization);
             Organization created = organizationMapper.findById(id);
@@ -107,7 +119,7 @@ public class ClassManagementApplicationService {
     /** 编辑班级名称和排序，所属学校和组织编码保持不变。 */
     @Transactional
     public Organization updateClass(AuthenticatedUser currentUser, UpdateClassCommand command) {
-        requireAccess(currentUser);
+        requireAccess(currentUser, "CLASS_UPDATE");
         Objects.requireNonNull(command, "编辑班级请求不能为空");
         Long classId = requiredId(command.classOrganizationId(), "班级组织标识");
         Organization current = requireManageableOrganization(currentUser.userId(), classId);
@@ -127,7 +139,7 @@ public class ClassManagementApplicationService {
             Long classOrganizationId,
             Integer expectedVersion
     ) {
-        requireAccess(currentUser);
+        requireAccess(currentUser, "CLASS_STATUS_CHANGE");
         Long classId = requiredId(classOrganizationId, "班级组织标识");
         if (expectedVersion == null || expectedVersion < 1) {
             throw new IllegalArgumentException("班级版本号必须大于0");
@@ -163,7 +175,7 @@ public class ClassManagementApplicationService {
             Long classOrganizationId,
             Integer expectedVersion
     ) {
-        requireAccess(currentUser);
+        requireAccess(currentUser, "CLASS_STATUS_CHANGE");
         Long classId = requiredId(classOrganizationId, "班级组织标识");
         Organization current = requireManageableOrganization(currentUser.userId(), classId);
         if (!CLASS_TYPE.equals(current.typeCode())) {
@@ -173,10 +185,12 @@ public class ClassManagementApplicationService {
                 currentUser.userId(), classId, expectedVersion);
     }
 
-    private void requireAccess(AuthenticatedUser currentUser) {
+    private void requireAccess(AuthenticatedUser currentUser, String permission) {
         featureAccessService.requireEnabled(FEATURE_CODE, null);
-        if (currentUser == null || !currentUser.roleCodes().contains(ORGANIZATION_ADMIN_ROLE)) {
-            throw new SystemOperationAccessDeniedException("仅机构管理员可管理班级");
+        if (currentUser == null || currentUser.clientType() == null
+                || !operationPermissions.isAllowed(currentUser.userId(), PermissionClient.valueOf(currentUser.clientType().name()), permission)
+                || (currentUser.clientType() != AuthClientType.WEB && !currentUser.roleCodes().contains(ORGANIZATION_ADMIN_ROLE))) {
+            throw new SystemOperationAccessDeniedException("当前账号缺少班级操作权限");
         }
     }
 

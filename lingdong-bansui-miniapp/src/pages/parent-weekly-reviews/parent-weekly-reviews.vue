@@ -1,7 +1,6 @@
 <template>
   <view class="page has-tabbar">
     <text class="title">孩子成长周报</text>
-    <button :disabled="busy" @tap="initialize">刷新周报</button>
     <text v-if="busy">正在加载周报</text>
     <text v-if="error" class="error">{{ error }}</text>
     <template v-if="allowed">

@@ -74,6 +74,10 @@ public class StudentImportAccessService {
         requireCurrentIdentity(userId, "STUDENT_IMPORT_RESULT_READ");
     }
 
+    public com.lingdong.learning.datascope.application.OrganizationDataScope currentScope(long userId) {
+        return dataScopeService.resolve(userId);
+    }
+
     public void requireFeatures() {
         featureAccessService.requireEnabled(STUDENT_IMPORT_FEATURE, null);
         featureAccessService.requireEnabled(IMPORT_VALIDATION_FEATURE, null);
@@ -98,9 +102,6 @@ public class StudentImportAccessService {
         User user = userMapper.findById(userId);
         if (user == null || user.status() != UserStatus.ENABLED) {
             throw denied("当前账号不可用");
-        }
-        if (!userRoleMapper.hasRoleCode(userId, "ORG_ADMIN")) {
-            throw denied("仅机构管理员可操作学员批量导入");
         }
         if (!permissionDecisionService.isAllowed(userId, PermissionClient.WEB, permissionCode)) {
             throw denied("当前账号缺少学员导入权限：" + permissionCode);

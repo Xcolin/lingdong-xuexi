@@ -8,8 +8,9 @@ import com.lingdong.learning.organization.domain.OrganizationChangeExecutionStat
 import com.lingdong.learning.organization.domain.OrganizationChangeType;
 
 import java.time.LocalDateTime;
+import java.util.function.Function;
 
-/** 组织变更申请快照、执行状态与审核状态的统一响应。 */
+/** 组织变更申请快照、执行状态与审核状态的统一响应；申请人/审核人展示为姓名。 */
 public record OrganizationChangeResponse(
         @JsonSerialize(using = ToStringSerializer.class) Long changeId,
         @JsonSerialize(using = ToStringSerializer.class) Long taskId,
@@ -24,21 +25,21 @@ public record OrganizationChangeResponse(
         OrganizationChangeExecutionStatus executionStatus,
         String failureReason,
         SystemTaskStatus taskStatus,
-        @JsonSerialize(using = ToStringSerializer.class) Long submittedBy,
+        String submittedBy,
         LocalDateTime submittedAt,
-        @JsonSerialize(using = ToStringSerializer.class) Long reviewedBy,
+        String reviewedBy,
         LocalDateTime reviewedAt,
         String reviewComment,
         LocalDateTime createdAt
 ) {
-    static OrganizationChangeResponse from(OrganizationChangeReviewItem item) {
+    static OrganizationChangeResponse from(OrganizationChangeReviewItem item, Function<Long, String> nameOf) {
         return new OrganizationChangeResponse(
                 item.change().id(), item.change().taskId(), item.change().organizationId(),
                 item.change().changeType(), item.change().targetParentId(), item.change().expectedVersion(),
                 item.change().organizationCodeSnapshot(), item.change().organizationNameSnapshot(),
                 item.change().fromParentIdSnapshot(), item.change().reason(),
                 item.change().executionStatus(), item.change().failureReason(), item.task().status(),
-                item.task().submittedBy(), item.task().submittedAt(), item.task().reviewedBy(),
+                nameOf.apply(item.task().submittedBy()), item.task().submittedAt(), nameOf.apply(item.task().reviewedBy()),
                 item.task().reviewedAt(), item.task().reviewComment(), item.change().createdAt()
         );
     }

@@ -8,6 +8,7 @@ import type { CurrentUser } from '../../api/auth';
 import { exceptionReportApi, type ExceptionReport, type ExceptionReportClassOption,
   type ExceptionReportDetails, type ExceptionReportQuery, type ExceptionReportStudentOption,
   type ExceptionReportType } from './api';
+import { formatDateTime as formatTime } from '../../utils/datetime';
 
 const typeLabels: Record<ExceptionReportType, string> = {
   ATTENDANCE: '出勤异常', LEARNING_STATUS: '学习状态异常', MENTAL_STATE: '心态异常'
@@ -70,7 +71,7 @@ export function ExceptionReportPage({ currentUser }: { currentUser: CurrentUser 
 
   return <div className="page-stack">
     <div className="page-heading"><div><h1>异常报备</h1><p>教师提交授权班级学生异常，机构管理员按组织范围处理。</p></div>
-      {canCreate && <Button actionKey="exception-reports.exception-report-page.1" type="primary" icon={<ClipboardPlus size={16} />} onClick={() => void openCreate()}>新增报备</Button>}
+      {canCreate && <Button actionKey="EXCEPTION_REPORT_CREATE" type="primary" icon={<ClipboardPlus size={16} />} onClick={() => void openCreate()}>新增报备</Button>}
     </div>
     {error && <Alert type="error" showIcon message={error} action={<Button actionKey="exception-reports.exception-report-page.2" icon={<SearchCheck size={16} />} onClick={() => void load(page, filters)}>重试</Button>} />}
     <Form form={filterForm} layout="inline" className="directory-filters" onFinish={(values) => void search(values)}>
@@ -95,7 +96,7 @@ export function ExceptionReportPage({ currentUser }: { currentUser: CurrentUser 
         { title: '报备时间', dataIndex: 'reportedAt', render: formatTime },
         { title: '操作', key: 'action', fixed: 'right', render: (_, row) => <Button actionKey="exception-reports.exception-report-page.5" type="text" icon={<Eye size={16} />} onClick={() => void openDetails(row.id)}>详情</Button> }
       ]} />
-    <Modal actionPrefix="exception-reports.exception-report-page.modal.1" title="新增异常报备" open={createOpen} onCancel={() => setCreateOpen(false)} onOk={() => form.submit()} confirmLoading={submitting} destroyOnClose>
+    <Modal actionPrefix="exception-reports.exception-report-page.modal.1" title="新增异常报备" open={createOpen} onCancel={() => setCreateOpen(false)} onOk={() => form.submit()} confirmLoading={submitting} destroyOnClose width="min(880px, 92vw)">
       <Form form={form} layout="vertical" onFinish={(values) => void create(values)}>
         <Form.Item name="classOrganizationId" label="班级" rules={[{ required: true, message: '请选择班级' }]}>
           <Select options={classes.map((item) => ({ value: item.classOrganizationId, label: item.className }))} onChange={(value) => void classChanged(value)} />
@@ -112,8 +113,8 @@ export function ExceptionReportPage({ currentUser }: { currentUser: CurrentUser 
       </Form>
     </Modal>
     <Modal title="异常报备详情" open={Boolean(details)} onCancel={() => setDetails(undefined)} footer={details?.report.status === 'SUBMITTED' && canHandle
-      ? <Space><Button actionKey="exception-reports.exception-report-page.6" onClick={() => setDetails(undefined)}>取消</Button><Button actionKey="exception-reports.exception-report-page.7" type="primary" loading={submitting} onClick={() => void handle()}>确认处理</Button></Space>
-      : <Button actionKey="exception-reports.exception-report-page.8" onClick={() => setDetails(undefined)}>关闭</Button>} width={720}>
+      ? <Space><Button actionKey="exception-reports.exception-report-page.6" onClick={() => setDetails(undefined)}>取消</Button><Button actionKey="EXCEPTION_REPORT_HANDLE" type="primary" loading={submitting} onClick={() => void handle()}>确认处理</Button></Space>
+      : <Button actionKey="exception-reports.exception-report-page.8" onClick={() => setDetails(undefined)}>关闭</Button>} width="min(1200px, 92vw)" styles={{ body: { maxHeight: 'calc(100vh - 220px)', overflowY: 'auto' } }}>
       {details && <Space direction="vertical" size="middle" style={{ width: '100%' }}>
         <Descriptions column={{ xs: 1, sm: 2 }} bordered size="small" items={[
           { key: 'student', label: '学生', children: `${details.report.studentName} ${details.report.studentAccountMasked}` },
@@ -129,5 +130,4 @@ export function ExceptionReportPage({ currentUser }: { currentUser: CurrentUser 
   </div>;
 }
 
-function formatTime(value?: string): string { return value ? value.replace('T', ' ').slice(0, 16) : '-'; }
 function toMessage(error: unknown): string { return error instanceof Error ? error.message : '请求未能完成'; }

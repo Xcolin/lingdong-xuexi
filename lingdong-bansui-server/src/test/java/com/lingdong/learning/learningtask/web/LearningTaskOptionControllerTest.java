@@ -41,6 +41,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 @Transactional
 class LearningTaskOptionControllerTest {
+    @Autowired private org.apache.ibatis.session.SqlSession sqlSession;
     @Autowired private MockMvc mockMvc;
     @Autowired private ObjectMapper objectMapper;
     @Autowired private AuthenticationApplicationService authenticationApplicationService;
@@ -162,12 +163,13 @@ class LearningTaskOptionControllerTest {
         mockMvc.perform(get("/api/v1/learning-task-options/students")
                         .param("sourceType", "ORGANIZATION")
                         .header("Authorization", "Bearer " + parentToken))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
 
         jdbcTemplate.update(
                 "update sys_organization set effective_status = 'DISABLED' where id in (?, ?)",
                 school.id(), classOrganization.id());
+        sqlSession.clearCache();
 
         mockMvc.perform(get("/api/v1/learning-task-options/organizations")
                         .param("sourceType", "ORGANIZATION")

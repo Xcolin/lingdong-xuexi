@@ -154,24 +154,6 @@ export const menuPageCatalog = [
 
 export const menuActionCatalog = [
   {
-    "code": "anonymous-ranks.anonymous-rank-page.1",
-    "name": "刷新孩子列表",
-    "route": "/anonymous-ranks",
-    "source": "anonymous-ranks/AnonymousRankPage.tsx"
-  },
-  {
-    "code": "anonymous-ranks.anonymous-rank-page.2",
-    "name": "刷新排行",
-    "route": "/anonymous-ranks",
-    "source": "anonymous-ranks/AnonymousRankPage.tsx"
-  },
-  {
-    "code": "rank-preferences.anonymous-rank-withdrawal-page.1",
-    "name": "刷新授权",
-    "route": "/rank-preferences",
-    "source": "anonymous-ranks/AnonymousRankWithdrawalPage.tsx"
-  },
-  {
     "code": "rank-preferences.anonymous-rank-withdrawal-page.2",
     "name": "撤回授权",
     "route": "/rank-preferences",
@@ -208,7 +190,7 @@ export const menuActionCatalog = [
     "source": "attachments/AttachmentManagementPage.tsx"
   },
   {
-    "code": "attachment-management.attachment-management-page.6",
+    "code": "ATTACHMENT_RULE_MANAGE",
     "name": "新增附件规则",
     "route": "/attachment-management",
     "source": "attachments/AttachmentManagementPage.tsx"
@@ -244,13 +226,7 @@ export const menuActionCatalog = [
     "source": "attendance/AttendancePage.tsx"
   },
   {
-    "code": "attendance-records.attendance-page.2",
-    "name": "刷新",
-    "route": "/attendance-records",
-    "source": "attendance/AttendancePage.tsx"
-  },
-  {
-    "code": "attendance-records.attendance-page.3",
+    "code": "ATTENDANCE_RECORD",
     "name": "班级点名",
     "route": "/attendance-records",
     "source": "attendance/AttendancePage.tsx"
@@ -298,7 +274,7 @@ export const menuActionCatalog = [
     "source": "attendance/AttendanceRecordDrawer.tsx"
   },
   {
-    "code": "cache-management.cache-management-page.1",
+    "code": "CACHE_REVIEW",
     "name": "批准",
     "route": "/cache-management",
     "source": "cache/CacheManagementPage.tsx"
@@ -310,7 +286,7 @@ export const menuActionCatalog = [
     "source": "cache/CacheManagementPage.tsx"
   },
   {
-    "code": "cache-management.cache-management-page.3",
+    "code": "CACHE_MANAGE",
     "name": "执行缓存操作",
     "route": "/cache-management",
     "source": "cache/CacheManagementPage.tsx"
@@ -342,12 +318,6 @@ export const menuActionCatalog = [
   {
     "code": "dashboard.dashboard-page.1",
     "name": "考勤台账",
-    "route": "/dashboard",
-    "source": "dashboard/DashboardPage.tsx"
-  },
-  {
-    "code": "dashboard.dashboard-page.2",
-    "name": "刷新",
     "route": "/dashboard",
     "source": "dashboard/DashboardPage.tsx"
   },
@@ -448,7 +418,7 @@ export const menuActionCatalog = [
     "source": "dashboard/ParentAccountLifecyclePanel.tsx"
   },
   {
-    "code": "dictionaries.dictionary-management-page.1",
+    "code": "DICTIONARY_MANAGE",
     "name": "新增类型",
     "route": "/dictionaries",
     "source": "dictionaries/DictionaryManagementPage.tsx"
@@ -490,7 +460,7 @@ export const menuActionCatalog = [
     "source": "dictionaries/DictionaryManagementPage.tsx"
   },
   {
-    "code": "exception-reports.exception-report-page.1",
+    "code": "EXCEPTION_REPORT_CREATE",
     "name": "新增报备",
     "route": "/exception-reports",
     "source": "exception-reports/ExceptionReportPage.tsx"
@@ -526,7 +496,7 @@ export const menuActionCatalog = [
     "source": "exception-reports/ExceptionReportPage.tsx"
   },
   {
-    "code": "exception-reports.exception-report-page.7",
+    "code": "EXCEPTION_REPORT_HANDLE",
     "name": "确认处理",
     "route": "/exception-reports",
     "source": "exception-reports/ExceptionReportPage.tsx"
@@ -538,7 +508,7 @@ export const menuActionCatalog = [
     "source": "exception-reports/ExceptionReportPage.tsx"
   },
   {
-    "code": "export-jobs.export-job-management-page.1",
+    "code": "EXPORT_JOB_CREATE",
     "name": "新建导出",
     "route": "/export-jobs",
     "source": "export-jobs/ExportJobManagementPage.tsx"
@@ -568,18 +538,6 @@ export const menuActionCatalog = [
     "source": "export-jobs/ExportJobManagementPage.tsx"
   },
   {
-    "code": "export-jobs.export-job-management-page.6",
-    "name": "刷新作业",
-    "route": "/export-jobs",
-    "source": "export-jobs/ExportJobManagementPage.tsx"
-  },
-  {
-    "code": "export-jobs.export-job-review-panel.1",
-    "name": "刷新待审任务",
-    "route": "/export-jobs",
-    "source": "export-jobs/ExportJobReviewPanel.tsx"
-  },
-  {
     "code": "export-jobs.export-job-review-panel.2",
     "name": "批准",
     "route": "/export-jobs",
@@ -604,19 +562,13 @@ export const menuActionCatalog = [
     "source": "feature-management/FeatureManagementPage.tsx"
   },
   {
-    "code": "feature-management.feature-management-page.3",
-    "name": "刷新",
-    "route": "/feature-management",
-    "source": "feature-management/FeatureManagementPage.tsx"
-  },
-  {
-    "code": "feature-management.feature-management-page.4",
+    "code": "FEATURE_TOGGLE_MANAGE",
     "name": "申请停用 / 申请启用",
     "route": "/feature-management",
     "source": "feature-management/FeatureManagementPage.tsx"
   },
   {
-    "code": "feature-management.feature-management-page.5",
+    "code": "FEATURE_TOGGLE_REVIEW",
     "name": "批准",
     "route": "/feature-management",
     "source": "feature-management/FeatureManagementPage.tsx"
@@ -648,12 +600,6 @@ export const menuActionCatalog = [
   {
     "code": "growth-points.growth-point-page.1",
     "name": "导出",
-    "route": "/growth-points",
-    "source": "growth-points/GrowthPointPage.tsx"
-  },
-  {
-    "code": "growth-points.growth-point-page.2",
-    "name": "刷新积分",
     "route": "/growth-points",
     "source": "growth-points/GrowthPointPage.tsx"
   },
@@ -700,7 +646,7 @@ export const menuActionCatalog = [
     "source": "growth-reviews/CreateGrowthReviewExport.tsx"
   },
   {
-    "code": "growth-reviews.create-growth-review-export.4",
+    "code": "GROWTH_REVIEW_PDF_EXPORT",
     "name": "提交导出",
     "route": "/growth-reviews",
     "source": "growth-reviews/CreateGrowthReviewExport.tsx"
@@ -708,12 +654,6 @@ export const menuActionCatalog = [
   {
     "code": "growth-reviews.growth-review-export-history.1",
     "name": "导出历史",
-    "route": "/growth-reviews",
-    "source": "growth-reviews/GrowthReviewExportHistory.tsx"
-  },
-  {
-    "code": "growth-reviews.growth-review-export-history.2",
-    "name": "刷新导出历史",
     "route": "/growth-reviews",
     "source": "growth-reviews/GrowthReviewExportHistory.tsx"
   },
@@ -728,12 +668,6 @@ export const menuActionCatalog = [
     "name": "下载",
     "route": "/growth-reviews",
     "source": "growth-reviews/GrowthReviewExportHistory.tsx"
-  },
-  {
-    "code": "growth-reviews.growth-review-page.1",
-    "name": "刷新复盘",
-    "route": "/growth-reviews",
-    "source": "growth-reviews/GrowthReviewPage.tsx"
   },
   {
     "code": "growth-reviews.growth-review-page.2",
@@ -754,13 +688,7 @@ export const menuActionCatalog = [
     "source": "growth-reviews/GrowthReviewPage.tsx"
   },
   {
-    "code": "growth-reviews.growth-review-subscription-panel.1",
-    "name": "刷新订阅状态",
-    "route": "/growth-reviews",
-    "source": "growth-reviews/GrowthReviewSubscriptionPanel.tsx"
-  },
-  {
-    "code": "iam.iam-audit-panel.1",
+    "code": "IAM_AUDIT_READ",
     "name": "查询审计日志",
     "route": "/iam",
     "source": "iam/IamAuditPanel.tsx"
@@ -772,25 +700,19 @@ export const menuActionCatalog = [
     "source": "iam/IamAuditPanel.tsx"
   },
   {
-    "code": "iam.iam-management-page.1",
+    "code": "IAM_ROLE_CREATE",
     "name": "新增角色",
     "route": "/iam",
     "source": "iam/IamManagementPage.tsx"
   },
   {
-    "code": "iam.iam-management-page.2",
-    "name": "新增权限",
-    "route": "/iam",
-    "source": "iam/IamManagementPage.tsx"
-  },
-  {
-    "code": "iam.iam-management-page.3",
+    "code": "IAM_ROLE_PERMISSION_GRANT",
     "name": "配置角色权限",
     "route": "/iam",
     "source": "iam/IamManagementPage.tsx"
   },
   {
-    "code": "iam.iam-management-page.4",
+    "code": "IAM_USER_PERMISSION_CONFIGURE",
     "name": "配置用户权限",
     "route": "/iam",
     "source": "iam/IamManagementPage.tsx"
@@ -810,18 +732,6 @@ export const menuActionCatalog = [
   {
     "code": "iam.iam-management-page.7",
     "name": "创建角色",
-    "route": "/iam",
-    "source": "iam/IamManagementPage.tsx"
-  },
-  {
-    "code": "iam.iam-management-page.8",
-    "name": "取消",
-    "route": "/iam",
-    "source": "iam/IamManagementPage.tsx"
-  },
-  {
-    "code": "iam.iam-management-page.9",
-    "name": "创建权限",
     "route": "/iam",
     "source": "iam/IamManagementPage.tsx"
   },
@@ -862,7 +772,7 @@ export const menuActionCatalog = [
     "source": "import-export-templates/ImportExportTemplateManagementPage.tsx"
   },
   {
-    "code": "import-export-templates.import-export-template-management-page.5",
+    "code": "IMPORT_EXPORT_TEMPLATE_MANAGE",
     "name": "新增模板版本",
     "route": "/import-export-templates",
     "source": "import-export-templates/ImportExportTemplateManagementPage.tsx"
@@ -934,7 +844,7 @@ export const menuActionCatalog = [
     "source": "import-jobs/ImportJobManagementPage.tsx"
   },
   {
-    "code": "import-jobs.import-job-management-page.3",
+    "code": "IMPORT_JOB_CREATE",
     "name": "新建校验作业",
     "route": "/import-jobs",
     "source": "import-jobs/ImportJobManagementPage.tsx"
@@ -964,7 +874,7 @@ export const menuActionCatalog = [
     "source": "import-jobs/ImportJobManagementPage.tsx"
   },
   {
-    "code": "import-jobs.import-job-management-page.8",
+    "code": "STUDENT_IMPORT_EXECUTE",
     "name": "执行学员导入",
     "route": "/import-jobs",
     "source": "import-jobs/ImportJobManagementPage.tsx"
@@ -1000,7 +910,7 @@ export const menuActionCatalog = [
     "source": "interface-services/InterfaceServiceManagementPage.tsx"
   },
   {
-    "code": "interface-services.interface-service-management-page.4",
+    "code": "INTERFACE_SERVICE_REVIEW",
     "name": "批准",
     "route": "/interface-services",
     "source": "interface-services/InterfaceServiceManagementPage.tsx"
@@ -1012,7 +922,7 @@ export const menuActionCatalog = [
     "source": "interface-services/InterfaceServiceManagementPage.tsx"
   },
   {
-    "code": "interface-services.interface-service-management-page.6",
+    "code": "INTERFACE_SERVICE_MANAGE",
     "name": "登记接口服务",
     "route": "/interface-services",
     "source": "interface-services/InterfaceServiceManagementPage.tsx"
@@ -1078,7 +988,7 @@ export const menuActionCatalog = [
     "source": "learning-tasks/LearningTaskManagementPage.tsx"
   },
   {
-    "code": "learning-tasks.learning-task-management-page.4",
+    "code": "LEARNING_TASK_CREATE",
     "name": "新建任务",
     "route": "/learning-tasks",
     "source": "learning-tasks/LearningTaskManagementPage.tsx"
@@ -1102,7 +1012,7 @@ export const menuActionCatalog = [
     "source": "learning-tasks/LearningTaskManagementPage.tsx"
   },
   {
-    "code": "learning-tasks.publish",
+    "code": "LEARNING_TASK_PUBLISH",
     "name": "发布任务",
     "route": "/learning-tasks",
     "source": "learning-tasks/LearningTaskManagementPage.tsx"
@@ -1126,7 +1036,7 @@ export const menuActionCatalog = [
     "source": "learning-tasks/PreviousDayTaskCopyModal.tsx"
   },
   {
-    "code": "learning-tasks.previous-day-task-copy-modal.2",
+    "code": "LEARNING_TASK_COPY_PREVIOUS_DAY",
     "name": "确认复制",
     "route": "/learning-tasks",
     "source": "learning-tasks/PreviousDayTaskCopyModal.tsx"
@@ -1144,13 +1054,7 @@ export const menuActionCatalog = [
     "source": "learning-tasks/TaskDeferQueue.tsx"
   },
   {
-    "code": "learning-tasks.task-defer-queue.2",
-    "name": "刷新",
-    "route": "/learning-tasks",
-    "source": "learning-tasks/TaskDeferQueue.tsx"
-  },
-  {
-    "code": "learning-tasks.task-defer-queue.3",
+    "code": "TASK_ASSIGNMENT_DEFER",
     "name": "顺延",
     "route": "/learning-tasks",
     "source": "learning-tasks/TaskDeferQueue.tsx"
@@ -1162,7 +1066,7 @@ export const menuActionCatalog = [
     "source": "learning-tasks/TaskReviewDrawer.tsx"
   },
   {
-    "code": "learning-tasks.task-review-drawer.2",
+    "code": "TASK_ASSIGNMENT_REVIEW",
     "name": "审核通过并发放积分",
     "route": "/learning-tasks",
     "source": "learning-tasks/TaskReviewDrawer.tsx"
@@ -1198,7 +1102,7 @@ export const menuActionCatalog = [
     "source": "learning-tasks/TaskTemplateEditorModal.tsx"
   },
   {
-    "code": "learning-tasks.task-template-editor-modal.2",
+    "code": "LEARNING_TASK_TEMPLATE_MANAGE_PERSONAL",
     "name": "保存",
     "route": "/learning-tasks",
     "source": "learning-tasks/TaskTemplateEditorModal.tsx"
@@ -1252,7 +1156,7 @@ export const menuActionCatalog = [
     "source": "menus/MenuManagementPage.tsx"
   },
   {
-    "code": "menu-management.menu-management-page.2",
+    "code": "MENU_MANAGE",
     "name": "新增菜单",
     "route": "/menu-management",
     "source": "menus/MenuManagementPage.tsx"
@@ -1312,13 +1216,7 @@ export const menuActionCatalog = [
     "source": "organizations/ClassManagementPanel.tsx"
   },
   {
-    "code": "organizations.class-management-panel.3",
-    "name": "刷新",
-    "route": "/organizations",
-    "source": "organizations/ClassManagementPanel.tsx"
-  },
-  {
-    "code": "organizations.class-management-panel.4",
+    "code": "CLASS_CREATE",
     "name": "新增班级",
     "route": "/organizations",
     "source": "organizations/ClassManagementPanel.tsx"
@@ -1342,7 +1240,7 @@ export const menuActionCatalog = [
     "source": "organizations/ClassManagementPanel.tsx"
   },
   {
-    "code": "organizations.organization-change-review-panel.1",
+    "code": "ORG_NODE_CHANGE_REVIEW",
     "name": "批准",
     "route": "/organizations",
     "source": "organizations/OrganizationChangeReviewPanel.tsx"
@@ -1350,12 +1248,6 @@ export const menuActionCatalog = [
   {
     "code": "organizations.organization-change-review-panel.2",
     "name": "驳回",
-    "route": "/organizations",
-    "source": "organizations/OrganizationChangeReviewPanel.tsx"
-  },
-  {
-    "code": "organizations.organization-change-review-panel.3",
-    "name": "刷新",
     "route": "/organizations",
     "source": "organizations/OrganizationChangeReviewPanel.tsx"
   },
@@ -1486,7 +1378,7 @@ export const menuActionCatalog = [
     "source": "organizations/OrganizationNodeEditorDrawer.tsx"
   },
   {
-    "code": "organizations.organization-node-editor-drawer.2",
+    "code": "ORG_NODE_UPDATE",
     "name": "保存",
     "route": "/organizations",
     "source": "organizations/OrganizationNodeEditorDrawer.tsx"
@@ -1504,7 +1396,7 @@ export const menuActionCatalog = [
     "source": "organizations/ParentMobileManualRecoveryDrawer.tsx"
   },
   {
-    "code": "organizations.parent-mobile-manual-recovery-drawer.3",
+    "code": "PARENT_ACCOUNT_LIFECYCLE_MANAGE",
     "name": "确认换绑",
     "route": "/organizations",
     "source": "organizations/ParentMobileManualRecoveryDrawer.tsx"
@@ -1528,7 +1420,7 @@ export const menuActionCatalog = [
     "source": "organizations/StudentClassAssignmentDrawer.tsx"
   },
   {
-    "code": "organizations.student-class-assignment-drawer.2",
+    "code": "STUDENT_CLASS_ASSIGN",
     "name": "确认配置",
     "route": "/organizations",
     "source": "organizations/StudentClassAssignmentDrawer.tsx"
@@ -1564,34 +1456,28 @@ export const menuActionCatalog = [
     "source": "organizations/TeacherClassAssignmentDrawer.tsx"
   },
   {
-    "code": "parent-relationships.parent-relationship-page.1",
+    "code": "SECONDARY_PARENT_INVITE_CREATE",
     "name": "邀请副家长",
     "route": "/parent-relationships",
     "source": "parent-relationships/ParentRelationshipPage.tsx"
   },
   {
-    "code": "parent-relationships.parent-relationship-page.2",
+    "code": "PRIMARY_PARENT_TRANSFER_CREATE",
     "name": "转移监护权",
     "route": "/parent-relationships",
     "source": "parent-relationships/ParentRelationshipPage.tsx"
   },
   {
-    "code": "parent-relationships.parent-relationship-page.3",
+    "code": "PRIMARY_PARENT_SELF_UNBIND",
     "name": "解除我的主家长关系",
     "route": "/parent-relationships",
     "source": "parent-relationships/ParentRelationshipPage.tsx"
   },
   {
-    "code": "parent-relationships.parent-relationship-page.4",
+    "code": "SECONDARY_PARENT_UNBIND",
     "name": "解除副家长",
     "route": "/parent-relationships",
     "source": "parent-relationships/ParentRelationshipPage.tsx"
-  },
-  {
-    "code": "rewards.reward-management-page.1",
-    "name": "刷新奖励数据",
-    "route": "/rewards",
-    "source": "rewards/RewardManagementPage.tsx"
   },
   {
     "code": "rewards.reward-management-page.2",
@@ -1624,7 +1510,7 @@ export const menuActionCatalog = [
     "source": "rewards/RewardManagementPage.tsx"
   },
   {
-    "code": "rewards.reward-management-page.7",
+    "code": "REWARD_EXCHANGE_REVIEW",
     "name": "同意",
     "route": "/rewards",
     "source": "rewards/RewardManagementPage.tsx"
@@ -1678,13 +1564,13 @@ export const menuActionCatalog = [
     "source": "student-login/StudentLoginManagementPage.tsx"
   },
   {
-    "code": "student-login.student-login-management-page.3",
+    "code": "STUDENT_LOGIN_QR_CREATE",
     "name": "生成",
     "route": "/student-login",
     "source": "student-login/StudentLoginManagementPage.tsx"
   },
   {
-    "code": "student-login.student-login-management-page.4",
+    "code": "STUDENT_WECHAT_UNBIND",
     "name": "解绑",
     "route": "/student-login",
     "source": "student-login/StudentLoginManagementPage.tsx"
@@ -1700,12 +1586,6 @@ export const menuActionCatalog = [
     "name": "刷新二维码",
     "route": "/student-login",
     "source": "student-login/StudentLoginManagementPage.tsx"
-  },
-  {
-    "code": "system-tasks.system-task-workbench.1",
-    "name": "刷新",
-    "route": "/system-tasks",
-    "source": "system-tasks/SystemTaskWorkbench.tsx"
   },
   {
     "code": "system-tasks.system-task-workbench.2",
@@ -1732,13 +1612,13 @@ export const menuActionCatalog = [
     "source": "system-tasks/SystemTaskWorkbench.tsx"
   },
   {
-    "code": "teachers.teacher-management-page.1",
+    "code": "TEACHER_BATCH_MANAGE",
     "name": "批量操作",
     "route": "/teachers",
     "source": "teachers/TeacherManagementPage.tsx"
   },
   {
-    "code": "teachers.teacher-management-page.2",
+    "code": "TEACHER_CREATE",
     "name": "新增教师",
     "route": "/teachers",
     "source": "teachers/TeacherManagementPage.tsx"
@@ -1756,19 +1636,19 @@ export const menuActionCatalog = [
     "source": "teachers/TeacherManagementPage.tsx"
   },
   {
-    "code": "teachers.profile.edit",
+    "code": "TEACHER_UPDATE",
     "name": "编辑资料",
     "route": "/teachers",
     "source": "teachers/TeacherManagementPage.tsx"
   },
   {
-    "code": "teachers.password.reset",
+    "code": "TEACHER_PASSWORD_RESET",
     "name": "重置密码",
     "route": "/teachers",
     "source": "teachers/TeacherManagementPage.tsx"
   },
   {
-    "code": "teachers.classes.configure",
+    "code": "TEACHER_CLASS_ASSIGN",
     "name": "班级范围",
     "route": "/teachers",
     "source": "teachers/TeacherManagementPage.tsx"
@@ -1792,7 +1672,7 @@ export const menuActionCatalog = [
     "source": "teachers/TeacherManagementPage.tsx"
   },
   {
-    "code": "users.user-management-page.1",
+    "code": "IAM_USER_CREATE",
     "name": "新增用户",
     "route": "/users",
     "source": "users/UserManagementPage.tsx"
@@ -2132,5 +2012,275 @@ export const menuActionCatalog = [
     "name": "取消",
     "route": "/import-jobs",
     "source": "import-jobs/ImportJobManagementPage.tsx"
+  },
+  {
+    "code": "menu-management.batch-buttons.open",
+    "name": "批量新增按钮",
+    "route": "/menu-management",
+    "source": "menus/BatchMenuButtons.tsx"
+  },
+  {
+    "code": "menu-management.batch-buttons.save",
+    "name": "批量保存",
+    "route": "/menu-management",
+    "source": "menus/BatchMenuButtons.tsx"
+  },
+  {
+    "code": "menu-management.batch-buttons.add",
+    "name": "添加一行",
+    "route": "/menu-management",
+    "source": "menus/BatchMenuButtons.tsx"
+  },
+  {
+    "code": "menu-management.batch-buttons.remove",
+    "name": "删除",
+    "route": "/menu-management",
+    "source": "menus/BatchMenuButtons.tsx"
+  },
+  {
+    "code": "iam.role-permission-tree.save",
+    "name": "保存角色权限",
+    "route": "/iam",
+    "source": "iam/RolePermissionTreeModal.tsx"
+  },
+  {
+    "code": "iam.role-permission-tree.retry",
+    "name": "重新加载",
+    "route": "/iam",
+    "source": "iam/RolePermissionTreeModal.tsx"
+  },
+  {
+    "code": "iam.role-permission-tree.cancel",
+    "name": "取消",
+    "route": "/iam",
+    "source": "iam/RolePermissionTreeModal.tsx"
+  },
+  {
+    "code": "iam.role-row.authorize",
+    "name": "授权",
+    "route": "/iam",
+    "source": "iam/IamManagementPage.tsx"
+  },
+  {
+    "code": "iam.role-row.users",
+    "name": "关联用户",
+    "route": "/iam",
+    "source": "iam/IamManagementPage.tsx"
+  },
+  {
+    "code": "iam.role-users.retry",
+    "name": "重试",
+    "route": "/iam",
+    "source": "iam/RoleUsersModal.tsx"
+  },
+  {
+    "code": "iam.role-users.query",
+    "name": "查询",
+    "route": "/iam",
+    "source": "iam/RoleUsersModal.tsx"
+  },
+  {
+    "code": "iam.role-users.save",
+    "name": "保存关联",
+    "route": "/iam",
+    "source": "iam/RoleUsersModal.tsx"
+  },
+  {
+    "code": "iam.role-users.cancel",
+    "name": "取消",
+    "route": "/iam",
+    "source": "iam/RoleUsersModal.tsx"
+  },
+  {
+    "code": "users.row.authorize",
+    "name": "授权",
+    "route": "/users",
+    "source": "users/UserManagementPage.tsx"
+  },
+  {
+    "code": "users.permission-tree.save",
+    "name": "保存用户权限",
+    "route": "/users",
+    "source": "iam/UserPermissionTreeModal.tsx"
+  },
+  {
+    "code": "users.permission-tree.retry",
+    "name": "重新加载",
+    "route": "/users",
+    "source": "iam/UserPermissionTreeModal.tsx"
+  },
+  {
+    "code": "users.permission-tree.cancel",
+    "name": "取消",
+    "route": "/users",
+    "source": "iam/UserPermissionTreeModal.tsx"
+  },
+  {
+    "code": "iam.user-permission-tree.save",
+    "name": "保存用户权限",
+    "route": "/iam",
+    "source": "iam/UserPermissionTreeModal.tsx"
+  },
+  {
+    "code": "iam.user-permission-tree.retry",
+    "name": "重新加载",
+    "route": "/iam",
+    "source": "iam/UserPermissionTreeModal.tsx"
+  },
+  {
+    "code": "iam.user-permission-tree.cancel",
+    "name": "取消",
+    "route": "/iam",
+    "source": "iam/UserPermissionTreeModal.tsx"
+  },
+  {
+    "code": "users.create-user.save",
+    "name": "创建用户",
+    "route": "/users",
+    "source": "users/CreateUserDrawer.tsx"
+  },
+  {
+    "code": "users.create-user.retry",
+    "name": "重试",
+    "route": "/users",
+    "source": "users/CreateUserDrawer.tsx"
+  },
+  {
+    "code": "organizations.create-user.save",
+    "name": "创建用户",
+    "route": "/organizations",
+    "source": "users/CreateUserDrawer.tsx"
+  },
+  {
+    "code": "organizations.create-user.retry",
+    "name": "重试",
+    "route": "/organizations",
+    "source": "users/CreateUserDrawer.tsx"
+  },
+  {
+    "code": "organizations.members.retry",
+    "name": "重试",
+    "route": "/organizations",
+    "source": "organizations/OrganizationMembersDrawer.tsx"
+  },
+  {
+    "code": "organizations.members.query",
+    "name": "查询",
+    "route": "/organizations",
+    "source": "organizations/OrganizationMembersDrawer.tsx"
+  },
+  {
+    "code": "organizations.members.reset",
+    "name": "重置",
+    "route": "/organizations",
+    "source": "organizations/OrganizationMembersDrawer.tsx"
+  },
+  {
+    "code": "organizations.members.add",
+    "name": "关联已有用户",
+    "route": "/organizations",
+    "source": "organizations/OrganizationMembersDrawer.tsx"
+  },
+  {
+    "code": "organizations.members.add-admin",
+    "name": "添加组织管理员",
+    "route": "/organizations",
+    "source": "organizations/OrganizationMembersDrawer.tsx"
+  },
+  {
+    "code": "organizations.members.create",
+    "name": "新增用户",
+    "route": "/organizations",
+    "source": "organizations/OrganizationMembersDrawer.tsx"
+  },
+  {
+    "code": "organizations.members.promote",
+    "name": "设为管理员",
+    "route": "/organizations",
+    "source": "organizations/OrganizationMembersDrawer.tsx"
+  },
+  {
+    "code": "organizations.member-picker.save",
+    "name": "保存关联",
+    "route": "/organizations",
+    "source": "users/UserPickerModal.tsx"
+  },
+  {
+    "code": "organizations.member-picker.query",
+    "name": "查询",
+    "route": "/organizations",
+    "source": "users/UserPickerModal.tsx"
+  },
+  {
+    "code": "organizations.member-picker.cancel",
+    "name": "取消",
+    "route": "/organizations",
+    "source": "users/UserPickerModal.tsx"
+  },
+  {
+    "code": "organizations.admin-picker.save",
+    "name": "保存关联",
+    "route": "/organizations",
+    "source": "users/UserPickerModal.tsx"
+  },
+  {
+    "code": "organizations.admin-picker.query",
+    "name": "查询",
+    "route": "/organizations",
+    "source": "users/UserPickerModal.tsx"
+  },
+  {
+    "code": "organizations.admin-picker.cancel",
+    "name": "取消",
+    "route": "/organizations",
+    "source": "users/UserPickerModal.tsx"
+  },
+  {
+    "code": "users.directory.reset",
+    "name": "重置",
+    "route": "/users",
+    "source": "users/UserManagementPage.tsx"
+  },
+  {
+    "code": "iam.directory.query",
+    "name": "查询",
+    "route": "/iam",
+    "source": "iam/IamManagementPage.tsx"
+  },
+  {
+    "code": "iam.directory.reset",
+    "name": "重置",
+    "route": "/iam",
+    "source": "iam/IamManagementPage.tsx"
+  },
+  {
+    "code": "organizations.node.add-child",
+    "name": "新增下级",
+    "route": "/organizations",
+    "source": "organizations/OrganizationManagementPage.tsx"
+  },
+  {
+    "code": "menu-management.node.add-child",
+    "name": "新增下级",
+    "route": "/menu-management",
+    "source": "menus/MenuManagementPage.tsx"
+  },
+  {
+    "source": "users/UserManagementPage.tsx",
+    "code": "IAM_USER_PASSWORD_SET",
+    "name": "重置密码",
+    "route": "/users"
+  },
+  {
+    "source": "users/ResetUserPasswordModal.tsx",
+    "code": "users.reset-password.save",
+    "name": "保存密码",
+    "route": "/users"
+  },
+  {
+    "source": "users/ResetUserPasswordModal.tsx",
+    "code": "users.reset-password.cancel",
+    "name": "取消",
+    "route": "/users"
   }
 ] as const;

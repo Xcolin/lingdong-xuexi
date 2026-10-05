@@ -18,6 +18,17 @@
         </constructor>
     </resultMap>
 
+    <sql id="organizationMemberFilter">
+        FROM sys_user u JOIN sys_user_organization uo ON uo.user_id = u.id
+        WHERE uo.organization_id = #{organizationId}
+        <if test="keyword != null">AND (u.username LIKE CONCAT('%', #{keyword}, '%') OR u.display_name LIKE CONCAT('%', #{keyword}, '%'))</if>
+    </sql>
+    <select id="findOrganizationMembers" resultMap="UserResultMap">
+        SELECT u.id, u.username, u.display_name, u.mobile, u.password_hash, u.user_type, u.status, u.created_at, u.updated_at
+        <include refid="organizationMemberFilter"/>
+        ORDER BY u.created_at DESC, u.id DESC LIMIT #{limit} OFFSET #{offset}
+    </select>
+    <select id="countOrganizationMembers" resultType="long">SELECT COUNT(*) <include refid="organizationMemberFilter"/></select>
     <select id="findById" resultMap="UserResultMap">
         SELECT id, username, display_name, mobile, password_hash, user_type, status, created_at, updated_at
         FROM sys_user
@@ -50,8 +61,26 @@
         FOR UPDATE
     </select>
 
+    <resultMap id="UserNameResultMap" type="com.lingdong.learning.user.infrastructure.persistence.UserNameRow">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="display_name" javaType="java.lang.String"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findNamesByIds" resultMap="UserNameResultMap">
+        SELECT id, display_name
+        FROM sys_user
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </select>
+
     <sql id="directoryFilters">
         <where>
+            <if test="query.organizationId != null">
+                AND EXISTS (SELECT 1 FROM sys_user_organization membership
+                            WHERE membership.user_id = sys_user.id AND membership.organization_id = #{query.organizationId})
+            </if>
             <if test="query.keyword != null">
                 AND (username LIKE CONCAT('%', #{query.keyword}, '%')
                 OR display_name LIKE CONCAT('%', #{query.keyword}, '%'))

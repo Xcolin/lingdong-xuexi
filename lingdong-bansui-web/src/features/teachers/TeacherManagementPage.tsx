@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { organizationApi, type OrganizationNode } from '../../api/organization';
+import { formatDateTime as formatTime } from '../../utils/datetime';
 import {
   teachersApi, type CreateTeacherInput, type Teacher, type TeacherBatchOperation,
   type TeacherPage, type TeacherQuery, type TeacherStatus, type UpdateTeacherProfileInput
@@ -238,8 +239,8 @@ export function TeacherManagementPage({ permissionCodes }: TeacherManagementPage
       <div className="page-heading">
         <h1>教师管理</h1>
         <Space wrap>
-          {canUseBatch && <Button actionKey="teachers.teacher-management-page.1" icon={<UsersRound size={16} />} disabled={selectedIds.length === 0} onClick={openBatch}>批量操作</Button>}
-          {canCreate && <Button actionKey="teachers.teacher-management-page.2" type="primary" icon={<UserPlus size={16} />} onClick={() => setCreateOpen(true)}>新增教师</Button>}
+          {canUseBatch && <Button actionKey="TEACHER_BATCH_MANAGE" icon={<UsersRound size={16} />} disabled={selectedIds.length === 0} onClick={openBatch}>批量操作</Button>}
+          {canCreate && <Button actionKey="TEACHER_CREATE" type="primary" icon={<UserPlus size={16} />} onClick={() => setCreateOpen(true)}>新增教师</Button>}
         </Space>
       </div>
       {errorMessage && <Alert type="error" showIcon message={errorMessage} action={<Button actionKey="teachers.teacher-management-page.3" size="small" onClick={() => void loadTeachers(filters, directory.page)}>重试</Button>} />}
@@ -272,9 +273,9 @@ export function TeacherManagementPage({ permissionCodes }: TeacherManagementPage
             {
               title: '操作', key: 'actions', fixed: 'right', width: 220,
               render: (_, teacher) => <Space size={2}>
-                {canUpdate && <ActionButton actionKey="teachers.profile.edit" title="编辑资料" label={`编辑教师-${teacher.displayName}`} icon={<Pencil size={16} />} onClick={() => openProfile(teacher)} />}
-                {canResetPassword && <ActionButton actionKey="teachers.password.reset" title="重置密码" label={`重置密码-${teacher.displayName}`} icon={<KeyRound size={16} />} onClick={() => setPasswordTeacher(teacher)} />}
-                {canManageClass && <ActionButton actionKey="teachers.classes.configure" title="班级范围" label={`班级范围-${teacher.displayName}`} icon={<Link2 size={16} />} onClick={() => openClasses(teacher)} />}
+                {canUpdate && <ActionButton actionKey="TEACHER_UPDATE" title="编辑资料" label={`编辑教师-${teacher.displayName}`} icon={<Pencil size={16} />} onClick={() => openProfile(teacher)} />}
+                {canResetPassword && <ActionButton actionKey="TEACHER_PASSWORD_RESET" title="重置密码" label={`重置密码-${teacher.displayName}`} icon={<KeyRound size={16} />} onClick={() => setPasswordTeacher(teacher)} />}
+                {canManageClass && <ActionButton actionKey="TEACHER_CLASS_ASSIGN" title="班级范围" label={`班级范围-${teacher.displayName}`} icon={<Link2 size={16} />} onClick={() => openClasses(teacher)} />}
                 {canChangeStatus && <StatusActions teacher={teacher} onChange={changeStatus} />}
               </Space>
             }
@@ -282,7 +283,7 @@ export function TeacherManagementPage({ permissionCodes }: TeacherManagementPage
         />
       </ProCard>
 
-      <Modal title="新增教师" open={createOpen} footer={null} onCancel={() => setCreateOpen(false)} destroyOnHidden>
+      <Modal title="新增教师" open={createOpen} footer={null} onCancel={() => setCreateOpen(false)} destroyOnHidden width="min(880px, 92vw)" styles={{ body: { maxHeight: 'calc(100vh - 220px)', overflowY: 'auto' } }}>
         <Form form={createForm} layout="vertical" initialValues={{ classOrganizationIds: [] }} onFinish={createTeacher}>
           <Form.Item label="教师账号" name="username" rules={[{ required: true }, { max: 64 }]}><Input autoComplete="off" /></Form.Item>
           <Form.Item label="教师姓名" name="displayName" rules={[{ required: true }, { max: 20 }]}><Input autoComplete="off" /></Form.Item>
@@ -294,7 +295,7 @@ export function TeacherManagementPage({ permissionCodes }: TeacherManagementPage
         </Form>
       </Modal>
 
-      <Modal title="编辑教师资料" open={Boolean(editingTeacher)} footer={null} onCancel={() => setEditingTeacher(undefined)} destroyOnHidden>
+      <Modal title="编辑教师资料" open={Boolean(editingTeacher)} footer={null} onCancel={() => setEditingTeacher(undefined)} destroyOnHidden width="min(640px, 92vw)">
         <Form form={profileForm} layout="vertical" onFinish={updateProfile}>
           <Form.Item label="教师姓名" name="displayName" rules={[{ required: true }, { max: 20 }]}><Input /></Form.Item>
           <Form.Item label="新手机号" name="mobile" extra="留空保持现有手机号不变"><Input disabled={Form.useWatch('clearMobile', profileForm) === true} /></Form.Item>
@@ -303,19 +304,19 @@ export function TeacherManagementPage({ permissionCodes }: TeacherManagementPage
         </Form>
       </Modal>
 
-      <Modal title="重置教师密码" open={Boolean(passwordTeacher)} footer={null} onCancel={() => setPasswordTeacher(undefined)} destroyOnHidden>
+      <Modal title="重置教师密码" open={Boolean(passwordTeacher)} footer={null} onCancel={() => setPasswordTeacher(undefined)} destroyOnHidden width="min(520px, 92vw)">
         <Form form={passwordForm} layout="vertical" onFinish={resetPassword}>
           <Form.Item label="新密码" name="newPassword" rules={[{ required: true }, { pattern: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,20}$/, message: '请输入 8 至 20 位字母和数字组合' }]}><Input.Password autoComplete="new-password" /></Form.Item>
           <FormActions submitting={submitting} onCancel={() => setPasswordTeacher(undefined)} submitText="重置密码" />
         </Form>
       </Modal>
 
-      <Drawer title={classTeacher ? `${classTeacher.displayName}的班级范围` : '教师班级范围'} open={Boolean(classTeacher)} width={420} onClose={() => setClassTeacher(undefined)} extra={<Button actionKey="teachers.teacher-management-page.5" type="primary" loading={submitting} onClick={() => void saveClasses()}>保存</Button>}>
+      <Drawer title={classTeacher ? `${classTeacher.displayName}的班级范围` : '教师班级范围'} open={Boolean(classTeacher)} width="min(420px, 92vw)" onClose={() => setClassTeacher(undefined)} extra={<Button actionKey="teachers.teacher-management-page.5" type="primary" loading={submitting} onClick={() => void saveClasses()}>保存</Button>}>
         <Checkbox.Group className="teacher-class-checkboxes" value={selectedClassIds} onChange={(values) => setSelectedClassIds(values.map(String))} options={classDrawerOptions.map(toOption)} />
         {classDrawerOptions.length === 0 && <Alert type="info" showIcon message="该学校暂无可用班级" />}
       </Drawer>
 
-      <Modal title="批量操作" open={batchOpen} footer={null} onCancel={() => setBatchOpen(false)} destroyOnHidden>
+      <Modal title="批量操作" open={batchOpen} footer={null} onCancel={() => setBatchOpen(false)} destroyOnHidden width="min(640px, 92vw)">
         <Form form={batchForm} layout="vertical" onFinish={executeBatch}>
           <Alert type="info" showIcon message={`已选择 ${selectedIds.length} 位教师`} />
           <Form.Item label="操作类型" name="operation" rules={[{ required: true }]}><Select options={availableBatchOptions} onChange={setBatchOperation} /></Form.Item>
@@ -367,10 +368,6 @@ function belongsToSchool(node: OrganizationNode, schoolId: string, schools: Orga
 
 function toOption(node: OrganizationNode) {
   return { value: node.id, label: node.name };
-}
-
-function formatTime(value: string): string {
-  return new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
 }
 
 function toMessage(error: unknown): string {

@@ -2,8 +2,9 @@ import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { ViewportTable as Table } from '../../components/ViewportTable';
 import { Alert, Descriptions, Drawer, Form, Progress, Select, Space, Tabs, Tag, Tooltip, message } from 'antd';
 import { TableProps } from 'antd';
-import { Download, Eye, Plus, RefreshCw, RotateCcw, Search } from 'lucide-react';
+import { Download, Eye, Plus, RotateCcw, Search } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { formatDateTime as formatTime } from '../../utils/datetime';
 import {
   exportJobApi,
   type ExportJobDetail,
@@ -145,7 +146,7 @@ export function ExportJobManagementPage(props: ExportJobManagementPageProps) {
   return <div className="page-stack export-job-page">
     <div className="page-heading">
       <h1>数据导出中心</h1>
-      {props.canCreateOrdinary || props.canSubmitSensitive || props.canExportDictionary || props.canExportTemplate || props.canExportInterface || props.canExportCache || props.canExportSystemTasks || props.canExportRewards || props.canExportExceptions || props.canExportAttachments || props.canExportStudentTasks || props.canExportOrgTaskStatistics || props.canExportAttendanceLedger ? <Button actionKey="export-jobs.export-job-management-page.1" type="primary" icon={<Plus size={16} />} onClick={() => setCreateOpen(true)}>新建导出</Button> : null}
+      {props.canCreateOrdinary || props.canSubmitSensitive || props.canExportDictionary || props.canExportTemplate || props.canExportInterface || props.canExportCache || props.canExportSystemTasks || props.canExportRewards || props.canExportExceptions || props.canExportAttachments || props.canExportStudentTasks || props.canExportOrgTaskStatistics || props.canExportAttendanceLedger ? <Button actionKey="EXPORT_JOB_CREATE" type="primary" icon={<Plus size={16} />} onClick={() => setCreateOpen(true)}>新建导出</Button> : null}
     </div>
     {tabs.length > 1 ? <Tabs className="export-job-tabs" items={tabs} /> : tabs[0]?.children}
     <CreateExportJobModal
@@ -219,7 +220,6 @@ function OwnExportJobs(props: OwnExportJobsProps) {
         <Form.Item><Space>
           <Button actionKey="export-jobs.export-job-management-page.4" htmlType="submit" icon={<Search size={16} />}>查询</Button>
           <Button actionKey="export-jobs.export-job-management-page.5" icon={<RotateCcw size={16} />} onClick={() => { props.filterForm.resetFields(); void props.onLoad({ page: 1, pageSize: props.page.pageSize }); }}>重置</Button>
-          <Tooltip title="刷新作业"><Button actionKey="export-jobs.export-job-management-page.6" aria-label="刷新作业" icon={<RefreshCw size={16} />} onClick={() => void props.onLoad({ ...props.filterForm.getFieldsValue(), page: props.page.page, pageSize: props.page.pageSize })} /></Tooltip>
         </Space></Form.Item>
       </Form>
     </section>
@@ -234,9 +234,9 @@ function OwnExportJobs(props: OwnExportJobsProps) {
 }
 
 function ExportDetailDrawer({ detail, onClose }: { detail?: ExportJobDetail; onClose: () => void }) {
-  return <Drawer open={Boolean(detail)} title="导出作业详情" width={680} onClose={onClose} destroyOnHidden>
+  return <Drawer open={Boolean(detail)} title="导出作业详情" width="min(1100px, 92vw)" onClose={onClose} destroyOnHidden>
     {detail ? <div className="export-job-detail">
-      <Descriptions size="small" bordered column={1} items={[
+      <Descriptions size="small" bordered column={{ xs: 1, sm: 2 }} items={[
         { key: 'code', label: '作业编码', children: detail.job.jobCode },
         { key: 'type', label: '数据集', children: exportTypeText(detail.job.exportType) },
         { key: 'status', label: '状态', children: statusText(detail.job.status) },
@@ -281,5 +281,4 @@ const statusColor = (status: ExportJobStatus) => status === 'SUCCEEDED' ? 'green
 const progress = (job: ExportJobRecord) => job.totalRows > 0
   ? Math.min(100, Math.round(job.processedRows * 100 / job.totalRows))
   : job.status === 'SUCCEEDED' ? 100 : 0;
-const formatTime = (value: string | null) => value ? new Date(value).toLocaleString('zh-CN', { hour12: false }) : '-';
 const toMessage = (error: unknown) => error instanceof Error ? error.message : '请求未能完成';

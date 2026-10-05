@@ -5,9 +5,10 @@ import com.lingdong.learning.common.security.RequirePermission;
 import com.lingdong.learning.iam.application.IamQueryApplicationService;
 import com.lingdong.learning.permission.application.ConfigureUserPermissionCommand;
 import com.lingdong.learning.permission.application.ConfigureRolePermissionCommand;
-import com.lingdong.learning.permission.application.CreatePermissionCommand;
 import com.lingdong.learning.permission.application.GrantRolePermissionCommand;
 import com.lingdong.learning.permission.application.PermissionAdministrationService;
+import com.lingdong.learning.permission.application.BatchRolePermissionsCommand;
+import com.lingdong.learning.permission.application.PermissionAssignment;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -40,20 +41,21 @@ public class PermissionManagementController {
 
     @RequirePermission("IAM_PERMISSION_READ")
     @GetMapping("/permissions")
-    public List<PermissionResponse> listPermissions() {
-        return iamQueryApplicationService.listPermissions().stream().map(PermissionResponse::from).toList();
+    public List<PermissionResponse> listPermissions(@AuthenticationPrincipal AuthenticatedUser currentUser) {
+        return iamQueryApplicationService.listPermissions(currentUser.userId()).stream().map(PermissionResponse::from).toList();
     }
 
-    @RequirePermission("IAM_PERMISSION_CREATE")
+    @RequirePermission("IAM_ROLE_PERMISSION_GRANT")
+    @GetMapping("/iam/role-permission-menus")
+    public List<com.lingdong.learning.menu.domain.MenuNode> listRolePermissionMenus(
+            @AuthenticationPrincipal AuthenticatedUser currentUser) {
+        return permissionAdministrationService.listRolePermissionMenus(currentUser.userId());
+    }
+
+    /** 已关闭的独立权限目录写入口；权限资源统一通过菜单管理维护。 */
     @PostMapping("/permissions")
-    @ResponseStatus(HttpStatus.CREATED)
-    public PermissionResponse createPermission(
-            @AuthenticationPrincipal AuthenticatedUser currentUser,
-            @Valid @RequestBody CreatePermissionRequest request
-    ) {
-        return PermissionResponse.from(permissionAdministrationService.createPermission(new CreatePermissionCommand(
-                currentUser.userId(), request.code(), request.name(), request.resourceType(), request.client(), request.parentId()
-        )));
+    public void rejectStandalonePermissionCreation() {
+        throw new com.lingdong.learning.common.security.SystemOperationAccessDeniedException("权限资源请通过菜单管理维护");
     }
 
     @RequirePermission("IAM_ROLE_PERMISSION_GRANT")
@@ -80,6 +82,20 @@ public class PermissionManagementController {
     }
 
     @RequirePermission("IAM_ROLE_PERMISSION_GRANT")
+    @PutMapping("/roles/{roleId}/permissions:batch")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void batchRolePermissions(@AuthenticationPrincipal AuthenticatedUser currentUser,
+            @PathVariable Long roleId, @Valid @RequestBody BatchRolePermissionsRequest request) {
+        permissionAdministrationService.batchRolePermissions(new BatchRolePermissionsCommand(
+                currentUser.userId(), roleId, request.permissionIds(), request.managedPermissionIds(), request.expectedAssignments()));
+    }
+
+    public record BatchRolePermissionsRequest(
+            @jakarta.validation.constraints.NotNull List<Long> permissionIds,
+            @jakarta.validation.constraints.NotNull List<Long> managedPermissionIds,
+            @jakarta.validation.constraints.NotNull List<PermissionAssignment> expectedAssignments) { }
+
+    @RequirePermission("IAM_ROLE_PERMISSION_GRANT")
     @PutMapping("/roles/{roleId}/permissions/{permissionId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void configureRolePermission(
@@ -102,6 +118,22 @@ public class PermissionManagementController {
     ) {
         permissionAdministrationService.removeRolePermission(
                 currentUser.userId(), roleId, permissionId);
+    }
+
+    @RequirePermission("IAM_USER_PERMISSION_CONFIGURE")
+    @GetMapping("/users/{userId}/permission-tree")
+    public com.lingdong.learning.permission.application.UserPermissionTree userTree(
+            @AuthenticationPrincipal AuthenticatedUser currentUser, @PathVariable Long userId) {
+        return permissionAdministrationService.userPermissionTree(currentUser.userId(), userId);
+    }
+
+    @RequirePermission("IAM_USER_PERMISSION_CONFIGURE")
+    @PutMapping("/users/{userId}/permissions:batch")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void batchUserPermissions(@AuthenticationPrincipal AuthenticatedUser currentUser,
+            @PathVariable Long userId, @Valid @RequestBody BatchRolePermissionsRequest request) {
+        permissionAdministrationService.batchUserPermissions(new com.lingdong.learning.permission.application.BatchUserPermissionsCommand(
+                currentUser.userId(), userId, request.permissionIds(), request.managedPermissionIds(), request.expectedAssignments()));
     }
 
     @RequirePermission("IAM_USER_PERMISSION_CONFIGURE")

@@ -3,7 +3,6 @@
     <text class="title">{{ withdrawalMode ? '排行查看授权' : '班级匿名排行' }}</text>
     <text class="note">{{ withdrawalMode ? '可撤回本人已开启的查看授权，不影响孩子参榜。' : '仅显示名次和当前班级来源净积分，不含家庭积分；同分并列，默认关闭。' }}</text>
     <text v-if="error" class="error">{{ error }}</text>
-    <button :disabled="busy" @tap="load">刷新</button>
     <text v-if="busy" class="note">正在加载</text>
     <template v-if="allowed && withdrawalMode">
       <view v-for="(item, index) in withdrawals" :key="item.studentId + item.classId" class="withdrawal">

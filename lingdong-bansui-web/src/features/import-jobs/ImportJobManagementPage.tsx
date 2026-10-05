@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import { importJobApi, type ImportJobDetail, type ImportJobErrorPage, type ImportJobOptions, type ImportJobQuery, type ImportJobRecord, type ImportJobStatus } from '../../api/import-jobs';
 import { studentImportApi, type StudentImportRecord, type StudentImportRowPage, type StudentImportRowStatus } from '../../api/student-imports';
 import { classApi, type ClassOrganization } from '../../api/classes';
+import { formatDateTime as formatTime } from '../../utils/datetime';
 
 const emptyErrorPage: ImportJobErrorPage = { items: [], page: 1, pageSize: 20, total: 0 };
 const emptyStudentRows: StudentImportRowPage = { items: [], page: 1, pageSize: 20, total: 0 };
@@ -163,7 +164,7 @@ export function ImportJobManagementPage({
   ];
 
   return <div className="page-stack import-job-page">
-    <div className="page-heading"><h1>导入校验作业</h1>{canCreate ? <Button actionKey="import-jobs.import-job-management-page.3" type="primary" icon={<FilePlus2 size={16} />} onClick={() => setCreateOpen(true)}>新建校验作业</Button> : null}</div>
+    <div className="page-heading"><h1>导入校验作业</h1>{canCreate ? <Button actionKey="IMPORT_JOB_CREATE" type="primary" icon={<FilePlus2 size={16} />} onClick={() => setCreateOpen(true)}>新建校验作业</Button> : null}</div>
     {error ? <Alert type="error" showIcon message={error} action={<Button actionKey="import-jobs.import-job-management-page.4" size="small" onClick={() => void loadInitial()}>重试</Button>} /> : null}
     <section className="template-filter-panel" aria-label="作业筛选"><Form form={filterForm} layout="inline" className="directory-filters" onFinish={search}>
       <Form.Item label="作业编码" name="jobCode"><Input allowClear /></Form.Item>
@@ -172,15 +173,15 @@ export function ImportJobManagementPage({
       <Form.Item><Space><Button actionKey="import-jobs.import-job-management-page.5" htmlType="submit" icon={<Search size={16} />}>查询</Button><Button actionKey="import-jobs.import-job-management-page.6" icon={<RotateCcw size={16} />} onClick={() => { filterForm.resetFields(); void search({}); }}>重置</Button></Space></Form.Item>
     </Form></section>
     <section className="template-table-panel" aria-label="导入校验作业台账"><Table rowKey="id" size="small" loading={loading} dataSource={page.items} columns={columns} scroll={{ x: 1040 }} pagination={{ current: page.page, pageSize: page.pageSize, total: page.total, showSizeChanger: true }} onChange={(pagination) => void loadPage({ ...filterForm.getFieldsValue(), page: pagination.current ?? 1, pageSize: pagination.pageSize ?? 20 })} /></section>
-    <Modal actionPrefix="import-jobs.import-job-management-page.modal.1" open={createOpen} title="新建校验作业" className="import-job-create-modal" okText="提交校验" confirmLoading={creating} onOk={() => createForm.submit()} onCancel={() => { setCreateOpen(false); setFile(undefined); createForm.resetFields(); }} destroyOnHidden>
+    <Modal actionPrefix="import-jobs.import-job-management-page.modal.1" open={createOpen} title="新建校验作业" className="import-job-create-modal" okText="提交校验" confirmLoading={creating} width="min(640px, 92vw)" onOk={() => createForm.submit()} onCancel={() => { setCreateOpen(false); setFile(undefined); createForm.resetFields(); }} destroyOnHidden>
       <Form form={createForm} layout="vertical" onFinish={create} preserve={false}>
         <Form.Item label="导入模板" name="templateId" rules={[{ required: true, message: '请选择导入模板' }]}><Select options={options.templates.map(option)} /></Form.Item>
         <Form.Item label="组织范围" name="organizationId"><Select allowClear options={options.organizations.map(option)} /></Form.Item>
         <Form.Item label="XLSX 文件" required><Upload maxCount={1} accept=".xlsx" beforeUpload={selected => { setFile(selected); return false; }} onRemove={() => { setFile(undefined); return true; }}><Button actionKey="import-jobs.import-job-management-page.7" icon={<UploadIcon size={16} />}>选择文件</Button></Upload></Form.Item>
       </Form>
     </Modal>
-    <Drawer open={Boolean(detail)} title="作业详情" width={680} onClose={closeDetail} destroyOnHidden>
-      {detail ? <div className="import-job-detail"><Descriptions size="small" column={1} bordered items={[
+    <Drawer open={Boolean(detail)} title="作业详情" width="min(1100px, 92vw)" onClose={closeDetail} destroyOnHidden>
+      {detail ? <div className="import-job-detail"><Descriptions size="small" column={{ xs: 1, sm: 2 }} bordered items={[
         { key: 'code', label: '作业编码', children: detail.job.jobCode }, { key: 'template', label: '模板', children: `${detail.job.templateName}（${detail.job.templateVersion}）` },
         { key: 'status', label: '状态', children: statusText(detail.job.status) }, { key: 'count', label: '校验结果', children: `总计 ${detail.job.totalRows}，有效 ${detail.job.validRows}，无效 ${detail.job.invalidRows}` },
         { key: 'failure', label: '失败摘要', children: detail.job.failureMessage ?? '-' }
@@ -192,8 +193,8 @@ export function ImportJobManagementPage({
         { title: '记录时间', dataIndex: 'createdAt', width: 170, render: formatTime }
       ]} pagination={{ current: detailErrors.page, pageSize: detailErrors.pageSize, total: detailErrors.total, hideOnSinglePage: true }} onChange={(pagination) => void loadDetailErrors(pagination.current ?? 1, pagination.pageSize ?? 20)} /></section>
       <section aria-label="学员导入执行"><div className="page-heading"><h2>学员导入执行</h2>{!studentExecution && detail.job.status === 'VALIDATED' && detail.job.organizationId && canExecuteStudentImport
-        ? <Button actionKey="import-jobs.import-job-management-page.8" type="primary" icon={<Play size={16} />} onClick={() => void openStudentExecution()}>执行学员导入</Button> : null}</div>
-        {studentExecution ? <><Descriptions size="small" column={1} bordered items={[
+        ? <Button actionKey="STUDENT_IMPORT_EXECUTE" type="primary" icon={<Play size={16} />} onClick={() => void openStudentExecution()}>执行学员导入</Button> : null}</div>
+        {studentExecution ? <><Descriptions size="small" column={{ xs: 1, sm: 2 }} bordered items={[
           { key: 'executionCode', label: '执行编码', children: studentExecution.executionCode },
           { key: 'executionStatus', label: '执行状态', children: studentImportStatusText(studentExecution.status) },
           { key: 'executionCount', label: '处理结果', children: `总计 ${studentExecution.totalRows}，成功 ${studentExecution.succeededRows}，失败 ${studentExecution.failedRows}` },
@@ -208,7 +209,7 @@ export function ImportJobManagementPage({
       </section>
       </div> : null}
     </Drawer>
-    <Modal actionPrefix="import-jobs.import-job-management-page.modal.2" open={executeOpen} title="执行学员导入" okText="确认执行" confirmLoading={executing} onOk={() => executeForm.submit()} onCancel={() => { setExecuteOpen(false); executeForm.resetFields(); }} destroyOnHidden>
+    <Modal actionPrefix="import-jobs.import-job-management-page.modal.2" open={executeOpen} title="执行学员导入" okText="确认执行" confirmLoading={executing} width="min(520px, 92vw)" onOk={() => executeForm.submit()} onCancel={() => { setExecuteOpen(false); executeForm.resetFields(); }} destroyOnHidden>
       <Form form={executeForm} layout="vertical" onFinish={executeStudentImport} preserve={false}>
         <Form.Item label="目标班级（可选）" name="classOrganizationId"><Select allowClear showSearch optionFilterProp="label" options={classes.map(item => ({ value: item.id, label: item.name }))} /></Form.Item>
       </Form>
@@ -222,5 +223,4 @@ const statusColor = (status: ImportJobStatus) => status === 'VALIDATED' ? 'green
 const studentImportStatusText = (status: StudentImportRecord['status']) => ({ QUEUED: '排队中', RUNNING: '执行中', SUCCEEDED: '全部成功', PARTIAL_SUCCEEDED: '部分成功', FAILED: '执行失败' }[status]);
 const credentialStatusText = (status: StudentImportRecord['credentialStatus']) => ({ NONE: '尚未生成', AVAILABLE: '可下载一次', CONSUMED: '已下载', EXPIRED: '已过期' }[status]);
 const studentRowStatusText = (status: StudentImportRowStatus) => ({ PENDING: '待处理', SUCCEEDED: '成功', FAILED: '失败' }[status]);
-const formatTime = (value: string) => new Date(value).toLocaleString('zh-CN', { hour12: false });
 const toMessage = (error: unknown) => error instanceof Error ? error.message : '请求未能完成';

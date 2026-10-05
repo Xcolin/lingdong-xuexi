@@ -22,4 +22,10 @@ public class MenuController {
     public List<MenuNode> order(@AuthenticationPrincipal AuthenticatedUser user,@RequestBody MenuOrderCommand command) { return service.order(user,command); }
     @PutMapping("/iam/menus/{id}") @RequirePermission("MENU_MANAGE")
     public MenuNode update(@AuthenticationPrincipal AuthenticatedUser user,@PathVariable Long id,@RequestBody MenuWriteCommand command) { return service.update(user,id,command); }
+    @PostMapping("/iam/menus/{id}/buttons:batch") @RequirePermission("MENU_MANAGE") @ResponseStatus(HttpStatus.CREATED)
+    public List<MenuNode> createButtons(@AuthenticationPrincipal AuthenticatedUser user,@PathVariable Long id,@RequestBody List<MenuButtonBatchCommand> commands) { return service.createButtons(user,id,commands); }
+    @PutMapping("/iam/menus/buttons:batch") @RequirePermission("MENU_MANAGE")
+    public List<MenuNode> updateButtons(@AuthenticationPrincipal AuthenticatedUser user,@RequestBody List<MenuButtonBatchUpdateCommand> commands) { return service.updateButtons(user,commands); }
+    @PutMapping("/iam/menus/{id}/position") @RequirePermission("MENU_MANAGE")
+    public MenuNode move(@AuthenticationPrincipal AuthenticatedUser user,@PathVariable Long id,@RequestBody MenuPositionCommand command) { return service.move(user,id,command); }
 }

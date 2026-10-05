@@ -91,7 +91,7 @@ export function ParentMobileManualRecoveryDrawer({ open, onClose }: ParentMobile
   }
 
   return (
-    <Drawer title="家长换号核验" width={520} open={open} onClose={onClose} destroyOnHidden>
+    <Drawer title="家长换号核验" width="min(520px, 92vw)" open={open} onClose={onClose} destroyOnHidden>
       <Alert
         type="warning"
         showIcon
@@ -140,7 +140,7 @@ export function ParentMobileManualRecoveryDrawer({ open, onClose }: ParentMobile
         </Form.Item>
         <div className="form-actions">
           <Button actionKey="organizations.parent-mobile-manual-recovery-drawer.2" onClick={onClose}>取消</Button>
-          <Button actionKey="organizations.parent-mobile-manual-recovery-drawer.3" type="primary" htmlType="submit" loading={submitting}>确认换绑</Button>
+          <Button actionKey="PARENT_ACCOUNT_LIFECYCLE_MANAGE" type="primary" htmlType="submit" loading={submitting}>确认换绑</Button>
         </div>
       </Form>
     </Drawer>

@@ -22,6 +22,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -91,6 +92,34 @@ public class UserAccessApplicationService {
         }
     }
 
+    /** Creates account and initial organization membership in one transaction. */
+    @Transactional
+    public User createUserInOrganization(CreateUserCommand command, Long organizationId) {
+        Organization organization = organizationId == null ? null : organizationMapper.findByIdForUpdate(organizationId);
+        if (organization == null) throw new ResourceNotFoundException("组织不存在：" + organizationId);
+        if (!OrganizationOperationalStatusService.isOperational(organization)) throw new IllegalStateException("组织已停用，不能创建用户");
+        User created = createUser(command);
+        associateWithOrganization(new AssociateUserWithOrganizationCommand(created.id(), organizationId, command.operatorId()));
+        return created;
+    }
+
+    /** Creates a managed Web account, organization membership and initial credential atomically. */
+    @Transactional
+    public User createManagedUserInOrganization(CreateUserCommand command, Long organizationId, String password) {
+        if (command.type() == UserType.STUDENT && password != null && !password.isBlank()) {
+            throw new IllegalArgumentException("学生密码请使用学生凭据管理流程");
+        }
+        String passwordHash = command.type() == UserType.STUDENT ? null
+                : authenticationApplicationService.encodeManagedUserPassword(password);
+        User created = createUserInOrganization(command, organizationId);
+        if (passwordHash != null) {
+            if (userMapper.updatePasswordHash(created.id(), passwordHash) != 1) {
+                throw new IllegalStateException("初始密码保存失败");
+            }
+        }
+        return userMapper.findById(created.id());
+    }
+
     /**
      * Records an explicit personnel-to-organization association before an organization-scoped role is granted.
      */
@@ -141,6 +170,52 @@ public class UserAccessApplicationService {
                     command.organizationId(), null, "ASSIGNED");
         } catch (DuplicateKeyException exception) {
             throw new DuplicateUserRoleAssignmentException();
+        }
+    }
+
+    /**
+     * 角色侧批量授予用户：逐用户复用既有授予用例（保留组织范围校验与逐条审计），
+     * 组织范围角色必填组织；任一失败整批回滚并报告失败用户及原因。
+     */
+    @Transactional
+    public void batchAssignRole(BatchAssignRoleToRoleCommand command) {
+        Objects.requireNonNull(command, "批量授予请求不能为空");
+        if (command.assignments() == null || command.assignments().isEmpty() || command.assignments().size() > 200) {
+            throw new IllegalArgumentException("批量授予名单无效");
+        }
+        Role role = requireRole(command.roleId());
+        if (role.status() != RoleStatus.ENABLED) {
+            throw new IllegalStateException("角色已停用，不能授予用户：" + role.code());
+        }
+        boolean organizationScoped = role.dataScope() != null && role.dataScope() != com.lingdong.learning.iam.domain.RoleDataScope.ALL;
+        List<String> failures = new java.util.ArrayList<>();
+        // 预检阶段：先全量校验再写入，保证任一失败时不产生半批写入（并发冲突仍由唯一约束与事务兜底）
+        for (BatchRoleAssignmentItem item : command.assignments()) {
+            try {
+                if (item == null || item.userId() == null) {
+                    throw new IllegalArgumentException("用户标识不能为空");
+                }
+                if (organizationScoped && item.organizationId() == null) {
+                    throw new IllegalArgumentException("组织范围角色必须指定组织");
+                }
+                if (!organizationScoped && item.organizationId() != null) {
+                    throw new IllegalArgumentException("全局数据范围角色不需要指定组织");
+                }
+                requireUser(item.userId());
+                String scopeKey = resolveScopeKey(item.userId(), item.organizationId());
+                if (userRoleMapper.exists(item.userId(), command.roleId(), scopeKey)) {
+                    throw new DuplicateUserRoleAssignmentException();
+                }
+            } catch (RuntimeException exception) {
+                failures.add(item == null || item.userId() == null ? "无效条目（" + exception.getMessage() + "）"
+                        : item.userId() + "（" + exception.getMessage() + "）");
+            }
+        }
+        if (!failures.isEmpty()) {
+            throw new BatchRoleAssignmentException(failures);
+        }
+        for (BatchRoleAssignmentItem item : command.assignments()) {
+            assignRole(new AssignRoleToUserCommand(item.userId(), command.roleId(), item.organizationId(), command.operatorId()));
         }
     }
 

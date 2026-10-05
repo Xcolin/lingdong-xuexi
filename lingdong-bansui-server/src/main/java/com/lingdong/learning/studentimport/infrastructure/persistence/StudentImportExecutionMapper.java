@@ -31,6 +31,16 @@ public interface StudentImportExecutionMapper {
             @Param("status") StudentImportExecutionStatus status
     );
 
+    List<StudentImportExecutionRecord> findPageByRequesterScope(
+            @Param("requesterId") Long requesterId,
+            @Param("status") StudentImportExecutionStatus status,
+            @Param("scope") com.lingdong.learning.datascope.application.OrganizationDataScope scope,
+            @Param("offset") int offset, @Param("limit") int limit);
+
+    long countByRequesterScope(@Param("requesterId") Long requesterId,
+            @Param("status") StudentImportExecutionStatus status,
+            @Param("scope") com.lingdong.learning.datascope.application.OrganizationDataScope scope);
+
     int claim(@Param("id") Long id, @Param("expectedVersion") Long expectedVersion);
 
     int complete(

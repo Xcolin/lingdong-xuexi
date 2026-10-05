@@ -55,6 +55,18 @@ public class ApiExceptionHandler {
         return response(HttpStatus.CONFLICT, "STATE_CONFLICT", "当前状态不允许执行此操作", request);
     }
 
+    @ExceptionHandler(com.lingdong.learning.user.application.BatchRoleAssignmentException.class)
+    public ResponseEntity<SecurityErrorResponse> handleBatchRoleAssignment(
+            com.lingdong.learning.user.application.BatchRoleAssignmentException exception,HttpServletRequest request) {
+        return response(HttpStatus.CONFLICT,"ROLE_BATCH_ASSIGN_CONFLICT",exception.getMessage(),request);
+    }
+
+    @ExceptionHandler(com.lingdong.learning.menu.application.MenuBatchConflictException.class)
+    public ResponseEntity<SecurityErrorResponse> handleMenuBatchConflict(
+            com.lingdong.learning.menu.application.MenuBatchConflictException exception,HttpServletRequest request) {
+        return response(HttpStatus.CONFLICT,"MENU_BATCH_CONFLICT",exception.getMessage(),request);
+    }
+
     @ExceptionHandler(com.lingdong.learning.feature.application.FeatureToggleConflictException.class)
     public ResponseEntity<SecurityErrorResponse> handleFeatureConflict(
             com.lingdong.learning.feature.application.FeatureToggleConflictException exception,HttpServletRequest request) {

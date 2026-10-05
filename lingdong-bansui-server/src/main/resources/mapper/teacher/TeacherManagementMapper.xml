@@ -98,6 +98,18 @@
           <foreach collection="teacherUserIds" item="teacherUserId" open="(" separator="," close=")">
               #{teacherUserId}
           </foreach>
+          AND EXISTS (SELECT 1 FROM sys_organization class_organization
+              WHERE class_organization.id = edu_teacher_class.class_organization_id
+              <if test="!allOrganizations">
+                  AND <choose>
+                      <when test="rootPaths != null and rootPaths.size() > 0">
+                          <foreach collection="rootPaths" item="path" open="(" close=")" separator=" OR ">
+                              class_organization.organization_path LIKE CONCAT(#{path}, '%')
+                          </foreach>
+                      </when>
+                      <otherwise>1 = 0</otherwise>
+                  </choose>
+              </if>)
         ORDER BY teacher_user_id, class_organization_id
     </select>
 

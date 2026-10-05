@@ -16,6 +16,9 @@ import com.lingdong.learning.exceptionreport.infrastructure.persistence.Exceptio
 import com.lingdong.learning.feature.application.FeatureAccessService;
 import com.lingdong.learning.organization.domain.OrganizationEffectiveStatus;
 import com.lingdong.learning.organization.domain.OrganizationStatus;
+import com.lingdong.learning.permission.application.PermissionDecisionService;
+import com.lingdong.learning.permission.domain.PermissionClient;
+import com.lingdong.learning.auth.domain.AuthClientType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +29,7 @@ import java.util.List;
 /** 编排异常报备的对象范围、单向状态、不可变历史和本地消息事件。 */
 @Service
 public class ExceptionReportApplicationService {
+    private final PermissionDecisionService operationPermissions;
     private static final String FEATURE_CODE = "STUDENT_EXCEPTION_REPORT";
     private final ExceptionReportMapper mapper;
     private final OrganizationDataScopeService dataScopeService;
@@ -35,7 +39,9 @@ public class ExceptionReportApplicationService {
 
     public ExceptionReportApplicationService(ExceptionReportMapper mapper,
             OrganizationDataScopeService dataScopeService, FeatureAccessService featureAccessService,
-            IdGenerator idGenerator, Clock clock) {
+            IdGenerator idGenerator, Clock clock, PermissionDecisionService operationPermissions
+    ) {
+        this.operationPermissions = operationPermissions;
         this.mapper = mapper;
         this.dataScopeService = dataScopeService;
         this.featureAccessService = featureAccessService;
@@ -74,7 +80,7 @@ public class ExceptionReportApplicationService {
     @Transactional
     public ExceptionReportView handle(AuthenticatedUser user, Long id, HandleExceptionReportCommand command) {
         featureAccessService.requireEnabled(FEATURE_CODE, null);
-        requireRole(user, "ORG_ADMIN");
+        requireOperation(user, "EXCEPTION_REPORT_HANDLE");
         if (id == null || command == null || command.versionNo() < 0) throw new IllegalArgumentException("处理参数不合法");
         String note = requireText(command.handlingNote(), 1, 1000, "处理说明");
         ExceptionReportRow visible = findVisibleRow(user, id);
@@ -119,11 +125,11 @@ public class ExceptionReportApplicationService {
     @Transactional(readOnly = true)
     public List<ExceptionReportClassOption> findClassOptions(AuthenticatedUser user) {
         featureAccessService.requireEnabled(FEATURE_CODE, null);
-        if (user == null || user.roleCodes().contains("SYS_AUDITOR")) throw denied();
+        requireOperation(user, "EXCEPTION_REPORT_READ");
         if (user.roleCodes().contains("TEACHER") && !user.roleCodes().contains("ORG_ADMIN")) {
             return mapper.findTeacherClassOptions(user.userId());
         }
-        if (!user.roleCodes().contains("ORG_ADMIN")) throw denied();
+        if (user.clientType() != AuthClientType.WEB && !user.roleCodes().contains("ORG_ADMIN")) throw denied();
         return dataScopeService.findAccessibleOrganizations(user.userId()).stream()
                 .filter(organization -> "CLASS".equals(organization.typeCode()))
                 .filter(organization -> organization.status() == OrganizationStatus.ENABLED)
@@ -142,15 +148,21 @@ public class ExceptionReportApplicationService {
     private ExceptionReportQuery query(AuthenticatedUser user, Long classId, Long studentId,
             com.lingdong.learning.exceptionreport.domain.ExceptionReportType type,
             ExceptionReportStatus status, int limit, int offset) {
-        if (user == null || user.roleCodes().contains("SYS_AUDITOR")) throw denied();
+        requireOperation(user, "EXCEPTION_REPORT_READ");
         boolean teacher = user.roleCodes().contains("TEACHER") && !user.roleCodes().contains("ORG_ADMIN");
         if (teacher) return new ExceptionReportQuery(user.userId(), true, false, List.of(), classId, studentId, type, status, limit, offset);
-        if (!user.roleCodes().contains("ORG_ADMIN")) throw denied();
+        if (user.clientType() != AuthClientType.WEB && !user.roleCodes().contains("ORG_ADMIN")) throw denied();
         OrganizationDataScope scope = dataScopeService.resolve(user.userId());
         if (!scope.allOrganizations() && scope.rootPaths().isEmpty()) throw denied();
         return new ExceptionReportQuery(user.userId(), false, scope.allOrganizations(), scope.rootPaths(), classId, studentId, type, status, limit, offset);
     }
-    private void requireRole(AuthenticatedUser user, String role) { if (user == null || user.roleCodes().contains("SYS_AUDITOR") || !user.roleCodes().contains(role)) throw denied(); }
+    private void requireOperation(AuthenticatedUser user, String code) {
+        if (user == null || user.clientType() == null || !operationPermissions.isAllowed(user.userId(), PermissionClient.valueOf(user.clientType().name()), code)) throw denied();
+    }
+    private void requireRole(AuthenticatedUser user, String role) {
+        requireOperation(user, "EXCEPTION_REPORT_CREATE");
+        if (user.clientType() != AuthClientType.WEB && !user.roleCodes().contains(role)) throw denied();
+    }
     private SystemOperationAccessDeniedException denied() { return new SystemOperationAccessDeniedException("当前身份不能访问异常报备"); }
     private String requireText(String value, int min, int max, String name) {
         String text = value == null ? "" : value.trim();

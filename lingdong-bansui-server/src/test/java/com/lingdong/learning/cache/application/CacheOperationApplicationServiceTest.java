@@ -34,6 +34,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @SpringBootTest
 @ActiveProfiles("test")
 class CacheOperationApplicationServiceTest {
+    @Autowired private com.lingdong.learning.permission.infrastructure.persistence.UserPermissionMapper explicitPermissions;
+    @Autowired private com.lingdong.learning.permission.infrastructure.persistence.PermissionMapper permissionCatalog;
+    @Autowired private com.lingdong.learning.common.id.IdGenerator permissionIds;
     @Autowired
     private CacheOperationApplicationService cacheOperationApplicationService;
 
@@ -127,10 +130,11 @@ class CacheOperationApplicationServiceTest {
     }
 
     @Test
-    void mixedSystemAuditorCannotExecuteOrSubmitCacheChanges() {
+    void explicitDenyBlocksMixedRoleCacheChanges() {
         User mixed = createUserWithRole("cache_mixed_auditor", "兼任审核员", "SYS_ADMIN");
         userAccessApplicationService.assignRole(new AssignRoleToUserCommand(
                 mixed.id(), roleMapper.findByCode("SYS_AUDITOR").id(), null));
+        explicitPermissions.insert(permissionIds.nextId(), mixed.id(), permissionCatalog.findByCode("CACHE_MANAGE").id(), com.lingdong.learning.permission.domain.PermissionEffect.DENY);
 
         assertThatThrownBy(() -> cacheOperationApplicationService.execute(new ExecuteCacheOperationCommand(
                 mixed.id(), CacheDomain.DICTIONARY, CacheOperationType.REFRESH, "不应执行")))

@@ -32,6 +32,7 @@ import java.util.Objects;
 /** 在原机构数据范围内执行学生账号的不可恢复注销。 */
 @Service
 public class StudentAccountCancellationService {
+    private final StudentManagementAccessService managementAccess;
     private static final String FEATURE_CODE = "STUDENT_ACCOUNT_CANCELLATION";
     private static final String ORGANIZATION_ADMIN_ROLE = "ORG_ADMIN";
     private static final String STUDENT_ROLE = "STUDENT";
@@ -62,8 +63,9 @@ public class StudentAccountCancellationService {
             DeviceSessionMapper sessionMapper,
             FeatureAccessService featureAccessService,
             IdGenerator idGenerator,
-            Clock clock
+            Clock clock, StudentManagementAccessService managementAccess
     ) {
+        this.managementAccess = managementAccess;
         this.cancellationMapper = cancellationMapper;
         this.studentMapper = studentMapper;
         this.userMapper = userMapper;
@@ -82,7 +84,7 @@ public class StudentAccountCancellationService {
     public List<StudentAccountCancellationCandidate> listCandidates(AuthenticatedUser currentUser) {
         requireOrganizationAdministrator(currentUser);
         featureAccessService.requireEnabled(FEATURE_CODE, null);
-        return cancellationMapper.findCandidatesByOrganizationAdministrator(currentUser.userId())
+        return cancellationMapper.findCandidatesByOrganizationScope(managementAccess.scope(currentUser))
                 .stream()
                 .map(this::candidate)
                 .toList();
@@ -114,7 +116,7 @@ public class StudentAccountCancellationService {
             throw new StudentAccountCancellationConflictException("学生仍存在活动机构或家长关系");
         }
         Long organizationId = cancellationMapper
-                .findAccessibleLatestInactiveEnrollmentOrganizationId(currentUser.userId(), studentId);
+                .findAccessibleLatestInactiveEnrollmentOrganizationIdByScope(managementAccess.scope(currentUser), studentId);
         if (organizationId == null || organizationId <= 0) {
             throw notFound();
         }
@@ -147,7 +149,9 @@ public class StudentAccountCancellationService {
     }
 
     private void requireOrganizationAdministrator(AuthenticatedUser currentUser) {
-        if (currentUser == null || !currentUser.roleCodes().contains(ORGANIZATION_ADMIN_ROLE)
+        if (currentUser == null || (currentUser.clientType() == AuthClientType.WEB
+                ? !managementAccess.webAllowed(currentUser, "STUDENT_ACCOUNT_CANCELLATION_MANAGE")
+                : !currentUser.roleCodes().contains(ORGANIZATION_ADMIN_ROLE))
                 || (currentUser.clientType() != AuthClientType.WEB
                 && currentUser.clientType() != AuthClientType.MINIAPP)) {
             throw notFound();

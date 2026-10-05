@@ -5,6 +5,6 @@ public record MenuNode(
     @JsonSerialize(using=ToStringSerializer.class) Long id,
     String code, String name, MenuType type,
     @JsonSerialize(using=ToStringSerializer.class) Long parentId,
-    String route, String icon, String permissionCode, int sortOrder, MenuStatus status,
+    String route, String icon, String permissionCode, boolean grantable, int sortOrder, MenuStatus status,
     @JsonSerialize(using=ToStringSerializer.class) Long version
 ) {}

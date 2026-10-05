@@ -22,6 +22,8 @@ import java.util.Objects;
 /** 在独立事务内完成单个学员开户、机构关系、可选班级关系和密文结果。 */
 @Service
 public class StudentImportRowProcessor {
+    private final com.lingdong.learning.user.infrastructure.persistence.UserRoleMapper userRoles;
+    private final StudentImportAccessService access;
     private final StudentApplicationService studentService;
     private final StudentClassAssignmentService classAssignmentService;
     private final StudentCredentialCipher credentialCipher;
@@ -31,8 +33,11 @@ public class StudentImportRowProcessor {
             StudentApplicationService studentService,
             StudentClassAssignmentService classAssignmentService,
             StudentCredentialCipher credentialCipher,
-            StudentImportRowMapper rowMapper
+            StudentImportRowMapper rowMapper,
+            com.lingdong.learning.user.infrastructure.persistence.UserRoleMapper userRoles, StudentImportAccessService access
     ) {
+        this.userRoles = userRoles;
+        this.access = access;
         this.studentService = studentService;
         this.classAssignmentService = classAssignmentService;
         this.credentialCipher = credentialCipher;
@@ -46,9 +51,10 @@ public class StudentImportRowProcessor {
             StudentImportWorkbookRow source
     ) {
         validate(execution, row, source);
+        access.requireExecute(execution.requesterId(), execution.organizationId(), execution.classOrganizationId());
         AuthenticatedUser operator = new AuthenticatedUser(
                 execution.requesterId(), null, "student-import", "学员批量导入",
-                AuthClientType.WEB, List.of("ORG_ADMIN"));
+                AuthClientType.WEB, userRoles.findEnabledRoleCodesByUserId(execution.requesterId()));
         CreatedStudent created = studentService.createStudent(operator, new CreateStudentCommand(
                 source.studentName(), source.gradeCode(), execution.organizationId()));
         if (execution.classOrganizationId() != null) {

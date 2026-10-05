@@ -56,7 +56,7 @@ const parent: CurrentUser = {
   displayName: '测试家长',
   clientType: 'WEB',
   roleCodes: ['PARENT'],
-  permissionCodes: []
+  permissionCodes: ['LEARNING_TASK_READ_MANAGED', 'LEARNING_TASK_CREATE', 'TASK_ASSIGNMENT_DEFER', 'LEARNING_TASK_COPY_PREVIOUS_DAY', 'LEARNING_TASK_TEMPLATE_READ', 'LEARNING_TASK_TEMPLATE_MANAGE_PERSONAL']
 };
 
 describe('学习任务管理页面', () => {
@@ -257,7 +257,7 @@ describe('学习任务管理页面', () => {
 
     expect(await screen.findByRole('dialog', { name: '新建学习任务' })).toBeInTheDocument();
     expect(screen.getByText('家庭任务')).toBeInTheDocument();
-    expect(screen.queryByText('机构任务')).not.toBeInTheDocument();
+    expect(screen.getByText('机构任务')).toBeInTheDocument();
     expect(screen.queryByText('教师任务')).not.toBeInTheDocument();
   });
 

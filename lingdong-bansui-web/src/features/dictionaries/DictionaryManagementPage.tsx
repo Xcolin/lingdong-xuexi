@@ -18,6 +18,14 @@ import {
 type TypeFormValues = CreateDictionaryTypeInput & { status?: DictionaryStatus };
 type ItemFormValues = CreateDictionaryItemInput & { status?: DictionaryStatus };
 
+// 与后端 normalizeCode/normalizeItemCode 规则保持一致：3至64位、仅字母/数字/下划线；
+// 字典类型编码必须字母开头，字典项编码允许数字开头。
+const CODE_PATTERN = /^[A-Za-z][A-Za-z0-9_]{2,63}$/;
+const CODE_RULE_MESSAGE = '编码仅允许3至64位字母、数字和下划线，且必须以字母开头';
+const ITEM_CODE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_]{2,63}$/;
+const ITEM_CODE_RULE_MESSAGE = '编码仅允许3至64位字母、数字和下划线';
+const NAME_MAX_LENGTH = 50;
+
 export function DictionaryManagementPage({ canManage }: { canManage: boolean }) {
   const [types, setTypes] = useState<DictionaryType[]>([]);
   const [items, setItems] = useState<DictionaryItem[]>([]);
@@ -141,7 +149,7 @@ export function DictionaryManagementPage({ canManage }: { canManage: boolean }) 
         <h1>数据字典</h1>
         {canManage && (
           <Space wrap>
-            <Button actionKey="dictionaries.dictionary-management-page.1" icon={<Plus size={16} />} onClick={openCreateType}>新增类型</Button>
+            <Button actionKey="DICTIONARY_MANAGE" icon={<Plus size={16} />} onClick={openCreateType}>新增类型</Button>
             <Button actionKey="dictionaries.dictionary-management-page.2" type="primary" icon={<Plus size={16} />} disabled={!selectedTypeId} onClick={openCreateItem}>新增字典项</Button>
           </Space>
         )}
@@ -196,19 +204,19 @@ export function DictionaryManagementPage({ canManage }: { canManage: boolean }) 
           />
         </ProCard>
       </div>
-      <Modal title={editingType ? '修改字典类型' : '新增字典类型'} open={typeModalOpen} footer={null} onCancel={() => setTypeModalOpen(false)} destroyOnHidden>
+      <Modal title={editingType ? '修改字典类型' : '新增字典类型'} open={typeModalOpen} footer={null} onCancel={() => setTypeModalOpen(false)} destroyOnHidden width="min(640px, 92vw)">
         <Form form={typeForm} layout="vertical" onFinish={saveType}>
-          {!editingType && <Form.Item label="类型编码" name="code" rules={[{ required: true, message: '请输入类型编码' }]}><Input autoComplete="off" /></Form.Item>}
-          <Form.Item label="类型名称" name="name" rules={[{ required: true, message: '请输入类型名称' }]}><Input autoComplete="off" /></Form.Item>
+          {!editingType && <Form.Item label="类型编码" name="code" rules={[{ required: true, message: '请输入类型编码' }, { pattern: CODE_PATTERN, message: CODE_RULE_MESSAGE }]}><Input autoComplete="off" maxLength={64} /></Form.Item>}
+          <Form.Item label="类型名称" name="name" rules={[{ required: true, message: '请输入类型名称' }, { whitespace: true, message: '名称不能为空白字符' }]}><Input autoComplete="off" maxLength={NAME_MAX_LENGTH} showCount /></Form.Item>
           <Form.Item label="排序" name="sortOrder" rules={[{ required: true, message: '请输入排序' }]}><InputNumber min={0} precision={0} style={{ width: '100%' }} /></Form.Item>
           {editingType && <Form.Item label="状态" name="status" rules={[{ required: true }]}><StatusSelect /></Form.Item>}
           <FormActions submitting={submitting} onCancel={() => setTypeModalOpen(false)} />
         </Form>
       </Modal>
-      <Modal title={editingItem ? '修改字典项' : '新增字典项'} open={itemModalOpen} footer={null} onCancel={() => setItemModalOpen(false)} destroyOnHidden>
+      <Modal title={editingItem ? '修改字典项' : '新增字典项'} open={itemModalOpen} footer={null} onCancel={() => setItemModalOpen(false)} destroyOnHidden width="min(640px, 92vw)">
         <Form form={itemForm} layout="vertical" onFinish={saveItem}>
-          {!editingItem && <Form.Item label="字典项编码" name="code" rules={[{ required: true, message: '请输入字典项编码' }]}><Input autoComplete="off" /></Form.Item>}
-          <Form.Item label="字典项名称" name="name" rules={[{ required: true, message: '请输入字典项名称' }]}><Input autoComplete="off" /></Form.Item>
+          {!editingItem && <Form.Item label="字典项编码" name="code" rules={[{ required: true, message: '请输入字典项编码' }, { pattern: ITEM_CODE_PATTERN, message: ITEM_CODE_RULE_MESSAGE }]}><Input autoComplete="off" maxLength={64} /></Form.Item>}
+          <Form.Item label="字典项名称" name="name" rules={[{ required: true, message: '请输入字典项名称' }, { whitespace: true, message: '名称不能为空白字符' }]}><Input autoComplete="off" maxLength={NAME_MAX_LENGTH} showCount /></Form.Item>
           <Form.Item label="排序" name="sortOrder" rules={[{ required: true, message: '请输入排序' }]}><InputNumber min={0} precision={0} style={{ width: '100%' }} /></Form.Item>
           {editingItem && <Form.Item label="状态" name="status" rules={[{ required: true }]}><StatusSelect /></Form.Item>}
           <Form.Item name="defaultItem" valuePropName="checked"><Checkbox>设为默认项</Checkbox></Form.Item>
@@ -244,20 +252,20 @@ function toMessage(error: unknown): string {
 }
 
 function toCreateTypeInput(values: TypeFormValues): CreateDictionaryTypeInput {
-  return { code: values.code, name: values.name, sortOrder: values.sortOrder };
+  return { code: values.code.trim(), name: values.name.trim(), sortOrder: values.sortOrder };
 }
 
 function toUpdateTypeInput(values: TypeFormValues): UpdateDictionaryTypeInput {
-  return { name: values.name, sortOrder: values.sortOrder, status: values.status ?? 'ENABLED' };
+  return { name: values.name.trim(), sortOrder: values.sortOrder, status: values.status ?? 'ENABLED' };
 }
 
 function toCreateItemInput(values: ItemFormValues): CreateDictionaryItemInput {
-  return { code: values.code, name: values.name, sortOrder: values.sortOrder, defaultItem: values.defaultItem };
+  return { code: values.code.trim(), name: values.name.trim(), sortOrder: values.sortOrder, defaultItem: values.defaultItem };
 }
 
 function toUpdateItemInput(values: ItemFormValues): UpdateDictionaryItemInput {
   return {
-    name: values.name,
+    name: values.name.trim(),
     sortOrder: values.sortOrder,
     status: values.status ?? 'ENABLED',
     defaultItem: values.defaultItem

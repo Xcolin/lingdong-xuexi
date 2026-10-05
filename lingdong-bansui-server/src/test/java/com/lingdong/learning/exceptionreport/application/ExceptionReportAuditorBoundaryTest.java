@@ -18,7 +18,7 @@ class ExceptionReportAuditorBoundaryTest {
     private final ExceptionReportMapper mapper = mock(ExceptionReportMapper.class);
     private final ExceptionReportApplicationService service = new ExceptionReportApplicationService(
             mapper, mock(OrganizationDataScopeService.class), mock(FeatureAccessService.class),
-            mock(IdGenerator.class), Clock.systemUTC());
+            mock(IdGenerator.class), Clock.systemUTC(), org.mockito.Mockito.mock(com.lingdong.learning.permission.application.PermissionDecisionService.class, invocation -> invocation.getMethod().getName().equals("isAllowed") ? true : org.mockito.Answers.RETURNS_DEFAULTS.answer(invocation)));
     private final AuthenticatedUser user = new AuthenticatedUser(1874244142494694001L,
             1874244142494694002L, "auditor", "测试审核员", AuthClientType.MINIAPP,
             List.of("TEACHER", "SYS_AUDITOR"));
