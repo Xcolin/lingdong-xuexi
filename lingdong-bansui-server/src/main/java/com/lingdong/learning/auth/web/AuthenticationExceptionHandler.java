@@ -136,7 +136,7 @@ public class AuthenticationExceptionHandler {
     public ResponseEntity<SecurityErrorResponse> handleSmsDeliveryUnavailable(
             SmsDeliveryUnavailableException exception, HttpServletRequest request
     ) {
-        return response(HttpStatus.SERVICE_UNAVAILABLE, "SMS_DELIVERY_UNAVAILABLE", "短信服务暂不可用", request);
+        return response(HttpStatus.SERVICE_UNAVAILABLE, "SMS_DELIVERY_UNAVAILABLE", exception.getMessage(), request);
     }
 
     @ExceptionHandler(ParentWechatBindingTicketInvalidException.class)
@@ -179,7 +179,7 @@ public class AuthenticationExceptionHandler {
     public ResponseEntity<SecurityErrorResponse> handleWechatUnavailable(
             WechatAuthenticationUnavailableException exception, HttpServletRequest request
     ) {
-        return response(HttpStatus.SERVICE_UNAVAILABLE, "WECHAT_AUTH_UNAVAILABLE", "微信认证暂不可用，请使用手机号登录", request);
+        return response(HttpStatus.SERVICE_UNAVAILABLE, "WECHAT_AUTH_UNAVAILABLE", "微信登录暂未完成，请重新授权后重试", request);
     }
 
     private ResponseEntity<SecurityErrorResponse> response(

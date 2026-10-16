@@ -38,9 +38,18 @@ public class ApiExceptionHandler {
         return response(HttpStatus.NOT_FOUND, "RESOURCE_NOT_FOUND", "资源不存在或不可访问", request);
     }
 
-    @ExceptionHandler({MethodArgumentNotValidException.class, HttpMessageNotReadableException.class, IllegalArgumentException.class})
+    @ExceptionHandler({MethodArgumentNotValidException.class, HttpMessageNotReadableException.class})
     public ResponseEntity<SecurityErrorResponse> handleValidationException(Exception exception, HttpServletRequest request) {
         return response(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "请求参数不合法", request);
+    }
+
+    /** 参数类业务异常（如编码格式、取值范围）的消息均为面向用户的中文文案，直接透出便于定位。 */
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<SecurityErrorResponse> handleIllegalArgument(IllegalArgumentException exception, HttpServletRequest request) {
+        String message = exception.getMessage() == null || exception.getMessage().isBlank()
+                ? "请求参数不合法"
+                : exception.getMessage();
+        return response(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", message, request);
     }
 
     @ExceptionHandler(SystemOperationAccessDeniedException.class)
@@ -50,9 +59,28 @@ public class ApiExceptionHandler {
         return response(HttpStatus.FORBIDDEN, "ACCESS_DENIED", "无权执行此操作", request);
     }
 
+    @ExceptionHandler(com.lingdong.learning.student.application.InstitutionEnrollmentStateException.class)
+    public ResponseEntity<SecurityErrorResponse> handleInstitutionEnrollmentState(
+            com.lingdong.learning.student.application.InstitutionEnrollmentStateException exception, HttpServletRequest request) {
+        return response(HttpStatus.CONFLICT, "INSTITUTION_ENROLLMENT_STATE_CONFLICT", exception.getMessage(), request);
+    }
+
+    @ExceptionHandler(com.lingdong.learning.user.application.RoleRemovalStateException.class)
+    public ResponseEntity<SecurityErrorResponse> handleRoleRemovalState(
+            com.lingdong.learning.user.application.RoleRemovalStateException exception, HttpServletRequest request) {
+        return response(HttpStatus.CONFLICT, "ROLE_REMOVAL_STATE_CONFLICT", exception.getMessage(), request);
+    }
+
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<SecurityErrorResponse> handleStateConflict(IllegalStateException exception, HttpServletRequest request) {
         return response(HttpStatus.CONFLICT, "STATE_CONFLICT", "当前状态不允许执行此操作", request);
+    }
+
+    @ExceptionHandler(com.lingdong.learning.organization.application.OrganizationChangeExecutionException.class)
+    public ResponseEntity<SecurityErrorResponse> handleOrganizationChangeExecution(
+            com.lingdong.learning.organization.application.OrganizationChangeExecutionException exception, HttpServletRequest request
+    ) {
+        return response(HttpStatus.CONFLICT, "ORGANIZATION_CHANGE_EXECUTION_CONFLICT", exception.getMessage(), request);
     }
 
     @ExceptionHandler(com.lingdong.learning.user.application.BatchRoleAssignmentException.class)

@@ -49,7 +49,7 @@ public class GrowthRewardExchangeController {
                 exchangeService.findMine(currentUser, page, pageSize));
     }
 
-    @RequirePermission("REWARD_EXCHANGE_REVIEW_CHILD")
+    @RequirePermission("REWARD_EXCHANGE_READ")
     @GetMapping("/students/{studentId}")
     public GrowthRewardExchangePageResponse findManaged(
             @AuthenticationPrincipal AuthenticatedUser currentUser,
@@ -61,7 +61,7 @@ public class GrowthRewardExchangeController {
                 exchangeService.findManaged(currentUser, studentId, page, pageSize));
     }
 
-    @RequirePermission("REWARD_EXCHANGE_REVIEW_CHILD")
+    @RequirePermission("REWARD_EXCHANGE_REVIEW")
     @PostMapping("/{exchangeId}/approve")
     public GrowthRewardExchangeResponse approve(
             @AuthenticationPrincipal AuthenticatedUser currentUser,
@@ -71,7 +71,7 @@ public class GrowthRewardExchangeController {
                 exchangeService.approve(currentUser, exchangeId));
     }
 
-    @RequirePermission("REWARD_EXCHANGE_REVIEW_CHILD")
+    @RequirePermission("REWARD_EXCHANGE_REVIEW")
     @PostMapping("/{exchangeId}/reject")
     public GrowthRewardExchangeResponse reject(
             @AuthenticationPrincipal AuthenticatedUser currentUser,
@@ -82,7 +82,7 @@ public class GrowthRewardExchangeController {
                 exchangeService.reject(currentUser, exchangeId, request.rejectReason()));
     }
 
-    @RequirePermission("REWARD_EXCHANGE_REVIEW_CHILD")
+    @RequirePermission("REWARD_EXCHANGE_REVIEW")
     @PostMapping("/{exchangeId}/verify")
     public GrowthRewardExchangeResponse verify(
             @AuthenticationPrincipal AuthenticatedUser currentUser,

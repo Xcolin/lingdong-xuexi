@@ -33,7 +33,7 @@
         </choose>
     </sql>
     <select id="findClassOptions" resultType="com.lingdong.learning.exceptionreport.application.ExceptionReportClassOption">
-        SELECT c.id AS classOrganizationId, c.organization_name AS className
+        SELECT c.id AS classOrganizationId, (SELECT GROUP_CONCAT(o.organization_name ORDER BY LENGTH(o.organization_path) ASC SEPARATOR '·') FROM sys_organization o WHERE c.organization_path LIKE CONCAT(o.organization_path, '%')) AS className
         FROM sys_organization c WHERE c.organization_type = 'CLASS'
         AND c.status = 'ENABLED' AND c.effective_status = 'ENABLED'
         AND <include refid="classRange"/>

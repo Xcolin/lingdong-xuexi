@@ -33,6 +33,8 @@ public class AuthenticationController {
     private final AuthenticationApplicationService authenticationApplicationService;
     private final AccountSecurityEventService accountSecurityEventService;
     private final PermissionDecisionService permissionDecisionService;
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.lingdong.learning.auth.application.CurrentUserCapabilityService capabilities;
 
     public AuthenticationController(
             AuthenticationApplicationService authenticationApplicationService,
@@ -49,6 +51,15 @@ public class AuthenticationController {
         return toSessionResponse(authenticationApplicationService.loginByPassword(new PasswordLoginCommand(
                 request.username(), request.password(), request.deviceId(), request.deviceName()
         )));
+    }
+
+    public record RegistrationPasswordRequest(String username, String password,
+            com.lingdong.learning.auth.domain.AuthClientType clientType, String deviceId, String deviceName) {}
+
+    @PostMapping("/registration-sessions/password")
+    public PublicRegistrationController.RegistrationResponse loginRegistrationByPassword(@RequestBody RegistrationPasswordRequest request) {
+        return new PublicRegistrationController.RegistrationResponse(authenticationApplicationService.loginRegistrationByPassword(request.username(),
+                request.password(), request.clientType(), request.deviceId(), request.deviceName()));
     }
 
     @PostMapping("/organization-sessions/password")
@@ -81,10 +92,12 @@ public class AuthenticationController {
 
     @GetMapping("/me")
     public CurrentUserResponse currentUser(@AuthenticationPrincipal AuthenticatedUser currentUser) {
+        var identity=capabilities.describe(currentUser);
         return new CurrentUserResponse(currentUser.userId(), currentUser.sessionId(), currentUser.username(),
                 currentUser.displayName(), currentUser.clientType(), currentUser.roleCodes(),
                 permissionDecisionService.findAllowedCodes(
-                        currentUser.userId(), PermissionClient.valueOf(currentUser.clientType().name())));
+                        currentUser.userId(), PermissionClient.valueOf(currentUser.clientType().name())),
+                identity.userType(),identity.parentProfile(),identity.teacherProfile(),identity.learningTaskSourceTypes());
     }
 
     @GetMapping("/devices")

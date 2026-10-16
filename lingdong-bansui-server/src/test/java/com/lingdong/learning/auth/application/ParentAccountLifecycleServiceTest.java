@@ -55,7 +55,7 @@ class ParentAccountLifecycleServiceTest {
     void setUp() {
         when(userMapper.findById(USER_ID)).thenReturn(parent(OLD_MOBILE));
         when(userMapper.findByIdForUpdate(USER_ID)).thenReturn(parent(OLD_MOBILE));
-        when(userRoleMapper.hasRoleCode(USER_ID, "PARENT")).thenReturn(true);
+        when(userRoleMapper.hasAnyEnabledRole(USER_ID)).thenReturn(true);
         when(parentAuthenticationMapper.findProfileByUserId(USER_ID)).thenReturn(
                 new ParentProfile(11L, USER_ID, ParentOnboardingStatus.COMPLETED, null, null));
         when(hasher.mobileDigest(OLD_MOBILE)).thenReturn("old-mobile-digest");

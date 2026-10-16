@@ -59,11 +59,13 @@
         JOIN sys_organization class_organization
           ON class_organization.id = teacher_class.class_organization_id
         JOIN sys_organization school_organization
-          ON school_organization.id = class_organization.parent_id
+          ON class_organization.organization_path LIKE CONCAT(school_organization.organization_path, '%')
+         AND school_organization.organization_type IN ('SCHOOL', 'TRAINING_INSTITUTION')
         WHERE teacher_class.teacher_user_id = #{teacherUserId}
           AND teacher_class.status = 'ACTIVE'
           AND class_organization.status = 'ENABLED'
           AND class_organization.effective_status = 'ENABLED'
+          AND class_organization.organization_type = 'CLASS'
           AND school_organization.status = 'ENABLED'
           AND school_organization.effective_status = 'ENABLED'
         ORDER BY school_organization.sort_order, class_organization.sort_order,
@@ -77,8 +79,13 @@
           ON teacher_organization.id = user_organization.organization_id
         JOIN sys_organization class_organization
           ON class_organization.id = #{classOrganizationId}
+        JOIN sys_organization teacher_school
+          ON teacher_school.organization_type IN ('SCHOOL', 'TRAINING_INSTITUTION')
+         AND teacher_organization.organization_path LIKE CONCAT(teacher_school.organization_path, '%')
         WHERE user_organization.user_id = #{teacherUserId}
-          AND class_organization.organization_path LIKE CONCAT(teacher_organization.organization_path, '%'))
+          AND teacher_organization.status = 'ENABLED' AND teacher_organization.effective_status = 'ENABLED'
+          AND teacher_school.status = 'ENABLED' AND teacher_school.effective_status = 'ENABLED'
+          AND class_organization.organization_path LIKE CONCAT(teacher_school.organization_path, '%'))
     </select>
 
     <insert id="insert">

@@ -37,6 +37,13 @@ public class TeacherManagementController {
         this.batchService = batchService;
     }
 
+    @GetMapping("/lookup")
+    public TeacherManagementApplicationService.TeacherLookupPage lookup(@AuthenticationPrincipal AuthenticatedUser user,@RequestParam String permission,
+            @RequestParam(required=false)String keyword,@RequestParam(required=false)Long schoolId,@RequestParam(required=false)Long classOrganizationId,
+            @RequestParam(defaultValue="1")int page,@RequestParam(defaultValue="20")int pageSize){
+        return managementService.lookup(user,new TeacherQuery(keyword,schoolId,classOrganizationId,UserStatus.ENABLED,page,pageSize),permission);
+    }
+
     @RequirePermission("TEACHER_READ")
     @GetMapping
     public TeacherPageResponse list(
@@ -46,11 +53,19 @@ public class TeacherManagementController {
             @RequestParam(required = false) Long classOrganizationId,
             @RequestParam(required = false) UserStatus status,
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "20") int pageSize
+            @RequestParam(defaultValue = "20") int pageSize,
+            @RequestParam(required=false) Long campusOrganizationId,
+            @RequestParam(required=false) String subjectCode
     ) {
         return TeacherPageResponse.from(managementService.list(currentUser,
-                new TeacherQuery(keyword, schoolId, classOrganizationId, status, page, pageSize)));
+                new TeacherQuery(keyword, schoolId, classOrganizationId, status, page, pageSize,campusOrganizationId,subjectCode)));
     }
+
+    /** Compatibility overload for existing Java callers; only the expanded method is routed. */
+    @RequirePermission("TEACHER_READ")
+    public TeacherPageResponse list(AuthenticatedUser currentUser,String keyword,Long schoolId,Long classOrganizationId,UserStatus status,int page,int pageSize,Long campusOrganizationId){return list(currentUser,keyword,schoolId,classOrganizationId,status,page,pageSize,campusOrganizationId,null);}
+    @RequirePermission("TEACHER_READ")
+    public TeacherPageResponse list(AuthenticatedUser currentUser,String keyword,Long schoolId,Long classOrganizationId,UserStatus status,int page,int pageSize){return list(currentUser,keyword,schoolId,classOrganizationId,status,page,pageSize,null);}
 
     @RequirePermission("TEACHER_READ")
     @GetMapping("/{teacherUserId}")

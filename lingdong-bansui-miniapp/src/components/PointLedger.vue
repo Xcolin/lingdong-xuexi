@@ -122,7 +122,12 @@ function toMessage(cause: unknown): string {
 }
 </script>
 
+
+
+
+
 <style lang="scss" scoped>
+
 .state { padding: 40rpx 0; color: $ld-text-muted; font-size: $ld-font-body; text-align: center; }
 .state.error { color: $ld-danger; }
 .ledger-card {
@@ -147,4 +152,7 @@ function toMessage(cause: unknown): string {
   color: $ld-primary; font-size: $ld-font-caption; border: 2rpx solid $ld-primary-border;
 }
 .load-more::after { border: 0; }
+
+.ledger-card{background:#fffefa;border:1rpx solid #e1e9e2;border-radius:22rpx;box-shadow:none;padding:26rpx;}.ledger-title{flex:1;min-width:0;}.ledger-meta{line-height:1.6;color:#809486;}.source-label{background:#edf4ee;color:#184f40;}.ledger-amount{color:#184f40;}.ledger-amount.negative{color:#b65a4d;}.load-more{background:#edf4ee;color:#184f40;border-color:#d8e4db;}
+.ledger-card{background:white;border:0;border-bottom:1rpx solid #edf0e8;border-radius:0;margin:0;padding:24rpx;}.ledger-title{font-size:27rpx;color:#283b30;}.ledger-amount{color:#f49a00;font-size:30rpx;}.ledger-amount.negative{color:#ad6355;}.ledger-meta{font-size:22rpx;color:#828d85;}.source-label{background:#eaf5ed;color:#176c51;}
 </style>

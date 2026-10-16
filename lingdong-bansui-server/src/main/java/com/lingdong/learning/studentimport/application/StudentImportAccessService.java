@@ -118,7 +118,7 @@ public class StudentImportAccessService {
         if (organization == null || !dataScopeService.canAccess(userId, organizationId)) {
             throw denied("目标组织不存在或不在当前数据范围内");
         }
-        if (!expectedType.equals(organization.typeCode())) {
+        if (!(expectedType.equals(organization.typeCode()) || "SCHOOL".equals(expectedType) && com.lingdong.learning.organization.application.OrganizationHierarchy.isInstitutionRoot(organization))) {
             throw new IllegalArgumentException(typeMessage);
         }
         if (!OrganizationOperationalStatusService.isOperational(organization)) {

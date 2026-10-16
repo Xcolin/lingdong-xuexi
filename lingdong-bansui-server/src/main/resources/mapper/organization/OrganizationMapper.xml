@@ -256,12 +256,41 @@
           AS reference_count
     </select>
 
+    <select id="countMoveBusinessReferences" resultType="long">
+        SELECT
+            (SELECT COUNT(*) FROM sys_user_role WHERE organization_id = #{id})
+          + (SELECT COUNT(*) FROM sys_organization_admin WHERE organization_id = #{id})
+          + (SELECT COUNT(*) FROM sys_user_organization WHERE organization_id = #{id})
+          + (SELECT COUNT(*) FROM sys_feature_toggle WHERE organization_id = #{id})
+          + (SELECT COUNT(*) FROM sys_role_data_scope WHERE organization_id = #{id})
+          + (SELECT COUNT(*) FROM sys_import_job WHERE organization_id = #{id})
+          + (SELECT COUNT(*) FROM sys_student_import_execution WHERE organization_id = #{id})
+          + (SELECT COUNT(*) FROM sys_student_import_execution WHERE class_organization_id = #{id})
+          + (SELECT COUNT(*) FROM edu_student_organization WHERE organization_id = #{id})
+          + (SELECT COUNT(*) FROM edu_parent_binding_invitation WHERE organization_id = #{id})
+          + (SELECT COUNT(*) FROM edu_teacher_class WHERE class_organization_id = #{id})
+          + (SELECT COUNT(*) FROM edu_teacher_class_change_log WHERE class_organization_id = #{id})
+          + (SELECT COUNT(*) FROM learn_task WHERE source_organization_id = #{id})
+          + (SELECT COUNT(*) FROM learn_task_assignment WHERE source_organization_id = #{id})
+          + (SELECT COUNT(*) FROM growth_point_ledger WHERE source_organization_id = #{id})
+          + (SELECT COUNT(*) FROM edu_student_organization_change WHERE from_organization_id = #{id})
+          + (SELECT COUNT(*) FROM edu_student_organization_change WHERE to_organization_id = #{id})
+          + (SELECT COUNT(*) FROM auth_parent_mobile_manual_recovery WHERE organization_id = #{id})
+          + (SELECT COUNT(*) FROM auth_student_account_cancellation WHERE organization_id = #{id})
+          + (SELECT COUNT(*) FROM edu_exception_report WHERE class_organization_id = #{id})
+          + (SELECT COUNT(*) FROM attendance_record WHERE class_organization_id = #{id})
+          + (SELECT COUNT(*) FROM growth_rank_preference WHERE class_organization_id = #{id})
+          AS reference_count
+    </select>
+
     <delete id="deleteLeaf">
         DELETE FROM sys_organization
         WHERE id = #{id}
           AND version_no = #{expectedVersion}
           AND NOT EXISTS (
-              SELECT 1 FROM sys_organization child WHERE child.parent_id = #{id}
+              SELECT 1 FROM (
+                  SELECT child.parent_id FROM sys_organization child WHERE child.parent_id = #{id}
+              ) existing_child
           )
     </delete>
 
@@ -281,7 +310,7 @@
         WHERE organization_admin.user_id = #{userId}
           AND administrator_root.status = 'ENABLED'
           AND administrator_root.effective_status = 'ENABLED'
-          AND organization.organization_type = 'SCHOOL'
+          AND organization.organization_type IN ('SCHOOL', 'TRAINING_INSTITUTION')
           AND organization.status = 'ENABLED'
           AND organization.effective_status = 'ENABLED'
         ORDER BY organization.organization_path, organization.sort_order, organization.id

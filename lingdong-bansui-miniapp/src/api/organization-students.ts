@@ -3,14 +3,19 @@ import { request } from './http';
 export interface OrganizationStudentRelationship {
   studentId: string;
   studentName: string;
+  studentStatus?: string | null;
+  studentNumber?: string | null;
   gradeCode: string | null;
   enrollmentOrganizationId: string;
   enrollmentOrganizationName: string;
   currentClassOrganizationId: string | null;
   currentClassOrganizationName: string | null;
+  currentClassOrganizationIds?: string[];
+  currentClassOrganizationNames?: string[];
 }
 
 export interface OrganizationClassOption {
+  schoolOrganizationId: string | null;
   id: string;
   name: string;
 }
@@ -37,9 +42,9 @@ export function listOrganizationStudents(
 
 /** 使用机构小程序会话读取可用班级候选项。 */
 export function listOrganizationClasses(
-  accessToken: string
+  accessToken: string, schoolOrganizationId?: string
 ): Promise<OrganizationClassOption[]> {
-  return request<OrganizationClassOption[]>('/students/organization-relationship-classes', {
+  return request<OrganizationClassOption[]>('/students/organization-relationship-classes'+(schoolOrganizationId?'?schoolOrganizationId='+encodeURIComponent(schoolOrganizationId):''), {
     header: authorization(accessToken)
   });
 }

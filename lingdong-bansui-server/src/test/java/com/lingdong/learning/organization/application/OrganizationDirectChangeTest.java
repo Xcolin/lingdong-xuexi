@@ -72,7 +72,7 @@ class OrganizationDirectChangeTest {
         var school=organizationApplicationService.createOrganization(
                 new CreateOrganizationCommand("DIRECT_MOVE_SCHOOL","拖拽移动学校","SCHOOL",regionA.id(),10));
         var clazz=organizationApplicationService.createOrganization(
-                new CreateOrganizationCommand("DIRECT_MOVE_CLASS","拖拽移动班级","CLASS",school.id(),10));
+                new CreateOrganizationCommand("DIRECT_MOVE_CLASS","拖拽移动班级","CLASS",gradeId(school.id()),10));
 
         Organization moved=changeService.directMove(new MoveOrganizationCommand(
                 admin,school.id(),regionB.id(),school.versionNo()));
@@ -82,7 +82,7 @@ class OrganizationDirectChangeTest {
         assertThat(storedSchool.parentId()).isEqualTo(regionB.id());
         assertThat(storedSchool.parentScopeKey()).isEqualTo("PARENT:"+regionB.id());
         assertThat(storedSchool.path()).isEqualTo("/DIRECT_MOVE_B/DIRECT_MOVE_SCHOOL/");
-        assertThat(storedClass.path()).isEqualTo("/DIRECT_MOVE_B/DIRECT_MOVE_SCHOOL/DIRECT_MOVE_CLASS/");
+        assertThat(storedClass.path()).startsWith(storedSchool.path()).endsWith("/DIRECT_MOVE_CLASS/");
         assertThat(moved.versionNo()).isEqualTo(school.versionNo()+1);
         Integer audits=jdbc.queryForObject(
                 "select count(*) from sys_organization_change_audit where organization_id=? and event_type='DIRECT_MOVE'",
@@ -111,5 +111,11 @@ class OrganizationDirectChangeTest {
                 admin,school.id(),regionA.id(),school.versionNo())))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("排序接口");
+    }
+
+    private final java.util.Map<Long,Long> fixtureGrades=new java.util.HashMap<>();
+    private Long gradeId(Long schoolId) {
+        return fixtureGrades.computeIfAbsent(schoolId,id -> organizationApplicationService.createOrganization(
+                new CreateOrganizationCommand("GRD_"+java.util.UUID.randomUUID().toString().replace("-", "").toUpperCase(),"测试年级","GRADE",id,0)).id());
     }
 }

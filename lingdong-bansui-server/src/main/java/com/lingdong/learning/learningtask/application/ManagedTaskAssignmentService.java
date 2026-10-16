@@ -95,12 +95,12 @@ public class ManagedTaskAssignmentService {
             return false;
         }
         if (state.sourceType() == LearningTaskSourceType.FAMILY) {
-            return currentUser.roleCodes().contains("PARENT")
+            return permissionScope.isParent(currentUser)
                     && parentStudentMapper.existsActivePrimaryByParentAndStudent(
                     currentUser.userId(), state.studentId());
         }
         boolean creatorTeacher = state.sourceType() == LearningTaskSourceType.TEACHER
-                && currentUser.roleCodes().contains("TEACHER")
+                && permissionScope.teacherSourceAllowed(currentUser,state.sourceOrganizationId())
                 && currentUser.userId().equals(state.creatorUserId());
         boolean scopedOrganizationAdministrator = permissionScope.hasOrganizationAccess(currentUser, "TASK_ASSIGNMENT_EXEMPT")
                 && organizationDataScopeService.canAccess(

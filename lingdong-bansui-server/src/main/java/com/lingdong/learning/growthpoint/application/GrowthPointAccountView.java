@@ -8,6 +8,11 @@ public record GrowthPointAccountView(
         String studentName,
         long totalPoints,
         long availablePoints,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        long weekEarnedPoints,
+        long monthEarnedPoints
 ) {
+    public GrowthPointAccountView(Long studentId, String studentName, long totalPoints, long availablePoints, LocalDateTime updatedAt) {
+        this(studentId, studentName, totalPoints, availablePoints, updatedAt, 0, 0);
+    }
 }

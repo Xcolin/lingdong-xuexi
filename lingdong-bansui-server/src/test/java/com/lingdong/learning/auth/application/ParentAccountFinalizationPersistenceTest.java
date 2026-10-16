@@ -35,6 +35,7 @@ class ParentAccountFinalizationPersistenceTest {
                     id, username, display_name, mobile, password_hash, user_type, status
                 ) VALUES (?, '13800138101', '待注销家长', '13800138101', 'password-hash', 'FAMILY', 'ENABLED')
                 """, USER_ID);
+        jdbcTemplate.update("insert into auth_parent_profile(id,user_id,onboarding_status,first_login_at) values(?,?,'COMPLETED',CURRENT_TIMESTAMP)", USER_ID + 90, USER_ID);
         jdbcTemplate.update("""
                 INSERT INTO sys_user_role (id, user_id, role_id, organization_scope_key)
                 VALUES (?, ?, ?, 'GLOBAL')
@@ -119,6 +120,7 @@ class ParentAccountFinalizationPersistenceTest {
         jdbcTemplate.update("DELETE FROM edu_parent_student WHERE id = ?", RELATIONSHIP_ID);
         jdbcTemplate.update("DELETE FROM edu_student WHERE id = ?", STUDENT_ID);
         jdbcTemplate.update("DELETE FROM sys_user_role WHERE id = ?", USER_ROLE_ID);
+        jdbcTemplate.update("DELETE FROM auth_parent_profile WHERE user_id = ?", USER_ID);
         jdbcTemplate.update("DELETE FROM sys_user WHERE id = ?", USER_ID);
     }
 }

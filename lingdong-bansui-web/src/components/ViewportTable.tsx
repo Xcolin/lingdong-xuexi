@@ -1,10 +1,24 @@
+import type { CSSProperties } from 'react';
 import { forwardRef, useLayoutEffect, useRef, useState } from 'react';
 import { Table, type TableProps } from 'antd';
 import type { TableRef } from 'antd/es/table';
+import { createPagination, DEFAULT_PAGE_SIZE } from './pagination';
 
 /** A Table with a viewport-sized scroll body; explicit scroll settings take priority. */
 const AdaptiveTable = forwardRef<TableRef, TableProps<Record<string, unknown>>>(
   function AdaptiveTable({ scroll, ...props }, ref) {
+    const [clientPage, setClientPage] = useState(1);
+    const [clientPageSize, setClientPageSize] = useState(DEFAULT_PAGE_SIZE);
+    const paginationConfig = props.pagination === false ? false : props.pagination ?? {};
+    const pagination = paginationConfig === false ? false : createPagination({
+      ...paginationConfig,
+      current: paginationConfig.current ?? clientPage,
+      pageSize: paginationConfig.current === undefined ? clientPageSize : paginationConfig.pageSize ?? DEFAULT_PAGE_SIZE,
+      onChange: (page, pageSize) => {
+        setClientPage(page); setClientPageSize(pageSize);
+        paginationConfig.onChange?.(page, pageSize);
+      },
+    });
     const containerRef = useRef<HTMLDivElement>(null);
     const [bodyHeight, setBodyHeight] = useState(320);
 
@@ -18,7 +32,9 @@ const AdaptiveTable = forwardRef<TableRef, TableProps<Record<string, unknown>>>(
         const body = container.querySelector<HTMLElement>('.ant-table-body');
         const top = body?.getBoundingClientRect().top ?? container.getBoundingClientRect().top + 48;
         const overlay = container.closest<HTMLElement>('.ant-modal-body, .ant-drawer-body');
-        const bottom = Math.min(overlay?.getBoundingClientRect().bottom ?? Infinity, page?.getBoundingClientRect().bottom ?? window.innerHeight);
+        const panel = container.closest<HTMLElement>('.management-detail-pane, .ant-pro-card-body');
+        const panelBottom = panel && ['auto','scroll','hidden'].includes(getComputedStyle(panel).overflowY) ? panel.getBoundingClientRect().bottom : Infinity;
+        const bottom = Math.min(panelBottom, overlay?.getBoundingClientRect().bottom ?? Infinity, page?.getBoundingClientRect().bottom ?? window.innerHeight);
         // Keep pagination, summary and footer reachable below the scrolling rows.
         const pagination = container.querySelector<HTMLElement>('.ant-pagination');
         const footer = container.querySelector<HTMLElement>('.ant-table-footer');
@@ -65,8 +81,10 @@ const AdaptiveTable = forwardRef<TableRef, TableProps<Record<string, unknown>>>(
     }, [scroll?.y, props.pagination, props.dataSource]);
 
     return (
-      <div ref={containerRef} className="viewport-table">
-        <Table size="small" {...props} ref={ref} scroll={{ x: 'max-content', y: bodyHeight, ...scroll }} />
+      <div ref={containerRef} className={`viewport-table${scroll?.y === undefined ? ' viewport-table-fill' : ''}`} style={{'--table-body-height': `${bodyHeight}px`} as CSSProperties}>
+        <Table size="small" {...props} pagination={pagination} onChange={(next, filters, sorter, extra) => {
+          props.onChange?.({ ...next, current: next.pageSize === (paginationConfig && paginationConfig.pageSize || clientPageSize) ? next.current : 1 }, filters, sorter, extra);
+        }} ref={ref} scroll={{ x: 'max-content', y: bodyHeight, ...scroll }} />
       </div>
     );
   },

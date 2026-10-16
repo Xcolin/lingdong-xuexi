@@ -20,3 +20,14 @@ it('只提交密码，提交期间不能取消且防止重复提交，完成后�
  resolve();await waitFor(()=>expect(close).toHaveBeenCalledOnce());expect(screen.getByLabelText('新密码')).toHaveValue('');expect(screen.getByLabelText('确认密码')).toHaveValue('');
 });
 
+
+it('默认填入新的八位字母数字密码及一致确认值，打开另一用户重新生成',async()=>{
+ const view=render(<ResetUserPasswordModal user={user} onClose={()=>{}}/>);
+ await waitFor(()=>expect((screen.getByLabelText('新密码') as HTMLInputElement).value).toMatch(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8}$/));
+ const first=(screen.getByLabelText('新密码') as HTMLInputElement).value;
+ expect(screen.getByLabelText('确认密码')).toHaveValue(first);
+ expect(usersApi.setPassword).not.toHaveBeenCalled();
+ view.rerender(<ResetUserPasswordModal user={{...user,id:'user2'}} onClose={()=>{}}/>);
+ await waitFor(()=>expect(screen.getByLabelText('新密码')).not.toHaveValue(first));
+ expect(screen.getByLabelText('确认密码')).toHaveValue((screen.getByLabelText('新密码') as HTMLInputElement).value);
+});

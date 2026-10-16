@@ -14,6 +14,11 @@ import java.util.List;
  */
 @Mapper
 public interface UserMapper {
+    List<User> findPickerPage(@Param("query") com.lingdong.learning.iam.application.MemberPickerQuery query);
+    long countPicker(@Param("query") com.lingdong.learning.iam.application.MemberPickerQuery query);
+    List<com.lingdong.learning.user.application.RoleUserAssignment> findRolePickerAssignments(@Param("query") com.lingdong.learning.iam.application.MemberPickerQuery query);
+    long countRolePickerAssignments(@Param("query") com.lingdong.learning.iam.application.MemberPickerQuery query);
+
     List<User> findOrganizationMembers(@Param("organizationId") Long organizationId, @Param("keyword") String keyword, @Param("offset") int offset, @Param("limit") int limit);
 
     long countOrganizationMembers(@Param("organizationId") Long organizationId, @Param("keyword") String keyword);
@@ -52,6 +57,8 @@ public interface UserMapper {
             @Param("newMobile") String newMobile
     );
 
+    int updateProfile(@Param("id") Long id,@Param("displayName") String displayName,@Param("mobile") String mobile);
+    int updateStudentName(@Param("id") Long id,@Param("displayName") String displayName);
     int updateStatus(@Param("id") Long id, @Param("status") UserStatus status);
 
     int anonymizeCancelledParent(

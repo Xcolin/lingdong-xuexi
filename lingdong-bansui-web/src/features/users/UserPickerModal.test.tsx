@@ -1,11 +1,55 @@
-import {render,screen,fireEvent,waitFor} from '@testing-library/react';import {it,expect,vi} from 'vitest';import {UserPickerModal} from './UserPickerModal';import {usersApi} from '../../api/users';import {organizationApi} from '../../api/organization';
-vi.mock('../../api/users',()=>({usersApi:{list:vi.fn()}}));
-vi.mock('../../api/organization',()=>({organizationApi:{listTree:vi.fn(),members:vi.fn(),memberRelations:vi.fn()}}));
-it('已有用户只读，勾选新用户一次提交，失败保留选择',async()=>{vi.mocked(usersApi.list).mockResolvedValue({items:[{id:'old',displayName:'已有用户',username:'old',status:'ENABLED'},{id:'new',displayName:'新增用户',username:'new',status:'ENABLED'}],page:1,pageSize:20,total:2} as any);const submit=vi.fn().mockRejectedValue(new Error('整批失败'));render(<UserPickerModal open title="关联用户" onClose={()=>{}} onSubmit={submit} existingUserIds={['old']} actionPrefix="iam.role-users"/>);await screen.findByText('新增用户');const checkboxes=screen.getAllByRole('checkbox');expect(checkboxes[1]).toBeDisabled();fireEvent.click(checkboxes[2]);fireEvent.click(screen.getByRole('button',{name:'保存关联'}));await waitFor(()=>expect(submit).toHaveBeenCalledWith(['new'],null));await screen.findByText('整批失败');expect(checkboxes[2]).toBeChecked();});
-
-it('候选用户逐页读取目标组织关系，已有成员只读且已勾选',async()=>{vi.mocked(usersApi.list).mockResolvedValue({items:[{id:'existing',displayName:'其他页已有成员',username:'exists',status:'ENABLED'}],page:1,pageSize:20,total:1} as any);vi.mocked(organizationApi.memberRelations).mockResolvedValue([{userId:'existing',administrator:false}]);render(<UserPickerModal open title="关联用户" onClose={()=>{}} onSubmit={async()=>{}} actionPrefix="organizations.member-picker" targetOrganizationId="org"/>);await screen.findByText('其他页已有成员');await waitFor(()=>expect(organizationApi.memberRelations).toHaveBeenCalledWith('org',['existing']));const row=screen.getAllByRole('checkbox')[1];expect(row).toBeDisabled();expect(row).toBeChecked();expect(screen.getByRole('button',{name:'保存关联'})).toBeDisabled();});
+vi.mock('../../api/users',()=>({usersApi:{scopeOrganizations:vi.fn(async()=>{const flatten=(nodes:any[]):any[]=>nodes.flatMap(n=>[{...n,parentId:n.parentId??null,disabled:n.status==='DISABLED'||n.effectiveStatus==='DISABLED'},...flatten(n.children??[])]);return flatten(await organizationApi.listTree());})}}));
+import {render,screen,fireEvent,waitFor,within} from '@testing-library/react';
+import {beforeEach,it,expect,vi} from 'vitest';
 import userEvent from '@testing-library/user-event';
-it('切换组织加载失败清空旧名单并禁止提交',async()=>{
- const user=userEvent.setup();vi.mocked(organizationApi.listTree).mockResolvedValue([{id:'a',name:'学校A',status:'ENABLED',effectiveStatus:'ENABLED',children:[]},{id:'b',name:'学校B',status:'ENABLED',effectiveStatus:'ENABLED',children:[]}] as any);vi.mocked(organizationApi.members).mockResolvedValueOnce({items:[{id:'u',displayName:'学校A用户',username:'auser',status:'ENABLED'}],page:1,pageSize:20,total:1} as any).mockRejectedValueOnce(new Error('学校B加载失败'));
- render(<UserPickerModal open title="关联用户" requireOrganization actionPrefix="iam.role-users" onClose={()=>{}} onSubmit={async()=>{}}/>);await user.click(screen.getByRole('combobox'));await user.click(await screen.findByText('学校A'));await screen.findByText('学校A用户');await user.click(screen.getByRole('combobox'));await user.click(await screen.findByText('学校B'));await screen.findByText('学校B加载失败');expect(screen.queryByText('学校A用户')).not.toBeInTheDocument();expect(screen.getByRole('button',{name:'保存关联'})).toBeDisabled();
+import {UserPickerModal} from './UserPickerModal';
+import {organizationApi} from '../../api/organization';
+import {iamApi} from '../../api/iam';
+vi.mock('../../api/organization',()=>({organizationApi:{listTree:vi.fn(),memberPicker:vi.fn()}}));
+vi.mock('../../api/iam',()=>({iamApi:{roleUserPicker:vi.fn()}}));
+const candidate={id:'new',username:'new',displayName:'待加入老师',status:'ENABLED',organizationNames:['示例学校 / 东校区 / 三年级']};
+const linked={id:'old',username:'old',displayName:'已加入老师',status:'ENABLED',organizationNames:['示例学校 / 西校区']};
+const page=(items:any[],current=1,total=items.length)=>({items,page:current,pageSize:20,total});
+beforeEach(()=>{vi.clearAllMocks();vi.mocked(organizationApi.listTree).mockResolvedValue([]);vi.mocked(organizationApi.memberPicker).mockImplementation(async(_id,q)=>page(q.side==='CANDIDATES'?[candidate]:[linked],q.page,45) as any);});
+it('左右名单独立分页，批量加入成功刷新两侧且保留窗口',async()=>{
+ const submit=vi.fn().mockResolvedValue(undefined);const close=vi.fn();render(<UserPickerModal open title="关联用户" actionPrefix="organizations.member-picker" targetOrganizationId="org" onClose={close} onSubmit={submit} onRemove={async()=>{}}/>);
+ const left=await screen.findByRole('region',{name:'待加入'});const right=screen.getByRole('region',{name:'已加入'});await within(left).findByText('待加入老师');await within(right).findByText('已加入老师');expect(within(left).getByText('三年级')).toBeInTheDocument();
+ fireEvent.click(within(left).getAllByRole('checkbox')[1]);fireEvent.click(screen.getByRole('button',{name:'加入所选'}));await waitFor(()=>expect(submit).toHaveBeenCalledWith(['new'],null));expect(close).not.toHaveBeenCalled();
+ fireEvent.click(within(left).getByTitle('2'));await waitFor(()=>expect(organizationApi.memberPicker).toHaveBeenCalledWith('org',expect.objectContaining({side:'CANDIDATES',page:2})));expect(within(right).getByTitle('1')).toHaveAttribute('class',expect.stringContaining('active'));
+});
+it('批量移除失败保留右侧选择和错误',async()=>{
+ const remove=vi.fn().mockRejectedValue(new Error('整批失败'));render(<UserPickerModal open title="管理员" actionPrefix="organizations.admin-picker" targetOrganizationId="org" administratorMode onClose={()=>{}} onSubmit={async()=>{}} onRemove={remove}/>);
+ const right=await screen.findByRole('region',{name:'已加入'});await within(right).findByText('已加入老师');fireEvent.click(within(right).getAllByRole('checkbox')[1]);fireEvent.click(screen.getByRole('button',{name:'移除所选'}));await screen.findByText('整批失败');expect(within(right).getAllByRole('checkbox')[1]).toBeChecked();expect(remove).toHaveBeenCalledWith([expect.objectContaining({id:'old'})]);
+});
+it('组织筛选只改变filterOrganizationId并重置分页，授权组织独立',async()=>{
+ const actor=userEvent.setup();vi.mocked(organizationApi.listTree).mockResolvedValue([{id:'school',name:'示例学校',status:'ENABLED',effectiveStatus:'ENABLED',sortOrder:1,children:[{id:'campus',name:'东校区',namePath:'示例学校·东校区',status:'ENABLED',effectiveStatus:'ENABLED',sortOrder:1,children:[]}]}] as any);vi.mocked(iamApi.roleUserPicker).mockImplementation(async(_id,q)=>page(q.side==='CANDIDATES'?[candidate]:[],q.page) as any);
+ render(<UserPickerModal open title="关联角色" actionPrefix="iam.role-users" roleId="role" requireOrganization onClose={()=>{}} onSubmit={async()=>{}} onRemove={async()=>{}}/>);
+ await actor.click(screen.getByRole('combobox',{name:'授权组织'}));await actor.click(await screen.findByText('示例学校'));await screen.findByText('待加入老师');await actor.click(screen.getByRole('combobox',{name:'筛选组织（含下级）'}));await actor.click((await screen.findAllByText('东校区')).at(-1)!);await waitFor(()=>expect(iamApi.roleUserPicker).toHaveBeenCalledWith('role',expect.objectContaining({grantOrganizationId:'school',filterOrganizationId:'campus',page:1})));
+});
+it('同一用户多个角色授权拆成具体范围，移除仅提交选中的授权',async()=>{
+ vi.mocked(iamApi.roleUserPicker).mockImplementation(async(_id,q)=>page(q.side==='LINKED'?[{...linked,assignments:[{userId:'old',organizationId:'s1'},{userId:'old',organizationId:'s2'}]}]:[]) as any);const remove=vi.fn().mockResolvedValue(undefined);
+ render(<UserPickerModal open title="角色" actionPrefix="iam.role-users" roleId="role" onClose={()=>{}} onSubmit={async()=>{}} onRemove={remove}/>);const right=screen.getByRole('region',{name:'已加入'});await waitFor(()=>expect(within(right).getAllByText('已加入老师')).toHaveLength(2));fireEvent.click(within(right).getAllByRole('checkbox')[1]);fireEvent.click(screen.getByRole('button',{name:'移除所选'}));await waitFor(()=>expect(remove).toHaveBeenCalledWith([expect.objectContaining({assignments:[{userId:'old',organizationId:'s1'}]})]));
+});
+it('已关联加载失败时不能执行批量关联，避免使用不完整关系快照',async()=>{
+ vi.mocked(organizationApi.memberPicker).mockImplementation(async(_id,q)=>{if(q.side==='LINKED')throw new Error('已加入读取失败');return page([candidate]) as any;});render(<UserPickerModal open title="组织用户" actionPrefix="organizations.member-picker" targetOrganizationId="org" onClose={()=>{}} onSubmit={async()=>{}} onRemove={async()=>{}}/>);await screen.findByText('已加入读取失败');expect(screen.getByRole('button',{name:'加入所选'})).toBeDisabled();expect(screen.getByRole('button',{name:'移除所选'})).toBeDisabled();
+});
+
+it('组织用户没有同校或未归属分组条件，查询固定学校分组',async()=>{
+ render(<UserPickerModal open title="学校用户" actionPrefix="organizations.member-picker" targetOrganizationId="school" onClose={()=>{}} onSubmit={async()=>{}} onRemove={async()=>{}}/>);
+ await screen.findByText('待加入老师');expect(screen.queryByRole('combobox',{name:'候选用户分组'})).not.toBeInTheDocument();
+ expect(organizationApi.memberPicker).toHaveBeenCalledWith('school',expect.objectContaining({group:'SCHOOL',side:'CANDIDATES'}));
+});
+
+it('范围角色未选择新增授权组织时也可查看并移除已有范围，新增仍禁用',async()=>{
+ vi.mocked(iamApi.roleUserPicker).mockImplementation(async(_id,q)=>page(q.side==='LINKED'?[{...linked,assignments:[{userId:'old',organizationId:'original-school'}]}]:[]) as any);const remove=vi.fn().mockResolvedValue(undefined);render(<UserPickerModal open title="范围角色" actionPrefix="iam.role-users" roleId="role" requireOrganization onClose={()=>{}} onSubmit={async()=>{}} onRemove={remove}/>);const right=screen.getByRole('region',{name:'已加入'});await within(right).findByText('已加入老师');expect(screen.getByRole('button',{name:'加入所选'})).toBeDisabled();fireEvent.click(within(right).getAllByRole('checkbox')[1]);fireEvent.click(screen.getByRole('button',{name:'移除所选'}));await waitFor(()=>expect(remove).toHaveBeenCalledWith([expect.objectContaining({assignments:[{userId:'old',organizationId:'original-school'}]})]));expect(iamApi.roleUserPicker).toHaveBeenCalledWith('role',expect.objectContaining({side:'LINKED',grantOrganizationId:undefined}));
+});
+it('同页超过二十个具体授权范围全部可见，不被用户分页截断',async()=>{
+ const assignments=Array.from({length:25},(_,index)=>({userId:'old',organizationId:`scope-${index}`}));vi.mocked(iamApi.roleUserPicker).mockImplementation(async(_id,q)=>page(q.side==='LINKED'?[{...linked,assignments}]:[]) as any);render(<UserPickerModal open title="多范围角色" actionPrefix="iam.role-users" roleId="role" onClose={()=>{}} onSubmit={async()=>{}} onRemove={async()=>{}}/>);const right=screen.getByRole('region',{name:'已加入'});await within(right).findByText('scope-24');expect(within(right).getAllByText('已加入老师')).toHaveLength(25);
+});
+
+it('裁剪组织树保留同校已授权校区，排除其他学校校区',async()=>{
+ const node=(id:string,name:string,parentId:string)=>({id,name,parentId,typeCode:'CAMPUS',sortOrder:0,status:'ENABLED',effectiveStatus:'ENABLED',children:[]});
+ vi.mocked(organizationApi.listTree).mockResolvedValue([node('east','本校东校区','school-a'),node('west','本校西校区','school-a'),node('foreign','外校校区','school-b')] as any);
+ render(<UserPickerModal open title="学校用户" actionPrefix="organizations.member-picker" targetOrganizationId="east" onClose={()=>{}} onSubmit={async()=>{}} onRemove={async()=>{}}/>);
+ await screen.findByText('待加入老师');const actor=userEvent.setup();await actor.click(screen.getByRole('combobox',{name:'筛选组织（含下级）'}));expect(await screen.findByText('本校西校区')).toBeInTheDocument();expect(screen.queryByText('外校校区')).not.toBeInTheDocument();
 });

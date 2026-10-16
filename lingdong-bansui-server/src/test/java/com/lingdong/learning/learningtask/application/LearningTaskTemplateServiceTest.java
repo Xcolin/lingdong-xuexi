@@ -27,13 +27,21 @@ class LearningTaskTemplateServiceTest {
     private final DictionaryQueryService dictionaryQueryService = mock(DictionaryQueryService.class);
     private final LearningTaskTemplateMapper templateMapper = mock(LearningTaskTemplateMapper.class);
     private final IdGenerator idGenerator = mock(IdGenerator.class);
+    private final com.lingdong.learning.user.infrastructure.persistence.UserMapper actorUsers = mock(com.lingdong.learning.user.infrastructure.persistence.UserMapper.class);
+    private final com.lingdong.learning.auth.infrastructure.persistence.ParentAuthenticationMapper actorProfiles = mock(com.lingdong.learning.auth.infrastructure.persistence.ParentAuthenticationMapper.class);
+    private final com.lingdong.learning.user.infrastructure.persistence.UserRoleMapper actorRoles = mock(com.lingdong.learning.user.infrastructure.persistence.UserRoleMapper.class);
+    private final com.lingdong.learning.auth.application.ParentActorAccessService parentActors = new com.lingdong.learning.auth.application.ParentActorAccessService(actorUsers,actorProfiles,actorRoles);
     private final LearningTaskTemplateService service = new LearningTaskTemplateService(
-            featureAccessService, dictionaryQueryService, templateMapper, idGenerator);
+            featureAccessService, dictionaryQueryService, templateMapper, idGenerator, parentActors);
     private final AuthenticatedUser parent = new AuthenticatedUser(
-            44L, 55L, "parent", "家长", AuthClientType.WEB, List.of("PARENT"));
+            44L, 55L, "parent", "家长", AuthClientType.WEB, List.of("CUSTOM_FAMILY"));
 
     @BeforeEach
     void setUp() {
+        when(actorUsers.findById(44L)).thenReturn(com.lingdong.learning.user.domain.User.create(44L,"family","family",null,com.lingdong.learning.user.domain.UserType.FAMILY));
+        when(actorProfiles.findProfileByUserId(44L)).thenReturn(mock(com.lingdong.learning.auth.application.ParentProfile.class));
+        when(actorRoles.hasAnyEnabledRole(44L)).thenReturn(true);
+        when(actorUsers.findById(77L)).thenReturn(com.lingdong.learning.user.domain.User.create(77L,"teacher","teacher",null,com.lingdong.learning.user.domain.UserType.ORGANIZATION));
         when(dictionaryQueryService.findEnabledItems("TASK_CATEGORY"))
                 .thenReturn(List.of(dictionaryItem("GENERAL")));
         when(dictionaryQueryService.findEnabledItems("TASK_TAG"))
@@ -58,14 +66,21 @@ class LearningTaskTemplateServiceTest {
         verify(templateMapper).findVisible(44L);
     }
 
+    @Test void rejectsMiniappFamilyBeforeReadingTemplates() {
+        var miniapp = new AuthenticatedUser(44L,55L,"family","family",AuthClientType.MINIAPP,List.of("CUSTOM_FAMILY"));
+        assertThatThrownBy(() -> service.list(miniapp)).isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("仅 Web 家长可使用任务模板");
+        verify(templateMapper,never()).findVisible(44L);
+    }
+
     @Test
     void rejectsNonWebParentBeforeReadingTemplates() {
         AuthenticatedUser teacher = new AuthenticatedUser(
                 77L, 88L, "teacher", "教师", AuthClientType.WEB, List.of("TEACHER"));
 
         assertThatThrownBy(() -> service.list(teacher))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("仅 Web 家长可使用任务模板");
+                .isInstanceOf(com.lingdong.learning.common.security.SystemOperationAccessDeniedException.class)
+                .hasMessageContaining("家庭账号");
 
         verify(templateMapper, never()).findVisible(77L);
     }

@@ -1,0 +1,14 @@
+const assert=require('node:assert/strict');
+const fs=require('node:fs'),ts=require('typescript');
+const source=fs.readFileSync('src/model/managed-task-targets.ts','utf8');
+const mod={exports:{}};new Function('module','exports',ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}}).outputText)(mod,mod.exports);
+const build=mod.exports.managedTargets;
+const old=[{targetType:'STUDENT',targetId:'1'},{targetType:'ORGANIZATION',targetId:'2'}];
+assert.deepEqual(build(old,true,false,'9',[]),old);
+assert.notEqual(build(old,true,false,'9',[]),old);
+assert.deepEqual(build(old,false,false,'9',[]),[{targetType:'ORGANIZATION',targetId:'9'}]);
+assert.deepEqual(build(old,false,true,'9',['3','3','4']),[{targetType:'STUDENT',targetId:'3'},{targetType:'STUDENT',targetId:'4'}]);
+assert.throws(()=>build(old,false,true,'9',[]));assert.throws(()=>build(old,false,false,'',[]));
+assert.throws(()=>build(old,false,true,'9',['']));
+assert.throws(()=>build(old,false,true,'9',['3',' ']));
+console.log('managed task target regression passed');

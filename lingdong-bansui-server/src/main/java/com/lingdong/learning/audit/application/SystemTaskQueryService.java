@@ -64,12 +64,13 @@ public class SystemTaskQueryService {
         if(!permissions.isAllowed(userId,PermissionClient.WEB,"SYSTEM_TASK_READ"))throw denied();
         return allowed(userId,"FEATURE_TOGGLE_REVIEW") || allowed(userId,"ORG_NODE_CHANGE_REVIEW")
                 || allowed(userId,"CACHE_REVIEW") || allowed(userId,"INTERFACE_SERVICE_REVIEW")
-                || allowed(userId,"EXPORT_SENSITIVE_REVIEW");
+                || allowed(userId,"EXPORT_SENSITIVE_REVIEW") || allowed(userId,"ORGANIZATION_ONBOARDING_REVIEW");
     }
     private SystemOperationAccessDeniedException denied(){return new SystemOperationAccessDeniedException("当前身份无系统任务读取权限");}
     /** 汇总权限不能绕过领域权限和开关；未落地处理器不列入查询。 */
     private List<SystemTaskType> visibleTypes(Long userId,boolean auditor) {
         var types=new ArrayList<SystemTaskType>();
+        if(allowed(userId,auditor?"ORGANIZATION_ONBOARDING_REVIEW":"ORGANIZATION_ONBOARDING_READ"))types.add(SystemTaskType.ORGANIZATION_ONBOARDING);
         if(allowed(userId,"FEATURE_TOGGLE_READ")&&(!auditor||allowed(userId,"FEATURE_TOGGLE_REVIEW")))types.add(SystemTaskType.GLOBAL_FEATURE_TOGGLE);
         if(scopes.resolve(userId).allOrganizations()&&features.isEnabled("ORGANIZATION_MANAGEMENT",null)&&allowed(userId,auditor?"ORG_NODE_CHANGE_REVIEW":"ORG_NODE_CHANGE_SUBMIT"))
             types.addAll(List.of(SystemTaskType.ORGANIZATION_DISABLE,SystemTaskType.ORGANIZATION_MOVE,SystemTaskType.ORGANIZATION_DELETE));

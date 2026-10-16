@@ -113,6 +113,7 @@ public class ParentRelationshipApplicationService {
     /** 主副家长均可读取本人活动关系学生的当前主副关系。 */
     @Transactional(readOnly = true)
     public ParentRelationshipView getRelationships(Long operatorUserId, Long studentId) {
+        featureAccessService.requireEnabled(FEATURE_CODE, null);
         List<ParentRelationship> relationships = relationshipMapper.findActiveByStudentId(studentId);
         boolean accessible = relationships.stream()
                 .anyMatch(relationship -> relationship.parentUserId().equals(operatorUserId));

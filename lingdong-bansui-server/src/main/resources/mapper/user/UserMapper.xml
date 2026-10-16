@@ -18,6 +18,78 @@
         </constructor>
     </resultMap>
 
+    <sql id="pickerFilters">
+      FROM sys_user u WHERE 1=1
+      <if test="query.keyword != null">AND (u.username LIKE CONCAT('%',#{query.keyword},'%') OR u.display_name LIKE CONCAT('%',#{query.keyword},'%'))</if>
+      <if test="!query.assigned">AND u.status='ENABLED'</if>
+      <if test="query.roleId != null and !query.assigned and query.grantOrganizationPath != null">
+       AND EXISTS (SELECT 1 FROM sys_user_organization grant_member JOIN sys_organization grant_org ON grant_org.id=grant_member.organization_id WHERE grant_member.user_id=u.id AND LEFT(grant_org.organization_path,CHAR_LENGTH(#{query.grantOrganizationPath}))=#{query.grantOrganizationPath})
+      </if>
+      <choose>
+       <when test="query.unbound">
+        AND NOT EXISTS (SELECT 1 FROM sys_user_organization m JOIN sys_organization o ON o.id=m.organization_id JOIN sys_organization school ON school.organization_type IN ('SCHOOL', 'TRAINING_INSTITUTION') AND o.organization_path LIKE CONCAT(school.organization_path,'%') WHERE m.user_id=u.id)
+       </when>
+       <when test="query.roleId != null and query.assigned"/>
+       <otherwise>
+        <if test="query.schoolPath != null">
+         AND EXISTS (SELECT 1 FROM sys_user_organization m JOIN sys_organization o ON o.id=m.organization_id WHERE m.user_id=u.id AND o.organization_path LIKE CONCAT(#{query.schoolPath},'%'))
+
+        </if>
+        <choose>
+         <when test="query.organizationIds != null and !query.organizationIds.isEmpty()">
+          AND (EXISTS (SELECT 1 FROM sys_user_organization m WHERE m.user_id=u.id AND m.organization_id IN <foreach collection="query.organizationIds" item="id" open="(" close=")" separator=",">#{id}</foreach>)
+          <if test="query.roleId != null and query.allOrganizations">OR NOT EXISTS (SELECT 1 FROM sys_user_organization m WHERE m.user_id=u.id)</if>)
+         </when>
+         <otherwise><if test="!query.allOrganizations">AND 1=0</if></otherwise>
+        </choose>
+       </otherwise>
+      </choose>
+      <choose>
+       <when test="query.roleId != null">
+        AND <if test="!query.assigned">NOT</if> EXISTS (SELECT 1 FROM sys_user_role r WHERE r.user_id=u.id AND r.role_id=#{query.roleId}
+         <choose><when test="query.grantOrganizationId != null">AND r.organization_id=#{query.grantOrganizationId}</when><otherwise>
+           <if test="!query.assigned">AND r.organization_id IS NULL</if>
+           <if test="query.assigned and !query.allOrganizations"><choose><when test="!query.organizationIds.isEmpty()">AND (r.organization_id IN <foreach collection="query.organizationIds" item="id" open="(" close=")" separator=",">#{id}</foreach>
+       <if test="query.selfRole">OR (r.organization_id IS NULL AND EXISTS (SELECT 1 FROM sys_user_organization m WHERE m.user_id=r.user_id AND m.organization_id IN <foreach collection="query.organizationIds" item="id" open="(" close=")" separator=",">#{id}</foreach>))</if>)</when><otherwise>AND 1=0</otherwise></choose></if>
+          </otherwise></choose>)
+       </when>
+       <when test="query.administrator">
+        AND <if test="!query.assigned">NOT</if> EXISTS (SELECT 1 FROM sys_organization_admin a WHERE a.user_id=u.id AND a.organization_id=#{query.targetOrganizationId})
+       </when>
+       <otherwise>
+        AND <if test="!query.assigned">NOT</if> EXISTS (SELECT 1 FROM sys_user_organization m WHERE m.user_id=u.id AND m.organization_id=#{query.targetOrganizationId})
+       </otherwise>
+      </choose>
+    </sql>
+    <select id="findPickerPage" resultMap="UserResultMap">
+      SELECT u.id,u.username,u.display_name,u.mobile,u.password_hash,u.user_type,u.status,u.created_at,u.updated_at
+      <include refid="pickerFilters"/>
+      ORDER BY
+      <if test="query.organizationIds != null and !query.organizationIds.isEmpty()">
+       COALESCE((SELECT MIN(CASE m.organization_id <foreach collection="query.organizationIds" item="id" index="rank">WHEN #{id} THEN #{rank}</foreach> ELSE 2147483647 END) FROM sys_user_organization m WHERE m.user_id=u.id),2147483647),
+      </if>
+      u.id LIMIT #{query.limit} OFFSET #{query.offset}
+    </select>
+    <select id="countPicker" resultType="long">SELECT COUNT(*) <include refid="pickerFilters"/></select>
+    <sql id="rolePickerAssignmentFilters">
+      FROM sys_user_role r JOIN sys_user u ON u.id=r.user_id
+      WHERE r.role_id=#{query.roleId}
+      <if test="query.keyword != null">AND (u.username LIKE CONCAT('%',#{query.keyword},'%') OR u.display_name LIKE CONCAT('%',#{query.keyword},'%'))</if>
+      <if test="query.grantOrganizationId != null">AND r.organization_id=#{query.grantOrganizationId}</if>
+      <if test="!query.allOrganizations"><choose><when test="!query.organizationIds.isEmpty()">AND (r.organization_id IN <foreach collection="query.organizationIds" item="id" open="(" close=")" separator=",">#{id}</foreach>
+       <if test="query.selfRole">OR (r.organization_id IS NULL AND EXISTS (SELECT 1 FROM sys_user_organization m WHERE m.user_id=r.user_id AND m.organization_id IN <foreach collection="query.organizationIds" item="id" open="(" close=")" separator=",">#{id}</foreach>))</if>)</when><otherwise>AND 1=0</otherwise></choose></if>
+    </sql>
+    <resultMap id="PickerAssignmentResultMap" type="com.lingdong.learning.user.application.RoleUserAssignment">
+      <constructor><arg column="user_id" javaType="java.lang.Long"/><arg column="organization_id" javaType="java.lang.Long"/></constructor>
+    </resultMap>
+    <select id="findRolePickerAssignments" resultMap="PickerAssignmentResultMap">
+      SELECT r.user_id,r.organization_id <include refid="rolePickerAssignmentFilters"/>
+      ORDER BY
+      <if test="!query.organizationIds.isEmpty()">COALESCE(CASE r.organization_id <foreach collection="query.organizationIds" item="id" index="rank">WHEN #{id} THEN #{rank}</foreach> ELSE NULL END,
+       (SELECT MIN(CASE m.organization_id <foreach collection="query.organizationIds" item="id" index="rank">WHEN #{id} THEN #{rank}</foreach> ELSE 2147483647 END) FROM sys_user_organization m WHERE m.user_id=r.user_id),2147483647),</if>
+      r.user_id,r.id LIMIT #{query.limit} OFFSET #{query.offset}
+    </select>
+    <select id="countRolePickerAssignments" resultType="long">SELECT COUNT(*) <include refid="rolePickerAssignmentFilters"/></select>
     <sql id="organizationMemberFilter">
         FROM sys_user u JOIN sys_user_organization uo ON uo.user_id = u.id
         WHERE uo.organization_id = #{organizationId}
@@ -77,9 +149,21 @@
 
     <sql id="directoryFilters">
         <where>
+            <if test="query.visibleOrganizationIds != null">
+                <choose><when test="!query.visibleOrganizationIds.isEmpty()">
+                    AND EXISTS (SELECT 1 FROM sys_user_organization scoped WHERE scoped.user_id=sys_user.id AND scoped.organization_id IN
+                    <foreach collection="query.visibleOrganizationIds" item="id" open="(" close=")" separator=",">#{id}</foreach>)
+                </when><otherwise>AND 1=0</otherwise></choose>
+            </if>
             <if test="query.organizationId != null">
                 AND EXISTS (SELECT 1 FROM sys_user_organization membership
-                            WHERE membership.user_id = sys_user.id AND membership.organization_id = #{query.organizationId})
+                            WHERE membership.user_id = sys_user.id
+                            <if test="query.visibleOrganizationIds != null">
+                                <choose><when test="!query.visibleOrganizationIds.isEmpty()">
+                                    AND membership.organization_id IN <foreach collection="query.visibleOrganizationIds" item="id" open="(" close=")" separator=",">#{id}</foreach>
+                                </when><otherwise>AND 1=0</otherwise></choose>
+                            </if>
+                            AND membership.organization_id IN (SELECT child.id FROM sys_organization root JOIN sys_organization child ON child.id=root.id OR (root.organization_path IS NOT NULL AND CHAR_LENGTH(root.organization_path)&gt;0 AND LEFT(child.organization_path,CHAR_LENGTH(root.organization_path))=root.organization_path) WHERE root.id=#{query.organizationId}))
             </if>
             <if test="query.keyword != null">
                 AND (username LIKE CONCAT('%', #{query.keyword}, '%')
@@ -87,6 +171,15 @@
             </if>
             <if test="query.type != null">
                 AND user_type = #{query.type}
+            </if>
+            <if test="query.identityRoleCode != null">
+                AND EXISTS (SELECT 1 FROM sys_user_role identity_grant JOIN sys_role identity_role ON identity_role.id=identity_grant.role_id
+                    WHERE identity_grant.user_id=sys_user.id AND identity_role.status='ENABLED' AND identity_role.role_code=#{query.identityRoleCode}
+                    <if test="query.visibleOrganizationIds != null">
+                        <choose><when test="!query.visibleOrganizationIds.isEmpty()">
+                            AND (identity_grant.organization_id IS NULL OR identity_grant.organization_id IN <foreach collection="query.visibleOrganizationIds" item="id" open="(" close=")" separator=",">#{id}</foreach>)
+                        </when><otherwise>AND 1=0</otherwise></choose>
+                    </if>)
             </if>
             <if test="query.status != null">
                 AND status = #{query.status}
@@ -176,4 +269,6 @@
           AND user_type = 'STUDENT'
           AND status = 'ENABLED'
     </update>
+    <update id="updateProfile">UPDATE sys_user SET display_name=#{displayName},mobile=#{mobile},updated_at=CURRENT_TIMESTAMP WHERE id=#{id}</update>
+    <update id="updateStudentName">UPDATE edu_student SET student_name=#{displayName},updated_at=CURRENT_TIMESTAMP WHERE student_user_id=#{id}</update>
 </mapper>

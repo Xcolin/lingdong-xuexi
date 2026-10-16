@@ -10,10 +10,11 @@ import java.util.List;
 public record TeacherOptionResponse(
         @JsonSerialize(using = ToStringSerializer.class) Long userId,
         String displayName,
-        @JsonSerialize(contentUsing = ToStringSerializer.class) List<Long> classOrganizationIds
+        @JsonSerialize(contentUsing = ToStringSerializer.class) List<Long> classOrganizationIds,
+        List<String> organizationNames
 ) {
     static TeacherOptionResponse from(TeacherOption option) {
         return new TeacherOptionResponse(
-                option.userId(), option.displayName(), option.classOrganizationIds());
+                option.userId(), option.displayName(), option.classOrganizationIds(), option.organizationNames());
     }
 }

@@ -390,9 +390,9 @@ public class ParentPhoneAuthenticationService {
 
     private boolean isEnabledParent(User user, ParentProfile profile) {
         return user != null
-                && user.type() == UserType.FAMILY
+                && user.type() != UserType.STUDENT
                 && user.status() == UserStatus.ENABLED
-                && userRoleMapper.hasRoleCode(user.id(), PARENT_ROLE_CODE)
+                && userRoleMapper.hasAnyEnabledRole(user.id())
                 && profile != null;
     }
 

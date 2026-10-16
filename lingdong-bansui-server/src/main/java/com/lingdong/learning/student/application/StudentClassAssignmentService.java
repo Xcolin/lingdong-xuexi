@@ -21,6 +21,7 @@ import java.util.Objects;
 /** 在组织数据范围内维护学生唯一的活动班级关系。 */
 @Service
 public class StudentClassAssignmentService {
+    @org.springframework.beans.factory.annotation.Autowired private com.lingdong.learning.user.infrastructure.persistence.UserOrganizationMapper memberships;
     private static final String FEATURE_CODE = "LEARNING_TASK_MANAGEMENT";
     private static final String CLASS_ORGANIZATION_TYPE = "CLASS";
 
@@ -81,12 +82,14 @@ public class StudentClassAssignmentService {
             throw notFound();
         }
 
-        List<Long> activeClassIds = studentOrganizationMapper.findActiveClassOrganizationIds(normalizedStudentId);
+        var institution = com.lingdong.learning.organization.application.OrganizationHierarchy.schoolOf(classOrganization, organizationMapper);
+        if (institution == null) throw new IllegalArgumentException("班级没有所属教育机构");
+        List<Long> activeClassIds = studentOrganizationMapper.findActiveClassOrganizationIdsInEnrollment(normalizedStudentId, institution.id());
         if (activeClassIds.size() == 1 && classOrganizationId.equals(activeClassIds.get(0))) {
             return activeAssignment(normalizedStudentId, classOrganizationId);
         }
 
-        studentOrganizationMapper.deactivateActiveClasses(normalizedStudentId);
+        if ("SCHOOL".equals(institution.typeCode())) studentOrganizationMapper.deactivateActiveClassesInEnrollment(normalizedStudentId, institution.id());
         int activated = studentOrganizationMapper.activateExistingClass(
                 normalizedStudentId, classOrganizationId);
         if (activated == 0) {
@@ -111,3 +114,5 @@ public class StudentClassAssignmentService {
         return new ResourceNotFoundException("学生或班级不存在或不可访问");
     }
 }
+
+

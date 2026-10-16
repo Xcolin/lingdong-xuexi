@@ -142,4 +142,10 @@
         WHERE reward_id = #{rewardId}
           AND status = 'PENDING_APPROVAL'
     </update>
-</mapper>
+<select id="countPendingByParent" resultType="long">
+SELECT COUNT(*) FROM growth_reward_exchange exchange WHERE exchange.status=#{status}
+AND exchange.status IN ('PENDING_APPROVAL','PENDING_VERIFICATION')
+AND EXISTS (SELECT 1 FROM edu_parent_student guardian WHERE guardian.student_id=exchange.student_id
+AND guardian.parent_user_id=#{parentUserId} AND guardian.status='ACTIVE' AND guardian.relation_role='PRIMARY_GUARDIAN'
+<include refid="com.lingdong.learning.student.infrastructure.persistence.ParentStudentMapper.selectedStudentScope"><property name="studentIdColumn" value="guardian.student_id"/></include>)
+</select></mapper>

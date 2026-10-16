@@ -1,3 +1,4 @@
+import { Button as PlainButton } from 'antd';
 import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { useEffect, useState } from 'react';
 import { Form, Input, InputNumber, Modal, Segmented, Select, message } from 'antd';
@@ -71,7 +72,7 @@ export function TaskTemplateEditorModal({
       onCancel={onClose}
       destroyOnHidden
       footer={[
-        <Button actionKey="learning-tasks.task-template-editor-modal.1" key="cancel" onClick={onClose}>取消</Button>,
+        <PlainButton  key="cancel" onClick={onClose}>取消</PlainButton>,
         <Button actionKey="LEARNING_TASK_TEMPLATE_MANAGE_PERSONAL"
           key="save"
           type="primary"

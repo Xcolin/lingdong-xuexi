@@ -88,6 +88,8 @@ public interface OrganizationMapper {
     /** 锁定某父级下全部子节点（parentId 为空表示根层级），供同级排序串行化。 */
     List<Organization> findChildrenForUpdate(@Param("parentId") Long parentId);
 
+    long countMoveBusinessReferences(@Param("id") Long id);
+
     long countDeleteReferences(@Param("id") Long id);
 
     int deleteLeaf(

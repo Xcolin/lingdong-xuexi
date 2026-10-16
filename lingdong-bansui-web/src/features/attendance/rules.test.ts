@@ -12,9 +12,9 @@ describe('考勤权限、筛选和原子载荷', () => {
     expect(canAccessAttendance({ ...user, permissionCodes: [] }, true)).toBe(false);
     expect(canAccessAttendance({ ...user, roleCodes: ['SYS_AUDITOR'] }, true)).toBe(true);
   });
-  it.each(['PARENT', 'STUDENT'])('%s 即使误授写权限也只读', (role) => {
+  it.each(['PARENT', 'STUDENT'])('%s 不具有服务端有效记录动作时只读', (role) => {
     expect(canAccessAttendance({ ...user, roleCodes: [role] }, true)).toBe(true);
-    expect(canRecordAttendance({ ...user, roleCodes: [role] })).toBe(false);
+    expect(canRecordAttendance({ ...user, roleCodes: [role], permissionCodes: ['ATTENDANCE_READ'] })).toBe(false);
   });
   it('写入依据权限而非固定业务角色', () => {
     expect(canRecordAttendance(user)).toBe(true);

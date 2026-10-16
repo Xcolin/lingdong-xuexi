@@ -44,6 +44,11 @@ public class LearningTaskValidator {
             throw new IllegalArgumentException("固定任务结束日期不能早于计划日期");
         }
 
+        String frequency = com.lingdong.learning.learningtask.domain.TaskRecurrenceCalendar.frequency(input.recurrenceFrequency());
+        var requestedDays=input.recurrenceWeekdays();
+        if(input.recurrenceEnabled() && frequency.equals("WEEKLY") && (requestedDays==null||requestedDays.isEmpty())) requestedDays=List.of(scheduledDate.getDayOfWeek().getValue());
+        var days = input.recurrenceEnabled() ? com.lingdong.learning.learningtask.domain.TaskRecurrenceCalendar.weekdays(frequency,requestedDays) : java.util.List.<Integer>of();
+        if(input.recurrenceEnabled() && !frequency.equals("DAILY") && !days.contains(scheduledDate.getDayOfWeek().getValue())) throw new IllegalArgumentException("起始日期必须属于选定星期");
         String categoryCode = optionalCode(input.categoryCode());
         if (categoryCode != null) {
             requireEnabledDictionaryCode("TASK_CATEGORY", categoryCode, "任务分类");
@@ -57,7 +62,7 @@ public class LearningTaskValidator {
         return new ValidatedLearningTaskDraft(
                 title, difficulty, difficulty * 10, duration, scheduledDate, categoryCode,
                 tagCodes, optionalText(input.remark(), "任务备注", 200), targets,
-                input.recurrenceEnabled(), recurrenceEndDate);
+                input.recurrenceEnabled(), recurrenceEndDate, input.recurrenceEnabled()?frequency:"DAILY", days);
     }
 
     private List<String> normalizeTags(List<String> values) {

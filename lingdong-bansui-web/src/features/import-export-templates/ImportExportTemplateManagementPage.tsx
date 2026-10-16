@@ -1,3 +1,4 @@
+import { Button as PlainButton } from 'antd';
 import { ConfiguredModal as Modal } from '../../components/ConfiguredModal';
 import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { ViewportTable as Table } from '../../components/ViewportTable';
@@ -265,14 +266,14 @@ export function ImportExportTemplateManagementPage({ canManage }: ImportExportTe
       render: (_: unknown, item: ImportExportTemplateRecord) => (
         <Space size={2}>
           <Tooltip title="下载模板">
-            <Button actionKey="import-export-templates.import-export-template-management-page.1"
+            <Button actionKey="IMPORT_EXPORT_TEMPLATE_READ"
               type="text" icon={<Download size={16} />} aria-label={`下载-${item.templateName}`}
               loading={pendingId === item.id} onClick={() => void download(item)}
             />
           </Tooltip>
           {item.templateType === 'IMPORT' ? (
             <Tooltip title="字段映射">
-              <Button actionKey="import-export-templates.import-export-template-management-page.2"
+              <Button actionKey="IMPORT_EXPORT_TEMPLATE_READ"
                 type="text" icon={<Columns3 size={16} />} aria-label={`字段映射-${item.templateName}`}
                 disabled={pendingId === item.id} onClick={() => void openFields(item)}
               />
@@ -280,7 +281,7 @@ export function ImportExportTemplateManagementPage({ canManage }: ImportExportTe
           ) : null}
           {canManage && item.status === 'ENABLED' && !item.defaultTemplate ? (
             <Tooltip title="设为默认">
-              <Button actionKey="import-export-templates.import-export-template-management-page.3"
+              <Button actionKey="IMPORT_EXPORT_TEMPLATE_MANAGE"
                 type="text" icon={<Star size={16} />} aria-label={`设为默认-${item.templateName}`}
                 disabled={pendingId === item.id}
                 onClick={() => void changeTemplate(item,
@@ -290,7 +291,7 @@ export function ImportExportTemplateManagementPage({ canManage }: ImportExportTe
           ) : null}
           {canManage ? (
             <Tooltip title={item.status === 'ENABLED' ? '停用模板' : '启用模板'}>
-              <Button actionKey="import-export-templates.import-export-template-management-page.4"
+              <Button actionKey="IMPORT_EXPORT_TEMPLATE_MANAGE"
                 type="text" danger={item.status === 'ENABLED'}
                 icon={item.status === 'ENABLED' ? <PowerOff size={16} /> : <Power size={16} />}
                 aria-label={`${item.status === 'ENABLED' ? '停用' : '启用'}-${item.templateName}`}
@@ -324,7 +325,7 @@ export function ImportExportTemplateManagementPage({ canManage }: ImportExportTe
       {errorMessage ? (
         <Alert
           type="error" showIcon message={errorMessage}
-          action={<Button actionKey="import-export-templates.import-export-template-management-page.6" size="small" aria-label="重试" onClick={() => void loadInitial()}>重试</Button>}
+          action={<PlainButton  size="small" aria-label="重试" onClick={() => void loadInitial()}>重试</PlainButton>}
         />
       ) : null}
 
@@ -342,8 +343,8 @@ export function ImportExportTemplateManagementPage({ canManage }: ImportExportTe
           </Form.Item>
           <Form.Item>
             <Space>
-              <Button actionKey="import-export-templates.import-export-template-management-page.7" htmlType="submit" icon={<Search size={16} />} aria-label="查询模板">查询</Button>
-              <Button actionKey="import-export-templates.import-export-template-management-page.8" icon={<RotateCcw size={16} />} aria-label="重置筛选" onClick={() => void resetFilter()}>重置</Button>
+              <Button actionKey="IMPORT_EXPORT_TEMPLATE_READ" htmlType="submit" icon={<Search size={16} />} aria-label="查询模板">查询</Button>
+              <PlainButton  icon={<RotateCcw size={16} />} aria-label="重置筛选" onClick={() => void resetFilter()}>重置</PlainButton>
             </Space>
           </Form.Item>
         </Form>
@@ -352,12 +353,12 @@ export function ImportExportTemplateManagementPage({ canManage }: ImportExportTe
       <section className="template-table-panel" aria-label="模板台账">
         <Table<ImportExportTemplateRecord>
           rowKey="id" size="small" loading={loading} dataSource={templates} columns={columns}
-          scroll={{ x: 1230 }} pagination={{ pageSize: 20, hideOnSinglePage: true }}
+          scroll={{ x: 1230 }} pagination={{}}
           locale={{ emptyText: '暂无导入导出模板' }}
         />
       </section>
 
-      <Modal actionPrefix="import-export-templates.import-export-template-management-page.modal.1"
+      <Modal actionPrefix="IMPORT_EXPORT_TEMPLATE_MANAGE"
         open={createOpen} title="新增模板版本" width="min(880px, 92vw)" styles={{ body: { maxHeight: 'calc(100vh - 220px)', overflowY: 'auto' } }} className="template-create-modal"
         okText="保存模板" cancelText="取消" confirmLoading={submitting}
         onOk={() => createForm.submit()} onCancel={closeCreate} destroyOnHidden
@@ -392,7 +393,7 @@ export function ImportExportTemplateManagementPage({ canManage }: ImportExportTe
               beforeUpload={(file) => { setSelectedFile(file); return false; }}
               onRemove={() => { setSelectedFile(undefined); return true; }}
             >
-              <Button actionKey="import-export-templates.import-export-template-management-page.9" icon={<UploadIcon size={16} />}>选择模板文件</Button>
+              <PlainButton  icon={<UploadIcon size={16} />}>选择模板文件</PlainButton>
             </Upload>
           </Form.Item>
           <Form.Item label="设为默认模板" name="defaultTemplate" valuePropName="checked">
@@ -409,7 +410,7 @@ export function ImportExportTemplateManagementPage({ canManage }: ImportExportTe
         destroyOnHidden
         onClose={closeFields}
         extra={fieldEditable ? (
-          <Button actionKey="import-export-templates.import-export-template-management-page.10" type="primary" loading={fieldSubmitting} onClick={() => fieldForm.submit()}>
+          <Button actionKey="IMPORT_EXPORT_TEMPLATE_MANAGE" type="primary" loading={fieldSubmitting} onClick={() => fieldForm.submit()}>
             保存字段映射
           </Button>
         ) : null}
@@ -479,15 +480,15 @@ function EditableFieldList({ form, editable, ariaLabel }: EditableFieldListProps
               </Form.Item>
               <Form.Item {...fieldProps} name={[field.name, 'required']} valuePropName="checked"><Checkbox>必填</Checkbox></Form.Item>
               {editable ? <Space size={0} className="template-field-actions">
-                <Tooltip title="上移"><Button actionKey="import-export-templates.import-export-template-management-page.11" type="text" aria-label={`上移字段-${index + 1}`} icon={<ArrowUp size={16} />} disabled={index === 0} onClick={() => move(index, index - 1)} /></Tooltip>
-                <Tooltip title="下移"><Button actionKey="import-export-templates.import-export-template-management-page.12" type="text" aria-label={`下移字段-${index + 1}`} icon={<ArrowDown size={16} />} disabled={index === fields.length - 1} onClick={() => move(index, index + 1)} /></Tooltip>
-                <Tooltip title="删除字段"><Button actionKey="import-export-templates.import-export-template-management-page.13" type="text" danger aria-label={`删除字段-${index + 1}`} icon={<Trash2 size={16} />} disabled={fields.length === 1} onClick={() => remove(field.name)} /></Tooltip>
+                <Tooltip title="上移"><PlainButton  type="text" aria-label={`上移字段-${index + 1}`} icon={<ArrowUp size={16} />} disabled={index === 0} onClick={() => move(index, index - 1)} /></Tooltip>
+                <Tooltip title="下移"><PlainButton  type="text" aria-label={`下移字段-${index + 1}`} icon={<ArrowDown size={16} />} disabled={index === fields.length - 1} onClick={() => move(index, index + 1)} /></Tooltip>
+                <Tooltip title="删除字段"><PlainButton  type="text" danger aria-label={`删除字段-${index + 1}`} icon={<Trash2 size={16} />} disabled={fields.length === 1} onClick={() => remove(field.name)} /></Tooltip>
               </Space> : null}
             </div>;
           })}
         </div>
         <Form.ErrorList errors={errors} />
-        {editable ? <Button actionKey="import-export-templates.import-export-template-management-page.14" type="dashed" icon={<Plus size={16} />} onClick={() => add(emptyField())}>新增字段</Button> : null}
+        {editable ? <PlainButton  type="dashed" icon={<Plus size={16} />} onClick={() => add(emptyField())}>新增字段</PlainButton> : null}
       </>}
     </Form.List>
   );

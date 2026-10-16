@@ -8,6 +8,19 @@ import java.util.List;
 /** 学生和学校组织的直接关系持久化操作。 */
 @Mapper
 public interface StudentOrganizationMapper {
+    boolean existsFamilyAdministratorForStudent(@Param("studentId") Long studentId, @Param("userId") Long userId);
+    int removeInstitutionMemberships(@Param("studentUserId") Long studentUserId,@Param("institutionId") Long institutionId);
+    boolean existsManagedFamilyStudent(@Param("studentId") Long studentId,@Param("userId") Long userId,
+            @Param("scope") com.lingdong.learning.datascope.application.OrganizationDataScope scope);
+    int deactivateClass(@Param("studentId") Long studentId,@Param("classOrganizationId") Long classOrganizationId);
+    boolean existsEnrollment(@Param("studentId") Long studentId, @Param("organizationId") Long organizationId);
+    boolean existsActiveEnrollmentInScope(@Param("studentId") Long studentId,
+            @Param("organizationId") Long organizationId,
+            @Param("scope") com.lingdong.learning.datascope.application.OrganizationDataScope scope);
+    List<com.lingdong.learning.learningtask.application.StudentOption> findClassStudentOptions(
+            @Param("classId") Long classId,
+            @Param("scope") com.lingdong.learning.datascope.application.OrganizationDataScope scope,
+            @Param("membersOnly") boolean membersOnly);
     boolean existsActiveByOrganizationAdministratorAndStudent(
             @Param("userId") Long userId,
             @Param("studentId") Long studentId
@@ -97,4 +110,6 @@ public interface StudentOrganizationMapper {
     List<StudentOrganizationClassOptionRow> findEnabledClassOptionsByOrganizationAdministratorScope(
             @Param("scope") com.lingdong.learning.datascope.application.OrganizationDataScope scope);
 }
+
+
 

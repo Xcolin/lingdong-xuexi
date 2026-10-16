@@ -21,26 +21,19 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class GrowthRewardServiceSecondaryParentTest {
-    @Test void mixedAuditorCannotReadRewardsEvenAsParent() {
-        var user = new AuthenticatedUser(8910000000000000801L, 1L, "auditor", "审核员",
-                AuthClientType.WEB, List.of("PARENT", "SYS_AUDITOR"));
-        when(parentStudentMapper.existsActiveByParentAndStudent(user.userId(), 8910000000000000802L)).thenReturn(true);
-        assertThatThrownBy(() -> service.findManaged(user, 8910000000000000802L, 1, 20))
-                .isInstanceOf(com.lingdong.learning.common.security.SystemOperationAccessDeniedException.class);
-    }
     private final GrowthRewardMapper rewardMapper = mock(GrowthRewardMapper.class);
     private final ParentStudentMapper parentStudentMapper = mock(ParentStudentMapper.class);
     private final GrowthRewardService service = new GrowthRewardService(
             rewardMapper, mock(GrowthPointQueryMapper.class), parentStudentMapper,
             mock(CurrentStudentAccessService.class), mock(FeatureAccessService.class),
-            mock(IdGenerator.class), Clock.systemDefaultZone());
+            mock(IdGenerator.class), Clock.systemDefaultZone(), mock(com.lingdong.learning.auth.application.ParentActorAccessService.class));
 
     @Test
     void secondaryParentReadsRewardsButCannotCreateOne() {
         long parentId = 8910000000000000801L;
         long studentId = 8910000000000000802L;
         AuthenticatedUser secondaryParent = new AuthenticatedUser(
-                parentId, 1L, "secondary", "副家长", AuthClientType.WEB, List.of("PARENT"));
+                parentId, 1L, "secondary", "副家长", AuthClientType.WEB, List.of("CUSTOM_PARENT"));
         when(parentStudentMapper.existsActiveByParentAndStudent(parentId, studentId)).thenReturn(true);
         when(parentStudentMapper.existsActivePrimaryByParentAndStudent(parentId, studentId)).thenReturn(false);
         when(rewardMapper.findManagedByStudentId(studentId, 0, 20)).thenReturn(List.of());

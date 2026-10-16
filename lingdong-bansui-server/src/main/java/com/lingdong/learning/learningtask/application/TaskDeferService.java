@@ -118,8 +118,8 @@ public class TaskDeferService {
             throw new IllegalArgumentException("分页参数不合法");
         }
         ManagedDeferCandidateQuery query = new ManagedDeferCandidateQuery(
-                currentUser.userId(), currentUser.roleCodes().contains("PARENT"),
-                currentUser.roleCodes().contains("TEACHER"),
+                currentUser.userId(), permissionScope.isParent(currentUser),
+                permissionScope.isTeacher(currentUser),
                 permissionScope.hasOrganizationPermission(currentUser, "TASK_ASSIGNMENT_DEFER"),
                 pageSize, (long) (page - 1) * pageSize, permissionScope.organizationScope(currentUser).allOrganizations(), permissionScope.organizationScope(currentUser).rootPaths());
         return new ManagedDeferCandidatePage(
@@ -170,12 +170,12 @@ public class TaskDeferService {
             return false;
         }
         if (state.sourceType() == LearningTaskSourceType.FAMILY) {
-            return currentUser.roleCodes().contains("PARENT")
+            return permissionScope.isParent(currentUser)
                     && parentStudentMapper.existsActivePrimaryByParentAndStudent(
                     currentUser.userId(), state.studentId());
         }
         boolean creatorTeacher = state.sourceType() == LearningTaskSourceType.TEACHER
-                && currentUser.roleCodes().contains("TEACHER")
+                && permissionScope.teacherSourceAllowed(currentUser,state.sourceOrganizationId())
                 && currentUser.userId().equals(state.creatorUserId());
         boolean scopedOrganizationAdministrator = permissionScope.hasOrganizationPermission(currentUser, "TASK_ASSIGNMENT_DEFER")
                 && organizationDataScopeService.canAccess(

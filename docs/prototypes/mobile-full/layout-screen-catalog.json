@@ -1,0 +1,218 @@
+[
+  {
+    "id": "LAYOUT-01",
+    "title": "成长陪伴首页",
+    "board": "exec-016fba67-ee22-46ed-882e-f6f9cc484aea.png",
+    "status": "未验收",
+    "route": "/pages/parent-home/parent-home",
+    "api": [
+      "GET /auth/me",
+      "GET /task-reviews",
+      "GET /parent-reward-exchanges/summary"
+    ],
+    "reference": {
+      "path": "reference/LAYOUT-01.png",
+      "crop": [
+        287,
+        27,
+        535,
+        541
+      ],
+      "sourceSize": [
+        1536,
+        1024
+      ],
+      "sha256": "e8cb334fdfe83186d5e1b7ec8c0711ef05d43945dc9edc696b229ed3a75ca3ac",
+      "reviewStatus": "初步裁切，需核对内部内容边界"
+    },
+    "implementationStatus": "页面实现中，尚未通过逐屏像素验收"
+  },
+  {
+    "id": "LAYOUT-02",
+    "title": "成长陪伴任务",
+    "board": "exec-016fba67-ee22-46ed-882e-f6f9cc484aea.png",
+    "status": "未验收",
+    "route": "/pages/family-tasks/family-tasks",
+    "api": [
+      "GET /learning-tasks?sourceType=FAMILY",
+      "POST /learning-tasks",
+      "POST /learning-tasks/{id}/publish"
+    ],
+    "reference": {
+      "path": "reference/LAYOUT-02.png",
+      "crop": [
+        554,
+        27,
+        803,
+        541
+      ],
+      "sourceSize": [
+        1536,
+        1024
+      ],
+      "sha256": "e8cb334fdfe83186d5e1b7ec8c0711ef05d43945dc9edc696b229ed3a75ca3ac",
+      "reviewStatus": "初步裁切，需核对内部内容边界"
+    },
+    "implementationStatus": "页面实现中，尚未通过逐屏像素验收"
+  },
+  {
+    "id": "LAYOUT-03",
+    "title": "成长陪伴成长",
+    "board": "exec-016fba67-ee22-46ed-882e-f6f9cc484aea.png",
+    "status": "未验收",
+    "route": "/pages/parent-weekly-reviews/parent-weekly-reviews",
+    "api": [
+      "GET /growth-reviews/miniapp/students",
+      "GET /growth-reviews/miniapp/students/{studentId}"
+    ],
+    "reference": {
+      "path": "reference/LAYOUT-03.png",
+      "crop": [
+        823,
+        27,
+        1071,
+        541
+      ],
+      "sourceSize": [
+        1536,
+        1024
+      ],
+      "sha256": "e8cb334fdfe83186d5e1b7ec8c0711ef05d43945dc9edc696b229ed3a75ca3ac",
+      "reviewStatus": "初步裁切，需核对内部内容边界"
+    },
+    "implementationStatus": "页面实现中，尚未通过逐屏像素验收"
+  },
+  {
+    "id": "LAYOUT-04",
+    "title": "成长陪伴我的",
+    "board": "exec-016fba67-ee22-46ed-882e-f6f9cc484aea.png",
+    "status": "未验收",
+    "route": "/pages/parent-me/parent-me",
+    "api": [
+      "GET /auth/me"
+    ],
+    "reference": {
+      "path": "reference/LAYOUT-04.png",
+      "crop": [
+        1093,
+        27,
+        1342,
+        541
+      ],
+      "sourceSize": [
+        1536,
+        1024
+      ],
+      "sha256": "e8cb334fdfe83186d5e1b7ec8c0711ef05d43945dc9edc696b229ed3a75ca3ac",
+      "reviewStatus": "初步裁切，需核对内部内容边界"
+    },
+    "implementationStatus": "页面实现中，尚未通过逐屏像素验收"
+  },
+  {
+    "id": "LAYOUT-05",
+    "title": "成长小主人首页",
+    "board": "exec-016fba67-ee22-46ed-882e-f6f9cc484aea.png",
+    "status": "未验收",
+    "route": "/pages/student-dashboard/student-dashboard",
+    "api": [
+      "GET /task-assignments",
+      "GET /growth-points/me/account"
+    ],
+    "reference": {
+      "path": "reference/LAYOUT-05.png",
+      "crop": [
+        287,
+        586,
+        535,
+        1018
+      ],
+      "sourceSize": [
+        1536,
+        1024
+      ],
+      "sha256": "e8cb334fdfe83186d5e1b7ec8c0711ef05d43945dc9edc696b229ed3a75ca3ac",
+      "reviewStatus": "初步裁切，需核对内部内容边界"
+    },
+    "implementationStatus": "页面实现中，尚未通过逐屏像素验收"
+  },
+  {
+    "id": "LAYOUT-06",
+    "title": "成长小主人任务详情",
+    "board": "exec-016fba67-ee22-46ed-882e-f6f9cc484aea.png",
+    "status": "未验收",
+    "route": "/pages/task-detail/task-detail",
+    "api": [
+      "GET /task-assignments/{id}"
+    ],
+    "reference": {
+      "path": "reference/LAYOUT-06.png",
+      "crop": [
+        554,
+        586,
+        803,
+        1018
+      ],
+      "sourceSize": [
+        1536,
+        1024
+      ],
+      "sha256": "e8cb334fdfe83186d5e1b7ec8c0711ef05d43945dc9edc696b229ed3a75ca3ac",
+      "reviewStatus": "初步裁切，需核对内部内容边界"
+    },
+    "implementationStatus": "页面实现中，尚未通过逐屏像素验收"
+  },
+  {
+    "id": "LAYOUT-07",
+    "title": "成长小主人成长奖励",
+    "board": "exec-016fba67-ee22-46ed-882e-f6f9cc484aea.png",
+    "status": "未验收",
+    "route": "/pages/rewards/rewards",
+    "api": [
+      "GET /rewards/me",
+      "POST /reward-exchanges",
+      "GET /reward-exchanges/me"
+    ],
+    "reference": {
+      "path": "reference/LAYOUT-07.png",
+      "crop": [
+        823,
+        586,
+        1071,
+        1018
+      ],
+      "sourceSize": [
+        1536,
+        1024
+      ],
+      "sha256": "e8cb334fdfe83186d5e1b7ec8c0711ef05d43945dc9edc696b229ed3a75ca3ac",
+      "reviewStatus": "初步裁切，需核对内部内容边界"
+    },
+    "implementationStatus": "页面实现中，尚未通过逐屏像素验收"
+  },
+  {
+    "id": "LAYOUT-08",
+    "title": "成长小主人我的",
+    "board": "exec-016fba67-ee22-46ed-882e-f6f9cc484aea.png",
+    "status": "未验收",
+    "route": "/pages/student-home/student-home",
+    "api": [
+      "GET /auth/me"
+    ],
+    "reference": {
+      "path": "reference/LAYOUT-08.png",
+      "crop": [
+        1093,
+        586,
+        1342,
+        1018
+      ],
+      "sourceSize": [
+        1536,
+        1024
+      ],
+      "sha256": "e8cb334fdfe83186d5e1b7ec8c0711ef05d43945dc9edc696b229ed3a75ca3ac",
+      "reviewStatus": "初步裁切，需核对内部内容边界"
+    },
+    "implementationStatus": "页面实现中，尚未通过逐屏像素验收"
+  }
+]

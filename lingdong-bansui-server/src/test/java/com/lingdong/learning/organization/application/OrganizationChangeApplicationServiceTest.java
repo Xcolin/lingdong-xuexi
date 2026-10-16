@@ -234,11 +234,43 @@ class OrganizationChangeApplicationServiceTest {
                         "SCHOOL_CLASS_DISABLE", "班级停用学校", "SCHOOL", null, 10));
         Organization clazz = organizationApplicationService.createOrganization(
                 new CreateOrganizationCommand(
-                        "CLASS_DISABLE_REVIEW", "审批停用班级", "CLASS", school.id(), 10));
+                        "CLASS_DISABLE_REVIEW", "审批停用班级", "CLASS", gradeId(school.id()), 10));
         long assignmentId = insertUnfinishedOrganizationAssignment(
                 administrator.id(), clazz.id());
         OrganizationChange change = createDisableRequest(
                 administrator, clazz, "该班级停止开展教学任务");
+
+        SystemTask effective = organizationChangeApplicationService.approveAndApply(
+                change.taskId(), auditor.id(), "同意停用班级");
+
+        assertThat(effective.status()).isEqualTo(SystemTaskStatus.EFFECTIVE);
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT current_status FROM learn_task_assignment WHERE id = ?",
+                String.class, assignmentId)).isEqualTo("INVALIDATED");
+        assertThat(jdbcTemplate.queryForObject("""
+                SELECT COUNT(*) FROM learn_task_assignment_event
+                WHERE assignment_id = ? AND event_type = 'CLASS_INVALIDATED'
+                  AND operator_user_id = ?
+                """, Integer.class, assignmentId, auditor.id())).isEqualTo(1);
+    }
+
+    @Test
+    @Transactional
+    void approvedGradeDisableInvalidatesDescendantClassAssignment() {
+        User administrator = createUserWithRole(
+                "grade_disable_admin", "班级停用管理员", "SYS_ADMIN");
+        User auditor = createUserWithRole(
+                "grade_disable_auditor", "班级停用审核员", "SYS_AUDITOR");
+        Organization school = organizationApplicationService.createOrganization(
+                new CreateOrganizationCommand(
+                        "SCHOOL_GRADE_DISABLE", "班级停用学校", "SCHOOL", null, 10));
+        Organization clazz = organizationApplicationService.createOrganization(
+                new CreateOrganizationCommand(
+                        "CLASS_GRADE_DISABLE_REVIEW", "审批停用班级", "CLASS", gradeId(school.id()), 10));
+        long assignmentId = insertUnfinishedOrganizationAssignment(
+                administrator.id(), clazz.id());
+        OrganizationChange change = createDisableRequest(
+                administrator, organizationMapper.findById(clazz.parentId()), "该年级停止开展教学任务");
 
         SystemTask effective = organizationChangeApplicationService.approveAndApply(
                 change.taskId(), auditor.id(), "同意停用班级");
@@ -341,7 +373,7 @@ class OrganizationChangeApplicationServiceTest {
         Organization school = organizationApplicationService.createOrganization(
                 new CreateOrganizationCommand("SCHOOL_MOVE_D", "组织移动学校丁", "SCHOOL", sourceParent.id(), 10));
         Organization clazz = organizationApplicationService.createOrganization(
-                new CreateOrganizationCommand("CLASS_MOVE_D", "组织移动班级丁", "CLASS", school.id(), 10));
+                new CreateOrganizationCommand("CLASS_MOVE_D", "组织移动班级丁", "CLASS", gradeId(school.id()), 10));
         OrganizationChange change = createMoveRequest(
                 administrator, school, targetParent, "调整学校所属区域");
 
@@ -354,7 +386,7 @@ class OrganizationChangeApplicationServiceTest {
         assertThat(movedSchool.parentId()).isEqualTo(targetParent.id());
         assertThat(movedSchool.parentScopeKey()).isEqualTo("PARENT:" + targetParent.id());
         assertThat(movedSchool.path()).isEqualTo(targetParent.path() + school.code() + "/");
-        assertThat(movedClass.path()).isEqualTo(movedSchool.path() + clazz.code() + "/");
+        assertThat(movedClass.path()).startsWith(movedSchool.path()).endsWith("/"+clazz.code()+"/");
         assertThat(movedSchool.versionNo()).isEqualTo(school.versionNo() + 1);
         assertThat(movedClass.versionNo()).isEqualTo(clazz.versionNo() + 1);
     }
@@ -367,12 +399,11 @@ class OrganizationChangeApplicationServiceTest {
         organizationApplicationService.createOrganization(
                 new CreateOrganizationCommand(
                         "SCHOOL_DELETE_A_CHILD", "组织删除子级学校甲", "SCHOOL", parent.id(), 10));
-        OrganizationChange nonLeafChange = createDeleteRequest(
-                administrator, parent, "尝试删除非叶子节点");
 
-        assertThatThrownBy(() -> organizationChangeApplicationService.approveAndApply(
-                nonLeafChange.taskId(), auditor.id(), "同意删除"))
-                .isInstanceOf(OrganizationChangeExecutionException.class);
+        // 非叶子与存在业务引用的组织在提交申请时即被拒绝，并给出真实原因。
+        assertThatThrownBy(() -> createDeleteRequest(administrator, parent, "尝试删除非叶子节点"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("组织存在下级节点或业务引用");
         assertThat(organizationMapper.findById(parent.id())).isNotNull();
 
         Organization referenced = createRegion("REGION_DELETE_A_REF", "组织删除引用区域甲");
@@ -380,13 +411,23 @@ class OrganizationChangeApplicationServiceTest {
                 INSERT INTO sys_organization_admin (id, organization_id, user_id)
                 VALUES (8890000000000000001, ?, ?)
                 """, referenced.id(), administrator.id());
-        OrganizationChange referencedChange = createDeleteRequest(
-                administrator, referenced, "尝试删除存在管理员引用的节点");
-
-        assertThatThrownBy(() -> organizationChangeApplicationService.approveAndApply(
-                referencedChange.taskId(), auditor.id(), "同意删除"))
-                .isInstanceOf(OrganizationChangeExecutionException.class);
+        assertThatThrownBy(() -> createDeleteRequest(administrator, referenced, "尝试删除存在管理员引用的节点"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("组织存在下级节点或业务引用");
         assertThat(organizationMapper.findById(referenced.id())).isNotNull();
+
+        // 提交后新增引用的并发场景：审核通过执行失败时保留真实原因并拒绝生效。
+        Organization lateReference = createRegion("REGION_DELETE_A_LATE", "组织删除后置引用区域甲");
+        OrganizationChange lateChange = createDeleteRequest(administrator, lateReference, "先提交后产生引用");
+        jdbcTemplate.update("""
+                INSERT INTO sys_organization_admin (id, organization_id, user_id)
+                VALUES (8890000000000000002, ?, ?)
+                """, lateReference.id(), administrator.id());
+        assertThatThrownBy(() -> organizationChangeApplicationService.approveAndApply(
+                lateChange.taskId(), auditor.id(), "同意删除"))
+                .isInstanceOf(OrganizationChangeExecutionException.class)
+                .hasMessageContaining("组织存在下级节点或业务引用");
+        assertThat(organizationMapper.findById(lateReference.id())).isNotNull();
     }
 
     @Test
@@ -489,5 +530,33 @@ class OrganizationChangeApplicationServiceTest {
         Role role = roleMapper.findByCode(roleCode);
         userAccessApplicationService.assignRole(new AssignRoleToUserCommand(user.id(), role.id(), null));
         return user;
+    }
+
+
+    @Test
+    void reviewedCrossSchoolGradeMoveAllowsStructureAndRejectsClassBusinessReferences() {
+        User administrator=createUserWithRole("grade_move_admin","跨校管理员","SYS_ADMIN");
+        User auditor=createUserWithRole("grade_move_auditor","跨校审核员","SYS_AUDITOR");
+        Organization first=organizationApplicationService.createOrganization(new CreateOrganizationCommand("GRADE_MOVE_SCHOOL_A","跨校学校甲","SCHOOL",null,0));
+        Organization second=organizationApplicationService.createOrganization(new CreateOrganizationCommand("GRADE_MOVE_SCHOOL_B","跨校学校乙","SCHOOL",null,0));
+        Organization grade=organizationMapper.findById(gradeId(first.id()));
+        Organization cls=organizationApplicationService.createOrganization(new CreateOrganizationCommand("GRADE_MOVE_EMPTY_CLASS","空业务班级","CLASS",grade.id(),0));
+        OrganizationChange change=createMoveRequest(administrator,grade,second,"审核跨校空业务年级");
+        organizationChangeApplicationService.approveAndApply(change.taskId(),auditor.id(),"同意移动空业务结构");
+        Organization moved=organizationMapper.findById(grade.id());
+        assertThat(moved.parentId()).isEqualTo(second.id());
+        assertThat(organizationMapper.findById(cls.id()).path()).startsWith(moved.path());
+        insertUnfinishedOrganizationAssignment(administrator.id(),cls.id());
+        OrganizationChange back=createMoveRequest(administrator,moved,first,"有任务不得跨校");
+        assertThatThrownBy(() -> organizationChangeApplicationService.approveAndApply(back.taskId(),auditor.id(),"检查业务引用"))
+                .isInstanceOf(OrganizationChangeExecutionException.class);
+        assertThat(organizationMapper.findById(grade.id()).parentId()).isEqualTo(second.id());
+        assertThat(organizationMapper.findById(cls.id()).path()).startsWith(moved.path());
+    }
+
+    private final java.util.Map<Long,Long> fixtureGrades=new java.util.HashMap<>();
+    private Long gradeId(Long schoolId) {
+        return fixtureGrades.computeIfAbsent(schoolId,id -> organizationApplicationService.createOrganization(
+                new CreateOrganizationCommand("GRD_"+java.util.UUID.randomUUID().toString().replace("-", "").toUpperCase(),"测试年级","GRADE",id,0)).id());
     }
 }

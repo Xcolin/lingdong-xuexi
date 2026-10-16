@@ -1,0 +1,34 @@
+.access-page { min-height:100vh; box-sizing:border-box; background:#f7f5ed; padding:36rpx 32rpx 80rpx; color:#173e31; }
+.access-card { background:#fffefa; border:1rpx solid #e4e5d9; border-radius:28rpx; padding:32rpx; margin-top:28rpx; }
+.access-tip { display:block; background:#eef2e5; color:#416047; border-left:6rpx solid #79966b; padding:22rpx; font-size:25rpx; line-height:1.65; margin:20rpx 0; }
+.access-page input { background:#f5f5ee; border:1rpx solid #e1e5d8; border-radius:14rpx; padding:24rpx; margin:22rpx 0; height:48rpx; font-size:28rpx; }
+.access-primary { background:#194f3b; color:white; margin-top:28rpx; }
+.access-link { background:transparent; color:#48664f; margin-top:22rpx; font-size:25rpx; }
+.access-link::after { border:none; }
+.access-tabs { display:flex; flex-wrap:wrap; gap:12rpx; }
+.access-tabs button { margin:0; background:#f1f2e9; color:#526452; font-size:24rpx; padding:0 22rpx; }
+.access-tabs button.active { background:#194f3b; color:white; }
+.access-page { background:#f8faf7; padding-top:0; }
+.access-page::before { content:'灵动伴随'; display:block; color:#125747; text-align:center; font-size:36rpx; font-weight:700; padding:48rpx 0 58rpx 40rpx; margin:0 -32rpx 46rpx; border-bottom:1rpx solid #aabeb0; border-radius:0 0 50% 20%; background:linear-gradient(160deg,#f5faf7,#f7f7f1); }
+.access-page::after { content:''; position:absolute; top:44rpx; left:calc(50% - 112rpx); width:38rpx; height:52rpx; border-radius:85% 0 85% 0; transform:rotate(15deg); background:linear-gradient(135deg,#1a6656 0%,#105145 46%,#f5faf7 47%,#f5faf7 53%,#105145 54%,#236b58 100%); }
+.access-page .ld-heading-title { display:block; text-align:center; font-size:46rpx; color:#101e27; font-weight:700; }
+.access-page .ld-heading-sub { display:block; text-align:center; margin:16rpx 0 32rpx; }
+.access-card { border:0; padding:12rpx 12rpx 24rpx; background:transparent; }
+.access-page input { background:#fcfdfc; border-color:#d8dcdb; height:42rpx; }
+.access-page .access-primary,.access-page .ld-btn-primary { background:linear-gradient(125deg,#145448,#195943); border-radius:18rpx; font-weight:600; }
+.access-tabs { gap:0; border:1rpx solid #d8dcdb; border-radius:18rpx; overflow:hidden; }
+.access-tabs button { flex:1; border-radius:0; }
+
+/* Approved prototype: forest green, warm white and aligned touch targets. */
+.access-page {background:#F6F8F5;}
+.access-page .access-tip {background:#eaf1ed;border-left-color:#184F40;color:#3e6252;}
+.access-page .access-tabs button {background:#fcfdfb;color:#37463e;height:96rpx;line-height:96rpx;}
+.access-page .access-tabs button.active {background:#184F40;color:#fff;}
+.access-page input {box-sizing:border-box;height:96rpx;padding:0 24rpx;}
+.access-page .code-row {display:flex;align-items:center;gap:20rpx;}
+.access-page .code-row input {flex:1;min-width:0;margin:0;height:96rpx;}
+.access-page .code-row button {flex:0 0 212rpx;box-sizing:border-box;margin:0;height:96rpx;line-height:96rpx;padding:0;background:#e8eeea;color:#184F40;border:1rpx solid #d8e2dc;border-radius:14rpx;font-size:25rpx;}
+.access-page .code-row button::after {border:0;}
+.access-page .access-primary {height:104rpx;line-height:104rpx;background:#184F40;color:white;font-size:32rpx;}
+
+.access-page {min-height:calc(100vh - var(--window-top, 0px));}

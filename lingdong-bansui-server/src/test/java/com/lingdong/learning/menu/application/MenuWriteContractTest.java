@@ -14,7 +14,7 @@ import static org.mockito.Mockito.*;
 class MenuWriteContractTest {
  private final MenuMapper menus=mock(MenuMapper.class);
  private final PermissionMapper permissions=mock(PermissionMapper.class);
- private final MenuApplicationService service=new MenuApplicationService(menus,mock(IdGenerator.class),mock(PermissionDecisionService.class),permissions,mock(UserMapper.class),mock(UserRoleMapper.class),mock(IamChangeAuditService.class));
+ private final MenuApplicationService service=new MenuApplicationService(menus,mock(IdGenerator.class),mock(PermissionDecisionService.class),permissions,mock(UserMapper.class),mock(UserRoleMapper.class),mock(com.lingdong.learning.permission.infrastructure.persistence.RolePermissionMapper.class),mock(com.lingdong.learning.permission.infrastructure.persistence.UserPermissionMapper.class),mock(IamChangeAuditService.class));
  private MenuNode node(long id,String code,MenuType type,Long parent,String route) { return new MenuNode(id,code,code,type,parent,route,null,type==MenuType.DIRECTORY?null:code,type!=MenuType.DIRECTORY,0,MenuStatus.ENABLED,0L); }
  private void validate(MenuNode candidate,MenuNode before,List<MenuNode> all) throws Exception {
   var method=MenuApplicationService.class.getDeclaredMethod("validate",MenuNode.class,MenuNode.class,List.class); method.setAccessible(true);
@@ -41,6 +41,13 @@ class MenuWriteContractTest {
   var method=MenuApplicationService.class.getDeclaredMethod("syncPermission",MenuNode.class,MenuNode.class); method.setAccessible(true);
   assertThatThrownBy(()->method.invoke(service,button,null)).isInstanceOf(java.lang.reflect.InvocationTargetException.class).hasCauseInstanceOf(IllegalArgumentException.class);
   verify(permissions,never()).updateMenuMetadata(anyLong(),anyString(),any(),any(),any());
+ }
+ @Test void editsAlreadyMappedMiniappPermissionWithoutChangingClient() throws Exception {
+  var button=node(2,"MINIAPP_ACTION",MenuType.BUTTON,1L,null);
+  when(permissions.findByCode(button.code())).thenReturn(new Permission(20L,button.code(),"miniapp",PermissionResourceType.BUTTON,PermissionClient.MINIAPP,null,PermissionStatus.ENABLED,null));
+  var method=MenuApplicationService.class.getDeclaredMethod("syncPermission",MenuNode.class,MenuNode.class);method.setAccessible(true);
+  method.invoke(service,button,button);
+  verify(permissions).updateMenuMetadata(eq(20L),eq(button.name()),eq(PermissionStatus.ENABLED),eq(PermissionResourceType.BUTTON),isNull());
  }
  @Test void publicPermissionControllerRejectsStandaloneCreation() {
   var controller=new com.lingdong.learning.iam.web.PermissionManagementController(null,null);

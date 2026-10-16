@@ -1,0 +1,397 @@
+{
+  "01-01": {
+    "route": "/pages/unified-login/unified-login",
+    "viewState": "WECHAT; no bindingTicket",
+    "api": [
+      "POST /api/v1/auth/account-wechat-sessions"
+    ],
+    "gaps": [
+      "批准使用微信快捷登录；原图密码表单不强行替代；原图肖像未提取"
+    ],
+    "status": "未验收",
+    "visualAcceptance": "待微信原生截图与完整功能验收"
+  },
+  "01-02": {
+    "route": "/pages/student-login/student-login",
+    "viewState": "ACCOUNT / QR / WECHAT",
+    "api": [
+      "POST /api/v1/auth/student-sessions/code"
+    ],
+    "gaps": [
+      "批准4位登录码/扫码；原图肖像未提取"
+    ],
+    "status": "未验收",
+    "visualAcceptance": "待微信原生截图与完整功能验收"
+  },
+  "01-03": {
+    "route": "/pages/public-registration/public-registration",
+    "viewState": "step=1 account; step=2 contact; step=3 review+consent",
+    "api": [
+      "GET /api/v1/public/registration/context",
+      "POST /api/v1/auth/registration-codes",
+      "POST /api/v1/auth/registrations"
+    ],
+    "gaps": [
+      "三步真实表单；学校区域不在注册DTO；未截图"
+    ],
+    "status": "未验收",
+    "visualAcceptance": "待微信原生截图与完整功能验收"
+  },
+  "01-04": {
+    "route": "/pages/unified-login/unified-login",
+    "viewState": "bindingTicket present; bindingChoice empty",
+    "api": [
+      "POST /api/v1/auth/account-wechat-sessions"
+    ],
+    "gaps": [
+      "独立选择视图保存在同route，不放ticket到URL"
+    ],
+    "status": "未验收",
+    "visualAcceptance": "待微信原生截图与完整功能验收"
+  },
+  "01-05": {
+    "route": "/pages/unified-login/unified-login",
+    "viewState": "bindingChoice=EMAIL; mode=EMAIL",
+    "api": [
+      "POST /api/v1/auth/account-wechat-email-codes",
+      "POST /api/v1/auth/account-wechat-email-bindings"
+    ],
+    "gaps": [
+      "独立邮箱表单状态；验证码真实服务验证"
+    ],
+    "status": "未验收",
+    "visualAcceptance": "待微信原生截图与完整功能验收"
+  },
+  "01-06": {
+    "route": "/pages/unified-login/unified-login",
+    "viewState": "bindingChoice=PASSWORD; mode=PASSWORD",
+    "api": [
+      "POST /api/v1/auth/account-wechat-bindings"
+    ],
+    "gaps": [
+      "已有账号及强制改密续接；邮箱可选验证依原API"
+    ],
+    "status": "未验收",
+    "visualAcceptance": "待微信原生截图与完整功能验收"
+  },
+  "01-07": {
+    "route": "/pages/organization-onboarding/organization-onboarding",
+    "viewState": "family=true",
+    "api": [
+      "POST /api/v1/organization-onboarding/families",
+      "GET /api/v1/organization-onboarding/regions"
+    ],
+    "gaps": [
+      "child姓名年级不在family DTO；区域按真实目录"
+    ],
+    "status": "未验收",
+    "visualAcceptance": "待微信原生截图与完整功能验收"
+  },
+  "01-08": {
+    "route": "/pages/organization-onboarding/organization-onboarding",
+    "viewState": "family=false; school/training type",
+    "api": [
+      "POST /api/v1/organization-onboarding/applications",
+      "GET /api/v1/organization-onboarding/context"
+    ],
+    "gaps": [
+      "机构区域/联系人/验证联系方式；省市拆分职务DTO缺失"
+    ],
+    "status": "未验收",
+    "visualAcceptance": "待微信原生截图与完整功能验收"
+  },
+  "01-09": {
+    "route": "/pages/organization-application/organization-application",
+    "viewState": "PENDING / REJECTED / WITHDRAWN / APPROVED",
+    "api": [
+      "GET /api/v1/organization-onboarding/applications/{id}",
+      "POST /api/v1/organization-onboarding/applications/{id}/resubmit"
+    ],
+    "gaps": [
+      "只用真实申请时间状态驳回；无伪造审核时间"
+    ],
+    "status": "未验收",
+    "visualAcceptance": "待微信原生截图与完整功能验收"
+  },
+  "01-10": {
+    "route": "/pages/my-organizations/my-organizations",
+    "viewState": "choose=true; actual organizations",
+    "api": [
+      "GET /api/v1/organization-onboarding/my-organizations"
+    ],
+    "gaps": [
+      "批准家庭机构切换保留；入口权限依真实组织关系"
+    ],
+    "status": "未验收",
+    "visualAcceptance": "待微信原生截图与完整功能验收"
+  },
+  "05-01": {
+    "route": "/pages/student-dashboard/student-dashboard",
+    "viewState": "authenticated dashboard; StudentTodayTasks",
+    "api": [
+      "GET /api/v1/task-assignments?scheduledDate=...",
+      "GET /api/v1/growth-points/me/account"
+    ],
+    "gaps": [
+      "LAYOUT05与05-01原板为不同布局；当前首页依LAYOUT05，05-01四入口/插画尚未单独还原"
+    ],
+    "status": "未验收",
+    "visualAcceptance": "待微信原生截图与完整功能验收"
+  },
+  "05-02": {
+    "route": "/pages/task-list/task-list",
+    "viewState": "source filters",
+    "api": [
+      "GET /api/v1/task-assignments"
+    ],
+    "gaps": [
+      "任务模块由独立代理维护；未宣称原图通过"
+    ],
+    "status": "未验收",
+    "visualAcceptance": "待微信原生截图与完整功能验收"
+  },
+  "05-03": {
+    "route": "/pages/task-detail/task-detail",
+    "viewState": "task exists; assignmentId query",
+    "api": [
+      "GET /api/v1/task-assignments/{id}"
+    ],
+    "gaps": [
+      "现有任务详情；单屏验收未完成"
+    ],
+    "status": "未验收",
+    "visualAcceptance": "待微信原生截图与完整功能验收"
+  },
+  "05-04": {
+    "route": "/pages/task-detail/task-detail",
+    "viewState": "PENDING_CLAIM; claimTask",
+    "api": [
+      "POST /api/v1/task-assignments/{id}/claim"
+    ],
+    "gaps": [
+      "目前详情内操作，无独立认领确认屏"
+    ],
+    "status": "未验收",
+    "visualAcceptance": "待微信原生截图与完整功能验收"
+  },
+  "05-05": {
+    "route": "/pages/task-detail/task-detail",
+    "viewState": "IN_PROGRESS; execution details",
+    "api": [
+      "GET /api/v1/task-assignments/{id}"
+    ],
+    "gaps": [
+      "无独立执行记录屏"
+    ],
+    "status": "未验收",
+    "visualAcceptance": "待微信原生截图与完整功能验收"
+  },
+  "05-06": {
+    "route": "/pages/task-detail/task-detail",
+    "viewState": "IN_PROGRESS; pauseTask(EMOTION)",
+    "api": [
+      "POST /api/v1/task-assignments/{id}/pause"
+    ],
+    "gaps": [
+      "详情内暂停操作；原图多种安抚选择/独立插画屏未实现"
+    ],
+    "status": "未验收",
+    "visualAcceptance": "待微信原生截图与完整功能验收"
+  },
+  "05-07": {
+    "route": "/pages/task-detail/task-detail",
+    "viewState": "IN_PROGRESS; pauseTask(DIFFICULTY)",
+    "api": [
+      "POST /api/v1/task-assignments/{id}/pause"
+    ],
+    "gaps": [
+      "详情内难题搁置；独立表单屏未实现"
+    ],
+    "status": "未验收",
+    "visualAcceptance": "待微信原生截图与完整功能验收"
+  },
+  "05-08": {
+    "route": "/pages/task-detail/task-detail",
+    "viewState": "IN_PROGRESS or NEEDS_IMPROVEMENT; checkInContent+images",
+    "api": [
+      "POST /api/v1/task-assignments/{id}/check-ins"
+    ],
+    "gaps": [
+      "真实上传提交；仍详情内表单"
+    ],
+    "status": "未验收",
+    "visualAcceptance": "待微信原生截图与完整功能验收"
+  },
+  "05-09": {
+    "route": "/pages/task-detail/task-detail",
+    "viewState": "no postpone implementation identified",
+    "api": [],
+    "gaps": [
+      "顺延原型当前未实现；无占位功能"
+    ],
+    "status": "未验收",
+    "visualAcceptance": "待微信原生截图与完整功能验收"
+  },
+  "05-10": {
+    "route": "/pages/task-detail/task-detail",
+    "viewState": "confirmAbandon modal; EXEMPT read state",
+    "api": [
+      "POST /api/v1/task-assignments/{id}/abandon"
+    ],
+    "gaps": [
+      "放弃真实操作；免执行仅读取状态不伪造学生权限"
+    ],
+    "status": "未验收",
+    "visualAcceptance": "待微信原生截图与完整功能验收"
+  },
+  "06-01": {
+    "route": "/pages/growth-points/growth-points",
+    "viewState": "self account + ledgers",
+    "api": [
+      "GET /api/v1/growth-points/me/account",
+      "GET /api/v1/growth-points/me/ledgers"
+    ],
+    "gaps": [
+      "真实周月收益已添加；原图profile学校班级头像DTO缺失"
+    ],
+    "status": "未验收",
+    "visualAcceptance": "待微信原生截图与完整功能验收"
+  },
+  "06-02": {
+    "route": "/pages/rewards/rewards",
+    "viewState": "activeTab=rewards",
+    "api": [
+      "GET /api/v1/rewards/me",
+      "GET /api/v1/rewards/me/summary"
+    ],
+    "gaps": [
+      "没有原图reward image/category DTO，不伪造素材与分类"
+    ],
+    "status": "未验收",
+    "visualAcceptance": "待微信原生截图与完整功能验收"
+  },
+  "06-03": {
+    "route": "/pages/rewards/rewards",
+    "viewState": "selectedReward present",
+    "api": [
+      "POST /api/v1/reward-exchanges"
+    ],
+    "gaps": [
+      "独立确认state，家长approval扣分契约保留，无伪造delivery"
+    ],
+    "status": "未验收",
+    "visualAcceptance": "待微信原生截图与完整功能验收"
+  },
+  "06-04": {
+    "route": "/pages/rewards/rewards",
+    "viewState": "selectedExchange present",
+    "api": [
+      "GET /api/v1/reward-exchanges/me"
+    ],
+    "gaps": [
+      "真实状态和时间轴；无staffname/shipping字段"
+    ],
+    "status": "未验收",
+    "visualAcceptance": "待微信原生截图与完整功能验收"
+  },
+  "06-08": {
+    "route": "/pages/parent-rewards/parent-rewards",
+    "viewState": "verification present; delivery checked",
+    "api": [
+      "POST /api/v1/parent-reward-exchanges/{id}/verify"
+    ],
+    "gaps": [
+      "真实核销确认/权限；无shipping/inventory假数据"
+    ],
+    "status": "未验收",
+    "visualAcceptance": "待微信原生截图与完整功能验收"
+  },
+  "06-09": {
+    "route": "/pages/growth-reviews/growth-reviews",
+    "viewState": "period=DAY; editing=true; three reflectionFields",
+    "api": [
+      "POST /api/v1/growth-reviews/me/{id}/daily-reflection"
+    ],
+    "gaps": [
+      "原子三字段真实保存/隔离HTTP rollback通过；未视觉验收"
+    ],
+    "status": "未验收",
+    "visualAcceptance": "待微信原生截图与完整功能验收"
+  },
+  "06-10": {
+    "route": "/pages/growth-reviews/growth-reviews",
+    "viewState": "period=WEEK; authorized WEEK detail",
+    "api": [
+      "GET /api/v1/growth-reviews/me?periodType=WEEK",
+      "GET /api/v1/growth-reviews/me/{id}"
+    ],
+    "gaps": [
+      "教师评语/星次数/班级亮点不在DTO；DAY不可当WEEK"
+    ],
+    "status": "未验收",
+    "visualAcceptance": "待微信原生截图与完整功能验收"
+  },
+  "07-06": {
+    "route": "/pages/account-settings/account-settings",
+    "viewState": "panel=wechat; or parent-student-wechat child list",
+    "api": [
+      "POST /api/v1/auth/account-settings/wechat"
+    ],
+    "gaps": [
+      "个人真实微信绑定/孩子解绑分别按原权限；昵称缺DTO"
+    ],
+    "status": "未验收",
+    "visualAcceptance": "待微信原生截图与完整功能验收"
+  },
+  "07-07": {
+    "route": "/pages/account-settings/account-settings",
+    "viewState": "panel=contact",
+    "api": [
+      "GET /api/v1/auth/account-settings",
+      "POST /api/v1/auth/account-settings/codes",
+      "POST /api/v1/auth/account-settings/contact"
+    ],
+    "gaps": [
+      "保留密码及新旧验证码安全步骤；协议截图未验收"
+    ],
+    "status": "未验收",
+    "visualAcceptance": "待微信原生截图与完整功能验收"
+  },
+  "07-08": {
+    "route": "/pages/account-settings/account-settings",
+    "viewState": "panel=password; required initial-password state",
+    "api": [
+      "POST /api/v1/auth/password"
+    ],
+    "gaps": [
+      "密码更改强制flow保留，未真实凭据写"
+    ],
+    "status": "未验收",
+    "visualAcceptance": "待微信原生截图与完整功能验收"
+  },
+  "07-09": {
+    "route": "/pages/account-security/account-security",
+    "viewState": "identity student/parent/organization; actual devices",
+    "api": [
+      "GET /api/v1/auth/devices"
+    ],
+    "gaps": [
+      "真实设备与安全事件；设备细节按DTO显示"
+    ],
+    "status": "未验收",
+    "visualAcceptance": "待微信原生截图与完整功能验收"
+  },
+  "07-10": {
+    "route": "/pages/parent-account-lifecycle/parent-account-lifecycle",
+    "viewState": "cancellationFlowOpen; NONE/COOLING_OFF",
+    "api": [
+      "GET /api/v1/auth/parent-account-lifecycle",
+      "POST /api/v1/auth/parent-account-cancellations"
+    ],
+    "gaps": [
+      "现API验证码+确认+7天冷静期；原图reason/agreement DTO缺失，不立即注销"
+    ],
+    "status": "未验收",
+    "visualAcceptance": "待微信原生截图与完整功能验收"
+  }
+}

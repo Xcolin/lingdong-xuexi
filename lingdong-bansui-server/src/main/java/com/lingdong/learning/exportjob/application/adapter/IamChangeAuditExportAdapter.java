@@ -121,6 +121,12 @@ public class IamChangeAuditExportAdapter implements ExportDatasetAdapter {
             case USER_ORGANIZATION_ASSOCIATE -> "用户关联组织";
             case USER_ROLE_ASSIGN -> "用户分配角色";
             case ROLE_CREATE -> "角色创建";
+            case ROLE_UPDATE -> "角色编辑";
+            case ROLE_DELETE -> "角色删除";
+            case ROLE_STATUS_CHANGE -> "角色启停";
+            case ORGANIZATION_TYPE_UPDATE -> "组织类型编辑";
+            case ORGANIZATION_TYPE_DELETE -> "组织类型删除";
+            case ORGANIZATION_TYPE_STATUS_CHANGE -> "组织类型启停";
             case PERMISSION_CREATE -> "权限创建";
             case ROLE_PERMISSION_CONFIGURE -> "角色权限配置";
             case ROLE_PERMISSION_REMOVE -> "角色权限移除";
@@ -128,6 +134,10 @@ public class IamChangeAuditExportAdapter implements ExportDatasetAdapter {
             case USER_PERMISSION_REMOVE -> "用户权限移除";
             case ROLE_DATA_SCOPE_ADD -> "角色数据范围新增";
             case ORGANIZATION_ADMIN_ASSIGN -> "组织管理员配置";
+            case MENU_DELETE -> "菜单删除";
+            case USER_ORGANIZATION_DISSOCIATE -> "用户取消关联组织";
+            case ORGANIZATION_ADMIN_REVOKE -> "组织管理员撤销";
+            case USER_ROLE_REMOVE -> "用户角色移除";
         };
     }
 
@@ -139,6 +149,7 @@ public class IamChangeAuditExportAdapter implements ExportDatasetAdapter {
             case MENU -> "菜单";
             case USER -> "用户";
             case ROLE -> "角色";
+            case ORGANIZATION_TYPE -> "组织类型";
             case PERMISSION -> "权限";
             case ROLE_PERMISSION -> "角色权限";
             case USER_PERMISSION -> "用户权限";

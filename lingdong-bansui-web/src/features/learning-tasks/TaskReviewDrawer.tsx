@@ -1,3 +1,5 @@
+import { useMenuConfiguration } from '../../app/MenuConfiguration';
+import { Button as PlainButton } from 'antd';
 import { ConfiguredModal as Modal } from '../../components/ConfiguredModal';
 import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { useEffect, useState } from 'react';
@@ -62,7 +64,7 @@ export function TaskReviewDrawer({
       message.warning('请填写驳回意见');
       return;
     }
-    Modal.confirm({ actionPrefix: 'learning-tasks.task-review-drawer.confirm.1',
+    Modal.confirm({ actionPrefix: 'TASK_ASSIGNMENT_REVIEW',
       title: '确认驳回本次打卡',
       content: '任务将退回学生继续执行，当前打卡记录会保留。',
       okText: '确认驳回',
@@ -77,7 +79,7 @@ export function TaskReviewDrawer({
 
   function confirmApprove(): void {
     if (!assignmentId || !review) return;
-    Modal.confirm({ actionPrefix: 'learning-tasks.task-review-drawer.confirm.2',
+    Modal.confirm({ actionPrefix: 'TASK_ASSIGNMENT_REVIEW',
       title: '确认审核通过',
       content: `任务将完成并向学生发放 ${review.basePoints} 积分。积分到账后只能通过纠错台账调整。`,
       okText: '确认通过',
@@ -130,7 +132,7 @@ export function TaskReviewDrawer({
       onClose={submitting ? undefined : onClose}
     >
       {errorMessage && <Alert type="error" showIcon message={errorMessage}
-        action={<Button actionKey="learning-tasks.task-review-drawer.1" disabled={submitting} onClick={() => setReload(value => value + 1)}>刷新详情</Button>} />}
+        action={<PlainButton  disabled={submitting} onClick={() => setReload(value => value + 1)}>刷新详情</PlainButton>} />}
       {review && (
         <div className="review-drawer-content">
           <Descriptions column={{ xs: 1, sm: 2 }} size="small" bordered>
@@ -170,7 +172,7 @@ export function TaskReviewDrawer({
               placeholder="填写驳回意见"
               onChange={(event) => setReviewComment(event.target.value)}
             />
-            <Button actionKey="learning-tasks.task-review-drawer.3"
+            <Button actionKey="TASK_ASSIGNMENT_REVIEW"
               danger
               icon={<RotateCcw size={16} />}
               loading={submitting}
@@ -197,7 +199,7 @@ export function TaskReviewDrawer({
               onChange={(event) => setTransferReason(event.target.value)}
             />
             <Space>
-              <Button actionKey="learning-tasks.task-review-drawer.4"
+              <Button actionKey="TASK_ASSIGNMENT_REVIEW"
                 icon={<UserRoundCheck size={16} />}
                 disabled={!reviewerOptions.length}
                 loading={submitting}
@@ -212,6 +214,8 @@ export function TaskReviewDrawer({
 }
 
 function TaskAttachmentPreview({ review }: { review: TaskReview }) {
+  const configuration = useMenuConfiguration();
+  const canReadAttachments = !configuration || configuration.permissionCodes?.includes('ATTACHMENT_READ') === true;
   const [previewUrls, setPreviewUrls] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -222,11 +226,12 @@ function TaskAttachmentPreview({ review }: { review: TaskReview }) {
     const createdUrls: string[] = [];
     setPreviewUrls({});
     setFailed(false);
-    setLoading(attachments.length > 0);
-    if (!attachments.length) return () => undefined;
+    setLoading(canReadAttachments && attachments.length > 0);
+    if (!canReadAttachments || !attachments.length) return () => undefined;
     Promise.all(attachments.map(async (attachment) => {
       const blob = await taskReviewApi.readAttachment(attachment.id);
       const url = URL.createObjectURL(blob);
+      if (!active) { URL.revokeObjectURL(url); return [attachment.id, ''] as const; }
       createdUrls.push(url);
       return [attachment.id, url] as const;
     })).then((entries) => {
@@ -240,9 +245,10 @@ function TaskAttachmentPreview({ review }: { review: TaskReview }) {
       active = false;
       createdUrls.forEach((url) => URL.revokeObjectURL(url));
     };
-  }, [review.latestCheckIn.id, review.latestCheckIn.attachments]);
+  }, [review.latestCheckIn.id, review.latestCheckIn.attachments, canReadAttachments]);
 
   if (!review.latestCheckIn.attachments.length) return null;
+  if (!canReadAttachments) return <Alert type="info" showIcon message="当前权限不允许读取打卡附件" />;
   if (loading) return <Spin size="small" />;
   if (failed) return <Alert type="warning" showIcon message="部分打卡图片读取失败" />;
   return (

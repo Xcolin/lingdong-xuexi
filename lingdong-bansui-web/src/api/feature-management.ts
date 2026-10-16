@@ -12,6 +12,7 @@ function query(input: { page: number; pageSize: number; taskStatus?: SystemTaskS
   return params.toString();
 }
 export const featureManagementApi = {
+  toggleOptions: (permission: 'FEATURE_TOGGLE_READ'|'FEATURE_TOGGLE_MANAGE'|'FEATURE_TOGGLE_REVIEW'): Promise<GlobalFeatureToggle[]> => apiClient.get(`${prefix}/toggle-options?${new URLSearchParams({permission})}`),
   toggles: (): Promise<GlobalFeatureToggle[]> => apiClient.get(`${prefix}/toggles`),
   changes: (input: { page: number; pageSize: number; taskStatus?: SystemTaskStatus }): Promise<FeatureChangePage> => apiClient.get(`${prefix}/changes?${query(input)}`),
   reviewQueue: (input: { page: number; pageSize: number }): Promise<FeatureChangePage> => apiClient.get(`${prefix}/review-queue?${query(input)}`),

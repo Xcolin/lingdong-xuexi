@@ -26,6 +26,18 @@ class StudentIdentityProvisioningServiceTest {
     @Autowired private StudentLoginCodeHasher loginCodeHasher;
 
     @Test
+    void preservesExistingUsernameAndCredentialOnRepeatedProvision() {
+        User existing = User.create(90001234L, "xiangsihan", "向思涵", null, UserType.STUDENT);
+        userMapper.insert(existing);
+        provisioningService.ensureExistingUserIdentity(existing);
+        StudentCredential first = credentialMapper.findByStudentUserId(existing.id());
+        provisioningService.ensureExistingUserIdentity(existing);
+        assertThat(userMapper.findById(existing.id()).username()).isEqualTo("xiangsihan");
+        assertThat(credentialMapper.findByStudentUserId(existing.id()).codeHash()).isEqualTo(first.codeHash());
+        assertThat(userRoleMapper.hasRoleCode(existing.id(), "STUDENT")).isTrue();
+    }
+
+    @Test
     void issuesStudentUserRoleAndProtectedCredentialInOneTransaction() {
         IssuedStudentCredential issued = provisioningService.issue("无机构学生");
 

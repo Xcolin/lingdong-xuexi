@@ -18,6 +18,8 @@ import java.util.List;
 /** 解析并应用角色、用户组织关系和组织管理员边界的通用组织数据范围。 */
 @Service
 public class OrganizationDataScopeService {
+    @org.springframework.beans.factory.annotation.Autowired private com.lingdong.learning.teacher.infrastructure.persistence.TeacherProfileMapper teacherProfiles;
+    @org.springframework.beans.factory.annotation.Autowired private com.lingdong.learning.learningtask.infrastructure.persistence.TeacherClassMapper teacherClasses;
     private final RoleAssignmentScopeMapper roleScopeMapper;
     private final RoleDataScopeMapper customScopeMapper;
     private final UserOrganizationMapper userOrganizationMapper;
@@ -42,6 +44,13 @@ public class OrganizationDataScopeService {
     }
 
     public OrganizationDataScope resolve(Long userId) {
+        OrganizationDataScope scope = resolveUnselected(userId);
+        Organization selected = com.lingdong.learning.common.security.SelectedOrganizationContext.organization();
+        if (selected == null) return scope;
+        List<String> paths = scope.allOrganizations() ? List.of(selected.path()) : intersect(scope.rootPaths(), List.of(selected.path()));
+        return new OrganizationDataScope(false, scope.selfAllowed(), paths);
+    }
+    private OrganizationDataScope resolveUnselected(Long userId) {
         User user = userId == null ? null : userMapper.findById(userId);
         if (user == null || user.status() != UserStatus.ENABLED) {
             return OrganizationDataScope.empty();
@@ -54,7 +63,7 @@ public class OrganizationDataScopeService {
             return OrganizationDataScope.all(selfAllowed);
         }
 
-        List<String> roleRootPaths = resolveRoleRootPaths(assignments);
+        List<String> roleRootPaths = resolveRoleRootPaths(user,assignments);
         List<String> userRootPaths = findPaths(userOrganizationMapper.findOrganizationIds(userId));
         List<String> effectivePaths = intersect(roleRootPaths, userRootPaths);
 
@@ -83,7 +92,7 @@ public class OrganizationDataScopeService {
         return organizationMapper.findByRootPaths(scope.rootPaths());
     }
 
-    private List<String> resolveRoleRootPaths(List<RoleAssignmentScope> assignments) {
+    private List<String> resolveRoleRootPaths(User user,List<RoleAssignmentScope> assignments) {
         List<String> paths = new ArrayList<>();
         for (RoleAssignmentScope assignment : assignments) {
             if (assignment.dataScope() == RoleDataScope.CUSTOM) {
@@ -92,14 +101,31 @@ public class OrganizationDataScopeService {
             }
             if (assignment.dataScope() == RoleDataScope.REGION
                     || assignment.dataScope() == RoleDataScope.SCHOOL
-                    || assignment.dataScope() == RoleDataScope.CLASS) {
+                    || assignment.dataScope() == RoleDataScope.CLASS
+                    || assignment.dataScope() == RoleDataScope.FAMILY) {
                 Organization root = organizationMapper.findById(assignment.organizationId());
-                if (root != null && assignment.dataScope().name().equals(root.typeCode())) {
+                if (root != null && (assignment.dataScope().name().equals(root.typeCode()) || assignment.dataScope() == RoleDataScope.SCHOOL && com.lingdong.learning.organization.application.OrganizationHierarchy.isInstitutionRoot(root))) {
                     paths.add(root.path());
+                } else if(root!=null && assignment.dataScope()==RoleDataScope.CLASS
+                        && com.lingdong.learning.organization.application.OrganizationHierarchy.isInstitutionRoot(root)) {
+                    // Trusted school identity contributes only real active teaching classes, never the institution path.
+                    paths.addAll(teachingClassPaths(user,root));
                 }
             }
         }
         return OrganizationDataScope.normalize(paths);
+    }
+
+    private List<String> teachingClassPaths(User user,Organization institution){
+        if(user.type()!=com.lingdong.learning.user.domain.UserType.ORGANIZATION||teacherProfiles==null||teacherClasses==null
+                ||!teacherProfiles.enabled(user.id())||!com.lingdong.learning.organization.application.OrganizationOperationalStatusService.isOperational(institution))return List.of();
+        return teacherClasses.findActiveByTeacher(user.id()).stream()
+                .filter(relation->relation.status()==com.lingdong.learning.learningtask.domain.TeacherClassStatus.ACTIVE)
+                .map(relation->organizationMapper.findById(relation.classOrganizationId())).filter(java.util.Objects::nonNull)
+                .filter(org->"CLASS".equals(org.typeCode())&&com.lingdong.learning.organization.application.OrganizationOperationalStatusService.isOperational(org))
+                .filter(org->org.path().startsWith(institution.path()))
+                .filter(org->{var school=com.lingdong.learning.organization.application.OrganizationHierarchy.schoolOf(org,organizationMapper);return school!=null&&school.id().equals(institution.id());})
+                .map(Organization::path).toList();
     }
 
     private List<String> findPaths(List<Long> organizationIds) {
@@ -128,3 +154,4 @@ public class OrganizationDataScopeService {
         return OrganizationDataScope.normalize(intersections);
     }
 }
+

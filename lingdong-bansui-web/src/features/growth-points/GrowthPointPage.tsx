@@ -1,3 +1,5 @@
+import { Button as PlainButton } from 'antd';
+import { useMenuConfiguration } from '../../app/MenuConfiguration';
 import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { ViewportTable as Table } from '../../components/ViewportTable';
 import { useEffect, useState } from 'react';
@@ -16,12 +18,13 @@ import type {
   GrowthPointStudentOption
 } from './types';
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 
 interface GrowthPointPageProps {
   correctionEnabled?: boolean;
   dataExportEnabled?: boolean;
   canCreateExport?: boolean;
+  canCorrect?: boolean;
 }
 
 interface CorrectionFormValues {
@@ -42,8 +45,11 @@ const changeLabels: Record<GrowthPointChangeType, string> = {
 export function GrowthPointPage({
   correctionEnabled = false,
   dataExportEnabled = false,
-  canCreateExport = false
+  canCreateExport = false,
+  canCorrect: correctionPermission
 }: GrowthPointPageProps) {
+  const configuration = useMenuConfiguration();
+  const canCorrect = correctionPermission ?? (configuration ? configuration.permissionCodes?.includes('GROWTH_POINT_CORRECT_CHILD') === true : true);
   const { message: messageApi } = AntdApp.useApp();
   const [students, setStudents] = useState<GrowthPointStudentOption[]>([]);
   const [selectedStudentId, setSelectedStudentId] = useState<string>();
@@ -83,7 +89,7 @@ export function GrowthPointPage({
     }
   }
 
-  async function loadStudent(studentId: string, page: number, manageLoading = true): Promise<void> {
+  async function loadStudent(studentId: string, page: number, manageLoading = true, pageSize = ledgerPage.pageSize): Promise<void> {
     if (manageLoading) {
       setLoading(true);
     }
@@ -91,7 +97,7 @@ export function GrowthPointPage({
     try {
       const [nextAccount, nextLedgers] = await Promise.all([
         growthPointApi.account(studentId),
-        growthPointApi.ledgers(studentId, page, PAGE_SIZE)
+        growthPointApi.ledgers(studentId, page, pageSize)
       ]);
       setAccount(nextAccount);
       setLedgerPage(nextLedgers);
@@ -124,7 +130,7 @@ export function GrowthPointPage({
   }
 
   async function submitCorrection(values: CorrectionFormValues): Promise<void> {
-    if (!selectedStudentId || !correctingLedger) {
+    if (!selectedStudentId || !correctingLedger || !canCorrect) {
       return;
     }
     setCorrectionSubmitting(true);
@@ -160,12 +166,12 @@ export function GrowthPointPage({
             onChange={changeStudent}
           />
           {dataExportEnabled && canCreateExport ? <Tooltip title="导出当前孩子的积分台账">
-            <Button actionKey="growth-points.growth-point-page.1"
+            <PlainButton 
               aria-label="导出积分台账"
               icon={<Download size={16} />}
               disabled={!selectedStudentId}
               onClick={() => setExportOpen(true)}
-            >导出</Button>
+            >导出</PlainButton>
           </Tooltip> : null}
         </Space>
       </div>
@@ -175,7 +181,7 @@ export function GrowthPointPage({
           type="error"
           showIcon
           message={errorMessage}
-          action={<Button actionKey="growth-points.growth-point-page.3" size="small" onClick={() => void loadInitial()}>重试</Button>}
+          action={<PlainButton  size="small" onClick={() => void loadInitial()}>重试</PlainButton>}
         />
       )}
 
@@ -198,13 +204,13 @@ export function GrowthPointPage({
               loading={loading}
               dataSource={ledgerPage.items}
               locale={{ emptyText: '暂无积分变动' }}
-              scroll={{ x: correctionEnabled ? 1010 : 900 }}
+              scroll={{ x: correctionEnabled && canCorrect ? 1010 : 900 }}
               pagination={{
                 current: ledgerPage.page,
                 pageSize: ledgerPage.pageSize,
                 total: ledgerPage.total,
-                showSizeChanger: false,
-                onChange: (page) => selectedStudentId && void loadStudent(selectedStudentId, page)
+                showSizeChanger: true,
+                onChange: (page, pageSize) => selectedStudentId && void loadStudent(selectedStudentId, page, true, pageSize)
               }}
               columns={[
                 {
@@ -243,12 +249,12 @@ export function GrowthPointPage({
                   title: '审核人', dataIndex: 'reviewerDisplayName', key: 'reviewerDisplayName', width: 130,
                   render: (value: string | null) => value ?? '-'
                 },
-                ...(correctionEnabled ? [{
+                ...(correctionEnabled && canCorrect ? [{
                   title: '操作', key: 'action', width: 100, fixed: 'right' as const,
                   render: (_: unknown, item: GrowthPointLedger) => item.correctable ? (
                     <Tooltip title={item.correctionDeadline
                       ? `截止 ${formatDateTime(item.correctionDeadline)}` : '积分纠错'}>
-                      <Button actionKey="growth-points.growth-point-page.4"
+                      <Button actionKey="GROWTH_POINT_CORRECT_CHILD"
                         type="link"
                         size="small"
                         icon={<RotateCcw size={15} />}
@@ -295,8 +301,8 @@ export function GrowthPointPage({
               <Input.TextArea rows={4} maxLength={500} showCount placeholder="说明误操作情况和重新审核依据" />
             </Form.Item>
             <div className="form-actions">
-              <Button actionKey="growth-points.growth-point-page.5" disabled={correctionSubmitting} onClick={closeCorrection}>取消</Button>
-              <Button actionKey="growth-points.growth-point-page.6" type="primary" htmlType="submit" loading={correctionSubmitting}>确认纠错</Button>
+              <PlainButton  disabled={correctionSubmitting} onClick={closeCorrection}>取消</PlainButton>
+              <Button actionKey="GROWTH_POINT_CORRECT_CHILD" type="primary" htmlType="submit" loading={correctionSubmitting}>确认纠错</Button>
             </div>
           </Form>
         )}

@@ -67,8 +67,8 @@ class ClassManagementControllerTest {
                         .header("Authorization", bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"schoolOrganizationId":"%s","name":"接口测试一班","sortOrder":10}
-                                """.formatted(fixture.school().id())))
+                                {"gradeOrganizationId":"%s","name":"接口测试一班","sortOrder":10}
+                                """.formatted(gradeId(fixture.school().id()))))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").isString())
                 .andExpect(jsonPath("$.code").value(org.hamcrest.Matchers.matchesPattern(
@@ -113,10 +113,10 @@ class ClassManagementControllerTest {
                         .header("Authorization", bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"schoolOrganizationId":"%s","name":"小程序班级","sortOrder":10}
-                                """.formatted(fixture.school().id())))
+                                {"gradeOrganizationId":"%s","name":"小程序班级","sortOrder":10}
+                                """.formatted(gradeId(fixture.school().id()))))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.parentId").value(fixture.school().id().toString()));
+                .andExpect(jsonPath("$.parentId").value(gradeId(fixture.school().id()).toString()));
 
         mockMvc.perform(get("/api/v1/classes")
                         .header("Authorization", bearer(token)))
@@ -125,7 +125,7 @@ class ClassManagementControllerTest {
     }
 
     @Test
-    void enforcesDynamicPermissionAndOrganizationAdministratorRole() throws Exception {
+    void enforcesDynamicPermissionAndAllowsGrantedWebAdministrator() throws Exception {
         Fixture fixture = createFixture("class_api_permission");
         String organizationToken = loginWeb(fixture.administrator(), "class-api-permission");
         jdbcTemplate.update("""
@@ -148,9 +148,9 @@ class ClassManagementControllerTest {
                         .header("Authorization", bearer(systemToken))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"schoolOrganizationId":"%s","name":"越权班级","sortOrder":10}
-                                """.formatted(fixture.school().id())))
-                .andExpect(status().isForbidden());
+                                {"gradeOrganizationId":"%s","name":"越权班级","sortOrder":10}
+                                """.formatted(gradeId(fixture.school().id()))))
+                .andExpect(status().isCreated());
     }
 
     @Test
@@ -160,13 +160,13 @@ class ClassManagementControllerTest {
         Organization schoolA = organizationApplicationService.createOrganization(
                 new CreateOrganizationCommand("CLASS_SCOPE_SCHOOL_A", "班级范围学校甲", "SCHOOL", regionA.id(), 1));
         Organization classA = organizationApplicationService.createOrganization(
-                new CreateOrganizationCommand("CLASS_SCOPE_CLASS_A", "班级范围一班", "CLASS", schoolA.id(), 1));
+                new CreateOrganizationCommand("CLASS_SCOPE_CLASS_A", "班级范围一班", "CLASS", gradeId(schoolA.id()), 1));
         Organization regionB = organizationApplicationService.createOrganization(
                 new CreateOrganizationCommand("CLASS_SCOPE_REGION_B", "班级范围区域乙", "REGION", null, 2));
         Organization schoolB = organizationApplicationService.createOrganization(
                 new CreateOrganizationCommand("CLASS_SCOPE_SCHOOL_B", "班级范围学校乙", "SCHOOL", regionB.id(), 1));
         Organization classB = organizationApplicationService.createOrganization(
-                new CreateOrganizationCommand("CLASS_SCOPE_CLASS_B", "班级范围二班", "CLASS", schoolB.id(), 1));
+                new CreateOrganizationCommand("CLASS_SCOPE_CLASS_B", "班级范围二班", "CLASS", gradeId(schoolB.id()), 1));
 
         User administrator = createUser("class_scope_admin", "跨组织范围机构管理员");
         userAccessApplicationService.associateWithOrganization(
@@ -189,8 +189,8 @@ class ClassManagementControllerTest {
                         .header("Authorization", bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"schoolOrganizationId":"%s","name":"跨校越权班级","sortOrder":1}
-                                """.formatted(schoolB.id())))
+                                {"gradeOrganizationId":"%s","name":"跨校越权班级","sortOrder":1}
+                                """.formatted(gradeId(schoolB.id()))))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("RESOURCE_NOT_FOUND"));
         mockMvc.perform(put("/api/v1/classes/{classId}", classB.id())
@@ -252,6 +252,34 @@ class ClassManagementControllerTest {
         return new Fixture(administrator, school);
     }
 
+
+    @Test
+    void gradeEndpointsReturnAncestryAndClassCreationRequiresGrade() throws Exception {
+        Fixture fixture=createFixture("grade_api_contract");
+        String token=loginWeb(fixture.administrator(),"grade-api");
+        String gradeJson=mockMvc.perform(post("/api/v1/classes/grades").header("Authorization",bearer(token))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"schoolOrganizationId\":\""+fixture.school().id()+"\",\"name\":\"一年级\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.schoolOrganizationId").value(fixture.school().id().toString()))
+                .andExpect(jsonPath("$.schoolName").value(fixture.school().name()))
+                .andReturn().getResponse().getContentAsString();
+        String gradeId=new com.fasterxml.jackson.databind.ObjectMapper().readTree(gradeJson).path("id").asText();
+        mockMvc.perform(post("/api/v1/classes").header("Authorization",bearer(token)).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"schoolOrganizationId\":\""+fixture.school().id()+"\",\"name\":\"缺年级\"}"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(post("/api/v1/classes").header("Authorization",bearer(token)).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"gradeOrganizationId\":\""+gradeId+"\",\"name\":\"一班\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.schoolOrganizationId").value(fixture.school().id().toString()))
+                .andExpect(jsonPath("$.gradeOrganizationId").value(gradeId))
+                .andExpect(jsonPath("$.gradeName").value("一年级"));
+        mockMvc.perform(get("/api/v1/classes/grades").param("schoolOrganizationId",fixture.school().id().toString())
+                .header("Authorization",bearer(token))).andExpect(status().isOk()).andExpect(jsonPath("$[0].id").value(gradeId));
+        mockMvc.perform(get("/api/v1/classes").param("gradeOrganizationId",gradeId).header("Authorization",bearer(token)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$[0].name").value("一班"));
+    }
+
     private User createUser(String username, String displayName) {
         User user = userAccessApplicationService.createUser(
                 new CreateUserCommand(username, displayName, null, UserType.ORGANIZATION));
@@ -285,5 +313,11 @@ class ClassManagementControllerTest {
     }
 
     private record Fixture(User administrator, Organization school) {
+    }
+
+    private final java.util.Map<Long,Long> fixtureGrades=new java.util.HashMap<>();
+    private Long gradeId(Long schoolId) {
+        return fixtureGrades.computeIfAbsent(schoolId,id -> organizationApplicationService.createOrganization(
+                new CreateOrganizationCommand("GRD_"+java.util.UUID.randomUUID().toString().replace("-", "").toUpperCase(),"测试年级","GRADE",id,0)).id());
     }
 }

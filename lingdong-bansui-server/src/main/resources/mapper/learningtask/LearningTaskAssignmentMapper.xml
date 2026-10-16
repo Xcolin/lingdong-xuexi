@@ -141,6 +141,7 @@
               ON parent_student.student_id = assignment.student_id
              AND parent_student.parent_user_id = #{parentUserId}
              AND parent_student.status = 'ACTIVE'
+             <include refid="com.lingdong.learning.student.infrastructure.persistence.ParentStudentMapper.selectedStudentScope"><property name="studentIdColumn" value="assignment.student_id"/></include>
             WHERE assignment.task_id = #{taskId}
         )
     </select>
@@ -276,3 +277,4 @@
           AND teacher_class.teacher_user_id = #{teacherUserId})
     </select>
 </mapper>
+

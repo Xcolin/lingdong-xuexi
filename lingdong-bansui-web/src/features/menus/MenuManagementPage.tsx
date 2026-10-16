@@ -1,11 +1,12 @@
+import { Button as PlainButton } from 'antd';
 import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
-import { Alert, Descriptions, Drawer, Form, Input, InputNumber, Select, Space, Spin, Tag, Tree, TreeSelect } from 'antd';
+import { Alert, Descriptions, Drawer, Form, Input, InputNumber, Modal, Select, Space, Spin, Tag, Tree, TreeSelect } from 'antd';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { CurrentUser } from '../../api/auth';
 import { ApiRequestError } from '../../api/http';
 import { menuApi, type CreateMenuInput, type MenuNode } from '../../api/menus';
 import { menuPageCatalog } from '../../app/menuCatalog';
-import { useMenuConfiguration } from '../../app/MenuConfiguration';
+import { configuredAccess, useMenuConfiguration } from '../../app/MenuConfiguration';
 import { menuDrop, protectedMenu, sortedMenus } from './menuDrag';
 import { BatchMenuButtons } from './BatchMenuButtons';
 
@@ -23,8 +24,8 @@ export function menuTree(nodes: MenuNode[], filter: Filter, parentId: string | n
   });
 }
 export function MenuManagementPage({ currentUser }: { currentUser: CurrentUser }) {
-  const canManage = currentUser.permissionCodes.includes('MENU_MANAGE');
   const configuration = useMenuConfiguration();
+  const canManage = currentUser.permissionCodes.includes('MENU_MANAGE') && configuredAccess(configuration, 'MENU_MANAGE');
   const [nodes,setNodes] = useState<MenuNode[]>([]);
   const [selectedId,setSelectedId]=useState<string>();
   const [batch,setBatch] = useState<{pageId?:string}|null>(null);
@@ -104,18 +105,18 @@ export function MenuManagementPage({ currentUser }: { currentUser: CurrentUser }
   const parentTree = (parentId: string | null): ParentChoice[] => sorted(nodes.filter(n=>n.parentId===parentId && n.type !== 'BUTTON' && !excluded.has(n.id))).map(n=>({title:n.name,value:n.id,selectable:parentNodes.some(p=>p.id===n.id),children:parentTree(n.id)}));
   function renderTree(rows:TreeRow[]):{key:string;title:ReactNode;children?:ReturnType<typeof renderTree>}[] {
     return rows.map(node=>({key:node.id,title:<div className="management-tree-label">
-      <span className="menu-tree-name" title={node.name}>{node.name}</span><Tag>{typeNames[node.type]}</Tag>{node.status==='DISABLED'&&<Tag>停用</Tag>}
+      <span className="menu-tree-name" title={node.name}>{node.name}</span><Tag color={node.type==='DIRECTORY'?'blue':node.type==='PAGE'?'green':'gold'}>{typeNames[node.type]}</Tag>{node.status==='DISABLED'&&<Tag>停用</Tag>}
     </div>,...(node.children?{children:renderTree(node.children)}:{})}));
   }
   return <div className="page-stack management-page menu-management-page">
-    {error && <Alert type="error" showIcon message={error} action={<Button actionKey="menu-management.menu-management-page.1" onClick={()=>void load()}>重试</Button>} />}
-    {canManage && <div className="page-heading"><Space><Button actionKey="MENU_MANAGE" type="primary" onClick={()=>edit()}>新增菜单</Button><Button actionKey="menu-management.batch-buttons.open" onClick={()=>{setError(undefined);setBatch({});}}>批量新增按钮</Button></Space></div>}
+    {error && <Alert type="error" showIcon message={error} action={<PlainButton  onClick={()=>void load()}>重试</PlainButton>} />}
+    {canManage && <div className="page-heading"><Space><Button actionKey="MENU_MANAGE" type="primary" onClick={()=>edit()}>新增菜单</Button><Button actionKey="MENU_MANAGE" onClick={()=>{setError(undefined);setBatch({});}}>批量新增按钮</Button></Space></div>}
     <div className="content-panel management-query">
       <Form layout="inline" onFinish={()=>{setFilter({...draft});const match=sorted(nodes).find(node=>node.name.includes(draft.name.trim())&&(!draft.type||node.type===draft.type)&&(!draft.status||node.status===draft.status));if(match)setSelectedId(match.id);}} style={{gap:12}}>
         <Form.Item label="名称"><Input aria-label="名称" style={{width:180}} value={draft.name} onChange={e=>setDraft({...draft,name:e.target.value})} /></Form.Item>
         <Form.Item label="类型"><Select aria-label="类型" allowClear style={{width:180}} value={draft.type} options={Object.entries(typeNames).map(([value,label])=>({value,label}))} onChange={value=>setDraft({...draft,type:value})}/></Form.Item>
         <Form.Item label="状态"><Select aria-label="状态" allowClear style={{width:180}} value={draft.status} options={[{value:'ENABLED',label:'启用'},{value:'DISABLED',label:'停用'}]} onChange={value=>setDraft({...draft,status:value})}/></Form.Item>
-        <Form.Item><Space><Button actionKey="menu-management.menu-management-page.3" type="primary" htmlType="submit">查询</Button><Button actionKey="menu-management.menu-management-page.4" onClick={()=>{setDraft({name:''});setFilter({name:''});}}>重置</Button></Space></Form.Item>
+        <Form.Item><Space><Button actionKey="MENU_READ" type="primary" htmlType="submit">查询</Button><PlainButton  onClick={()=>{setDraft({name:''});setFilter({name:''});}}>重置</PlainButton></Space></Form.Item>
       </Form>
     </div>
     <div className="management-split menu-split">
@@ -130,10 +131,11 @@ export function MenuManagementPage({ currentUser }: { currentUser: CurrentUser }
     <section className="content-panel management-detail-pane" aria-label="选中菜单">
       {selected?<><div className="management-detail-heading"><div><strong>{selected.name}</strong><span className="management-context-code">{selected.code}</span></div><Tag color={selected.status==='ENABLED'?'green':'default'}>{selected.status==='ENABLED'?'启用':'停用'}</Tag></div>
       {canManage&&<Space wrap className="management-context-actions">
-        <Button actionKey="menu-management.menu-management-page.5" type="primary" aria-label={`编辑-${selected.name}`} disabled={busy} onClick={()=>edit(selected)}>编辑</Button>
-        {selected.type==='DIRECTORY'&&<Button actionKey="menu-management.node.add-child" disabled={busy} onClick={()=>edit(undefined,selected)}>新增下级</Button>}
-        {selected.type==='PAGE'&&<Button actionKey="menu-management.batch-buttons.open" aria-label={`批量新增按钮-${selected.name}`} disabled={busy} onClick={()=>{setError(undefined);setBatch({pageId:selected.id});}}>批量新增按钮</Button>}
-        <Button actionKey="menu-management.menu-management-page.8" danger={selected.status==='ENABLED'} aria-label={`${selected.status==='ENABLED'?'停用':'启用'}-${selected.name}`} disabled={busy||protectedStatus(selected)} onClick={()=>void mutate(()=>{const {id,...input}=selected;return menuApi.update(id,{...input,status:selected.status==='ENABLED'?'DISABLED':'ENABLED'});})}>{selected.status==='ENABLED'?'停用':'启用'}</Button>
+        <Button actionKey="MENU_MANAGE" type="primary" aria-label={`编辑-${selected.name}`} disabled={busy} onClick={()=>edit(selected)}>编辑</Button>
+        {selected.type==='DIRECTORY'&&<Button actionKey="MENU_MANAGE" disabled={busy} onClick={()=>edit(undefined,selected)}>新增下级</Button>}
+        {selected.type==='PAGE'&&<Button actionKey="MENU_MANAGE" aria-label={`批量新增按钮-${selected.name}`} disabled={busy} onClick={()=>{setError(undefined);setBatch({pageId:selected.id});}}>批量新增按钮</Button>}
+        <Button actionKey="MENU_MANAGE" danger={selected.status==='ENABLED'} aria-label={`${selected.status==='ENABLED'?'停用':'启用'}-${selected.name}`} disabled={busy||protectedStatus(selected)} onClick={()=>void mutate(()=>{const {id,...input}=selected;return menuApi.update(id,{...input,status:selected.status==='ENABLED'?'DISABLED':'ENABLED'});})}>{selected.status==='ENABLED'?'停用':'启用'}</Button>
+        <Button actionKey="MENU_MANAGE" danger aria-label={`删除-${selected.name}`} disabled={busy||protectedStatus(selected)} onClick={()=>Modal.confirm({title:'删除菜单节点',content:`确认删除“${selected.name}”吗？其按钮权限与全部授权将一并移除。`,okText:'删除',okButtonProps:{danger:true},cancelText:'返回',onOk:()=>mutate(()=>menuApi.remove(selected.id))})}>删除</Button>
       </Space>}
       <Descriptions column={1} size="small" items={[
         {key:'type',label:'类型',children:typeNames[selected.type]},
@@ -148,7 +150,7 @@ export function MenuManagementPage({ currentUser }: { currentUser: CurrentUser }
     </div>
     {batch && <BatchMenuButtons pages={nodes.filter(n=>n.type==='PAGE').map(n=>({id:n.id,name:n.name}))} existingCodes={nodes.map(n=>n.code)} initialPageId={batch.pageId} busy={busy} error={error}
       onClose={()=>setBatch(null)} onSubmit={(pageId,buttons)=>mutate(()=>menuApi.createButtons(pageId,buttons))}/>}
-    <Drawer title={editing?'编辑菜单':'新增菜单'} open={open} width="min(480px, 92vw)" closable={!busy} maskClosable={!busy} keyboard={!busy} onClose={()=>setOpen(false)} extra={<Button actionKey="menu-management.menu-management-page.9" type="primary" loading={busy} onClick={()=>form.submit()}>保存</Button>}>
+    <Drawer title={editing?'编辑菜单':'新增菜单'} open={open} width="min(480px, 92vw)" closable={!busy} maskClosable={!busy} keyboard={!busy} onClose={()=>setOpen(false)} extra={<Button actionKey="MENU_MANAGE" type="primary" loading={busy} onClick={()=>form.submit()}>保存</Button>}>
       <Form form={form} layout="vertical" onFinish={values=>void save(values)}>
         <Form.Item label="类型" name="type" rules={[{required:true}]}><Select disabled={!!editing} options={Object.entries(typeNames).map(([value,label])=>({value,label}))} onChange={()=>form.setFieldsValue({code:'',route:null,parentId:null})}/></Form.Item>
         <Form.Item label="编码" name="code" rules={[{required:true,message:'请输入编码'},{validator:(_,value)=>nodes.some(n=>n.code===value&&n.id!==editing?.id)?Promise.reject(new Error('编码已存在')):Promise.resolve()},...(!editing&&type!=='DIRECTORY'?[{pattern:/^[A-Z][A-Z0-9_]{2,127}$/,message:'编码即权限编码，使用大写字母、数字、下划线'}]:[])]}><Input disabled={!!editing} maxLength={128}/></Form.Item>

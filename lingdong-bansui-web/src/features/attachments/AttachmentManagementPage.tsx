@@ -1,3 +1,4 @@
+import { Button as PlainButton } from 'antd';
 import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { ViewportTable as Table } from '../../components/ViewportTable';
 import { Alert, DatePicker, Drawer, Form, Input, InputNumber, message, Modal, Select, Space, Switch, Tabs, Tag, Tooltip } from 'antd';
@@ -195,11 +196,11 @@ export function AttachmentManagementPage({ canReadRules, canManage, canReadFiles
         <Form.Item label="模块编码" name="moduleCode"><Input allowClear maxLength={64} /></Form.Item>
         <Form.Item label="文件分类" name="fileCategory"><Input allowClear maxLength={64} /></Form.Item>
         <Form.Item label="状态" name="status"><Select allowClear className="filter-select" options={ruleStatusOptions} /></Form.Item>
-        <Form.Item><Button actionKey="attachment-management.attachment-management-page.1" htmlType="submit" icon={<Search size={16} />}>查询规则</Button></Form.Item>
+        <Form.Item><Button actionKey="ATTACHMENT_RULE_READ" htmlType="submit" icon={<Search size={16} />}>查询规则</Button></Form.Item>
       </Form>
       <Table<AttachmentRuleRecord>
         rowKey="id" size="small" loading={loading} dataSource={rules} scroll={{ x: 1120 }}
-        pagination={{ pageSize: 20, hideOnSinglePage: true }} locale={{ emptyText: '暂无附件规则' }}
+        pagination={{}} locale={{ emptyText: '暂无附件规则' }}
         columns={[
           { title: '规则名称', dataIndex: 'ruleName', key: 'ruleName', width: 180 },
           { title: '模块编码', dataIndex: 'moduleCode', key: 'moduleCode', width: 190 },
@@ -212,9 +213,9 @@ export function AttachmentManagementPage({ canReadRules, canManage, canReadFiles
           ...(canManage ? [{
             title: '操作', key: 'actions', width: 104, fixed: 'right' as const,
             render: (_: unknown, item: AttachmentRuleRecord) => <Space size={2}>
-              <Tooltip title="编辑"><Button actionKey="attachment-management.attachment-management-page.2" type="text" icon={<Pencil size={16} />} aria-label={`编辑-${item.ruleName}`} onClick={() => openEditRule(item)} /></Tooltip>
+              <Tooltip title="编辑"><Button actionKey="ATTACHMENT_RULE_MANAGE" type="text" icon={<Pencil size={16} />} aria-label={`编辑-${item.ruleName}`} onClick={() => openEditRule(item)} /></Tooltip>
               <Tooltip title={item.status === 'ENABLED' ? '停用' : '启用'}>
-                <Button actionKey="attachment-management.attachment-management-page.3" type="text" danger={item.status === 'ENABLED'}
+                <Button actionKey="ATTACHMENT_RULE_MANAGE" type="text" danger={item.status === 'ENABLED'}
                   icon={item.status === 'ENABLED' ? <CircleOff size={16} /> : <CircleCheck size={16} />}
                   aria-label={`${item.status === 'ENABLED' ? '停用' : '启用'}-${item.ruleName}`}
                   onClick={() => void changeRuleStatus(item)} />
@@ -235,11 +236,11 @@ export function AttachmentManagementPage({ canReadRules, canManage, canReadFiles
         <Form.Item label="状态" name="status"><Select allowClear className="filter-select" options={fileStatusOptions} /></Form.Item>
         <Form.Item label="上传人标识" name="uploaderId"><Input allowClear maxLength={19} /></Form.Item>
         <Form.Item label="创建时间" name="createdRange"><DatePicker.RangePicker showTime /></Form.Item>
-        <Form.Item><Button actionKey="attachment-management.attachment-management-page.4" htmlType="submit" icon={<Search size={16} />}>查询文件</Button></Form.Item>
+        <Form.Item><Button actionKey="ATTACHMENT_FILE_LEDGER_READ" htmlType="submit" icon={<Search size={16} />}>查询文件</Button></Form.Item>
       </Form>
       <Table<AttachmentFileLedgerRecord>
         rowKey="id" size="small" loading={loading} dataSource={files} scroll={{ x: 1420 }}
-        pagination={{ pageSize: 20, hideOnSinglePage: true }} locale={{ emptyText: '暂无附件文件记录' }}
+        pagination={{}} locale={{ emptyText: '暂无附件文件记录' }}
         columns={[
           { title: '文件名称', dataIndex: 'originalName', key: 'originalName', width: 210, ellipsis: true },
           { title: '模块编码', dataIndex: 'moduleCode', key: 'moduleCode', width: 190 },
@@ -251,7 +252,7 @@ export function AttachmentManagementPage({ canReadRules, canManage, canReadFiles
           { title: '状态', dataIndex: 'status', key: 'status', width: 88, render: fileStatusTag },
           { title: '上传时间', dataIndex: 'uploadedAt', key: 'uploadedAt', width: 170, render: formatTime },
           { title: '操作', key: 'actions', width: 78, fixed: 'right', render: (_: unknown, item: AttachmentFileLedgerRecord) =>
-            <Tooltip title="查看业务关系"><Button actionKey="attachment-management.attachment-management-page.5" type="text" icon={<Link2 size={16} />} aria-label={`查看关系-${item.originalName}`} onClick={() => void openRelations(item)} /></Tooltip> }
+            <Tooltip title="查看业务关系"><Button actionKey="ATTACHMENT_FILE_LEDGER_READ" type="text" icon={<Link2 size={16} />} aria-label={`查看关系-${item.originalName}`} onClick={() => void openRelations(item)} /></Tooltip> }
         ]}
       />
     </div>
@@ -262,7 +263,7 @@ export function AttachmentManagementPage({ canReadRules, canManage, canReadFiles
       <h1>附件管理</h1>
       {canManage && activeTab === 'rules' && <Button actionKey="ATTACHMENT_RULE_MANAGE" type="primary" icon={<Plus size={16} />} onClick={openCreateRule}>新增附件规则</Button>}
     </div>
-    {errorMessage && <Alert type="error" showIcon message={errorMessage} action={<Button actionKey="attachment-management.attachment-management-page.7" size="small" icon={<RotateCw size={14} />} onClick={() => void (activeTab === 'rules' ? loadRules() : loadFiles())}>重试</Button>} />}
+    {errorMessage && <Alert type="error" showIcon message={errorMessage} action={<PlainButton  size="small" icon={<RotateCw size={14} />} onClick={() => void (activeTab === 'rules' ? loadRules() : loadFiles())}>重试</PlainButton>} />}
     <Tabs activeKey={activeTab} onChange={setActiveTab} items={[
       canReadRules ? { key: 'rules', label: '附件规则', children: rulePanel } : null,
       canReadFiles ? { key: 'files', label: '文件台账', children: filePanel } : null
@@ -282,7 +283,7 @@ export function AttachmentManagementPage({ canReadRules, canManage, canReadFiles
           <Form.Item label="单批数量" name="maxBatchCount" rules={[{ required: true }]}><InputNumber min={1} max={999} precision={0} className="full-width" /></Form.Item>
           <Form.Item label="允许预览" name="previewEnabled" valuePropName="checked"><Switch /></Form.Item>
         </div>
-        <div className="form-actions"><Button actionKey="attachment-management.attachment-management-page.8" onClick={() => setRuleModalOpen(false)}>取消</Button><Button actionKey="attachment-management.attachment-management-page.9" type="primary" htmlType="submit" loading={submitting}>保存规则</Button></div>
+        <div className="form-actions"><PlainButton  onClick={() => setRuleModalOpen(false)}>取消</PlainButton><Button actionKey="ATTACHMENT_RULE_MANAGE" type="primary" htmlType="submit" loading={submitting}>保存规则</Button></div>
       </Form>
     </Modal>
 

@@ -841,3 +841,298 @@ V100清理废弃入口和权限、初始化分组。Fresh MySQL暴露旧V29外�
 ## 2026-10-04 用户列表机构名称
 用户管理列表在名称后增加机构名称列；接口按当前页用户批量查询直属机构名称，多机构并列显示，未关联显示—，长文本省略且可悬停查看。沿用现有成员关联和组织筛选，未调整数据及权限。
 验证前端7测试、后端24回归测试、前端构建/后端打包通过，真实API确认teacher01机构名称，浏览器列显示正常，服务重启UP/db=true/redis=true。截图.local-verification/user-organization-column-final.png。
+
+## 2026-10-05 组织管理并入机构业务页签
+
+背景：组织管理页两种形态互斥（ORG_ADMIN补授ORG_NODE_READ/ORG_NODE_CHANGE_REVIEW后切入组织树管理形态），新增班级、学员关系、家长换号核验、学生账号注销、配置教师班级只存在于纯机构管理员（仅CLASS_READ）的机构业务独立页，补授后全系统无账号可见。按用户选择将机构业务并入平台组织视图。
+
+改动：OrganizationManagementPage抽出OrganizationOperationBody（showHeading区分独立页与页签嵌入，按钮、抽屉、班级面板逻辑单源），PlatformOrganizationManagementView顶部新增「机构业务」页签承接原机构业务全部内容；能力开关门控保留（学员关系/家长换号核验/学生账号注销分别受开关控制，配置教师班级恒显）；纯机构管理员独立页行为不变。纯前端改动，无后端与迁移变更。
+
+验证：organizations目录8个测试文件20项通过（新增2项回归：平台视图机构业务页签包含班级与业务入口、学员关系按开关显隐且配置教师班级恒在）；Web全量68文件360项通过、typecheck、生产构建通过。真实浏览器orgadmin实测：机构业务页签显示学员关系、配置教师班级、班级管理（新增/编辑/停用），配置教师班级抽屉正常打开且含取消/解除绑定/确认绑定；能力开关parentMobileManualRecoveryEnabled与studentAccountCancellationEnabled当前为关闭，对应按钮按设计隐藏。截图.local-verification/organization-operations-tab-final.png。未提交工作区改动。
+
+## 2026-10-05 V102清理29个残留UI按钮
+
+背景：组件与菜单配置比对发现29个按钮编码在前端动作目录（355个动作）中已无任何组件绑定，对任何角色均不可见：各页「刷新/重试」类14个（多轮改版去除刷新按钮）、菜单管理旧交互5个（改拖拽排序与集中操作区）、角色与权限旧授权5个（改级联勾选树与行内授权）、系统任务旧按钮3个（改跳转业务页审核）、匿名排行/排行授权2个。按受控数据修正规范以V102迁移清理（禁止手工改库）。
+
+改动：V102__remove_stale_ui_buttons.sql按V100同序清理——先删sys_role_permission与sys_user_permission授权，再删sys_menu按钮节点（限定type='BUTTON'），最后删sys_permission权限行，审计历史保留；历史迁移文件不改。同步修正MenuCatalogUpgradeTest对menu-management-page.10的断言（原断言权限必须存在，改为断言菜单行/授权/权限均已移除）。
+
+验证过程发现两处既有问题并一并处理：1) MenuPersistenceTest混合角色断言仍要求SYS_ADMIN+SYS_AUDITOR身份拒绝菜单写入，与已提交的权限编码判定设计（67a34cd移除固定身份门槛）冲突，属V102之前既有失败，按权限化语义修正为混合角色可管理菜单、纯审核员只读断言保留；2) 后端全量套件919项中另有21失败+1错误，经移除V102对照复跑确认失败集完全一致，全部为权限化等前几轮的既有问题（多为403期望未随身份门槛移除更新，及Flyway计数、导出边界等），与V102无关，留待专项对账轮处理，未在本轮掩盖。
+
+验证：MenuCatalogUpgradeTest 8/8、menu包6类30/30通过；后端全量套件919项中V102相关零新增失败（有/无V102对照均为21失败+1错误，既有问题见上）。重新打包后端并经pwsh start-real-env.ps1重启，Flyway对真实MySQL应用V102成功（lingdong_learning → v102），health UP且db=true、redis=true。真实API复核：菜单按钮384→355与前端动作目录精确一致（双向差异均为0）、菜单节点415→386、ORG_ADMIN授权118→116（移除其挂接的2个组织管理刷新按钮授权）、admin权限码462→433；菜单管理页渲染正常且残留按钮不再出现。截图.local-verification/v102-menu-management-after-cleanup.png。未提交工作区改动。
+
+## 2026-10-05 四项管理端增强（V103）
+
+需求与实现：1) 组织用户支持撤销——成员行新增「取消关联」、管理员行新增「取消管理员」（danger+二次确认），后端新增 POST /organizations/{id}/members:revoke（镜像 addMembers 锁序与权限：IAM_USER_ORGANIZATION_ASSIGN，管理员撤销另需 IAM_USER_ROLE_ASSIGN+IAM_DATA_SCOPE_CONFIGURE），三个 Mapper 补删除方法，新增审计事件 USER_ORGANIZATION_DISSOCIATE/ORGANIZATION_ADMIN_REVOKE/USER_ROLE_REMOVE；取消关联对管理员身份先拒后撤。2) 组织删除报错治理——根因：带业务引用的组织删除在审核通过执行时失败，但 safeFailureReason 兜底吞掉真实原因且 OrganizationChangeExecutionException 落入 IllegalStateException 通用409。修复：safeFailureReason 保留业务异常真实消息、ApiExceptionHandler 新增 OrganizationChangeExecutionException→409 透出原因、createAndSubmit 对 DELETE 增加引用计数预检（申请时即拒绝并告知真实原因）。3) 菜单管理增强——树节点类型 Tag 着色（目录 blue/页面 green/按钮 gold），新增节点删除（DELETE /iam/menus/{id}，@RequirePermission("MENU_MANAGE")）：核心入口（/dashboard、/menu-management）及其祖先与菜单管理页按钮保护不可删、有下级不可删，删除按 V102 同序级联清理角色授权/用户授权/权限行，审计 MENU_DELETE；新按钮 menu-management.node.delete。4) 机构名称全路径——新增 OrganizationNamePathService（·分隔），组织树响应增加 namePath（详情标题/名称行、父级选择下拉显示全路径层级）、用户列表机构名称列与任务组织选项/教师班级选项/考勤班级选项/异常报备班级选项/导出中心班级选项经 SQL 子查询（祖先路径 GROUP_CONCAT）统一升级为「学校·年级·班级」全路径，响应结构不变。
+
+V103 迁移：3个新按钮码（organizations.members.dissociate/revoke-admin 授 SYS_ADMIN+ORG_ADMIN，menu-management.node.delete 授 SYS_ADMIN）+权限行+按钮权限父级回填（沿用 V100 派生表写法规避 MySQL 1093）+审计事件 CHECK 扩展。过程中修复两处真实环境问题：UPDATE JOIN 写法 MySQL 不兼容改 V100 派生表式；首次失败残留的 flyway_schema_history 记录经一次性工具（凭据运行时读取不回显）清理。
+
+验证：受影响包测试（menu/organization/iam/exceptionreport/learningtask）新增失败全部修复后通过，后端全量919项失败集与 V102 轮基线逐字一致（21失败+1错误均为既有，零新增）；前端 organizations/menus 60项、typecheck、全量构建通过；LearningTaskOptionControllerTest 断言同步升级为全路径。真实浏览器逐项实测：①orgadmin 取消关联 teacher3（确认框→API→列表刷新）后经关联已有用户恢复原状，管理员行/成员行按钮齐备；②admin 对四年级三班提交删除申请当场弹出「组织变更执行失败：组织存在下级节点或业务引用（成员、管理员、师生关系、任务等），不能删除」；③创建 DICTIONARY_TEST_CLEANUP 测试按钮（gold 标记）→ 删除成功且菜单行/权限行级联清除（390→389），核心入口删除按钮正确禁用；④选中四年级三班详情标题显示「重庆两江新区新牌坊小学·四年级·四年级三班」。截图.local-verification/menu-delete-verified-final.png。未提交工作区改动。
+
+## 2026-10-05 修复组织删除执行在 MySQL 上必然失败（ERROR 1093）
+
+用户审核组织删除（四年级六班，两次）均提示兜底文案「组织变更执行失败：组织变更条件已变化，请核对后重新申请」。排查：预检 SQL 覆盖全部 23 张外键表且该组织引用计数为 0；按 applyApprovedChange 顺序在真实 MySQL 上逐步模拟（SELECT FOR UPDATE/DELETE/markApplied/audit INSERT/markEffective）全部成功，排除数据问题；给 catch 分支加 ERROR 日志（taskId/changeId/reason/handler+堆栈）后复现，定位 handler=UncategorizedSQLException——deleteLeaf 的 DELETE 语句含 NOT EXISTS(SELECT...FROM sys_organization) 自身子查询，触发 MySQL ERROR 1093（目标表不得出现在 UPDATE/DELETE 子查询中）；H2 允许该写法故后端测试全绿未暴露，属删除审核执行链路（V100 后新增的直通执行）在真实 MySQL 上的存量缺陷，此前从未成功执行过。修复：deleteLeaf 子查询改派生表物化写法（与 V100 权限回填同款规避方式），H2/MySQL 双兼容。
+
+修复同时保留新增的执行失败 ERROR 日志（含任务/变更标识、归因原因与异常类型），后续执行失败可第一时间定位。
+
+验证：OrganizationChangeApplicationServiceTest 14/14 通过；重新打包重启（health UP、db/redis=true）后真实链路复验——admin 对「验证删除组织乙」提交删除、auditor 批准，返回 executionStatus=APPLIED、taskStatus=EFFECTIVE，组织物理删除成功（测试组织甲同样清理成功，两次独立验证）。用户此前失败的「四年级六班」现可重新提交删除申请，提交预检通过后审核执行将正常生效；其两条 FAILED 历史变更记录保留作为审计痕迹。未提交工作区改动。
+
+## 2026-10-05 修复组织树拖拽换父误报
+
+用户把四年级六班（挂在三班下）拖到与五班平级时被误报「不能移动到自身或其下级组织」，被迫改走申请移动。根因：前端 handleTreeDrop 的换父空隙分支防环判定方向写反——检查的是「新父的子树包含被拖节点」（换父时几乎恒真，因为节点本来就在新父子树里），而正确的环判定是「新父位于被拖节点自己的子树内」（挂到自己后代下）。拖入内部分支同时补上反向判定（把祖先拖进后代内部成环，原判定漏检该方向，仅由后端兜底）。
+
+实现：防环判定抽为导出纯函数 dragMoveViolation（含注释说明两个方向的语义），handleTreeDrop 拖入内部与换父空隙分支改用该函数；纯前端改动，后端 validateMoveTarget 的路径前缀防环本就正确未动。
+
+验证：新增 7 项判定矩阵单测（空隙换父合法/换到后代违规/同父重排合法/拖入后代违规/祖先拖入后代违规/拖入无关节点合法/拖到自身违规），organizations 目录 8 文件 27 项、typecheck、生产构建通过。真实浏览器鼠标拖拽复验：临时创建「拖拽验证班」挂三班下（复现原场景），真实鼠标拖到五班空隙——出现「组织节点已移动」且无误报，树刷新后验证班位于四年级下与五班平级；随后经删除流程清理（APPLIED/EFFECTIVE）。截图.local-verification/drag-before.png、drag-after-fix.png。未提交工作区改动。
+
+## 2026-10-05 修复新增下级组织「请求参数不合法」吞掉真实原因
+
+用户新增下级组织保存时仅提示通用文案「请求参数不合法」，无法得知具体错项。复现：组织编码输入中文或小写均返回 400 VALIDATION_ERROR 通用文案。根因两层：1) 后端 ApiExceptionHandler 将 IllegalArgumentException 与 Bean Validation 异常合并映射为固定文案，而组织编码格式（3至64位大写字母、数字、下划线且字母开头）、名称长度、排序值等校验失败都以 IllegalArgumentException 抛出真实中文原因；2) 前端新增组织节点/新增组织类型弹窗的组织编码、类型编码字段只有必填和长度校验，缺少与后端一致的格式预校验，用户输入不规范编码直到提交才失败且看不到原因。
+
+修复：后端把 IllegalArgumentException 拆分为独立 handler 透出真实消息（全部为面向用户的中文业务文案；MethodArgumentNotValid 与 HttpMessageNotReadable 保持通用文案），消息为空时回退通用文案；前端组织编码、类型编码字段增加与后端一致的正则预校验并显示相同提示文案。
+
+验证：前端 organizations 8 文件 27 项、typecheck、生产构建通过；后端全量 919 项失败集与基线完全一致（21失败+1错误均为既有，零新增）。真实浏览器复验：API 层中文编码请求返回「组织编码仅允许3至64位大写字母、数字和下划线，且必须以字母开头」；表单输入中文编码即时红框提示相同文案且无法提交；改为合法编码 SIBAN_QI_TEST 创建成功且详情 namePath 正确显示全路径「重庆两江新区新牌坊小学·四年级·四年级七班」（顺带验证上级组织下拉的全路径层级显示）；测试节点经删除流程清理（APPLIED/EFFECTIVE）。截图.local-verification/org-code-validation.png。未提交工作区改动。
+
+## 2026-10-05 按权限编码访问管理端
+
+移除Web管理访问中SYS_ADMIN/SYS_AUDITOR/ORG_ADMIN/TEACHER固定身份门槛，管理端页面与接口一律按权限编码判定；保留有效账号、WEB客户端、功能开关、显式拒绝、组织数据范围及业务关系和审核不能自审。系统/IAM后端（菜单、组织、用户、角色、功能开关、系统任务、字典、缓存、接口服务、附件）与教育/导入导出后端（教师、班级、学生、考勤、异常报备、导入、导出）均改为权限加真实组织范围授权，修正导入作业列表、教师班级元数据、混合审核加只读权限导出三处范围不一致；二维码Web签发改为精确权限、活跃ENROLLMENT、组织数据范围及组织有效启用检查，保留主家长关系与MINIAPP原规则；导出冻结范围新增systemTaskReviewableTypes，旧快照不随新增权限扩大。前端菜单、页面入口与按钮按权限编码显示，自定义角色授权后即可访问对应管理页面。
+
+验证：系统组后端78项、业务组修复夹具后复测4/4通过（.local-verification/business-fixture-retest.log），SystemPermissionDrivenAccessTest覆盖混合权限导出、二维码权限和范围；前端相关回归（含PermissionRoutes、学生登录管理页46项等）与生产构建通过（permission-final-web-tests.log、permission-final-web-build.log），后端打包通过。verify-permission-runtime.ps1确认：health UP且db=true、redis=true，admin访问菜单/IAM/用户/组织/开关/系统任务接口全200，无TEACHER_READ与LEARNING_TASK_READ_MANAGED的教师目录、学习任务接口按权限返回403，Web 5173与H5 5174均200（permission-runtime-verification.log）。
+
+Codex因额度中断后由ZCode接手收尾浏览器复核：重启后端（pwsh运行start-real-env.ps1，密钥持续有效）与双前端dev服务后，admin登录5173，工作台、用户管理、角色与权限、菜单管理、组织管理、功能开关、系统任务、学生登录页均正常加载并返回真实数据；左侧导航教育管理组仅显示学生登录，教师管理、学习任务等未授权菜单隐藏，无成长管理组，与后端403行为一致。截图.local-verification/permission-driven-web-final.png。未提交工作区改动，未提交真实角色授权变更。
+
+## 2026-10-06 学校、年级、班级统一管理
+
+用户确认学校→年级→班级并要求简单清晰。组织架构与机构业务共用左侧选中节点：学校默认年级列表，年级默认班级列表，班级默认学生/教师；新增自动固定上级，仅填名称、排序，保存刷新树和列表并保留位置。组织用户、信息为次级页签，原类型管理、变更审核及其他业务能力保留。局部年级/班级范围以不可操作的学校/年级祖先显示上下文，防止局部权限账号出现空树；成员查询按独立权限裁剪，异步切换不会显示旧班级人员。
+
+新增年级直接归属学校、班级直接归属年级，班级为叶节点，禁止学校直接或间接嵌套。创建与直接/审核移动共享校验；直接跨校移动拒绝，审核跨校检查子树业务引用。年级CRUD复用CLASS_*权限，停用年级及审批停用祖先都会使子班未完成任务失效。存量直属学校班级保留，可通过CLASS_UPDATE归并同校年级，保持ID、关系及审计。班级响应返回学校/年级ID名称，教师摘要按学校祖先解析；教师候选允许未绑定的同校有效教师，保留实际范围和祖先关系要求。新增班级学生目录/候选接口分别使用STUDENT_READ/STUDENT_CLASS_ASSIGN，避免依赖任务创建权限。
+
+小程序同步年级选择、创建gradeOrganizationId和学校/年级名称显示；构建时修复teacher-home原有多余view闭合标签。浏览器复验发现教师响应classOrganizationIds与前端classIds不一致，已在API边界映射并补真实响应契约回归。
+
+验证：针对性后端99项（核心57项与额外兼容42项，重叠用例只计一次；旧两层测试夹具同步年级、失效状态及正确范围后复测通过），前端30项、Web构建、小程序type-check及mp-weixin构建、后端打包均通过。独立复核停用任务失效及跨校引用计数问题已修复，无剩余P1/P2。真实库schema103保持不变，不删数据、不改密码或角色授权。8080新后端PID404720健康UP/db=true/redis=true；管理员组织树、学校/年级/班级、教师候选、班级学生及入班候选接口200；现有2学校、1年级、4班级归属正确，Web5173/H5 5174均200。orgadmin当前未获CLASS_READ，验证保留拒绝权限，不修改授权。
+
+证据：.local-verification/school-hierarchy-final-backend-tests.log、school-hierarchy-compatibility-retest.log、school-hierarchy-final-web-tests.log（29项；新增教师wire契约后最终30项由前端复测；root再次运行API2项通过，school-hierarchy-teacher-contract-tests.log）、school-hierarchy-runtime-verification.log、school-hierarchy-miniapp-build.log。浏览器确认学校年级列表、年级4个班级、新增班级固定四年级、学生名单、教师候选及名单页面无报错；未提交新增/绑定数据。页面截图school-grade-class-final.png。
+
+## 2026-10-06 组织操作按钮直接展示
+
+按用户要求移除更多/更多业务Popover。新增下级、编辑、申请停用/移动/删除直接显示于组织操作行；学员关系、家长换号核验、学生账号注销、配置教师班级直接显示于独立业务操作行，继续保留权限及功能开关。按钮自动换行且文字不竖排，不挤压新增年级/班级入口。25项相关页面回归、类型检查及Web构建通过；浏览器确认年级页组织操作与业务操作均直接可见。无需重启后端。证据.local-verification/organization-visible-actions-tests.log、organization-visible-actions-build.log、organization-visible-actions-final.png。
+
+## 2026-10-08 班级学生列表重复刷新
+
+定位SchoolHierarchyPanel成员effect同时依赖班级ID与classes数组；StrictMode重放加组织列表异步返回导致同班学生请求3次。新增回归先确认3次失败，再移除组织列表依赖，以班级ID、读取权限和显式刷新版本控制成员请求；当前加载Promise在effect重放中复用，保留取消旧结果，离开班级重新进入仍重新查询。保存学生/教师关系和手动重试显式刷新，避免缓存旧列表。27项页面回归（含严格模式只查询一次、保存后一次刷新及切换班级防串数据）、类型检查和构建通过，Web5173 HTTP200。证据.local-verification/student-list-refresh-red.log、student-list-refresh-tests.log、student-list-refresh-build.log。仅前端变更，无需重启后端。
+
+## 2026-10-08 用户管理与组织用户统一学生创建
+
+STUDENT类型经两个共用入口创建时保留输入用户名/账号ID，在同事务建立edu_student、积分/lifecycle、内置学生角色、专属凭据和学校入学关系。学校/年级暂未分班，班级自动入班；非教育组织必须选择有效学校和年级信息，班级年级祖先默认推导，旧式直属学校班级允许手填年级。权限IAM_USER_CREATE、STUDENT_CREATE及分班权限、真实组织范围和相关开关校验保留；不因任务管理关闭阻止学生入班。
+
+补齐POST要求目标用户已关联所选组织，拒绝已停用账号、冲突有效入学/班级关系及历史停用入学关系。用户名、既有角色/关系/凭据保留。受保护创建/补齐POST仅在新签发凭据时返回initialLoginCode，GET/列表不返回；创建成功弹窗展示一次性账号和登录码，结果对象toString脱敏、studentId字符串序列化。学生账号认证与小程序输入兼容xiangsihan等合法64字符自定义账号，原数字账号保留。
+
+统一学生组织范围谓词供目录、候选、关系生命周期及studentAllowed使用：学校范围或当前活动班级范围；未分班时仅认可同校范围内GRADE账号会员。旧CLASS会员不保留转班后的读权限，同校其他学生不会进入窄范围。新SQL字面前缀LEFT比较阻止编码下划线通配越范围。成功创建学生发送无数据内部通知，仅当前CLASS且有STUDENT_READ面板刷新一次，保留StrictMode去重与卸载清理。
+
+验证：最终核心后端25项通过，加新HTTP事务隔离与StudentManagementController既有3项回归合计4项通过（重叠HTTP1项，唯一相关后端28项），最终前端创建/成员/班级联动22项通过；Web构建、小程序type-check/mp-weixin构建及后端打包通过。独立复核所发现跨目标用户范围、窄范围可见性、历史班级年级字段已修复，无剩余确认P1/P2。新HTTP测试加事务隔离，避免持久化测试学生污染其他ALL范围计数；旧扩展组仍有已有授权角色硬编码的历史权限断言，不作为全量测试通过声明。
+
+真实MySQL仅修复xiangsihan（原userId2107115161507594240）：档案0→1、凭据0→1，原CLASS2190000000000020003与住宅FAMILY2107115465045180416会员均保持。修复接口再调用不重复档案、不生成新码；四年级三班成员与候选都包含向思翰。首次码已保存忽略的私有文件.local-verification/xiangsihan-student-initial-credentials.json（不写日志），用该码完成真实学生QR登录并撤销验证会话，用户名和身份一致。未改变其他账号、密码或管理员授权，未清空数据。后端PID63276 health UP/db=true/redis=true，schema103不变。
+
+证据.local-verification/unified-student-final-tests.log、unified-student-http-isolation-tests.log、unified-literal-scope-green.log、unified-student-package.log、xiangsihan-before-repair.log、xiangsihan-after-repair.log、xiangsihan-repair-verification.log；浏览器新增独立验证页，三班学生名单和添加学生候选均显示向思翰，未提交额外绑定。截图unified-student-class-final.png、unified-student-candidate-final.png。未提交或回退工作区历史变更。
+
+## 2026-10-06 家长账号 xiangkanglin 无法登录：恢复服务并补齐账号数据
+
+用户报告管理端新增的家长账号 xiangkanglin 无法登录（提示请求失败）。排查发现两层原因：1) 直接原因——后端服务未运行（8080 无监听，早间实例已退出且无关闭日志），前端一切请求失败，任何账号均无法登录；2) 账号数据缺口——管理端「新增用户（家长类型）」按现有设计仅落库 sys_user、sys_user_organization 与 password_hash 三项，而家长登录资格判定（AuthenticationApplicationService.isEnabledWebUserWithMatchingPassword 与小程序家长端点同款）要求 type=FAMILY + ENABLED + PARENT 角色绑定 + auth_parent_profile 记录四项全满足；新增流程不自动建后两项，故凡管理端新增的家长账号均无法通过资格判定（种子家长 parent01/02 因初始化数据带全两项而可登录）。
+
+处置（按用户约束不动任何功能代码）：pwsh 重启后端（health UP、db/redis=true）；经现有角色分配接口为 xiangkanglin 绑定 PARENT 角色（GLOBAL 域，204 成功）；以一次性 SQL 工具按 parent01 行结构补建 auth_parent_profile（onboarding_status='COMPLETED'，幂等防重，凭据运行时读取不回显）。终态核对：type=FAMILY、status=ENABLED、password_hash 非空、PARENT 角色已绑（启用）、profile COMPLETED——四项资格条件全部就绪，登录验证由用户以自设密码完成。
+
+现有设计已知约束（记录备查，未经批准不改动）：管理端新增家长账号后需手工绑定 PARENT 角色并补 auth_parent_profile 方可登录；小程序家长登录要求账号名即 11 位手机号（按手机号定位账号），字母账号名仅适用管理端 Web 密码登录。另：权限判定接口 GET /users/{id}/roles 路径猜测错误时返回 500 未预期异常（噪声记录，未影响本次处置）。未提交工作区改动。
+
+## 2026-10-06 xiangkanglin 组织管理空树：数据范围角色语义错位（用现有自定义角色能力解决）
+
+xiangkanglin（家长+组织管理员双身份，管理「中渝香奈公馆4栋」）登录后组织管理页空树。排查：账号数据完整（ORG_ADMIN 绑定 scopeKey=ORG:4栋、sys_organization_admin 记录在、组织 ENABLED、144 个有效权限码含 ORG_NODE_READ/CLASS_READ，前端走平台组织树管理形态）；树结构正常（4栋 直接挂两江新区下，path 无异常）。根因：数据范围解析（OrganizationDataScopeService.resolveRoleRootPaths）要求 ORG_ADMIN（dataScope=SCHOOL）授权行指向组织的 type_code 严格等于 SCHOOL，而 4栋 为楼栋类组织 → ORG_ADMIN 范围路径为空；PARENT（dataScope=SELF）对组织树零贡献；三层交集（角色路径 ∩ 用户组织关联 ∩ 管理员记录）为空 → GET /organizations 返回空列表。该角色的 SCHOOL 语义面向"学校管理员"（orgadmin 管学校时正常），用于非学校类组织即出现空树。
+
+处置（不动功能代码，全部使用现有自定义数据范围角色能力）：新建角色「楼栋管理员」LOUDONG_ADMIN（dataScope=CUSTOM）；经现有数据范围配置接口指定 4栋；权限批量复制 ORG_ADMIN 全部 117 条 ALLOW；绑定 xiangkanglin（GLOBAL）。数据范围推演：CUSTOM→4栋.path 与成员关系、管理员记录三层交集=4栋 子树，组织树接口预期返回「中渝香奈公馆4栋」。保留原 ORG_ADMIN 绑定（SCHOOL 语义对其无贡献亦无害）。登录实测由用户完成。
+
+现有设计已知约束（记录备查）：ORG_ADMIN 内置角色的数据范围语义限定 SCHOOL 类型组织；对学校以外类型（楼栋/小区等）的组织管理员，应使用自定义数据范围角色（现有角色管理能力支持）。未提交工作区改动。
+
+## 2026-10-06 修复数据范围裁剪子树的组织树 409（xiangkanglin 组织管理报「当前状态不允许执行此操作」）
+
+配置楼栋管理员角色（CUSTOM 范围指向 4栋）后，xiangkanglin 打开组织管理报 409 STATE_CONFLICT。定位：数据范围解析已正确返回 4栋 子树（rootPaths=[4栋.path]，findByRootPaths 返回 4栋 单节点），但 toTree 组装时该节点 parentId 指向两江新区（不在可见集合内），命中「组织树数据不完整」IllegalStateException → 409。这是数据范围裁剪的固有语义缺陷：**任何非 ALL 范围的可见子树，其顶层节点的父必然不在可见集合内**（orgadmin 学校范围同构），全量管理员不受影响。
+
+修复：toTree 组装改为「父不在可见集合内的节点（含真根）一律作为可见根渲染」——数据库外键保证父子引用有效，裁剪集合中父不可见即父在范围外，作为根是正确语义；注释同步说明。后端 organization 包 57 项通过；全量 932 项失败 19+1（较既有基线 21+1 减少，系今晨会话修复旧夹具所致，本轮零新增）。打包重启 health UP。实测由用户以 xiangkanglin 登录完成（预期组织树显示「中渝香奈公馆4栋」为根）。未提交工作区改动。
+
+## 2026-10-06 xiangkanglin 菜单收敛（楼栋管理员角色权限收紧）
+
+用户反馈家长+楼栋管理员账号不应看到教师管理菜单。成因：LOUDONG_ADMIN 角色建立时批量复制了 ORG_ADMIN 全部 117 项授权，带入教师/学习任务/考勤/异常报备/导入导出等学校语义权限码，菜单随权限码显示。处置（差量权限收紧，不动代码）：经现有批量授权接口撤除 TEACHER_READ、TEACHER_CREATE、LEARNING_TASK_READ_MANAGED、ATTENDANCE_READ、ATTENDANCE_RECORD、EXCEPTION_REPORT_READ、IMPORT_JOB_READ、EXPORT_JOB_READ 八码（117→109），保留组织树管理、学生登录（STUDENT_READ/STUDENT_LOGIN_QR_CREATE）、用户管理（IAM_*）、机构业务（CLASS_READ 等）与家长成长类（GROWTH_*_CHILD 等）权限。刷新后教师管理、学习任务、考勤台账、异常报备、导入校验作业、数据导出中心六个菜单消失。
+
+学生登录「看孩子」确认：现有功能已支持——学生目录接口（StudentMapper.directoryFilters）内置家长亲子分支（PARENT 角色 → EXISTS edu_parent_student ACTIVE），与组织范围分支为 OR 并集；xiangkanglin 当前无亲子关系数据故列表为空。孩子绑定待用户提供学生姓名后以一次性数据操作建立（现有管理端无绑定入口）。未提交工作区改动。
+
+## 2026-10-08 校区层级、双栏关联与默认角色收尾
+
+支持学校直接年级或学校→校区→年级→班级，CAMPUS只能属于学校。学生关系及教师分班以学校隔离且继续校验实际授权范围；选项以组织DFS顺序、完整路径显示。组织成员/管理员和角色用户均使用待加入/已加入双栏，子树筛选、独立分页、批量增减，角色按用户+授权组织精确撤销。自动ORG_ADMIN按同校管理员关系保留/回收，既有手工角色绑定保留。默认STUDENT/TEACHER/PARENT/ORG_MEMBER/PLATFORM_USER，不自动SYS_ADMIN；普通角色SELF无管理业务权限。授权学校角色允许既有下级会员，不补学校会员，不扩大原实际范围。
+
+复核教师源范围写入绕过已修复：绑定及解除要求源教师在操作者实际组织范围内；校内其他校区教师只能由有对应范围的账号操作。教师DTO新增organizationNames，旧classOrganizationIds不变；菜单动作前后端358项内容及顺序一致。
+
+最终相关后端46项通过，前端专项及tsc+vite build通过，后端package成功。8080/5173/5174已运行，真实MySQL结构V104、Redis正常、admin登录通过、双栏真实API通过，四年级三班向思翰保留。浏览器工具初始化失败，实际点击/视觉验收尚未完成；没有清空数据或改变密码。日志与待验收细节见docs/superpowers/plans/2026-10-08-campus-school-members.md。
+
+## 2026-10-08 关联用户弹窗布局简化
+
+组织成员、组织管理员、角色关联用户共用弹窗加宽至min(1480px,96vw)，列表高度随视口增加；加入/移除移到两栏中间，保留双箭头、文字与原权限actionKey。组织筛选与授权组织框340px，树节点及列表只显示当前组织名称，树缩进保留层级；后端原组织路径和授权范围不变。小屏改为上下两栏，中间按钮横排。既有双栏/角色回归10项通过，tsc+vite build通过。证据.local-verification/user-picker-layout-tests.log、user-picker-layout-build.log。
+
+## 2026-10-08 用户资料编辑与随机重置密码
+
+用户列表新增独立IAM_USER_UPDATE编辑按钮和抽屉，可修改名称/手机号；账号、用户类型只读，机构关系沿用原关联流程。后端PATCH /users/{id}校验编辑权限与目标实际组织范围、注销状态及重复手机号，事务锁用户行；学生姓名同步档案，手机号变更撤销该用户现有会话，记录USER_PROFILE_CHANGE。V105初始化可授权编辑/保存/取消菜单按钮，并继承现有用户创建允许/拒绝授予；前后端动作目录一致。
+
+重置密码弹窗用Web Crypto生成每次新8位字母数字组合，至少一字母一数字，同时填入确认值，仍可手改；密码只在原确认操作后提交，不存日志或本地持久化。学生既有登录码流程不变。
+
+后端用户编辑及角色回归16项、前端编辑/随机密码/目录/菜单13项通过，前端类型检查构建成功，后端打包成功。运行JAR锁定导致首次打包失败，核实项目8080进程后停服重打包并恢复；真实MySQL已成功V105，健康db/redis正常，admin获新编辑权限，以原资料无变化PATCH验证新接口成功，未改任何真实密码。证据.local-verification/user-edit-backend-tests.log、user-edit-web-tests.log、user-edit-web-build.log、user-edit-package.log、user-edit-server.log、user-edit-runtime-verification.log。
+
+## 2026-10-08 组织业务同校选择与创建目录联动
+
+组织用户选项卡前置并默认打开。学校业务动作接收SchoolHierarchyPanel推导的真实学校ID，未取得上下文时禁用；教师班级通过/classes?schoolOrganizationId查询、前端再次按学校及有效状态过滤，无固定学校的入口先选择学校。学员关系目标班级DTO新增schoolOrganizationId，按所选学生入学学校过滤；上下文或学生改变清空目标选择，提交再次核对本校。后端保留原校内关系写入校验及实际数据范围。
+
+关联已有用户/管理员弹窗删除同校与未归属分组下拉，固定本校候选；组织筛选树只呈现本校节点，裁剪树仍保留同校已授权兄弟校区。后端组织候选拒绝UNBOUND分组（403）、allowedUnbound=false；非学校目标候选收窄自身子树。角色用户关联仍按其原实际授权范围。没有清空数据或改变既有密码。
+
+普通/教师/家长新账号使用同一Web Crypto生成器自动填8位字母数字初始密码与确认值，可修改；学生保持专属学生登录码。按学生类型自动建立学生档案、凭据及入学关系，按教师类型自动角色与学校会员，已用真实教师目录查询和学生创建集成测试确认自动挂接。创建成功通知已打开的学生/教师目录刷新一次，无凭据进入事件。
+
+验证：后端4组17项通过；前端9组75项通过，追加裁剪校区回归后选择器9项通过（与前次重叠8项，唯一相关前端76项）。类型检查/前端构建与后端打包成功；后端已恢复8080，管理端5173 HTTP200，MySQL V105、Redis正常。真实3所学校查询各自班级及学员目标班级隔离，未归属查询均403，原向思翰班级关系保留。证据.local-verification/school-only-backend-tests.log、school-only-web-final-tests.log、school-only-picker-final.log、school-only-web-build.log、school-only-package.log、school-only-server.log、school-only-runtime-verification.log。
+
+## 2026-10-08 班级组织用户创建后自动挂接班级师生列表
+
+定位：STUDENT在CLASS下创建已有同事务学生档案/入学/班级关系；TEACHER此前仅建立身份和学校会员，缺edu_teacher_class授课关系，故班级学生与教师选项卡不显示新教师。UserAccess创建教师且目标CLASS时，现在预检TEACHER_CLASS_ASSIGN权限，并在同一事务复用TeacherClassAssignmentService.assign，保留真实范围、同校、有效状态、功能开关与BIND审计；学校/校区/年级账号不猜测具体班级。缺分班权限不会写入账号。班级面板订阅教师创建通知，StrictMode下更新一次并在卸载后清理；学生原有通知与自动入班保持。
+
+真实只读查询仅找启用ORGANIZATION教师、已有直接CLASS会员但不存在任何授课历史的组合，发现2条。通过原有受保护绑定API补齐并确认classOrganizationIds包含对应班级，排除主动解除/停用的关系，无密码变更。重启后2条关系仍可见，向思翰原班级关系保持。
+
+验证：后端CampusMembership10、学生创建4、教师班级2项（16项）通过；相关前端创建14项已通过，班级面板新增刷新夹具修正后14项通过（唯一28项）；前后端构建/打包通过，8080/5173正常，真实DB/Redis UP，结构仍V105。证据.local-verification/class-user-autobind-backend.log、class-user-autobind-web.log、class-user-autobind-web-final.log、class-user-autobind-repair.log、class-user-autobind-build.log、class-user-autobind-package.log、class-user-autobind-runtime.log。只读检测脚本MissingClassTeachers.java及结果在忽略的.local-verification目录。
+
+## 2026-10-08 组织类型/角色生命周期与组织用户类型限制
+
+组织类型、自定义角色新增编辑、删除与启停单选，内置类型及内置角色前后端禁止这些操作；角色编码/数据范围保持只读，名称说明可编辑；组织类型编码只读、名称排序可编辑。有组织引用的类型、有用户关联的角色拒绝删除，未关联角色清理权限/自定义范围后删除。角色状态改变撤销关联用户现有会话。组织类型停用阻止新建该类型组织，不级联停用现有组织。Role列表授权/关联用户保留，去掉两项toolbar配置角色权限/配置用户权限入口。
+
+用户目录启停用、锁定解锁改两组Radio单选：LOCKED属于启用且锁定，DISABLED时锁定组不可操作；注销无操作。Radio动作同时校验运行权限和菜单配置，IAM_USER_STATUS_CHANGE补为菜单主键；旧三个独立状态按钮停用。HTTP用户状态改为显式授权包装，检查真实用户可见范围，内部可信状态入口保留。
+
+新增用户依据选中组织动态限制：FAMILY只FAMILY/STUDENT，SCHOOL/CAMPUS/GRADE/CLASS只ORGANIZATION/TEACHER/STUDENT，COUNTRY/CITY/REGION只PLATFORM；未知自定义组织保持原选项。后端同规则拒绝伪造请求，默认类型合理修正，随机密码、学生专属登录码、班级师生自动挂接及缓存刷新保留。
+
+V106增加六项生命周期权限及新状态配置入口、两项取消动作，沿已有创建授予保留ALLOW/DENY；审计增六事件和ORGANIZATION_TYPE，前端/导出中文标签同步。后端相关6组40项全部最终通过（首次39pass/1fail为区域创建测试被误改机构类型，按真实REGION夹具纠正后相关16项重测绿色）；前端6组67项通过，类型检查/构建/后端打包成功。
+
+真实MySQL增量迁移V106成功；临时专用role/type完整create/edit/disable/enable/delete烟测成功并清理，内置无变化修改请求被400拒绝、用户status无变化请求保持updatedAt，无现有用户密码或资料更改，健康DB/Redis UP、5173 HTTP200。证据.local-verification/management-lifecycle-backend.log、management-lifecycle-backend-final.log、management-lifecycle-web-final.log、management-lifecycle-web-build.log、management-lifecycle-package.log、management-lifecycle-server.log、management-lifecycle-runtime.log。
+
+## 2026-10-09 培训机构、多机构学生关系与统一分页
+
+新增内置TRAINING_INSTITUTION，教育机构根统一覆盖学校/培训，校区与GRADE（培训作为课程分类）及CLASS层级保留，机构范围SQL、教师、角色SCHOOL范围、成员、任务与导入等兼容；不自动转换已有SCHOOL记录。普通学校每机构一个行政班，培训可同时多课程班，转班/单课退出/机构退出只处理该机构，其他学校/培训/家庭关联及同一账号凭据保持。多机构摘要增加机构类型、班级ID和名称数组，不能用任意单值表示多课。Family学生创建学校/年级不再必填，单独建档和一次凭据创建。
+
+新增班级邀请码（256bit随机码，SHA256存储，有效期默认7天，最多100次申请）、有限信息解析、家庭申请及机构确认。邀请码不提供全校搜索；申请前核验真实亲子关系、家庭管理员或管理权限+实际家庭范围，共居不等于亲子。审批复用已有学生身份，保留家庭会员并建立实际机构和班级关系。学校认证暂不做。家庭组织用户新增编辑入口（复用IAM_USER_UPDATE）和关联机构申请；班级业务新增邀请码/入学审核，家庭可查看本学生申请记录。
+
+公共分页参照授权审计：默认10，10/20/50，右下角共X条与跳页，容量变化回第一页；服务端请求实际传容量，筛选/刷新保留容量，双栏名单独立容量，静态表公共wrapper控制分页。明确pagination:false的树/小配置/报表不强制分页，内部完整加载100批次保持。所有相关Web页容量已检查，包括用户/教师/学生/任务/考勤/异常/功能开关/导入导出/复盘等。
+
+验证：机构负责人19项、学生31项及完整多机构E2E通过，root整合59项首次58通过/1错误为不同测试同名家庭约束，唯一家庭名称修正后相关学生及入学12项通过，最终59核心均有成功证据。Web全量76文件443项初次439pass/4fail，旧默认20断言及mock reset修正，导入详情专项通过、2邀请测试与14班级面板最终通过，四项均已专项绿色，未重复声明全量443单次绿。公共分页负责人另13文件119独立相关用例通过。前端typecheck/build、后端package通过。旧FlywayMigrationTest仍有6个历史固定数量/旧权限断言未更新，不作为全量后端成功声明。
+
+真实MySQL从V106增量到V108（109迁移校验），没有删除/重建业务数据，不重置学生码或用户密码；健康DB/Redis UP，admin登录、新类型及三个入学权限、实际pageSize10/50接口均验证，向思翰原班级保留。8080/5173/5174持续会话恢复，原密钥复用，JDK17本轮采用已验证Microsoft17路径。证据.local-verification/training-pagination-backend-final.log、training-backend-failures-final.log、student-multi-e2e-final.log、training-pagination-web-full.log、training-web-full-failures-final.log、training-web-final-green.log、training-pagination-web-build.log、training-pagination-package.log、training-pagination-server.log、training-pagination-runtime.log。
+
+
+### 2026-10-09 辅助按钮无需授权
+
+- 精确移除取消弹窗、重试加载、重置查询共100个辅助动作目录；前后端目录同步。
+- ConfiguredButton使用已核对的编码清单，辅助操作不依赖菜单权限；ConfiguredModal取消按钮始终可用。
+- 取消关联、取消管理员、重置密码等业务操作保留权限控制。
+- V109已在真实数据库迁移成功；后端health为UP、数据库与Redis正常。相关8项组件/目录测试和前端构建通过。
+
+
+### 2026-10-09 入学申请状态与按钮文案修复
+
+- 已核对向思翰在新牌坊小学三班的ACTIVE关系；申请同校四班应走校内转班，不修改其真实关系。
+- 入学已入班、待审重复申请、同校已有行政班等已知冲突返回具体说明，普通内部状态异常仍保留泛化提示。
+- 关联弹窗分步按钮保留“确认班级”和“提交入学申请”，展示权限仍由同一申请动作控制。
+- 8项后端及7项前端相关回归通过，前端类型检查通过；后端重新打包部署。
+
+
+### 2026-10-09 组织管理身份展示与满屏布局
+
+- 组织类型、变更记录页签仅SYS_ADMIN角色显示；有组织读取权限的其他角色直接显示组织架构且不渲染外层页签栏。
+- 保留原接口权限与组织数据范围；仅有审核权限但无组织读取权限的账号不加载变更记录，也不扩大组织读取权限。
+- 组织架构、菜单管理、数据字典占满工作区可用高度，左右白色面板等高；长内容在面板内部滚动，外层页面不滚动。
+- ViewportTable同时参考所属面板底部计算表格高度，保留分页空间。
+- 前端49项相关回归、类型检查和生产构建通过。
+
+
+### 2026-10-09 角色关联撤销校验修复
+
+- removeRole与batchRemoveRole使用独立撤销范围校验，不复用新增授权的组织类型/角色范围匹配条件。
+- 仍验证操作者实际组织范围、具体用户角色组织授权记录、全局范围和组织管理员身份保护；不直接修改真实用户授权。
+- RoleBatchAssignmentTest共4项通过，包含旧类型不匹配授权可撤销、新授权仍拒绝、越权撤销不改变数据。验证使用spring.flyway.target=108隔离V109 MySQL删除语法的H2兼容问题；真实数据库仍V109，不修改已执行迁移。
+- 后端重新打包并部署。
+
+
+### 2026-10-09 组织管理员角色撤销明确提示
+
+- 只读确认xiangkanglin在中渝香奈公馆4栋有实际组织管理员身份与ORG_ADMIN组织范围授权。直接撤销被管理员身份保护阻止。
+- 已知撤销冲突使用RoleRemovalStateException返回明确操作说明，未知状态异常保持泛化。
+- 正确流程为组织用户取消管理员，同步移除对应ORG_ADMIN并保留成员身份；未自动修改该真实用户身份。
+- 角色撤销响应测试通过，后端重新打包部署。
+
+
+### 2026-10-09 菜单按钮授权名称功能前缀
+
+- 270项前后端内置动作目录按所属子功能使用“功能 · 操作”，label字段保留实际页面短文案。
+- V110同步真实库sys_menu按钮名和sys_permission权限名；手工按钮以所属页面为前缀，编码与授权关联不变。
+- ConfiguredButton/ConfiguredModal不使用带功能前缀的配置名称覆盖实际操作按钮；既有普通自定义短名称仍支持。
+- 批量新增按钮名称提供功能前缀示例。
+- 10项组件/目录回归及前端构建通过；真实库无未加前缀按钮、无菜单权限名称不一致，V110迁移成功。
+
+
+### 2026-10-09 按钮功能分组排序
+
+- V111按所属页面将同一功能前缀按钮连续分组；主功能组在前，组内查询查看、新增编辑、关联授权、审核、执行和保存确认、停用删除排序。
+- 同步sys_menu及sys_permission.sort_order；页面目录顺序、编码与授予关系不变。
+- 修正MySQL临时表重复引用限制，仅清理V111失败迁移记录后重试成功。真实库V111已应用、后端恢复。
+
+
+### 2026-10-09 权限与菜单完全对齐及用户组织编辑
+
+- V112逐项将63个接口/小程序权限挂到现有业务页面，保留客户端、原代码及角色用户ALLOW/DENY，角色与用户授权树不再产生其他权限。兼容权限明确标注并保留，避免破坏已有授权。
+- 真实接口核对未映射权限为0；权限客户端、角色授权及用户授权迁移前后摘要相同。
+- 编辑用户所属组织支持多选且至少一个；GET organization-edit回显当前、锁定及可访问选项，PATCH资料与组织差量在同一事务更新。
+- 编辑依赖IAM_USER_UPDATE，变更关联还需IAM_USER_ORGANIZATION_ASSIGN；目标类型、组织范围校验保留，管理员/角色/学生教师业务依赖锁定，组织列表并发变化拒绝覆盖。学生学校班级仍走入学申请或学员关系。
+- 用户编辑前端15项及后端11项相关回归、最终构建通过；真实接口学生组织回显成功、空组织保存400拒绝、4条业务依赖锁定；后端健康UP、数据库Redis正常。
+- 权限映射前端19项授权树测试及后端6项菜单客户端测试通过；修正未成功V112同表更新子查询后成功部署。
+
+
+### 2026-10-09 用户列表关联角色
+
+- 用户管理新增“关联角色”，左右显示未关联/已关联角色，中间加入所选、移除所选，按角色名称编码筛选。
+- 同一角色的组织范围授权独立回显；全局角色直接关联，学校机构/区域/班级等角色先选授权组织；移除使用原授权组织。
+- UserRoleAssociationService复用既有批量授予及撤销逻辑，在外层事务完成多角色操作，保留操作者权限、用户和组织范围以及管理员身份保护。
+- V113将既有IAM_USER_ROLE_ASSIGN规范节点置于用户管理，编码与授权不变；角色侧关联用户继续复用同一权限。
+- 15项前端相关回归、4项后端测试及构建通过。真实接口角色回显、空批次400拒绝及菜单归属验证通过；未改变真实用户角色，后端健康UP。
+
+
+### 2026-10-09 家长账号菜单差异与学生查询编码统一
+
+- 只读核对xiangkanglin仅PARENT角色，无用户独立权限；角色已授予学生登录页面和旧查询按钮，缺少实际STUDENT_READ接口码。
+- 家长关系、班级匿名排行全局开关关闭，仍按既有功能限制隐藏，未启用开关。
+- V114把student-login.student-login-management-page.2与STUDENT_READ同功能合并，角色用户授权迁移，DENY优先；清理旧查询节点/权限，把规范查询按钮归学生登录页面。
+- 学生登录前端入口识别页面权限STUDENT_LOGIN_READ及STUDENT_READ，功能开关依然有效；按钮使用规范接口权限码。
+- 49项菜单路由学生登录回归及前端构建通过；真实库V114成功，迁移前后查询合并效果摘要校验一致，家长STUDENT_READ授权已补齐。
+
+
+### 2026-10-09 组织管理子按钮授权入口一致性
+
+- 核对PARENT已有组织管理多个按钮ALLOW但无ORG_NODE_READ，前端入口与组织树接口只看页面读取码造成菜单缺失。
+- PermissionDecisionService针对WEB组织管理只读入口，按同一菜单可见性规则从实际已允许子按钮派生ORG_NODE_READ；不派生写权限，显式用户/角色DENY及菜单停用优先。
+- PARENT数据范围为SELF，本人不等于家庭组织范围；组织数据范围解析不变，组织树无可访问数据时明确提示检查角色范围与组织授权。未给真实账号加组织范围或管理员身份。
+- 5项拒绝/停用/无关按钮决策测试及1项真实范围集成测试通过；集成使用兼容V108测试结构，真实数据库仍V114。前端构建通过，后端重新部署。
+
+
+### 2026-10-09 家长家庭组织可见与默认PARENT_ADMIN
+
+- 普通PARENT可通过组织管理只读查看本人直接关联且启用的FAMILY节点；不修改SELF写入范围，不展示未关联家庭、学校或组织成员管理操作。
+- FAMILY组织设置管理员时挂PARENT_ADMIN及当前家庭组织范围，学校/培训机构仍ORG_ADMIN；取消家庭管理员移除对应自动角色，保留PARENT与成员身份，角色停用也可撤销管理员。
+- 增加FAMILY角色数据范围，按sys_user_role.organization_id与用户组织关联、管理员边界交集计算，不给全部家庭范围。
+- V115查到已有PARENT_ADMIN为用户自建CUSTOM/SELF，保留名称与全部权限，仅改为FAMILY；不自动变更现有用户角色，不移除旧ORG_ADMIN。初始化默认权限只对尚不存在的新角色生效。
+- 最初大量管理授权/旧ORG_ADMIN清理迁移被自动审批拒绝未执行，改为最小方案后完成。真实授权、用户权限与权限客户端摘要前后相同。
+- 前端26项相关回归及最终23项组织页面回归、构建通过；后端7项家庭隔离及管理员生命周期回归、最后2项角色停用撤销回归通过。集成验证使用兼容V108结构，真实库V115已应用。
+- 三服务运行，后端数据库Redis正常；现有PARENT_ADMIN权限按用户配置控制，不默认追加高权限管理授权。
+
+
+### 2026-10-09 家庭管理员组织用户页签修复
+
+- PARENT_ADMIN已授予organizations.members.query但未授予IAM_USER_LIST，旧页面和成员接口额外要求后者导致页签隐藏。
+- 页签及组织成员查询接口接受专属组织用户查询权限，保留旧IAM_USER_LIST兼容；仍按当前家庭范围校验，不新增用户目录或其他权限。
+- 全局组织类型403不再阻断当前家庭组织加载；补齐ApiRequestError导入。
+- 25项前端页面回归、2项家庭范围后端集成回归及构建通过。核对xiangkanglin实际PARENT_ADMIN绑定家庭中渝香奈公馆4栋28-1，存在对应管理员身份。
+- 后端、Web5173、H55174恢复运行，健康UP，数据库Redis正常，两个前端HTTP200。

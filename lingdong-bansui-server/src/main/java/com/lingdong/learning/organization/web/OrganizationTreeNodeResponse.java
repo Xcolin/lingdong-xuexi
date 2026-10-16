@@ -15,6 +15,7 @@ public record OrganizationTreeNodeResponse(
         @JsonSerialize(using = ToStringSerializer.class) Long parentId,
         String code,
         String name,
+        String namePath,
         String typeCode,
         String path,
         Integer sortOrder,
@@ -27,16 +28,17 @@ public record OrganizationTreeNodeResponse(
         List<OrganizationTreeNodeResponse> children
 ) {
     public static OrganizationTreeNodeResponse from(Organization organization) {
-        return from(organization, List.of());
+        return from(organization, List.of(), organization.name());
     }
 
     public static OrganizationTreeNodeResponse from(
             Organization organization,
-            List<OrganizationTreeNodeResponse> children
+            List<OrganizationTreeNodeResponse> children,
+            String namePath
     ) {
         return new OrganizationTreeNodeResponse(
-                organization.id(), organization.parentId(), organization.code(), organization.name(), organization.typeCode(),
-                organization.path(), organization.sortOrder(), organization.status(), organization.effectiveStatus(),
+                organization.id(), organization.parentId(), organization.code(), organization.name(), namePath,
+                organization.typeCode(), organization.path(), organization.sortOrder(), organization.status(), organization.effectiveStatus(),
                 organization.versionNo(), organization.createdAt(), organization.updatedAt(),
                 organization.adminDivisionCode(), children
         );

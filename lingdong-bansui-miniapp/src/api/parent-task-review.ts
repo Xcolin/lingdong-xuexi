@@ -2,8 +2,8 @@ import { request, apiUrl } from './http';
 import type { TaskAttachment } from './attachment';
 import type { ReviewIdentity } from '@/models/parent-task-reviews';
 export interface ParentTaskReview {
-  assignmentId: string; title: string; studentName: string; basePoints: number;
-  sourceType: 'FAMILY' | 'TEACHER' | 'ORGANIZATION'; sourceOrganizationName: string | null;
+  assignmentId: string; taskId: string; title: string; studentId: string; studentName: string; basePoints: number;
+  sourceType: 'FAMILY' | 'TEACHER' | 'ORGANIZATION'; sourceOrganizationId: string | null; sourceOrganizationName: string | null;
   latestCheckIn: { id: string; content: string | null; submittedAt: string; attachments: TaskAttachment[] } | null;
 }
 export interface ParentReviewPage { items: ParentTaskReview[]; page: number; pageSize: number; total: number }

@@ -1,8 +1,8 @@
 <template>
-  <view class="has-tabbar page-shell">
+  <view class="prototype-workspace has-tabbar page-shell"><view class="prototype-section-header"><PrototypeIcon name="school" :size="22" /><text>班级考勤</text></view>
     <view v-if="loading" class="state">正在核验考勤权限</view>
     <template v-else-if="enabled">
-      <view class="heading-band">
+      <view v-if="!detail" class="heading-band">
         <text class="title">{{ canRecord ? '人工考勤' : '考勤记录' }}</text>
         <view v-if="canRecord" class="tabs">
           <view :class="['tab', mode === 'list' && 'active']" @tap="changeMode('list')">考勤记录</view>
@@ -99,12 +99,13 @@
       <view v-if="errorMessage" class="error">{{ errorMessage }}</view>
     </template>
     <view v-else class="state"><text>{{ errorMessage || '考勤暂不可用' }}</text><button class="outline" @tap="refresh">重新加载</button></view>
-  <AppTabBar v-if="identity === 'teacher'" :items="TEACHER_TABS" :active="2" />
-  <AppTabBar v-else-if="identity === 'organization'" :items="ORG_TABS" :active="2" />
+  
+  <AppTabBar v-if="identity === 'organization'" :items="ORG_TABS" :active="2" />
   </view>
 </template>
 
 <script setup lang="ts">
+import PrototypeIcon from '@/components/PrototypeIcon.vue';
 import AppTabBar from '@/components/AppTabBar.vue';
 import { TEACHER_TABS, ORG_TABS } from '@/config/tabbar';
 import { computed, ref } from 'vue';
@@ -330,43 +331,6 @@ function changeRowStatus(row: AttendanceDraft, event: { detail: { value: string 
 function formatTime(value: string): string { return value ? value.replace('T', ' ').slice(0, 19) : ''; }
 </script>
 
-<style lang="scss" scoped>
-.page-shell { min-height: 100vh; padding-bottom: 40rpx; background: #f4f7f5; color: #1c2b28; font-size: 28rpx; letter-spacing: 0; }
-/* #ifdef H5 */
-.page-shell { min-height: calc(100vh - 44px); }
-/* #endif */
-.heading-band, .band, .list-band { background: #fff; border-bottom: 2rpx solid #dbe3df; }
-.heading-band, .band { padding: 24rpx 32rpx; }
-.band, .list-band { margin-top: 20rpx; }
-.title, .section-title, .meta, .name { display: block; overflow-wrap: anywhere; }
-.title { font-size: 34rpx; font-weight: 700; }
-.section-title { margin-top: 28rpx; font-size: 30rpx; font-weight: 600; }
-.tabs { display: flex; margin-top: 22rpx; border-bottom: 2rpx solid #dbe3df; }
-.tab { flex: 1; padding: 20rpx 12rpx; text-align: center; border-bottom: 4rpx solid transparent; }
-.tab.active { border-color: #167c5a; color: #167c5a; font-weight: 600; }
-.two-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16rpx; }
-/* 微信 WXSS 不支持 * 通配符选择器，用显式元素选择器替代。 */
-.two-columns > view, .two-columns > picker, .two-columns > button { min-width: 0; }
-.field { width: 100%; min-height: 80rpx; height: auto; margin-top: 18rpx; padding: 20rpx 16rpx; border: 2rpx solid #cbd7d1; border-radius: 8rpx; box-sizing: border-box; font-size: 27rpx; line-height: 1.5; overflow-wrap: anywhere; }
-input.field { height: 84rpx; }
-.primary, .outline { width: 100%; min-height: 80rpx; margin: 18rpx 0 0; padding: 18rpx 14rpx; border-radius: 8rpx; font-size: 27rpx; line-height: 1.5; box-sizing: border-box; }
-.primary { background: #167c5a; color: #fff; }
-.outline { background: #fff; color: #167c5a; border: 2rpx solid #cbd7d1; }
-.primary::after, .outline::after { border: 0; }
-button[disabled] { opacity: .5; }
-.record-row, .history-row { padding: 26rpx 32rpx; border-bottom: 2rpx solid #edf1ef; }
-.history-row { padding-left: 0; padding-right: 0; }
-.row-head { display: flex; gap: 16rpx; align-items: center; }
-.name { flex: 1; min-width: 0; font-size: 29rpx; font-weight: 600; }
-.meta { margin-top: 10rpx; font-size: 24rpx; color: #64756d; line-height: 1.6; }
-.row-head .meta { margin-top: 0; flex-shrink: 0; }
-.status { flex-shrink: 0; color: #167c5a; }
-.LATE, .EARLY_LEAVE { color: #946000; }
-.ABSENT { color: #b42318; }
-.LEAVE { color: #5267a4; }
-.pagination { display: grid; grid-template-columns: 140rpx minmax(0, 1fr) 140rpx; align-items: center; gap: 12rpx; padding: 24rpx 20rpx; text-align: center; font-size: 23rpx; }
-.pagination .outline { margin-top: 0; font-size: 24rpx; }
-.submit-band { padding: 20rpx 32rpx 32rpx; }
-.state { padding: 64rpx 32rpx; color: #64756d; text-align: center; }
-.error { padding: 24rpx 32rpx; color: #b42318; overflow-wrap: anywhere; }
+<style scoped>
+.secondary-page,.prototype-workspace{padding:24rpx 28rpx 60rpx;min-height:calc(100vh - var(--window-top,0px));box-sizing:border-box;background:#f6f9f5;color:#172e25}.has-footer,.has-tabbar{padding-bottom:160rpx}.prototype-section-header{display:flex;justify-content:center;align-items:center;gap:12rpx;margin:-24rpx -28rpx 24rpx;padding:28rpx;background:linear-gradient(120deg,#206b52,#0c4f3e);color:white;font-size:32rpx;font-weight:650}.section,.form-band,.band,.heading-band{background:#fff;border:1rpx solid #e4ece3;border-radius:24rpx;padding:26rpx;margin-bottom:22rpx}.segmented,.mode-control,.tabs,.action-grid,.form-actions,.paging,.search-row,.two-columns{display:flex;align-items:center;gap:14rpx;margin:18rpx 0}.segmented button,.mode-control button,.tab,.action-grid button{flex:1}.active{background:#e2f2e6;color:#0a774d}.field-label{display:block;font-size:26rpx;margin:20rpx 0 12rpx}.picker-field,.picker-value,.field,input,textarea{background:#f7faf6;border:1rpx solid #dfe8dc;border-radius:16rpx;padding:18rpx;font-size:26rpx;box-sizing:border-box}.picker-field{display:flex;justify-content:space-between}.search-row input{flex:1;min-width:0}textarea{width:100%;min-height:180rpx}.row,.request-person,.invitation-class{display:flex;align-items:center;gap:18rpx;padding:24rpx 0;border-bottom:1rpx solid #e8eee6}.person{width:80rpx;height:80rpx;border-radius:50%;background:#e2eee3;display:flex;align-items:center;justify-content:center;flex-shrink:0}.person-copy{flex:1;min-width:0}.row-top,.section-heading,.detail-line,.list-head{display:flex;justify-content:space-between;align-items:center;gap:12rpx}.name,.section-title,.title,.form-title{font-size:30rpx;font-weight:650}.meta,.small,.counter{display:block;font-size:23rpx;color:#778179;line-height:1.7}.badge,.status{border-radius:12rpx;background:#e2f4e7;color:#13734d;padding:4rpx 12rpx;font-size:23rpx}.PENDING,.submitted{background:#fff0cb;color:#b37a20}.detail-line{font-size:25rpx;padding:15rpx 0}.error,.danger{color:#ac4e42}.empty,.state,.state-text{padding:30rpx;text-align:center;font-size:25rpx;color:#7c867d}.empty text{display:block}.bottom-actions{position:fixed;bottom:0;left:0;right:0;background:#fff;padding:24rpx 28rpx calc(24rpx + env(safe-area-inset-bottom));border-top:1rpx solid #e2ebe0;z-index:4}.qr-content{text-align:center;padding:28rpx 0}.invite-code{display:block;font-size:38rpx;font-weight:700;letter-spacing:2rpx;margin:20rpx 0}.block-action{width:100%;margin-top:24rpx}.list-band{background:#fff;border-radius:24rpx;padding:20rpx}.list-row,.record-row,.history-row{border-bottom:1rpx solid #e6ede4;padding:24rpx 0}button{font-size:26rpx;line-height:1.5;margin:0;padding:16rpx 22rpx;background:#eaf2e8;color:#24583d;border-radius:16rpx}button::after{border:0}.primary,.submit-button,.save-button{background:#176f50;color:white}.secondary,.outline{background:#f2f6ef;color:#28563e}.required{color:#ba5b4c}.reason-input,.textarea{width:100%}
 </style>

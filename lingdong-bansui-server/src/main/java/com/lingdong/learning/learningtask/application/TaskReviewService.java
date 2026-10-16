@@ -262,13 +262,10 @@ public class TaskReviewService {
 
     private void requireReviewer(AuthenticatedUser currentUser) {
         featureAccessService.requireEnabled(FEATURE_CODE, null);
-        if (permissionScope.hasOrganizationPermission(currentUser, "TASK_ASSIGNMENT_REVIEW")) return;
-        if (currentUser != null && currentUser.clientType() == com.lingdong.learning.auth.domain.AuthClientType.WEB)
-            throw new SystemOperationAccessDeniedException("当前账号无任务审核权限");
-        if (currentUser == null || currentUser.roleCodes().contains("SYS_AUDITOR")
-                || currentUser.roleCodes().stream().noneMatch(REVIEW_ROLES::contains)) {
-            throw new SystemOperationAccessDeniedException("当前用户不是业务审核角色");
-        }
+        permissionScope.requireWebPermission(currentUser,"TASK_ASSIGNMENT_REVIEW");
+        if (!permissionScope.isParent(currentUser) && !permissionScope.isTeacher(currentUser)
+                && !permissionScope.isOrganizationOperator(currentUser))
+            throw new SystemOperationAccessDeniedException("当前账号没有任务审核业务身份");
     }
 
     private TaskReviewView toView(TaskReviewRow row) {

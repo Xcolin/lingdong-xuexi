@@ -140,7 +140,7 @@ class OrganizationWorkbenchControllerTest {
         Organization school = createSchool("WORKBENCH_STUDENT_SCHOOL", "学员关系学校", 10);
         Organization classOrganization = organizationApplicationService.createOrganization(
                 new CreateOrganizationCommand(
-                        "WORKBENCH_STUDENT_CLASS", "学员关系一班", "CLASS", school.id(), 10));
+                        "WORKBENCH_STUDENT_CLASS", "学员关系一班", "CLASS", gradeId(school.id()), 10));
         assign(administrator, school);
         Long studentId = idGenerator.nextId();
         jdbcTemplate.update("""
@@ -209,5 +209,11 @@ class OrganizationWorkbenchControllerTest {
 
     private String bearer(String token) {
         return "Bearer " + token;
+    }
+
+    private final java.util.Map<Long,Long> fixtureGrades=new java.util.HashMap<>();
+    private Long gradeId(Long schoolId) {
+        return fixtureGrades.computeIfAbsent(schoolId,id -> organizationApplicationService.createOrganization(
+                new CreateOrganizationCommand("GRD_"+java.util.UUID.randomUUID().toString().replace("-", "").toUpperCase(),"测试年级","GRADE",id,0)).id());
     }
 }

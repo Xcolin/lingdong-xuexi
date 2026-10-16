@@ -109,15 +109,15 @@ export function ParentAccountLifecyclePanel({ onSessionEnded }: ParentAccountLif
           && <Alert type="warning" showIcon message="冷静期已结束，账号待后续注销处理" />}
         <div className="panel-footer">
           <Space wrap>
-            <Button actionKey="dashboard.parent-account-lifecycle-panel.1" icon={<Smartphone size={16} />} onClick={openMobileModal}>更换手机号</Button>
+            <Button actionKey="PARENT_ACCOUNT_LIFECYCLE_MANAGE" icon={<Smartphone size={16} />} onClick={openMobileModal}>更换手机号</Button>
             {state.cancellationStatus === 'NONE' && (
-              <Button actionKey="dashboard.parent-account-lifecycle-panel.2" danger icon={<UserRoundX size={16} />}
+              <Button actionKey="PARENT_ACCOUNT_LIFECYCLE_MANAGE" danger icon={<UserRoundX size={16} />}
                 disabled={state.activeStudentRelationshipCount > 0}
                 onClick={() => setCancellationModalOpen(true)}>申请注销</Button>
             )}
             {state.cancellationStatus === 'COOLING_OFF' && (
               <Popconfirm title="确认撤销注销申请？" onConfirm={() => void revokeCancellation()}>
-                <Button actionKey="dashboard.parent-account-lifecycle-panel.3">撤销注销申请</Button>
+                <Button actionKey="PARENT_ACCOUNT_LIFECYCLE_MANAGE">撤销注销申请</Button>
               </Popconfirm>
             )}
             {state.cancellationStatus !== 'NONE' && <Tag>{formatTime(state.coolingEndsAt)}</Tag>}
@@ -130,25 +130,25 @@ export function ParentAccountLifecyclePanel({ onSessionEnded }: ParentAccountLif
       onCancel={() => setMobileModalOpen(false)} destroyOnHidden>
       {mobileStage === 'CURRENT' ? <Space direction="vertical" size="middle" style={{ width: '100%' }}>
         <Alert type="info" showIcon message={`验证码将发送至 ${state?.maskedMobile ?? '当前手机号'}`} />
-        <Button actionKey="dashboard.parent-account-lifecycle-panel.4" icon={<Send size={16} />} onClick={() => void run(async () => {
+        <Button actionKey="PARENT_ACCOUNT_LIFECYCLE_MANAGE" icon={<Send size={16} />} onClick={() => void run(async () => {
           await authApi.issueCurrentMobileCode();
           message.success('验证码已发送');
         })}>发送当前手机号验证码</Button>
         <Input aria-label="当前手机号验证码" value={currentCode} maxLength={6}
           onChange={(event) => setCurrentCode(event.target.value)} placeholder="6 位验证码" />
-        <Button actionKey="dashboard.parent-account-lifecycle-panel.5" type="primary" icon={<KeyRound size={16} />} disabled={!/^\d{6}$/.test(currentCode)}
+        <Button actionKey="PARENT_ACCOUNT_LIFECYCLE_MANAGE" type="primary" icon={<KeyRound size={16} />} disabled={!/^\d{6}$/.test(currentCode)}
           onClick={() => void verifyCurrentMobile()}>验证当前手机号</Button>
       </Space> : <Space direction="vertical" size="middle" style={{ width: '100%' }}>
         <Input aria-label="新手机号" value={newMobile} maxLength={11}
           onChange={(event) => setNewMobile(event.target.value)} placeholder="新手机号" />
-        <Button actionKey="dashboard.parent-account-lifecycle-panel.6" icon={<Send size={16} />} disabled={!/^1[3-9]\d{9}$/.test(newMobile)}
+        <Button actionKey="PARENT_ACCOUNT_LIFECYCLE_MANAGE" icon={<Send size={16} />} disabled={!/^1[3-9]\d{9}$/.test(newMobile)}
           onClick={() => void run(async () => {
             await authApi.issueNewMobileCode(ticket, newMobile);
             message.success('验证码已发送');
           })}>发送新手机号验证码</Button>
         <Input aria-label="新手机号验证码" value={newCode} maxLength={6}
           onChange={(event) => setNewCode(event.target.value)} placeholder="6 位验证码" />
-        <Button actionKey="dashboard.parent-account-lifecycle-panel.7" type="primary" disabled={!/^\d{6}$/.test(newCode)}
+        <Button actionKey="PARENT_ACCOUNT_LIFECYCLE_MANAGE" type="primary" disabled={!/^\d{6}$/.test(newCode)}
           onClick={() => void completeMobileChange()}>确认更换手机号</Button>
       </Space>}
     </Modal>
@@ -157,7 +157,7 @@ export function ParentAccountLifecyclePanel({ onSessionEnded }: ParentAccountLif
       onCancel={() => setCancellationModalOpen(false)} destroyOnHidden>
       <Space direction="vertical" size="middle" style={{ width: '100%' }}>
         <Alert type="warning" showIcon message="申请后进入 7 天冷静期，期间账号仍可登录并撤销申请" />
-        <Button actionKey="dashboard.parent-account-lifecycle-panel.8" icon={<Send size={16} />} onClick={() => void run(async () => {
+        <Button actionKey="PARENT_ACCOUNT_LIFECYCLE_MANAGE" icon={<Send size={16} />} onClick={() => void run(async () => {
           await authApi.issueParentCancellationCode();
           message.success('验证码已发送');
         })}>发送注销验证码</Button>
@@ -165,7 +165,7 @@ export function ParentAccountLifecyclePanel({ onSessionEnded }: ParentAccountLif
           onChange={(event) => setCancellationCode(event.target.value)} placeholder="6 位验证码" />
         <Input aria-label="注销确认文本" value={confirmation}
           onChange={(event) => setConfirmation(event.target.value)} placeholder="请输入“确认注销”" />
-        <Button actionKey="dashboard.parent-account-lifecycle-panel.9" danger type="primary"
+        <Button actionKey="PARENT_ACCOUNT_LIFECYCLE_MANAGE" danger type="primary"
           disabled={!/^\d{6}$/.test(cancellationCode) || confirmation !== '确认注销'}
           onClick={() => void requestCancellation()}>提交注销申请</Button>
       </Space>

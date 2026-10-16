@@ -20,4 +20,12 @@ public interface RoleMapper {
     Role findByCode(@Param("code") String code);
 
     List<Role> findAll();
+    Role lockById(@Param("id") Long id);
+    int updateDetails(@Param("id") Long id, @Param("name") String name, @Param("description") String description);
+    int updateStatus(@Param("id") Long id, @Param("status") com.lingdong.learning.iam.domain.RoleStatus status);
+    boolean hasUserAssignments(@Param("id") Long id);
+    int revokeAssociatedSessions(@Param("id") Long id);
+    int deletePermissions(@Param("id") Long id);
+    int deleteDataScopes(@Param("id") Long id);
+    int deleteById(@Param("id") Long id);
 }

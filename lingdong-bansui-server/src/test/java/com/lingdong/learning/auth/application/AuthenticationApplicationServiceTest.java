@@ -21,12 +21,55 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @SpringBootTest
 @ActiveProfiles("test")
 class AuthenticationApplicationServiceTest {
+    @Test void verifiedSmsLoginPreservesRolesAndRejectsDisabledStudentsAndUnknownPhones() {
+        var user=createUser("auth_sms_personal","短信注册用户",UserType.PERSONAL);
+        jdbcTemplate.update("UPDATE sys_user SET mobile=? WHERE id=?","13900009881",user.id());
+        for(var client:com.lingdong.learning.auth.domain.AuthClientType.values()) {
+            var session=authenticationApplicationService.loginExistingAccountByMobile("13900009881",client,"sms-"+client,"短信设备");
+            assertThat(authenticationApplicationService.authenticateAccessToken(session.accessToken()).roleCodes()).isEmpty();
+        }
+        jdbcTemplate.update("UPDATE sys_user SET status='DISABLED' WHERE id=?",user.id());
+        assertThatThrownBy(()->authenticationApplicationService.loginExistingAccountByMobile("13900009881",com.lingdong.learning.auth.domain.AuthClientType.WEB,"bad","停用"))
+            .isInstanceOf(AuthenticationFailedException.class);
+        var student=createUser("auth_sms_student","学生",UserType.STUDENT);
+        jdbcTemplate.update("UPDATE sys_user SET mobile=? WHERE id=?","13900009882",student.id());
+        assertThatThrownBy(()->authenticationApplicationService.loginExistingAccountByMobile("13900009882",com.lingdong.learning.auth.domain.AuthClientType.MINIAPP,"bad","学生"))
+            .isInstanceOf(AuthenticationFailedException.class);
+        assertThatThrownBy(()->authenticationApplicationService.loginExistingAccountByMobile("13900009883",com.lingdong.learning.auth.domain.AuthClientType.WEB,"bad","未知"))
+            .isInstanceOf(AuthenticationFailedException.class);
+    }
+    @Test void existingWebFamilyWithoutParentProfileCanLoginAndUseItsSessionWithoutRoles() {
+        User user=createUser("auth_generic_family_no_profile","Web家庭账号",UserType.FAMILY);
+        setPasswordHash(user.id(),"Password123");
+        var session=authenticationApplicationService.loginRegistrationByPassword(user.username(),"Password123",com.lingdong.learning.auth.domain.AuthClientType.MINIAPP,"family-basic","家庭账号设置");
+        var identity=authenticationApplicationService.authenticateAccessToken(session.accessToken());
+        assertThat(identity.userId()).isEqualTo(user.id());
+        assertThat(identity.roleCodes()).isEmpty();
+        assertThat(authenticationApplicationService.isUsableForGenericAccount(user,com.lingdong.learning.auth.domain.AuthClientType.MINIAPP)).isTrue();
+    }
     @Autowired private AuthenticationApplicationService authenticationApplicationService;
     @Autowired private UserAccessApplicationService userAccessApplicationService;
     @Autowired private UserMapper userMapper;
     @Autowired private RoleMapper roleMapper;
     @Autowired private JdbcTemplate jdbcTemplate;
     @Autowired private PasswordEncoder passwordEncoder;
+
+    @Test
+    void personalAccountUsesBothClientsWithoutReceivingRoles() {
+        User personal = createUser("auth_personal_user", "普通注册账号", UserType.PERSONAL);
+        setPasswordHash(personal.id(), "Password123");
+        for (com.lingdong.learning.auth.domain.AuthClientType client : com.lingdong.learning.auth.domain.AuthClientType.values()) {
+            AuthenticatedSession session = authenticationApplicationService.loginRegistrationByPassword(
+                    personal.username(), "Password123", client, "personal-" + client, "注册设备");
+            AuthenticatedUser identity = authenticationApplicationService.authenticateAccessToken(session.accessToken());
+            assertThat(identity.userId()).isEqualTo(personal.id());
+            assertThat(identity.roleCodes()).isEmpty();
+            assertThat(identity.clientType()).isEqualTo(client);
+        }
+        assertThatThrownBy(() -> authenticationApplicationService.loginRegistrationByPassword(
+                personal.username(), "WrongPassword1", com.lingdong.learning.auth.domain.AuthClientType.MINIAPP,
+                "bad-personal", "错误密码")).isInstanceOf(AuthenticationFailedException.class);
+    }
 
     @Test
     void allowsOnlySystemAdministratorsToSetAStrongPasswordForPlatformUsers() {
@@ -272,3 +315,4 @@ class AuthenticationApplicationServiceTest {
         return userAccessApplicationService.createUser(new CreateUserCommand(username, displayName, null, type));
     }
 }
+

@@ -1,0 +1,62 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ----------------< com.lingdong:lingdong-bansui-server >-----------------
+[INFO] Building lingdong-bansui-server 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:3.4.5:run (default-cli) > test-compile @ lingdong-bansui-server >>>
+[INFO] 
+[INFO] --- clean:3.4.1:clean (remove-stale-local-config) @ lingdong-bansui-server ---
+[INFO] Deleting E:\apps\lingdong-xuexi-code\lingdong-bansui-server\target\classes (includes = [**/application-local.*], excludes = [])
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ lingdong-bansui-server ---
+[INFO] Copying 218 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ lingdong-bansui-server ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ lingdong-bansui-server ---
+[INFO] Copying 1 resource from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ lingdong-bansui-server ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] <<< spring-boot:3.4.5:run (default-cli) < test-compile @ lingdong-bansui-server <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:3.4.5:run (default-cli) @ lingdong-bansui-server ---
+[INFO] Attaching agents: []
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.4.5)
+
+2026-10-08 16:00:50.477 INFO  [main] c.l.l.LingdongLearningApplication - Starting LingdongLearningApplication using Java 17.0.13 with PID 87324 (E:\apps\lingdong-xuexi-code\lingdong-bansui-server\target\classes started by Administrator in E:\apps\lingdong-xuexi-code\lingdong-bansui-server)
+2026-10-08 16:00:50.479 INFO  [main] c.l.l.LingdongLearningApplication - The following 1 profile is active: "local"
+2026-10-08 16:00:52.011 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-10-08 16:00:52.013 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-10-08 16:00:52.123 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 88 ms. Found 0 Redis repository interfaces.
+2026-10-08 16:00:52.991 INFO  [main] o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
+2026-10-08 16:00:53.016 INFO  [main] o.a.catalina.core.StandardService - Starting service [Tomcat]
+2026-10-08 16:00:53.017 INFO  [main] o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.40]
+2026-10-08 16:00:53.101 INFO  [main] o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-10-08 16:00:53.102 INFO  [main] o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 2577 ms
+2026-10-08 16:00:53.311 INFO  [main] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2026-10-08 16:01:02.752 INFO  [main] com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@5950054d
+2026-10-08 16:01:02.754 INFO  [main] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2026-10-08 16:01:02.947 INFO  [main] org.flywaydb.core.FlywayExecutor - Database: jdbc:mysql://8.156.80.3:3306/lingdong_learning?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai (MySQL 8.0)
+2026-10-08 16:01:03.582 INFO  [main] o.f.core.internal.command.DbValidate - Successfully validated 105 migrations (execution time 00:00.343s)
+2026-10-08 16:01:04.069 INFO  [main] o.f.core.internal.command.DbMigrate - Current version of schema `lingdong_learning`: 104
+2026-10-08 16:01:04.125 INFO  [main] o.f.core.internal.command.DbMigrate - Schema `lingdong_learning` is up to date. No migration necessary.
+2026-10-08 16:01:07.615 INFO  [main] o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port 8080 (http) with context path '/'
+2026-10-08 16:01:07.631 INFO  [main] c.l.l.LingdongLearningApplication - Started LingdongLearningApplication in 17.754 seconds (process running for 18.126)
+2026-10-08 16:01:07.634 WARN  [main] o.s.c.events.SpringDocAppInitializer - SpringDoc /api/v1/openapi endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=false'
+2026-10-08 16:02:02.629 INFO  [http-nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-10-08 16:02:02.630 INFO  [http-nio-8080-exec-1] o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-10-08 16:02:02.633 INFO  [http-nio-8080-exec-1] o.s.web.servlet.DispatcherServlet - Completed initialization in 3 ms

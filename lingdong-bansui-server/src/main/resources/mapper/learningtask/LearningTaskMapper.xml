@@ -25,6 +25,8 @@
             <arg column="created_at" javaType="java.time.LocalDateTime"/>
             <arg column="updated_at" javaType="java.time.LocalDateTime"/>
             <arg column="recurrence_status" javaType="com.lingdong.learning.learningtask.domain.LearningTaskRecurrenceStatus"/>
+            <arg column="recurrence_frequency" javaType="java.lang.String"/>
+            <arg column="recurrence_weekdays" javaType="java.util.List" typeHandler="com.lingdong.learning.learningtask.infrastructure.persistence.TaskWeekdaysTypeHandler"/>
         </constructor>
     </resultMap>
 
@@ -34,7 +36,7 @@
         review_timeout_hours, recurrence_enabled, recurrence_end_date,
         status, published_at, created_at, updated_at,
         (SELECT recurrence.status FROM learn_task_recurrence recurrence
-         WHERE recurrence.task_id = learn_task.id) AS recurrence_status
+         WHERE recurrence.task_id = learn_task.id) AS recurrence_status, recurrence_frequency, recurrence_weekdays
     </sql>
 
     <sql id="managedFilters">
@@ -43,7 +45,14 @@
             AND (
                 1 = 0
                 <if test="query.parent">
-                    OR (source_type = 'FAMILY' AND creator_user_id = #{query.currentUserId})
+                                        OR (source_type = 'FAMILY' AND creator_user_id = #{query.currentUserId}
+                      <bind name="selectedOrganizationId" value="@com.lingdong.learning.common.security.SelectedOrganizationContext@organizationId()"/>
+                      <if test="selectedOrganizationId != null">
+                        AND EXISTS (SELECT 1 FROM learn_task_target selected_target
+                          JOIN edu_student selected_student ON selected_target.target_type='STUDENT' AND selected_target.target_id=selected_student.id
+                          JOIN sys_user_organization selected_member ON selected_member.user_id=selected_student.student_user_id
+                          WHERE selected_target.task_id=learn_task.id AND selected_member.organization_id=#{selectedOrganizationId})
+                      </if>)
                 </if>
                 <if test="query.teacher">
                     OR (source_type = 'TEACHER' AND creator_user_id = #{query.currentUserId})
@@ -115,13 +124,13 @@
         INSERT INTO learn_task (
             id, source_type, source_organization_id, creator_user_id, title, difficulty_level,
             base_points, duration_minutes, scheduled_date, category_code, remark, reviewer_user_id,
-            review_timeout_hours, recurrence_enabled, recurrence_end_date, status
+            review_timeout_hours, recurrence_enabled, recurrence_end_date, status, recurrence_frequency, recurrence_weekdays
         ) VALUES (
             #{task.id}, #{task.sourceType}, #{task.sourceOrganizationId, jdbcType=BIGINT},
             #{task.creatorUserId}, #{task.title}, #{task.difficultyLevel}, #{task.basePoints},
             #{task.durationMinutes}, #{task.scheduledDate}, #{task.categoryCode, jdbcType=VARCHAR},
             #{task.remark, jdbcType=VARCHAR}, #{task.reviewerUserId}, #{task.reviewTimeoutHours},
-            #{task.recurrenceEnabled}, #{task.recurrenceEndDate, jdbcType=DATE}, #{task.status}
+            #{task.recurrenceEnabled}, #{task.recurrenceEndDate, jdbcType=DATE}, #{task.status}, #{task.recurrenceFrequency}, #{task.recurrenceWeekdays, jdbcType=VARCHAR, typeHandler=com.lingdong.learning.learningtask.infrastructure.persistence.TaskWeekdaysTypeHandler}
         )
     </insert>
 
@@ -133,6 +142,7 @@
             remark = #{task.remark, jdbcType=VARCHAR}, reviewer_user_id = #{task.reviewerUserId},
             recurrence_enabled = #{task.recurrenceEnabled},
             recurrence_end_date = #{task.recurrenceEndDate, jdbcType=DATE},
+            recurrence_frequency = #{task.recurrenceFrequency}, recurrence_weekdays = #{task.recurrenceWeekdays, jdbcType=VARCHAR, typeHandler=com.lingdong.learning.learningtask.infrastructure.persistence.TaskWeekdaysTypeHandler},
             updated_at = CURRENT_TIMESTAMP
         WHERE id = #{task.id} AND status = 'DRAFT'
     </update>
@@ -177,3 +187,4 @@
           AND status = 'PUBLISHED'
     </insert>
 </mapper>
+

@@ -1,0 +1,106 @@
+{
+  "auditDate": "2026-10-10",
+  "status": "fixed authorized Web blockers; pending root unified verification",
+  "completedWebFixes": [
+    {
+      "file": "growthpoint/application/AnonymousRankAccess.java",
+      "change": "Actual ParentActorAccessService, client-specific rank action, guardian relationship and active class. Existing owner preference withdrawal exception unchanged."
+    },
+    {
+      "file": "exportjob/application/ExportJobAccessService.java",
+      "change": "Point/reward XLSX family identity uses ParentActorAccessService, preserves primary child and requester/frozen-scope conditions. Stale REWARD_EXCHANGE_REVIEW_CHILD dependency changed to canonical REWARD_EXCHANGE_READ; explicit business read dependencies below."
+    },
+    {
+      "file": "auth/application/StudentWechatBindingManagementService.java",
+      "change": "FAMILY+profile with locked own primary relationship or enabled institutional actor+exact action+active school enrollment in actual scope. List school-scoped SQL includes enabled school/student/account. Family cannot masquerade institutional scope."
+    },
+    {
+      "file": "common/security/ParentOnboardingAccessInterceptor.java",
+      "change": "Actual enabled FAMILY+profile triggers protocol/onboarding check for any custom role; prerequisite-path exemptions preserved."
+    },
+    {
+      "file": "exceptionreport/application/ExceptionReportApplicationService.java",
+      "change": "Actual enabled organization/platform and nonempty real organization scope takes precedence; otherwise teacher occupation profile+active effective class scope. Creation retains teacher-student class constraint. Export teacherOnly snapshot uses same predicate."
+    }
+  ],
+  "declaredReadDependencies": [
+    {
+      "action": "REWARD_EXCHANGE_EXPORT",
+      "reads": [
+        "REWARD_EXCHANGE_READ"
+      ],
+      "dataset": "REWARD_EXCHANGE_LEDGER",
+      "identity": "FAMILY profile and active role; target primary guardian"
+    },
+    {
+      "action": "EXPORT_JOB_CREATE",
+      "reads": [
+        "GROWTH_POINT_READ_CHILD"
+      ],
+      "dataset": "GROWTH_POINT_LEDGER",
+      "identity": "FAMILY profile; target primary guardian"
+    },
+    {
+      "action": "EXPORT_JOB_READ",
+      "reads": [
+        "GROWTH_POINT_READ_CHILD"
+      ],
+      "dataset": "GROWTH_POINT_LEDGER",
+      "identity": "requester ownership + current actual FAMILY primary guardian"
+    },
+    {
+      "action": "EXPORT_JOB_READ",
+      "reads": [
+        "REWARD_EXCHANGE_EXPORT",
+        "REWARD_EXCHANGE_READ"
+      ],
+      "dataset": "REWARD_EXCHANGE_LEDGER",
+      "note": "Existing dataset historical-read export qualification was retained, now explicit; root may choose a separate history-read policy but must not hide this dependency."
+    },
+    {
+      "action": "EXCEPTION_REPORT_EXPORT",
+      "reads": [
+        "EXCEPTION_REPORT_READ"
+      ],
+      "dataset": "EXCEPTION_REPORT_LEDGER",
+      "scope": "actual teacher/class or actual organization scope"
+    }
+  ],
+  "miniappOnlyRemaining": [
+    {
+      "file": "teacher/application/TeacherWorkbenchQueryService.java",
+      "gate": "MINIAPP workbench still TEACHER name+actual class."
+    },
+    {
+      "file": "auth/application/AuthenticationApplicationService.java",
+      "gate": "Organization MINIAPP login still ORG_ADMIN/TEACHER eligibility; Web organization login does not use it."
+    },
+    {
+      "file": "dashboard/application/ActivityTrendService.java",
+      "gate": "MINIAPP activity trend requires ORG_ADMIN name; Web exact progress action works."
+    },
+    {
+      "file": "student/application/ParentBindingInvitationApplicationService.java",
+      "gate": "Non-WEB create path still ORG_ADMIN name; declared action currently WEB."
+    }
+  ],
+  "falsePositives": [
+    "LearningTaskScopeService/LearningTaskOptionService requireRole labels now dispatch to actual identities, not actor roleCodes.",
+    "UserAccess requireRole loads target role entities and preserves administrative role semantics.",
+    "PermissionAvailability allowedRoleCodes is declared root-owned canonical metadata, not hidden service gate."
+  ],
+  "verificationTargets": [
+    "AnonymousRankAccessTest",
+    "ExportJobAccessServiceTest",
+    "ParentOnboardingAccessInterceptorTest",
+    "StudentWechatBindingIdentityScopeTest",
+    "ExceptionReportApplicationServiceTest",
+    "ExceptionReportAuditorBoundaryTest",
+    "ExceptionReportIdentityScopeTest"
+  ],
+  "completedExportModeBatch": [
+    "StudentTaskExportAccessService, OrgTaskStatExportAccessService, AttendanceLedgerExportAccessService use actual ExportActorIdentityService modes; roleCodes grant names no longer select privacy ranges.",
+    "Attendance frozen mode equality now explicitly checked as well as full authorized class containment.",
+    "Exact Web export action and per-mode business read dependencies, features, row limits, selected student/class and frozen IDs are preserved."
+  ]
+}

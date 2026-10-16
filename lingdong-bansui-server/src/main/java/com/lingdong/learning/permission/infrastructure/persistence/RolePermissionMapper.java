@@ -41,4 +41,5 @@ public interface RolePermissionMapper {
     );
 
     int delete(@Param("roleId") Long roleId, @Param("permissionId") Long permissionId);
+    int deleteByPermissionId(@Param("permissionId") Long permissionId);
 }

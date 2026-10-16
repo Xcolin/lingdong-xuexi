@@ -1,3 +1,4 @@
+import { Button as PlainButton } from 'antd';
 import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { useEffect, useRef, useState } from 'react';
 import { Alert, App, Form, Input, Modal, Segmented, Select, Space } from 'antd';
@@ -56,7 +57,7 @@ export function CreateGrowthReviewExport({ studentId, reviewId, onCreated }: {
   }
 
   return <>
-    <Button actionKey="growth-reviews.create-growth-review-export.1" icon={<FileDown size={16} />} onClick={() => {
+    <Button actionKey="EXPORT_JOB_CREATE" icon={<FileDown size={16} />} onClick={() => {
       setSelectedReviewId(reviewId); setSelection(reviewId ? 'SINGLE' : 'RANGE'); setOpen(true);
     }}>导出 PDF</Button>
     <Modal title="导出复盘 PDF" open={open} footer={null} destroyOnHidden width="min(640px, 92vw)"
@@ -85,7 +86,7 @@ export function CreateGrowthReviewExport({ studentId, reviewId, onCreated }: {
         </>}
         {error && <Alert type="error" showIcon message={error} style={{ marginBottom: 12 }} />}
         {!loading && options.length === 0 && <Space style={{ marginBottom: 12 }} wrap>
-          <span>暂无可用复盘模板</span><Button actionKey="growth-reviews.create-growth-review-export.2" aria-label="重试模板" icon={<RefreshCw size={16} />} onClick={() => setRetry(value => value + 1)} />
+          <span>暂无可用复盘模板</span><PlainButton  aria-label="重试模板" icon={<RefreshCw size={16} />} onClick={() => setRetry(value => value + 1)} />
         </Space>}
         <Form.Item label="模板版本" name="templateId" rules={[{ required: true, message: '请选择模板' }]}>
           <Select loading={loading} disabled={submitting || loading} options={options.map(item => ({ value: item.id, label: `${item.templateName} · ${item.version}` }))}
@@ -97,8 +98,8 @@ export function CreateGrowthReviewExport({ studentId, reviewId, onCreated }: {
         <Form.Item label="导出原因" name="reason" rules={[{ required: true, whitespace: true, max: 500, message: '请填写导出原因，最多500字' }]}>
           <Input.TextArea rows={3} maxLength={500} showCount disabled={submitting} />
         </Form.Item>
-        <div className="form-actions"><Button actionKey="growth-reviews.create-growth-review-export.3" disabled={submitting} onClick={() => setOpen(false)}>取消</Button>
-          <Button actionKey="GROWTH_REVIEW_PDF_EXPORT" type="primary" htmlType="submit" loading={submitting} disabled={loading || !template}>提交导出</Button></div>
+        <div className="form-actions"><PlainButton  disabled={submitting} onClick={() => setOpen(false)}>取消</PlainButton>
+          <Button actionKey="EXPORT_JOB_CREATE" type="primary" htmlType="submit" loading={submitting} disabled={loading || !template}>提交导出</Button></div>
       </Form>
     </Modal>
   </>;

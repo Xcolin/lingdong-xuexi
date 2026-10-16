@@ -1,0 +1,4 @@
+import {getDeviceId} from '../features/auth/LoginPage';
+import {apiClient,authSessionStore,type AuthSession} from './http';
+export interface RegistrationContext {emailEnabled:boolean;smsEnabled:boolean;agreementVersion:string;agreementUrl?:string;retryAfterSeconds:number;codeExpiresInSeconds:number}
+export const registrationApi={agreement:()=>apiClient.publicGet<{version:string;content:string}>('/public/registration/agreement'),context:()=>apiClient.publicGet<RegistrationContext>('/public/registration/context'),code:(channel:string,destination:string)=>apiClient.publicPost<{retryAfterSeconds:number}>('/auth/registration-codes',{channel,destination,clientType:'WEB'}),async register(input:Record<string,unknown>){const result=await apiClient.publicPost<{session:AuthSession}>('/auth/registrations',{...input,clientType:'WEB',deviceId:getDeviceId(),deviceName:'灵动伴随管理端'});authSessionStore.save(result.session);return result;}};

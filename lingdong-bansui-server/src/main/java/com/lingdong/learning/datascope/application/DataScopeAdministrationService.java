@@ -20,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 /** Configures explicit organization-based data boundaries under system-administrator control. */
 @Service
 public class DataScopeAdministrationService {
+    @org.springframework.beans.factory.annotation.Autowired private com.lingdong.learning.organization.onboarding.application.OrganizationOwnerGuard ownerGuard;
+    @org.springframework.beans.factory.annotation.Autowired private com.lingdong.learning.iam.application.MemberScopeService memberScopes;
     private final com.lingdong.learning.permission.application.PermissionDecisionService decisions;
     private final UserRoleMapper userRoleMapper;
     private final UserMapper userMapper;
@@ -45,6 +47,10 @@ public class DataScopeAdministrationService {
     @Transactional
     public void configureOrganizationAdministrator(Long operatorId, Long userId, Long organizationId) {
         requireSystemAdministrator(operatorId);
+        configureAdministratorIdentity(operatorId,userId,organizationId);
+    }
+
+    private void configureAdministratorIdentity(Long operatorId,Long userId,Long organizationId) {
         if (userMapper.findById(userId) == null) {
             throw new ResourceNotFoundException("用户不存在：" + userId);
         }
@@ -58,6 +64,25 @@ public class DataScopeAdministrationService {
         auditService.record(IamChangeAuditEventType.ORGANIZATION_ADMIN_ASSIGN, operatorId,
                 IamChangeTargetType.ORGANIZATION_ADMIN, userId, organizationId, organizationId,
                 null, "ASSIGNED");
+    }
+
+    @Transactional
+    public void revokeOrganizationAdministrator(Long operatorId, Long userId, Long organizationId) {
+        requireSystemAdministrator(operatorId);
+        revokeAdministratorIdentity(operatorId,userId,organizationId);
+    }
+
+    private void revokeAdministratorIdentity(Long operatorId,Long userId,Long organizationId) {
+        if (organizationAdminMapper.lockRelation(userId, organizationId) == null) {
+            throw new IllegalStateException("用户不是该组织管理员");
+        }
+        if(ownerGuard!=null)ownerGuard.requireRemovable(userId,organizationId);
+        if (organizationAdminMapper.delete(organizationId, userId) != 1) {
+            throw new IllegalStateException("组织管理员撤销失败");
+        }
+        auditService.record(IamChangeAuditEventType.ORGANIZATION_ADMIN_REVOKE, operatorId,
+                IamChangeTargetType.ORGANIZATION_ADMIN, userId, organizationId, organizationId,
+                "ASSIGNED", "REVOKED");
     }
 
     @Transactional
@@ -79,6 +104,22 @@ public class DataScopeAdministrationService {
         auditService.record(IamChangeAuditEventType.ROLE_DATA_SCOPE_ADD, operatorId,
                 IamChangeTargetType.ROLE_DATA_SCOPE, roleId, organizationId, organizationId,
                 null, "ADDED");
+    }
+
+    @Transactional
+    public void configureScopedOrganizationAdministrator(Long operatorId,Long userId,Long organizationId) {
+        requireScopedAdministratorOperation(operatorId,organizationId,false);
+        configureAdministratorIdentity(operatorId,userId,organizationId);
+    }
+    @Transactional
+    public void revokeScopedOrganizationAdministrator(Long operatorId,Long userId,Long organizationId) {
+        requireScopedAdministratorOperation(operatorId,organizationId,true);
+        revokeAdministratorIdentity(operatorId,userId,organizationId);
+    }
+    private void requireScopedAdministratorOperation(Long operatorId,Long organizationId,boolean revoke) {
+        String code=revoke?"ORG_ADMIN_REVOKE":"ORG_ADMIN_ASSIGN";
+        if(!decisions.isAllowed(operatorId,com.lingdong.learning.common.security.RequestPermissionClient.forOperator(operatorId),code))throw new SystemOperationAccessDeniedException("缺少对应组织管理员操作权限");
+        memberScopes.requireTarget(operatorId,organizationId);
     }
 
     private void requireSystemAdministrator(Long operatorId) {

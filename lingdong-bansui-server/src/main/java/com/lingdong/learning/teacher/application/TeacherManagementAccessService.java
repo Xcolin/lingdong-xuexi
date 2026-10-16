@@ -52,11 +52,21 @@ public class TeacherManagementAccessService {
         }
     }
 
+    public void requireLookup(AuthenticatedUser user,String permission){
+        if(user==null||user.clientType()!=AuthClientType.WEB||!operationPermissions.isAllowed(user.userId(),PermissionClient.WEB,permission))throw new SystemOperationAccessDeniedException("缺少对应教师选择动作权限");
+    }
+    /** School is filtering context: a scoped descendant may supply its ancestor, without granting the entire school. */
+    public void requireLookupSchool(AuthenticatedUser user,Long schoolId){
+        Organization school=schoolId==null?null:organizationMapper.findById(schoolId);
+        if(school==null||!com.lingdong.learning.organization.application.OrganizationHierarchy.isInstitutionRoot(school)||!OrganizationOperationalStatusService.isOperational(school))throw notFound();
+        if(!organizationDataScopeService.canAccess(user.userId(),schoolId)&&organizationDataScopeService.findAccessibleOrganizations(user.userId()).stream().noneMatch(org->org.path().startsWith(school.path())))throw notFound();
+    }
+
     public Organization requireManageableSchool(AuthenticatedUser currentUser, Long schoolId) {
         requireManager(currentUser);
         Organization school = schoolId == null ? null : organizationMapper.findById(schoolId);
         if (school == null
-                || !"SCHOOL".equals(school.typeCode())
+                || !com.lingdong.learning.organization.application.OrganizationHierarchy.isInstitutionRoot(school)
                 || !organizationDataScopeService.canAccess(currentUser.userId(), school.id())) {
             throw notFound();
         }

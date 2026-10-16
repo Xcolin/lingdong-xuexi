@@ -5,7 +5,11 @@ export interface OrganizationClass {
   parentId: string | null;
   code: string;
   name: string;
-  typeCode: 'SCHOOL' | 'CLASS';
+  typeCode: 'SCHOOL' | 'GRADE' | 'CLASS';
+  schoolOrganizationId?: string | null;
+  schoolName?: string | null;
+  gradeOrganizationId?: string | null;
+  gradeName?: string | null;
   sortOrder: number;
   status: 'ENABLED' | 'DISABLED';
   effectiveStatus: 'ENABLED' | 'DISABLED';
@@ -41,15 +45,20 @@ export function listManagedClasses(accessToken: string): Promise<OrganizationCla
   });
 }
 
+export function listManageableGrades(accessToken: string): Promise<OrganizationClass[]> {
+  return request<OrganizationClass[]>('/classes/grades', { header: authorization(accessToken) });
+}
+
 export function createManagedClass(
   accessToken: string,
   schoolOrganizationId: string,
   name: string,
-  sortOrder: number
+  sortOrder: number,
+  gradeOrganizationId: string
 ): Promise<OrganizationClass> {
   return request<OrganizationClass>('/classes', {
     method: 'POST', header: authorization(accessToken),
-    data: { schoolOrganizationId, name, sortOrder }
+    data: { schoolOrganizationId, gradeOrganizationId, name, sortOrder }
   });
 }
 

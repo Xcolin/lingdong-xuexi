@@ -157,3 +157,34 @@ describe('家长奖励管理页面', () => {
     await waitFor(() => expect(rewardApi.verifyExchange).toHaveBeenCalledWith('1874244142494647602'));
   });
 });
+
+it('仅兑换读取时不请求奖励库且不显示奖励管理和审核', async () => {
+ rewardApi.listStudents.mockResolvedValue([{id:studentId,studentName:'单权限孩子'}]);
+ rewardApi.listExchanges.mockResolvedValue([{id:'exchange',studentId,rewardName:'只读兑换',requiredPoints:1,status:'PENDING_APPROVAL'}]);
+ render(<AntdApp><RewardManagementPage permissionCodes={['REWARD_EXCHANGE_READ']} /></AntdApp>);
+ expect(await screen.findByText('只读兑换')).toBeInTheDocument();
+ expect(rewardApi.listRewards).not.toHaveBeenCalled();
+ expect(screen.queryByRole('tab',{name:'奖励库'})).toBeNull();
+ expect(screen.queryByRole('button',{name:'新建奖励'})).toBeNull();
+ expect(screen.queryByRole('button',{name:'同意兑换 只读兑换'})).toBeNull();
+});
+it('仅奖励读取时不请求兑换列表且不能新增', async () => {
+ rewardApi.listStudents.mockResolvedValue([{id:studentId,studentName:'单权限孩子'}]);
+ rewardApi.listRewards.mockResolvedValue([{id:'reward',studentId,rewardName:'只读奖励',requiredPoints:2,status:'ONLINE'}]);
+ render(<AntdApp><RewardManagementPage permissionCodes={['REWARD_READ']} /></AntdApp>);
+ expect(await screen.findByText('只读奖励')).toBeInTheDocument();
+ expect(rewardApi.listExchanges).not.toHaveBeenCalled();
+ expect(screen.queryByRole('tab',{name:'兑换处理'})).toBeNull();
+ expect(screen.queryByRole('button',{name:'新建奖励'})).toBeNull();
+});
+
+it('撤回奖励读取后切换到仍有权的兑换页签',async()=>{
+ rewardApi.listStudents.mockResolvedValue([{id:studentId,studentName:'孩子'}]);
+ rewardApi.listRewards.mockResolvedValue([{id:'reward',studentId,rewardName:'即将撤回的奖励',requiredPoints:1,status:'ONLINE'}]);
+ rewardApi.listExchanges.mockResolvedValue([]);
+ const view=render(<AntdApp><RewardManagementPage permissionCodes={['REWARD_READ','REWARD_EXCHANGE_READ']}/></AntdApp>);
+ await screen.findByText('即将撤回的奖励');
+ view.rerender(<AntdApp><RewardManagementPage permissionCodes={['REWARD_EXCHANGE_READ']}/></AntdApp>);
+ await waitFor(()=>expect(screen.getByRole('tab',{name:'兑换处理'})).toHaveAttribute('aria-selected','true'));
+ expect(screen.queryByRole('tab',{name:'奖励库'})).toBeNull();
+});

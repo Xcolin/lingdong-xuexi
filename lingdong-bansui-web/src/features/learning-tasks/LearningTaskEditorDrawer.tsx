@@ -1,3 +1,5 @@
+import { Button as PlainButton } from 'antd';
+import {teacherOptionLabel} from './teacherOptionLabel';
 import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { useEffect, useMemo, useState } from 'react';
 import { Drawer, Form, Input, InputNumber, Segmented, Select, Space, Spin, Switch, message } from 'antd';
@@ -200,9 +202,9 @@ export function LearningTaskEditorDrawer({
       extra={
         <Space>
           {taskTemplateEnabled && currentUser.permissionCodes.includes('LEARNING_TASK_TEMPLATE_READ') && (
-            <Button actionKey="learning-tasks.learning-task-editor-drawer.1" onClick={() => void openTemplateEditor()}>保存为个人模板</Button>
+            <Button actionKey="LEARNING_TASK_TEMPLATE_MANAGE_PERSONAL" onClick={() => void openTemplateEditor()}>保存为个人模板</Button>
           )}
-          <Button actionKey="learning-tasks.learning-task-editor-drawer.2" type="primary" loading={submitting} onClick={() => form.submit()}>保存草稿</Button>
+          <Button actionKey="LEARNING_TASK_CREATE" type="primary" loading={submitting} onClick={() => form.submit()}>保存草稿</Button>
         </Space>
       }
     >
@@ -299,7 +301,7 @@ export function LearningTaskEditorDrawer({
                 placeholder="不选择时由当前机构管理员审核"
                 options={teachers.map((teacher) => ({
                   value: teacher.userId,
-                  label: teacher.displayName
+                  label: teacherOptionLabel(teacher)
                 }))}
               />
             </Form.Item>
@@ -310,11 +312,11 @@ export function LearningTaskEditorDrawer({
               <div className="task-target-list">
                 <div className="task-target-heading">
                   <span>任务目标</span>
-                  <Button actionKey="learning-tasks.learning-task-editor-drawer.3"
+                  <PlainButton 
                     type="text"
                     icon={<Plus size={16} />}
                     onClick={() => add({ targetType: defaultTargetType(sourceType), targetId: '' })}
-                  >添加目标</Button>
+                  >添加目标</PlainButton>
                 </div>
                 {fields.map((field) => (
                   <Space key={field.key} align="start" className="task-target-row">
@@ -342,7 +344,7 @@ export function LearningTaskEditorDrawer({
                         );
                       }}
                     </Form.Item>
-                    <Button actionKey="learning-tasks.learning-task-editor-drawer.4"
+                    <PlainButton 
                       type="text"
                       danger
                       aria-label="删除目标"
@@ -374,14 +376,10 @@ export function LearningTaskEditorDrawer({
 }
 
 function sourceOptions(currentUser: CurrentUser): Array<{ value: LearningTaskSourceType; label: string }> {
-  const roleSources: Array<[string, LearningTaskSourceType]> = [
-    ['PARENT', 'FAMILY'],
-    ['ORG_ADMIN', 'ORGANIZATION'],
-    ['TEACHER', 'TEACHER']
-  ];
-  return roleSources
-    .filter(([role, source]) => currentUser.permissionCodes.includes('LEARNING_TASK_CREATE') && (source === 'ORGANIZATION' || currentUser.roleCodes.includes(role)))
-    .map(([, source]) => ({ value: source, label: sourceLabels[source] }));
+  const supported = currentUser.learningTaskSourceTypes ?? [];
+  return (['FAMILY', 'ORGANIZATION', 'TEACHER'] as LearningTaskSourceType[])
+    .filter(source => currentUser.permissionCodes.includes('LEARNING_TASK_CREATE') && supported.includes(source))
+    .map(source => ({ value: source, label: sourceLabels[source] }));
 }
 
 function defaultTargetType(sourceType?: LearningTaskSourceType): LearningTaskTargetType {

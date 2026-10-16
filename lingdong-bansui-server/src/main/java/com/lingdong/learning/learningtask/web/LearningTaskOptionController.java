@@ -47,7 +47,7 @@ public class LearningTaskOptionController {
                 .toList();
     }
 
-    @RequirePermission("TEACHER_CLASS_ASSIGN")
+    @RequirePermission(anyOf={"TEACHER_CLASS_ASSIGN","LEARNING_TASK_CREATE"})
     @GetMapping("/teachers")
     public List<TeacherOptionResponse> teachers(
             @AuthenticationPrincipal AuthenticatedUser currentUser,

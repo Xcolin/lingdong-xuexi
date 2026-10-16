@@ -15,8 +15,23 @@ public record ValidatedLearningTaskDraft(
         String remark,
         List<LearningTaskTargetInput> targets,
         boolean recurrenceEnabled,
-        LocalDate recurrenceEndDate
+        LocalDate recurrenceEndDate,
+        String recurrenceFrequency, java.util.List<Integer> recurrenceWeekdays
 ) {
+    public ValidatedLearningTaskDraft(
+        String title,
+        int difficultyLevel,
+        int basePoints,
+        int durationMinutes,
+        LocalDate scheduledDate,
+        String categoryCode,
+        List<String> tagCodes,
+        String remark,
+        List<LearningTaskTargetInput> targets,
+        boolean recurrenceEnabled,
+        LocalDate recurrenceEndDate
+) { this(title, difficultyLevel, basePoints, durationMinutes, scheduledDate, categoryCode, tagCodes, remark, targets, recurrenceEnabled, recurrenceEndDate, "DAILY", java.util.List.of()); }
+
     public ValidatedLearningTaskDraft {
         tagCodes = List.copyOf(tagCodes);
         targets = List.copyOf(targets);

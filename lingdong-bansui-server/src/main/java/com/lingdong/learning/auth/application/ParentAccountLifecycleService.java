@@ -24,6 +24,7 @@ import java.time.Duration;
 /** 家长手机号换绑与账号注销前置流程的统一事务边界。 */
 @Service
 public class ParentAccountLifecycleService {
+    @org.springframework.beans.factory.annotation.Autowired private com.lingdong.learning.organization.onboarding.application.OrganizationOwnerGuard ownerGuard;
     private static final String FEATURE_CODE = "PARENT_ACCOUNT_LIFECYCLE";
     private static final String PARENT_ROLE_CODE = "PARENT";
     private static final String ACTIVE_SCOPE_KEY = "ACTIVE";
@@ -181,6 +182,7 @@ public class ParentAccountLifecycleService {
             throw new IllegalArgumentException("请输入确认注销");
         }
         User parent = requireParent(userMapper.findByIdForUpdate(userId));
+        if(ownerGuard!=null)ownerGuard.requireAccountAvailable(userId);
         ParentAccountCancellationRecord existing = lifecycleMapper.findActiveCancellationForUpdate(userId);
         if (existing != null) {
             return existing;
@@ -247,7 +249,7 @@ public class ParentAccountLifecycleService {
         if (user == null
                 || user.type() != UserType.FAMILY
                 || user.status() != UserStatus.ENABLED
-                || !userRoleMapper.hasRoleCode(user.id(), PARENT_ROLE_CODE)
+                || !userRoleMapper.hasAnyEnabledRole(user.id())
                 || parentAuthenticationMapper.findProfileByUserId(user.id()) == null) {
             throw new AuthenticationFailedException();
         }

@@ -11,7 +11,7 @@ import type {
 /** 家长端仅调用主关系孩子范围内的成长复盘接口。 */
 export const growthReviewApi = {
   listStudents(): Promise<GrowthReviewStudentOption[]> {
-    return apiClient.get<GrowthReviewStudentOption[]>('/growth-points/students');
+    return apiClient.get<{id:string;studentName:string}[]>('/parent/student-options').then(rows => rows.map(row => ({studentId:row.id,studentName:row.studentName})));
   },
   list(
     studentId: string,

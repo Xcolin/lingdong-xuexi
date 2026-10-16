@@ -7,14 +7,14 @@ const api = vi.hoisted(() => ({ list: vi.fn(), detail: vi.fn(), downloadFile: vi
 vi.mock('./exportApi', () => ({ growthReviewExportApi: api }));
 const job = { id: '1874244142494650180', jobCode: 'EXP-测试', status: 'SUCCEEDED', totalRows: 1, processedRows: 1,
   templateName: '复盘模板', templateVersion: 'V1', requestedAt: '2026-09-08T12:00:00', requestReason: '留存' };
-beforeEach(() => { vi.clearAllMocks(); api.list.mockResolvedValue({ items: [job], total: 1, page: 1, pageSize: 20 }); api.detail.mockResolvedValue(job); });
+beforeEach(() => { vi.clearAllMocks(); api.list.mockResolvedValue({ items: [job], total: 1, page: 1, pageSize: 10 }); api.detail.mockResolvedValue(job); });
 it('打开时查询指定孩子，查看公开详情', async () => {
   const user = userEvent.setup();
   render(<App><GrowthReviewExportHistory studentId="1874244142494650102" /></App>);
   expect(api.list).not.toHaveBeenCalled();
   await user.click(screen.getByRole('button', { name: '导出历史' }));
   await screen.findByText('EXP-测试');
-  expect(api.list).toHaveBeenCalledWith('1874244142494650102', { page: 1, pageSize: 20, status: undefined });
+  expect(api.list).toHaveBeenCalledWith('1874244142494650102', { page: 1, pageSize: 10, status: undefined });
   await user.click(screen.getByRole('button', { name: '详情-EXP-测试' }));
   await screen.findByText('复盘模板');
 });
@@ -25,11 +25,11 @@ it('切换孩子后卸载历史，迟到响应不能展示旧孩子数据', asyn
   const view = render(<App><GrowthReviewExportHistory key="a" studentId="a" /></App>);
   await user.click(screen.getByRole('button', { name: '导出历史' }));
   view.rerender(<App><GrowthReviewExportHistory key="b" studentId="b" /></App>);
-  resolve({ items: [job], total: 1, page: 1, pageSize: 20 });
+  resolve({ items: [job], total: 1, page: 1, pageSize: 10 });
   await waitFor(() => expect(screen.queryByText('EXP-测试')).not.toBeInTheDocument());
 });
 it('失败作业不可下载', async () => {
-  api.list.mockResolvedValue({ items: [{ ...job, status: 'FAILED' }], total: 1, page: 1, pageSize: 20 });
+  api.list.mockResolvedValue({ items: [{ ...job, status: 'FAILED' }], total: 1, page: 1, pageSize: 10 });
   const user = userEvent.setup();
   render(<App><GrowthReviewExportHistory studentId="a" /></App>);
   await user.click(screen.getByRole('button', { name: '导出历史' }));

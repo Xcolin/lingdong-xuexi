@@ -9,4 +9,5 @@ public interface MenuMapper {
     int insert(@Param("node") MenuNode node);
     int update(@Param("node") MenuNode node);
     int reorder(@Param("id") Long id,@Param("version") Long version,@Param("sortOrder") int sortOrder);
+    int deleteById(@Param("id") Long id,@Param("version") Long version);
 }

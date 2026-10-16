@@ -17,20 +17,19 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/organization-admins")
 public class DataScopeManagementController {
     private final DataScopeAdministrationService dataScopeAdministrationService;
+    @org.springframework.beans.factory.annotation.Autowired private com.lingdong.learning.iam.application.OrganizationMembershipService memberships;
 
     public DataScopeManagementController(DataScopeAdministrationService dataScopeAdministrationService) {
         this.dataScopeAdministrationService = dataScopeAdministrationService;
     }
 
-    @RequirePermission("IAM_DATA_SCOPE_CONFIGURE")
+    @RequirePermission("ORG_ADMIN_ASSIGN")
     @PostMapping
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void configureOrganizationAdministrator(
             @AuthenticationPrincipal AuthenticatedUser currentUser,
             @Valid @RequestBody ConfigureOrganizationAdministratorRequest request
     ) {
-        dataScopeAdministrationService.configureOrganizationAdministrator(
-                currentUser.userId(), request.userId(), request.organizationId()
-        );
+        memberships.addMembers(currentUser.userId(),request.organizationId(),java.util.List.of(request.userId()),true);
     }
 }

@@ -1,3 +1,4 @@
+import { Button as PlainButton } from 'antd';
 import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { useEffect, useState } from 'react';
 import { Drawer, Form, Input, InputNumber, Select, message } from 'antd';
@@ -82,7 +83,7 @@ export function OrganizationNodeEditorDrawer({ open, node, divisionOptions, divi
           <InputNumber min={0} precision={0} className="full-width" />
         </Form.Item>
         <div className="form-actions">
-          <Button actionKey="organizations.organization-node-editor-drawer.1" onClick={onClose}>取消</Button>
+          <PlainButton  onClick={onClose}>取消</PlainButton>
           <Button actionKey="ORG_NODE_UPDATE" type="primary" htmlType="submit" loading={submitting} icon={<Save size={16} />}>保存</Button>
         </div>
       </Form>

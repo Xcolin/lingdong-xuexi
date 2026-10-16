@@ -73,9 +73,11 @@ class OrganizationMiniappAuthenticationTest {
         userAccessApplicationService.assignRole(
                 new AssignRoleToUserCommand(teacher.id(), teacherRole.id(), null));
         Organization school = createSchool("TEACHER_MINI_SCHOOL", "教师认证学校");
+        Organization grade = organizationApplicationService.createOrganization(
+                new CreateOrganizationCommand("TEACHER_MINI_GRADE", "教师认证年级", "GRADE", school.id(), 10));
         Organization teacherClass = organizationApplicationService.createOrganization(
                 new CreateOrganizationCommand(
-                        "TEACHER_MINI_CLASS", "教师认证班级", "CLASS", school.id(), 10));
+                        "TEACHER_MINI_CLASS", "教师认证班级", "CLASS", grade.id(), 10));
         jdbcTemplate.update("""
                 insert into edu_teacher_class (
                     id, teacher_user_id, class_organization_id, status

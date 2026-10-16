@@ -1,3 +1,5 @@
+import { useMenuConfiguration } from '../../app/MenuConfiguration';
+import { Button as PlainButton } from 'antd';
 import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { ViewportTable as Table } from '../../components/ViewportTable';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -30,10 +32,12 @@ const SUPPLEMENT_TYPES: Array<{ label: string; value: GrowthReviewSupplementType
 ];
 
 export function GrowthReviewPage({ canReadExportHistory = false, canCreateExport = false,
-  subscriptionEnabled = false, canEnableSubscription = false }: {
+  subscriptionEnabled = false, canEnableSubscription = false, canSupplement: supplementPermission }: {
   canReadExportHistory?: boolean; canCreateExport?: boolean;
-  subscriptionEnabled?: boolean; canEnableSubscription?: boolean;
+  subscriptionEnabled?: boolean; canEnableSubscription?: boolean; canSupplement?: boolean;
 }) {
+  const configuration = useMenuConfiguration();
+  const canSupplement = supplementPermission ?? (configuration ? configuration.permissionCodes?.includes('GROWTH_REVIEW_SUPPLEMENT_CHILD') === true : true);
   const [created, setCreated] = useState<{ studentId: string; version: number }>();
   const { message } = App.useApp();
   const [form] = Form.useForm<AddGrowthReviewSupplementInput>();
@@ -112,7 +116,7 @@ export function GrowthReviewPage({ canReadExportHistory = false, canCreateExport
   }
 
   async function submitSupplement(values: AddGrowthReviewSupplementInput): Promise<void> {
-    if (!studentId || !detail) return;
+    if (!studentId || !detail || !canSupplement) return;
     const version = requestVersion.current;
     setSubmitting(true);
     try {
@@ -226,7 +230,7 @@ export function GrowthReviewPage({ canReadExportHistory = false, canCreateExport
                       <Tag color="green">第 {detail.contentVersion} 版</Tag>
                     </div>
                     {detail.periodType === 'DAY' && (
-                      <Button actionKey="growth-reviews.growth-review-page.2"
+                      <Button actionKey="GROWTH_REVIEW_SUPPLEMENT_CHILD" hidden={!canSupplement}
                         icon={<FilePenLine size={16} />}
                         onClick={() => setSupplementOpen(true)}
                       >补录复盘</Button>
@@ -324,7 +328,7 @@ export function GrowthReviewPage({ canReadExportHistory = false, canCreateExport
 
       <Modal
         title="补录成长复盘"
-        open={supplementOpen}
+        open={supplementOpen && canSupplement}
         footer={null}
         width="min(640px, 92vw)"
         maskClosable={!submitting}
@@ -346,8 +350,8 @@ export function GrowthReviewPage({ canReadExportHistory = false, canCreateExport
             <Input.TextArea rows={5} maxLength={1000} showCount />
           </Form.Item>
           <div className="form-actions">
-            <Button actionKey="growth-reviews.growth-review-page.3" disabled={submitting} onClick={() => setSupplementOpen(false)}>取消</Button>
-            <Button actionKey="growth-reviews.growth-review-page.4" type="primary" htmlType="submit" loading={submitting}>确认追加</Button>
+            <PlainButton  disabled={submitting} onClick={() => setSupplementOpen(false)}>取消</PlainButton>
+            <Button actionKey="GROWTH_REVIEW_SUPPLEMENT_CHILD" hidden={!canSupplement} type="primary" htmlType="submit" loading={submitting}>确认追加</Button>
           </div>
         </Form>
       </Modal>

@@ -60,6 +60,7 @@ class ParentMobileManualRecoveryPersistenceTest {
                     id, username, display_name, mobile, password_hash, user_type, status
                 ) VALUES (?, ?, '待换号家长', ?, 'password-hash', 'FAMILY', 'ENABLED')
                 """, PARENT_ID, OLD_MOBILE, OLD_MOBILE);
+        jdbcTemplate.update("insert into auth_parent_profile(id,user_id,onboarding_status,first_login_at) values(?,?,'COMPLETED',CURRENT_TIMESTAMP)", PARENT_ID + 90, PARENT_ID);
         jdbcTemplate.update("""
                 INSERT INTO sys_user_role (
                     id, user_id, role_id, organization_id, organization_scope_key
@@ -175,6 +176,7 @@ class ParentMobileManualRecoveryPersistenceTest {
         jdbcTemplate.update("DELETE FROM sys_organization_admin WHERE id = ?", ORGANIZATION_ADMIN_ID);
         jdbcTemplate.update(
                 "DELETE FROM sys_user_role WHERE id IN (?, ?)", OPERATOR_ROLE_ID, PARENT_ROLE_ASSIGNMENT_ID);
+        jdbcTemplate.update("DELETE FROM auth_parent_profile WHERE user_id = ?", PARENT_ID);
         jdbcTemplate.update("DELETE FROM sys_user WHERE id IN (?, ?)", OPERATOR_ID, PARENT_ID);
         jdbcTemplate.update("DELETE FROM sys_organization WHERE id = ?", ORGANIZATION_ID);
     }

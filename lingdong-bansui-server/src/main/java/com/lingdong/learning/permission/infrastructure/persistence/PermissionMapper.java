@@ -18,6 +18,7 @@ public interface PermissionMapper {
     boolean existsByCode(@Param("code") String code);
 
     int insert(@Param("permission") Permission permission);
+    int delete(@Param("id") Long id);
 
     /** 菜单树同步：按主键更新名称与状态。 */
     int updateNameAndStatus(@Param("id") Long id, @Param("name") String name, @Param("status") PermissionStatus status);

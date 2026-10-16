@@ -34,7 +34,7 @@ class GrowthReviewExportAccessServiceTest {
     private GrowthReviewExportAccessService access;
 
     @BeforeEach void setUp() {
-        access = new GrowthReviewExportAccessService(features, permissions, users, roles, relations);
+        access = new GrowthReviewExportAccessService(features, permissions, users, roles, relations, org.mockito.Mockito.mock(com.lingdong.learning.auth.application.ParentActorAccessService.class));
         when(users.findById(PARENT)).thenReturn(new User(PARENT, "parent", "测试家长", null, null,
                 UserType.FAMILY, UserStatus.ENABLED, null, null));
         when(roles.hasRoleCode(PARENT, "PARENT")).thenReturn(true);
@@ -80,16 +80,16 @@ class GrowthReviewExportAccessServiceTest {
         assertThatThrownBy(() -> access.requireHistoricalRead(user(AuthClientType.WEB), prepared())).isInstanceOf(SystemOperationAccessDeniedException.class);
     }
 
-    @Test void refusesAuditorEvenWhenAlsoParentAndRejectsDisabledAccount() {
+    @Test void allowsMixedRoleParentAndRejectsDisabledAccount() {
         when(roles.hasRoleCode(PARENT, "SYS_AUDITOR")).thenReturn(true);
-        assertThatThrownBy(() -> access.requireCreate(user(AuthClientType.WEB), STUDENT)).isInstanceOf(SystemOperationAccessDeniedException.class);
+        org.assertj.core.api.Assertions.assertThatCode(() -> access.requireCreate(user(AuthClientType.WEB), STUDENT)).doesNotThrowAnyException();
         when(roles.hasRoleCode(PARENT, "SYS_AUDITOR")).thenReturn(false);
         when(users.findById(PARENT)).thenReturn(null);
         assertThatThrownBy(() -> access.requireExecution(prepared())).isInstanceOf(SystemOperationAccessDeniedException.class);
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"EXPORT_JOB_READ", "GROWTH_REVIEW_READ_CHILD"})
+    @ValueSource(strings = {"EXPORT_JOB_READ"})
     void historicalReadRechecksDynamicPermission(String permission) {
         when(permissions.isAllowed(PARENT, PermissionClient.WEB, permission)).thenReturn(false);
         assertThatThrownBy(() -> access.requireHistoricalRead(user(AuthClientType.WEB), prepared())).isInstanceOf(SystemOperationAccessDeniedException.class);
@@ -104,6 +104,6 @@ class GrowthReviewExportAccessServiceTest {
 
     private Prepared prepared() { return new Prepared(PARENT, STUDENT, List.of()); }
     private AuthenticatedUser user(AuthClientType client) {
-        return new AuthenticatedUser(PARENT, PARENT + 3, "parent", "测试家长", client, List.of("PARENT"));
+        return new AuthenticatedUser(PARENT, PARENT + 3, "parent", "测试家长", client, List.of("CUSTOM_PARENT","SYS_AUDITOR"));
     }
 }

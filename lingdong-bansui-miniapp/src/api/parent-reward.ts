@@ -1,10 +1,11 @@
+import {isParentIdentity} from '@/models/parent-identity';
 import { request } from './http';
 import type { StudentRewardExchange } from './reward';
-export interface RewardIdentity { clientType:string; roleCodes:string[]; permissionCodes:string[] }
+export interface RewardIdentity { parentProfile?:boolean;userType?:string;clientType:string; roleCodes:string[]; permissionCodes:string[] }
 export const MANAGE_REWARDS='MINIAPP_REWARD_MANAGE_CHILD';
 export const REVIEW_EXCHANGES='MINIAPP_REWARD_EXCHANGE_REVIEW_CHILD';
 export function canUseParentRewards(user:RewardIdentity, permission?:string) {
-  return user.clientType==='MINIAPP' && user.roleCodes.includes('PARENT') && !user.roleCodes.includes('SYS_AUDITOR')
+  return isParentIdentity(user)
     && (permission ? user.permissionCodes.includes(permission) : [MANAGE_REWARDS,REVIEW_EXCHANGES].some(code=>user.permissionCodes.includes(code)));
 }
 export interface RewardChild { studentId:string;studentName:string;relationshipRole:'PRIMARY_GUARDIAN'|'SECONDARY_GUARDIAN' }
@@ -14,6 +15,7 @@ export interface RewardPage<T> {items:T[];page:number;pageSize:number;total:numb
 const header=(token:string)=>({Authorization:`Bearer ${token}`});
 const id=(value:string)=>encodeURIComponent(value);
 export const parentRewardApi={
+ summary:(token:string)=>request<{pendingApprovalCount:number;pendingVerificationCount:number}>('/parent-reward-exchanges/summary',{header:header(token)}),
  me:(token:string)=>request<RewardIdentity>('/auth/me',{header:header(token)}),
  children:(token:string)=>request<RewardChild[]>('/parent-rewards/students',{header:header(token)}),
  rewards:(token:string,studentId:string,page:number)=>request<RewardPage<ParentReward>>(`/parent-rewards/students/${id(studentId)}?page=${page}&pageSize=20`,{header:header(token)}),

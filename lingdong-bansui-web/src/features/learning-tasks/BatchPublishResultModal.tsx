@@ -11,7 +11,7 @@ interface BatchPublishResultModalProps {
 /** 清晰区分批量发布中的成功项和失败项。 */
 export function BatchPublishResultModal({ result, onClose }: BatchPublishResultModalProps) {
   return (
-    <Modal actionPrefix="learning-tasks.batch-publish-result-modal.modal.1"
+    <Modal 
       title="批量发布结果"
       open={Boolean(result)}
       onCancel={onClose}

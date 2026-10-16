@@ -1,3 +1,4 @@
+import { teachersApi } from '../../api/teachers';
 import { apiClient } from '../../api/http';
 import type {
   BatchPublishResult,
@@ -58,11 +59,11 @@ export const learningTaskApi = {
       `/learning-task-options/students?${queryString({ sourceType, organizationId, keyword })}`
     );
   },
-  listTeachers(classId?: string, keyword?: string): Promise<TeacherOption[]> {
-    return apiClient.get<TeacherOption[]>(
-      `/learning-task-options/teachers?${queryString({ classId, keyword })}`
-    );
+  async listTeachers(classId?: string, keyword?: string): Promise<TeacherOption[]> {
+    const result=await teachersApi.lookup('LEARNING_TASK_CREATE',{classOrganizationId:classId,keyword,page:1,pageSize:100});
+    return result.items.map(item=>({userId:item.id,displayName:item.displayName,classIds:item.classOrganizationIds}));
   }
+
 };
 
 function queryString(values: object): string {

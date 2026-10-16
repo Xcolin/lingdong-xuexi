@@ -1,20 +1,24 @@
 <template>
-  <view class="page-shell">
+  <view class="prototype-workspace page-shell"><PrototypePageHeader title="开启成长陪伴" icon="growth"/>
     <view v-if="loading" class="loading-state">正在加载</view>
+    <view v-else-if="!state" class="content-shell">
+      <text class="error-message">{{ errorMessage || '暂时无法加载，请重试' }}</text>
+      <button class="primary-button" @tap="loadState">重新加载</button>
+    </view>
     <view v-else-if="state?.agreementAcceptanceRequired" class="content-shell">
       <text class="page-title">用户协议更新</text>
       <view class="title-rule" />
       <view class="content-band">
         <text class="content-title">当前协议版本</text>
         <text class="version-text">{{ state.currentAgreementVersion }}</text>
-        <text class="content-description">请确认接受当前用户协议后继续使用家长端。</text>
+        <text class="content-description">请确认接受当前用户协议后继续使用成长陪伴端。</text>
       </view>
       <text v-if="errorMessage" class="error-message">{{ errorMessage }}</text>
       <button class="primary-button" :loading="submitting" :disabled="submitting" @tap="acceptAgreement">同意并继续</button>
     </view>
 
     <view v-else-if="state?.onboardingRequired" class="content-shell">
-      <text class="page-title">家长首次引导</text>
+      <text class="page-title">成长伙伴引导</text>
       <view class="title-rule" />
       <view class="step-row">
         <view v-for="(_, index) in steps" :key="index" :class="['step-dot', { active: index <= current }]" />
@@ -35,6 +39,7 @@
 </template>
 
 <script setup lang="ts">
+import PrototypePageHeader from '@/components/PrototypePageHeader.vue';
 import { ref } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import {
@@ -44,6 +49,7 @@ import {
   type ParentAuthState
 } from '@/api/auth';
 import { getParentSession } from '@/session/parent-session';
+import { ApiError } from '@/api/http';
 
 const steps = [
   { title: '欢迎使用', description: '建立清晰、稳定的家庭学习节奏。' },
@@ -58,25 +64,34 @@ const state = ref<ParentAuthState | null>(null);
 const current = ref(0);
 const errorMessage = ref('');
 
-onLoad(async () => {
+onLoad(loadState);
+async function loadState() {
+  loading.value = true;
+  errorMessage.value = '';
   const session = getParentSession();
   if (!session) {
-    await uni.reLaunch({ url: '/pages/index/index' });
+    await uni.reLaunch({ url: '/pages/unified-login/unified-login' });
     return;
   }
   try {
     const loaded = await getParentState(session.accessToken);
+    if (getParentSession()?.accessToken !== session.accessToken) return;
     if (!loaded.onboardingRequired && !loaded.agreementAcceptanceRequired) {
       await uni.redirectTo({ url: '/pages/parent-home/parent-home' });
       return;
     }
     state.value = loaded;
   } catch (error) {
+    if (getParentSession()?.accessToken !== session.accessToken) return;
+    if (error instanceof ApiError && error.statusCode === 401) {
+      await uni.reLaunch({ url: '/pages/unified-login/unified-login' });
+      return;
+    }
     errorMessage.value = error instanceof Error ? error.message : '家长状态加载失败';
   } finally {
     loading.value = false;
   }
-});
+}
 
 async function acceptAgreement(): Promise<void> {
   const session = getParentSession();
@@ -139,3 +154,5 @@ async function complete(): Promise<void> {
 .secondary-button::after { border: 2rpx solid #167c5a; border-radius: 12rpx; }
 .primary-button[disabled] { background: #91aaa1; color: #ffffff; }
 </style>
+
+<style scoped>.prototype-workspace{padding:28rpx;min-height:calc(100vh - var(--window-top,0px));box-sizing:border-box;background:#f6f8f5;}.content-shell{padding:6rpx 0;}.page-title{font-size:34rpx;color:#224f36;font-weight:650;}.title-rule{display:none;}.content-band{background:#fffefa;border:1rpx solid #e1ebdc;border-radius:24rpx;padding:30rpx;margin:26rpx 0;}.content-title{font-size:31rpx;color:#255139;}.content-description{font-size:26rpx;color:#819377;line-height:1.8;}.primary-button{background:#184f40;border-radius:20rpx;color:#fff;height:92rpx;line-height:92rpx;font-size:28rpx;}.secondary-button{background:#eaf2e6;border-radius:20rpx;color:#326546;}</style>

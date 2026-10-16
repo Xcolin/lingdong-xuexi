@@ -1,6 +1,7 @@
 package com.lingdong.learning.growthpoint.application;
 
 import com.lingdong.learning.auth.application.AuthenticatedUser;
+import com.lingdong.learning.auth.application.ParentActorAccessService;
 import com.lingdong.learning.auth.domain.AuthClientType;
 import com.lingdong.learning.common.id.IdGenerator;
 import com.lingdong.learning.common.security.SystemOperationAccessDeniedException;
@@ -43,6 +44,8 @@ public class GrowthPointCorrectionService {
     private final IdGenerator idGenerator;
     private final Clock clock;
 
+    private final ParentActorAccessService parentActors;
+
     public GrowthPointCorrectionService(
             GrowthPointLedgerMapper ledgerMapper,
             GrowthPointAccountMapper accountMapper,
@@ -52,8 +55,10 @@ public class GrowthPointCorrectionService {
             ParentStudentMapper parentStudentMapper,
             FeatureAccessService featureAccessService,
             IdGenerator idGenerator,
-            Clock clock
+            Clock clock,
+            ParentActorAccessService parentActors
     ) {
+        this.parentActors = parentActors;
         this.ledgerMapper = ledgerMapper;
         this.accountMapper = accountMapper;
         this.assignmentMapper = assignmentMapper;
@@ -148,8 +153,8 @@ public class GrowthPointCorrectionService {
     }
 
     private void requireWebParent(AuthenticatedUser currentUser) {
-        if (currentUser == null || currentUser.clientType() != AuthClientType.WEB
-                || !currentUser.roleCodes().contains("PARENT")) {
+        parentActors.require(currentUser);
+        if (currentUser == null || currentUser.clientType() != AuthClientType.WEB) {
             throw new SystemOperationAccessDeniedException("仅 Web 端主家长可发起积分纠错");
         }
     }

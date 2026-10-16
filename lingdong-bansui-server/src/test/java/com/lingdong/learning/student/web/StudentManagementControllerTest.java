@@ -144,7 +144,8 @@ class StudentManagementControllerTest {
         mockMvc.perform(get("/api/v1/students")
                         .header("Authorization", "Bearer " + loginAccessToken("student_scope_sys_admin")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.total").value(2));
+                .andExpect(jsonPath("$.total").value(1))
+                .andExpect(jsonPath("$.items[0].id").value(organizationStudentId.toString()));
 
         mockMvc.perform(get("/api/v1/students")
                         .header("Authorization", "Bearer " + loginAccessToken("student_scope_ordinary")))
@@ -160,14 +161,18 @@ class StudentManagementControllerTest {
                 "student_class_org_admin", "班级配置机构管理员", UserType.PLATFORM);
         Organization school = organizationApplicationService.createOrganization(
                 new CreateOrganizationCommand("STUDENT_CLASS_SCHOOL", "班级配置学校", "SCHOOL", null, 10));
+        Organization grade = organizationApplicationService.createOrganization(
+                new CreateOrganizationCommand("STUDENT_CLASS_GRADE", "班级配置年级", "GRADE", school.id(), 10));
         Organization firstClass = organizationApplicationService.createOrganization(
-                new CreateOrganizationCommand("STUDENT_CLASS_ONE", "一班", "CLASS", school.id(), 10));
+                new CreateOrganizationCommand("STUDENT_CLASS_ONE", "一班", "CLASS", grade.id(), 10));
         Organization secondClass = organizationApplicationService.createOrganization(
-                new CreateOrganizationCommand("STUDENT_CLASS_TWO", "二班", "CLASS", school.id(), 20));
+                new CreateOrganizationCommand("STUDENT_CLASS_TWO", "二班", "CLASS", grade.id(), 20));
         Organization outsideSchool = organizationApplicationService.createOrganization(
                 new CreateOrganizationCommand("STUDENT_CLASS_OUTSIDE_SCHOOL", "范围外学校", "SCHOOL", null, 20));
+        Organization outsideGrade = organizationApplicationService.createOrganization(
+                new CreateOrganizationCommand("STUDENT_CLASS_OUTSIDE_GRADE", "范围外年级", "GRADE", outsideSchool.id(), 10));
         Organization outsideClass = organizationApplicationService.createOrganization(
-                new CreateOrganizationCommand("STUDENT_CLASS_OUTSIDE", "范围外班级", "CLASS", outsideSchool.id(), 10));
+                new CreateOrganizationCommand("STUDENT_CLASS_OUTSIDE", "范围外班级", "CLASS", outsideGrade.id(), 10));
         userAccessApplicationService.associateWithOrganization(
                 new AssociateUserWithOrganizationCommand(organizationAdministrator.id(), school.id()));
         assignRole(organizationAdministrator, "ORG_ADMIN", school.id());
@@ -256,14 +261,18 @@ class StudentManagementControllerTest {
                 "student_lifecycle_org_admin", "关系生命周期机构管理员", UserType.PLATFORM);
         Organization sourceSchool = organizationApplicationService.createOrganization(
                 new CreateOrganizationCommand("STUDENT_LIFECYCLE_SOURCE", "转出学校", "SCHOOL", null, 10));
+        Organization sourceGrade = organizationApplicationService.createOrganization(
+                new CreateOrganizationCommand("STUDENT_LIFECYCLE_GRADE", "关系生命周期年级", "GRADE", sourceSchool.id(), 10));
         Organization firstClass = organizationApplicationService.createOrganization(
-                new CreateOrganizationCommand("STUDENT_LIFECYCLE_CLASS_ONE", "转班一班", "CLASS", sourceSchool.id(), 10));
+                new CreateOrganizationCommand("STUDENT_LIFECYCLE_CLASS_ONE", "转班一班", "CLASS", sourceGrade.id(), 10));
         Organization secondClass = organizationApplicationService.createOrganization(
-                new CreateOrganizationCommand("STUDENT_LIFECYCLE_CLASS_TWO", "转班二班", "CLASS", sourceSchool.id(), 20));
+                new CreateOrganizationCommand("STUDENT_LIFECYCLE_CLASS_TWO", "转班二班", "CLASS", sourceGrade.id(), 20));
         Organization targetSchool = organizationApplicationService.createOrganization(
                 new CreateOrganizationCommand("STUDENT_LIFECYCLE_TARGET", "转入学校", "SCHOOL", null, 20));
+        Organization targetGrade = organizationApplicationService.createOrganization(
+                new CreateOrganizationCommand("STUDENT_LIFECYCLE_TARGET_GRADE", "转入年级", "GRADE", targetSchool.id(), 10));
         Organization targetClass = organizationApplicationService.createOrganization(
-                new CreateOrganizationCommand("STUDENT_LIFECYCLE_TARGET_CLASS", "转入学校一班", "CLASS", targetSchool.id(), 10));
+                new CreateOrganizationCommand("STUDENT_LIFECYCLE_TARGET_CLASS", "转入学校一班", "CLASS", targetGrade.id(), 10));
         userAccessApplicationService.associateWithOrganization(
                 new AssociateUserWithOrganizationCommand(organizationAdministrator.id(), sourceSchool.id()));
         userAccessApplicationService.associateWithOrganization(

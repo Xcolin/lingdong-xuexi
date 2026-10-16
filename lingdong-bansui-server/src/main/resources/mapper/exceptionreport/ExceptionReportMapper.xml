@@ -74,7 +74,9 @@
     <select id="findTeacherClassOptions"
             resultType="com.lingdong.learning.exceptionreport.application.ExceptionReportClassOption">
         SELECT class_organization.id AS classOrganizationId,
-               class_organization.organization_name AS className
+               (SELECT GROUP_CONCAT(o.organization_name ORDER BY LENGTH(o.organization_path) ASC SEPARATOR '·')
+                  FROM sys_organization o
+                 WHERE class_organization.organization_path LIKE CONCAT(o.organization_path, '%')) AS className
         FROM edu_teacher_class teacher_class
         JOIN sys_organization class_organization ON class_organization.id = teacher_class.class_organization_id
         WHERE teacher_class.teacher_user_id = #{teacherUserId}

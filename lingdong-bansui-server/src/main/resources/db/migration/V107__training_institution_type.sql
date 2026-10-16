@@ -1,0 +1,1 @@
+INSERT INTO sys_organization_type(id,type_code,type_name,built_in,status,sort_order) SELECT 1874300000000005701,'TRAINING_INSTITUTION','培训机构',1,'ENABLED',70 WHERE NOT EXISTS(SELECT 1 FROM sys_organization_type WHERE type_code='TRAINING_INSTITUTION');

@@ -1,0 +1,14 @@
+const fs=require('fs'),vm=require('vm'),ts=require('typescript'),assert=require('node:assert/strict'),out={},calls=[];
+vm.runInNewContext(ts.transpileModule(fs.readFileSync('src/api/teacher-management.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText,{exports:out,require:()=>({request:(path,options)=>{calls.push({path,options});return Promise.resolve({});}})});
+out.readTeacherSubject('token','2110871757849100288','2110871760814473216');
+out.updateTeacherSubject('token','2110871757849100288','2110871760814473216',{subjectCode:null,versionNo:2});
+assert.equal(calls[0].path,'/organization-teachers/2110871757849100288/institutions/2110871760814473216/subject');
+assert.equal(calls[0].options.header.Authorization,'Bearer token');
+assert.equal(calls[1].path,calls[0].path);assert.equal(calls[1].options.method,'PUT');
+assert.equal(calls[1].options.data.subjectCode,null);assert.equal(calls[1].options.data.versionNo,2);
+out.listOrganizationTeachers('token','',1,20,{schoolId:'2110871760814473216',subjectCode:'MATH & ART'});
+assert.match(calls[2].path,/subjectCode=MATH%20%26%20ART/);
+out.listTeacherSubjectOptions('token');assert.equal(calls[3].path,'/organization-teachers/subject-options');assert.equal(calls[3].options.header.Authorization,'Bearer token');
+out.listTeacherSubjectSummaries('token',[{teacherUserId:'2110871757849100288',institutionOrganizationId:'2110871760814473216'}]);
+assert.equal(calls[4].path,'/organization-teachers/subject-summaries');assert.equal(calls[4].options.method,'POST');assert.equal(calls[4].options.data.items[0].teacherUserId,'2110871757849100288');
+console.log('PASS teacher subject API preserves exact identifiers and explicit clear/version');

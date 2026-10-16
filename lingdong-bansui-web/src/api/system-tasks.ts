@@ -17,6 +17,8 @@ export interface SystemTask {
   impactScope: string | null;
   status: SystemTaskStatus;
   submittedBy: string | null;
+  submittedById?: string | null;
+  reviewedById?: string | null;
   submittedAt: string | null;
   reviewedBy: string | null;
   reviewedAt: string | null;

@@ -28,4 +28,6 @@ public class MenuController {
     public List<MenuNode> updateButtons(@AuthenticationPrincipal AuthenticatedUser user,@RequestBody List<MenuButtonBatchUpdateCommand> commands) { return service.updateButtons(user,commands); }
     @PutMapping("/iam/menus/{id}/position") @RequirePermission("MENU_MANAGE")
     public MenuNode move(@AuthenticationPrincipal AuthenticatedUser user,@PathVariable Long id,@RequestBody MenuPositionCommand command) { return service.move(user,id,command); }
+    @DeleteMapping("/iam/menus/{id}") @RequirePermission("MENU_MANAGE") @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@AuthenticationPrincipal AuthenticatedUser user,@PathVariable Long id) { service.delete(user,id); }
 }

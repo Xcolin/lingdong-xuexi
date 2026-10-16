@@ -69,7 +69,7 @@ public class RecurringTaskGenerationService {
                 && (recurrence.endDate() == null || !generationDate.isAfter(recurrence.endDate()))) {
             generatedDateCount++;
             generatedAssignmentCount += insertMissingAssignments(task, studentIds, generationDate);
-            generationDate = generationDate.plusDays(1);
+            generationDate = com.lingdong.learning.learningtask.domain.TaskRecurrenceCalendar.nextAfter(generationDate,recurrence.frequencyType(),recurrence.recurrenceWeekdays());
         }
 
         boolean completed = recurrence.endDate() != null && generationDate.isAfter(recurrence.endDate());
@@ -89,7 +89,7 @@ public class RecurringTaskGenerationService {
         if (task == null
                 || task.status() != LearningTaskStatus.PUBLISHED
                 || !Boolean.TRUE.equals(task.recurrenceEnabled())
-                || !"DAILY".equals(recurrence.frequencyType())) {
+                || !java.util.Set.of("DAILY","WEEKLY","CUSTOM").contains(recurrence.frequencyType())) {
             throw new IllegalStateException("固定任务计划关联的任务状态无效");
         }
         return task;

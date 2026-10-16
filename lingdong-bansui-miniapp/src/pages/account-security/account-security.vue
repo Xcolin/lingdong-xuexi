@@ -1,5 +1,6 @@
 <template>
-  <view class="has-tabbar page-shell">
+  <view class="prototype-workspace has-tabbar page-shell">
+    <PrototypePageHeader title="登录设备管理" icon="shield"/>
     <view v-if="warningCount > 0" class="warning-band">
       <text class="warning-title">发现 {{ warningCount }} 条新设备登录提醒</text>
       <text class="warning-copy">请核对设备，发现异常时及时下线。</text>
@@ -7,7 +8,7 @@
 
     <view class="section-band">
       <view class="section-heading">
-        <text class="section-title">登录设备</text>
+        <text class="section-title">已登录设备（{{ devices.length }}）</text>
         <button class="text-button danger" @tap="confirmSignOutAll">全部下线</button>
       </view>
       <view v-if="devices.length === 0" class="empty-text">暂无活动设备</view>
@@ -36,11 +37,13 @@
         <text v-else class="read-tag">已读</text>
       </view>
     </view>
-  <AppTabBar v-if="identity === 'organization'" :items="ORG_TABS" :active="3" />
+  <AppTabBar v-if="identity === 'organization'" :items="teacherWorkbench?TEACHER_TABS:ORG_TABS" :active="3" />
   </view>
 </template>
 
 <script setup lang="ts">
+import PrototypePageHeader from '@/components/PrototypePageHeader.vue';
+import PrototypeIcon from '@/components/PrototypeIcon.vue';
 import AppTabBar from '@/components/AppTabBar.vue';
 import { TEACHER_TABS, ORG_TABS } from '@/config/tabbar';
 import { computed, ref } from 'vue';
@@ -62,6 +65,7 @@ import { clearStudentSession, getStudentSession } from '@/session/student-sessio
 import { clearOrganizationSession, getOrganizationSession } from '@/session/organization-session';
 
 const identity = ref<MiniappAuthIdentity>('student');
+const teacherWorkbench=ref(false);
 const accessToken = ref('');
 const devices = ref<AccountDeviceSession[]>([]);
 const events = ref<AccountSecurityEvent[]>([]);
@@ -72,6 +76,7 @@ onLoad(async (query) => {
       && query?.identity !== 'student'
       && query?.identity !== 'organization') return leavePage();
   identity.value = query.identity;
+  teacherWorkbench.value=query.workbench==='teacher';
   const session = identity.value === 'parent'
     ? getParentSession()
     : identity.value === 'student'
@@ -162,8 +167,15 @@ function formatTime(value: string): string {
 }
 </script>
 
+
+
+
+
+
+
 <style lang="scss" scoped>
-.page-shell { min-height: 100vh; padding: 32rpx; box-sizing: border-box; background: #f4f7f5; }
+
+.page-shell { min-height: calc(100vh - var(--window-top,0px)); padding: 32rpx; box-sizing: border-box; background: #f4f7f5; }
 .warning-band { padding: 28rpx; border-left: 8rpx solid #d97706; background: #fff7e6; }
 .warning-title, .warning-copy, .section-title, .row-title, .row-meta { display: block; }
 .warning-title { color: #7a3f0d; font-size: 30rpx; font-weight: 700; }
@@ -182,4 +194,22 @@ function formatTime(value: string): string {
 .current-tag, .read-tag { color: #167c5a; font-size: 23rpx; }
 .read-tag { color: #708078; }
 .empty-text { padding: 42rpx 28rpx; color: #708078; font-size: 26rpx; text-align: center; }
+
+@import "@/styles/workspace-prototype.scss";
+
+.prototype-workspace{background:#f4faf7!important;padding:0 28rpx 48rpx!important;min-height:calc(100vh - var(--window-top,0px));box-sizing:border-box;color:#172d27;}
+.prototype-workspace.has-tabbar{padding-bottom:160rpx!important;}
+.prototype-header{margin:0 -28rpx 28rpx;padding:32rpx 32rpx 48rpx;display:flex;align-items:center;gap:18rpx;background:linear-gradient(115deg,#226d5c,#07573f);color:#fff;border-radius:0 0 30rpx 30rpx;}
+.prototype-header-title{font-size:34rpx;font-weight:700;letter-spacing:1rpx;}
+.card,.section-band,.summary-band,.action-band,.heading-band{background:#fff!important;border:1rpx solid #e2eee7!important;border-radius:24rpx!important;box-shadow:none!important;margin-bottom:22rpx;padding:24rpx!important;}
+input,textarea,.field{background:#fbfcfb!important;border:1rpx solid #dce5df!important;border-radius:14rpx!important;padding:18rpx!important;box-sizing:border-box;font-size:26rpx!important;}
+input{min-height:76rpx;}textarea{width:100%;}
+button{border-radius:18rpx!important;font-size:26rpx!important;}button::after{border:0;}
+.heading,.section-title,.row-title,.task-title{color:#162b24;font-weight:650;font-size:28rpx;}
+.row-meta,.task-meta,.hint{color:#78847e;font-size:24rpx;line-height:1.65;}
+.list-row,.relationship-row,.task-row{border-bottom:1rpx solid #edf1ee;padding:24rpx 0;}
+.current-tag,.read-tag,.source-badge{background:#e7f7e9;color:#168450;border-radius:10rpx;padding:6rpx 12rpx;font-size:22rpx;}
+
+.secondary-page,.prototype-workspace{background:#f5f9f5!important;padding:24rpx 28rpx 70rpx!important;color:#1a382a;}
+.section-band{background:white;border:0;border-radius:26rpx;padding:26rpx;margin-bottom:24rpx;}.list-row{background:#fafcfb;border:1rpx solid #e0e8e2;border-radius:20rpx;padding:24rpx;margin:20rpx 0;}.row-title{font-size:29rpx;color:#1d3228;}.row-meta{font-size:24rpx;line-height:1.6;color:#818b84;}.current-tag{background:#d9f9d8;color:#227b39;border-radius:10rpx;font-size:23rpx;padding:8rpx 12rpx;}.text-button.danger{background:#edf1ee;color:#466056;border-radius:14rpx;padding:8rpx 24rpx;}.warning-band{background:#fff2df;border-radius:20rpx;color:#a65c25;padding:24rpx;}.section-title{font-size:29rpx;}
 </style>

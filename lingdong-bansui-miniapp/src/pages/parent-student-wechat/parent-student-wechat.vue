@@ -1,9 +1,6 @@
 <template>
-  <view class="page-shell">
-    <view class="page-heading">
-      <text class="heading-title">学生微信绑定</text>
-      <view class="heading-rule" />
-    </view>
+  <view class="prototype-workspace page-shell">
+    <PrototypePageHeader title="微信绑定管理" icon="shield"/>
 
     <view v-if="loading" class="state-text">正在加载</view>
     <view v-else-if="items.length === 0" class="state-text">暂无可管理学生</view>
@@ -11,7 +8,7 @@
       <view v-for="item in items" :key="item.studentId" class="student-row">
         <view class="student-info">
           <text class="student-name">{{ item.studentName }}</text>
-          <text class="student-account">{{ item.studentAccountMasked }}</text>
+          <text class="student-account">{{ item.studentAccountMasked }}</text><text v-if="item.boundAt" class="binding-time">绑定时间 {{ item.boundAt }}</text>
         </view>
         <view class="binding-actions">
           <text :class="['binding-status', { bound: item.bound }]">
@@ -19,15 +16,17 @@
           </text>
           <button v-if="item.bound" class="unbind-button" :disabled="submittingId === item.studentId"
                   @tap="confirmUnbind(item)">
-            解绑
+            解除绑定
           </button>
         </view>
       </view>
+      <view class="binding-notice">解除绑定后，将无法使用微信快捷登录，不影响已记录的成长数据。</view>
     </view>
   </view>
 </template>
 
 <script setup lang="ts">
+import PrototypePageHeader from '@/components/PrototypePageHeader.vue';
 import { ref } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { getMiniappCapabilities } from '@/api/capability';
@@ -91,7 +90,13 @@ function leavePage(): Promise<unknown> {
 }
 </script>
 
+
+
+
+
+
 <style lang="scss" scoped>
+
 .page-shell { min-height: 100vh; padding: 56rpx 40rpx 72rpx; box-sizing: border-box; background: #f4f7f5; }
 /* #ifdef H5 */
 .page-shell { min-height: calc(100vh - 44px); }
@@ -111,4 +116,9 @@ function leavePage(): Promise<unknown> {
 .binding-status.bound { color: #167c5a; }
 .unbind-button { width: 104rpx; height: 60rpx; margin: 0; padding: 0; background: transparent; color: #b34f3b; font-size: 25rpx; }
 .unbind-button::after { border: 2rpx solid #d9a69a; border-radius: 8rpx; }
+
+@import "@/styles/workspace-prototype.scss";
+.prototype-workspace{background:#f6f8f5;padding:28rpx;min-height:calc(100vh - var(--window-top,0px));box-sizing:border-box;}.student-row,.invitation-form{background:#fffefa;border:1rpx solid #e3eadf;border-radius:24rpx;padding:26rpx;}.title-rule,.heading-rule{display:none;}.field-input{box-sizing:border-box;height:88rpx;border:1rpx solid #d9e4d4;background:#fcfdfb;border-radius:14rpx;font-size:26rpx;}
+.secondary-page,.prototype-workspace{background:#f5f9f5!important;padding:24rpx 28rpx 70rpx!important;color:#1a382a;}
+.student-row{display:block;background:white;border:1rpx solid #e3ebe5;border-radius:24rpx;padding:28rpx;margin-bottom:24rpx;}.student-info{background:#e9f8ed;border-radius:20rpx;padding:24rpx;}.student-name{font-size:30rpx;color:#143f30;}.student-account,.binding-time{display:block;margin-top:14rpx;color:#7a877e;font-size:24rpx;}.binding-actions{display:flex;align-items:center;justify-content:space-between;margin-top:24rpx;}.binding-status.bound{background:#ddf9df;color:#287b39;border-radius:12rpx;}.unbind-button{background:#fadddd;color:#c7564d;border-radius:18rpx;padding:18rpx 28rpx;font-size:27rpx;}.binding-notice{background:#fff2df;color:#ad6841;border-radius:20rpx;padding:26rpx;font-size:25rpx;line-height:1.7;}
 </style>

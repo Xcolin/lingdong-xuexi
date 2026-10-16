@@ -29,6 +29,7 @@ class StudentCodeLoginApplicationServiceTest {
     @Autowired private StudentMapper studentMapper;
     @Autowired private StudentCredentialMapper credentialMapper;
     @Autowired private DeviceSessionMapper sessionMapper;
+    @Autowired private org.springframework.jdbc.core.JdbcTemplate jdbc;
 
     private IssuedStudentCredential issued;
     private String deviceId;
@@ -51,6 +52,15 @@ class StudentCodeLoginApplicationServiceTest {
         assertThat(persisted.userId()).isEqualTo(issued.studentUserId());
         assertThat(credential.failureCount()).isZero();
         assertThat(credential.lastSuccessAt()).isNotNull();
+    }
+
+    @Test
+    void authenticatesCustomStudentUsernameWithSameIdentityAndCode() {
+        jdbc.update("update sys_user set username=? where id=?", "xiangsihan", issued.studentUserId());
+        var custom = new StudentCodeLoginCommand("xiangsihan", issued.plainLoginCode(), deviceId,
+                "学生设备", null, null, "127.0.0.1");
+        var session = loginService.login(custom);
+        assertThat(sessionMapper.findById(session.sessionId()).userId()).isEqualTo(issued.studentUserId());
     }
 
     @Test

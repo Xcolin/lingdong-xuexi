@@ -1,3 +1,5 @@
+import {classApi} from '../../api/classes';
+import {teachersApi} from '../../api/teachers';
 import { apiClient } from '../../api/http';
 import type { OrganizationOption, StudentOption, TeacherOption } from '../learning-tasks/types';
 
@@ -11,6 +13,9 @@ export interface StudentOrganizationRelationshipSummary {
   studentId: string;
   studentName: string;
   gradeCode: string | null;
+  institutionTypeCode?:string;
+  currentClassOrganizationIds?:string[];
+  currentClassOrganizationNames?:string[];
   enrollmentOrganizationId: string;
   enrollmentOrganizationName: string;
   currentClassOrganizationId: string | null;
@@ -18,6 +23,7 @@ export interface StudentOrganizationRelationshipSummary {
 }
 
 export interface StudentOrganizationClassOption {
+  schoolOrganizationId?:string|null;
   id: string;
   name: string;
 }
@@ -36,6 +42,7 @@ export interface StudentOrganizationRelationship {
   studentId: string;
   enrollmentOrganizationId: string;
   currentClassOrganizationId: string | null;
+  currentClassOrganizationIds?:string[];
   status: 'ACTIVE' | 'INACTIVE';
   changes: StudentOrganizationChange[];
 }
@@ -49,20 +56,25 @@ export interface TeacherClassAssignment {
   effectiveTo: string | null;
 }
 
+interface TeacherOptionResponse {
+  organizationNames?: string[];
+  userId: string;
+  displayName: string;
+  classOrganizationIds: string[];
+}
+
 export const classAssignmentApi = {
-  listClasses(): Promise<OrganizationOption[]> {
-    return apiClient.get<OrganizationOption[]>(
-      '/learning-task-options/organizations?sourceType=ORGANIZATION&organizationType=CLASS'
-    );
+  listClassMembers(classId: string): Promise<StudentOption[]> { return apiClient.get(`/students/class-members?classOrganizationId=${encodeURIComponent(classId)}`); },
+  async listClasses(schoolId?:string,permission='STUDENT_CLASS_ASSIGN'): Promise<OrganizationOption[]> {
+    const classes=await classApi.lookup(permission,'CLASS',{schoolOrganizationId:schoolId});
+    return classes.filter(item=>item.status==='ENABLED'&&item.effectiveStatus==='ENABLED'&&(!schoolId||item.schoolOrganizationId===schoolId)).map(item=>({id:item.id,name:item.namePath??item.name,organizationType:'CLASS',parentId:item.parentId,organizationPath:'',schoolOrganizationId:item.schoolOrganizationId,schoolName:item.schoolName}));
   },
-  listRelationshipClasses(): Promise<StudentOrganizationClassOption[]> {
-    return apiClient.get<StudentOrganizationClassOption[]>(
-      '/students/organization-relationship-classes'
-    );
+  listRelationshipClasses(schoolId?:string): Promise<StudentOrganizationClassOption[]> {
+    return apiClient.get('/students/organization-relationship-classes'+(schoolId?`?schoolOrganizationId=${encodeURIComponent(schoolId)}`:''));
   },
-  listStudents(): Promise<StudentOption[]> {
+  listStudents(classOrganizationId?: string): Promise<StudentOption[]> {
     return apiClient.get<StudentOption[]>(
-      '/learning-task-options/students?sourceType=ORGANIZATION'
+      '/students/class-assignment-options' + (classOrganizationId ? `?classOrganizationId=${encodeURIComponent(classOrganizationId)}` : '')
     );
   },
   listRelationships(): Promise<StudentOrganizationRelationshipSummary[]> {
@@ -70,14 +82,20 @@ export const classAssignmentApi = {
       '/students/organization-relationships'
     );
   },
-  listTeachers(classId: string): Promise<TeacherOption[]> {
-    return apiClient.get<TeacherOption[]>(
-      `/learning-task-options/teachers?classId=${encodeURIComponent(classId)}`
-    );
+  async listTeachers(classId: string): Promise<TeacherOption[]> {
+    const teachers: TeacherOption[]=[];
+    let page=1,total=0;
+    do {
+      const result=await teachersApi.lookup('TEACHER_CLASS_ASSIGN',{classOrganizationId:classId,page,pageSize:100});
+      teachers.push(...result.items.map(item=>({userId:item.id,displayName:item.displayName,classIds:item.classOrganizationIds,organizationNames:[item.schoolName]})));
+      total=result.total;page++;
+    }while(teachers.length<total);
+    return teachers;
   },
   assignStudent(studentId: string, classOrganizationId: string): Promise<StudentClassAssignment> {
     return apiClient.put<StudentClassAssignment>(`/students/${studentId}/class`, { classOrganizationId });
   },
+  deactivateCourse(studentId:string,classOrganizationId:string,reason:string){return apiClient.post<StudentOrganizationRelationship>(`/students/${studentId}/class-deactivations`,{classOrganizationId,reason});},
   transferStudent(
     studentId: string,
     classOrganizationId: string,

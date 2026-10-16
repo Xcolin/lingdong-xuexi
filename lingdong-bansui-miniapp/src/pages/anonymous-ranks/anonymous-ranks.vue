@@ -1,6 +1,6 @@
 <template>
-  <view class="rank-page">
-    <text class="title">{{ withdrawalMode ? '排行查看授权' : '班级匿名排行' }}</text>
+  <view class="prototype-workspace rank-page">
+    <PrototypePageHeader :title="withdrawalMode?'排行查看授权':'班级匿名排行'" icon="chart"/>
     <text class="note">{{ withdrawalMode ? '可撤回本人已开启的查看授权，不影响孩子参榜。' : '仅显示名次和当前班级来源净积分，不含家庭积分；同分并列，默认关闭。' }}</text>
     <text v-if="error" class="error">{{ error }}</text>
     <text v-if="busy" class="note">正在加载</text>
@@ -31,6 +31,8 @@
 </template>
 
 <script setup lang="ts">
+import PrototypePageHeader from '@/components/PrototypePageHeader.vue';
+import {isParentIdentity} from "@/models/parent-identity";
 import { ref } from 'vue';
 import { onLoad, onShow, onHide, onUnload } from '@dcloudio/uni-app';
 import { getParentSession } from '@/session/parent-session';
@@ -57,7 +59,7 @@ async function load() {
     if (!token) throw new Error('请先登录家长账号');
     const user = await api.me(token);
     if (version !== sequence) return;
-    if (user.clientType !== 'MINIAPP' || !user.roleCodes.includes('PARENT') || user.roleCodes.includes('SYS_AUDITOR')) throw new Error('当前身份无权使用此功能');
+    if (!isParentIdentity(user)) throw new Error('当前身份无权使用此功能');
     if (withdrawalMode.value) {
       const result = await api.withdrawals(token);
       if (version === sequence) { withdrawals.value = result; allowed.value = true; }
@@ -146,3 +148,5 @@ async function withdraw(item: RankWithdrawal) {
 .heading { font-weight: 700; }
 .withdrawal button { margin: 0; }
 </style>
+
+<style scoped>.prototype-workspace{background:#f6f8f5;padding:28rpx;min-height:calc(100vh - var(--window-top,0px));box-sizing:border-box;}.field,.withdrawal{border:1rpx solid #e0e8db;background:#fffefa;border-radius:20rpx;padding:22rpx;margin:16rpx 0;}.note{font-size:24rpx;color:#84967b;line-height:1.7;}.rank-row{background:#fffefa;border-radius:20rpx;margin:12rpx 0;padding:24rpx;}.action{background:#184f40;color:white;border-radius:18rpx;}</style>

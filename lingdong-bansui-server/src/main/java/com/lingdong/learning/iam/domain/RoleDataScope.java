@@ -8,6 +8,7 @@ public enum RoleDataScope {
     REGION,
     SCHOOL,
     CLASS,
+    FAMILY,
     SELF,
     CUSTOM
 }

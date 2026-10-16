@@ -54,11 +54,12 @@
          AND parent_user.user_type = 'FAMILY'
          AND parent_user.status = 'ENABLED'
          AND parent_user.mobile IS NOT NULL
+        JOIN auth_parent_profile parent_profile
+          ON parent_profile.user_id = parent_user.id
         JOIN sys_user_role parent_user_role
           ON parent_user_role.user_id = parent_user.id
         JOIN sys_role parent_role
           ON parent_role.id = parent_user_role.role_id
-         AND parent_role.role_code = 'PARENT'
          AND parent_role.status = 'ENABLED'
         WHERE student.status = 'ENABLED'
           AND enrollment_organization.organization_path

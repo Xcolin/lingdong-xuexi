@@ -1,5 +1,6 @@
 <template>
-  <view class="ld-page">
+  <view class="ld-page access-page">
+<button @tap="openRegistration">注册 / 账号登录</button>
     <view class="ld-heading">
       <text class="ld-heading-title">机构与教师登录</text>
       <view class="ld-heading-rule" />
@@ -31,7 +32,9 @@
 </template>
 
 <script setup lang="ts">
+function openRegistration(){uni.navigateTo({url:"/pages/unified-login/unified-login"});}
 import { ref } from 'vue';
+import {routeRequiredPasswordChange} from '@/session/account-login-routing';
 import { onLoad } from '@dcloudio/uni-app';
 import { loginOrganizationByPassword } from '@/api/auth';
 import { getMiniappCapabilities } from '@/api/capability';
@@ -78,6 +81,7 @@ async function submit(): Promise<void> {
       deviceName: getOrganizationDeviceName()
     });
     saveOrganizationSession(session);
+    if(await routeRequiredPasswordChange(session.accessToken,'organization')) return;
     password.value = '';
     try {
       await getOrganizationWorkbenchContext(session.accessToken);
@@ -100,6 +104,8 @@ async function submit(): Promise<void> {
 </script>
 
 <style lang="scss" scoped>
+@import "@/styles/account-access.scss";
+.ld-card { background:#fffefa; border-radius:28rpx; border:1rpx solid #e4e5d9; } .ld-btn-primary { background:#194f3b; }
 .first-field { margin-top: 0; }
 .error-gap { margin-top: 24rpx; }
 .submit-button { margin-top: 36rpx; }

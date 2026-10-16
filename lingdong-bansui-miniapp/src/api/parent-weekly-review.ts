@@ -1,7 +1,7 @@
+import {isParentIdentity} from '@/models/parent-identity';
 import { request } from './http';
-export interface WeeklyUser { clientType: string; roleCodes: string[]; permissionCodes: string[] }
-export const canReadWeekly = (user: WeeklyUser) => user.clientType === 'MINIAPP' && user.roleCodes.includes('PARENT')
-  && !user.roleCodes.includes('SYS_AUDITOR') && user.permissionCodes.includes('MINIAPP_GROWTH_REVIEW_READ_CHILD');
+export interface WeeklyUser { parentProfile?:boolean;userType?:string;clientType: string; roleCodes: string[]; permissionCodes: string[] }
+export const canReadWeekly = (user: WeeklyUser) => isParentIdentity(user) && user.permissionCodes.includes('MINIAPP_GROWTH_REVIEW_READ_CHILD');
 export interface WeeklyStudent { studentId: string; studentName: string }
 export interface WeeklySummary {
   reviewId: string; studentId: string; studentName: string; periodType: string; periodStart: string; periodEnd: string;

@@ -12,11 +12,16 @@ public record GrowthPointAccountResponse(
         String studentName,
         long totalPoints,
         long availablePoints,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        long weekEarnedPoints,
+        long monthEarnedPoints
 ) {
+    public GrowthPointAccountResponse(Long studentId, String studentName, long totalPoints, long availablePoints, LocalDateTime updatedAt) {
+        this(studentId, studentName, totalPoints, availablePoints, updatedAt, 0, 0);
+    }
     static GrowthPointAccountResponse from(GrowthPointAccountView view) {
         return new GrowthPointAccountResponse(
                 view.studentId(), view.studentName(), view.totalPoints(),
-                view.availablePoints(), view.updatedAt());
+                view.availablePoints(), view.updatedAt(), view.weekEarnedPoints(), view.monthEarnedPoints());
     }
 }

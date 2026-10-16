@@ -21,14 +21,15 @@ import java.time.LocalDateTime;
 /** 在独立事务内完成单个家长账号的不可逆注销和身份匿名化。 */
 @Service
 public class ParentAccountFinalizationService {
+    @org.springframework.beans.factory.annotation.Autowired private com.lingdong.learning.organization.onboarding.application.OrganizationOwnerGuard ownerGuard;
     private static final String FEATURE_CODE = "PARENT_ACCOUNT_LIFECYCLE";
-    private static final String PARENT_ROLE_CODE = "PARENT";
     private static final String ACTIVE_SCOPE_KEY = "ACTIVE";
     private static final String ACTIVE_RELATIONSHIP_ERROR = "ACTIVE_RELATIONSHIP";
 
     private final ParentAccountLifecycleMapper lifecycleMapper;
     private final UserMapper userMapper;
     private final UserRoleMapper userRoleMapper;
+    private final com.lingdong.learning.auth.infrastructure.persistence.ParentAuthenticationMapper parentProfiles;
     private final ParentStudentMapper parentStudentMapper;
     private final ParentWechatBindingMapper wechatBindingMapper;
     private final DeviceSessionMapper sessionMapper;
@@ -45,7 +46,8 @@ public class ParentAccountFinalizationService {
             DeviceSessionMapper sessionMapper,
             FeatureAccessService featureAccessService,
             ParentAccountFinalizationProperties properties,
-            Clock clock
+            Clock clock,
+            com.lingdong.learning.auth.infrastructure.persistence.ParentAuthenticationMapper parentProfiles
     ) {
         this.lifecycleMapper = lifecycleMapper;
         this.userMapper = userMapper;
@@ -56,6 +58,7 @@ public class ParentAccountFinalizationService {
         this.featureAccessService = featureAccessService;
         this.properties = properties;
         this.clock = clock;
+        this.parentProfiles = parentProfiles;
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -81,6 +84,7 @@ public class ParentAccountFinalizationService {
             return ParentAccountFinalizationResult.DEFERRED_ACTIVE_RELATIONSHIP;
         }
 
+        if(ownerGuard!=null)ownerGuard.requireAccountAvailable(parent.id());
         wechatBindingMapper.deleteByUserId(parent.id());
         if (userMapper.anonymizeCancelledParent(parent.id(), "cancelled_" + parent.id()) != 1) {
             throw new IllegalStateException("家长账号匿名化失败");
@@ -105,6 +109,7 @@ public class ParentAccountFinalizationService {
         return user != null
                 && user.type() == UserType.FAMILY
                 && user.status() != UserStatus.CANCELLED
-                && userRoleMapper.hasRoleCode(user.id(), PARENT_ROLE_CODE);
+                && userRoleMapper.hasAnyEnabledRole(user.id())
+                && parentProfiles.findProfileByUserId(user.id()) != null;
     }
 }

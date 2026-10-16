@@ -32,8 +32,6 @@ import java.util.Objects;
 @Service
 public class ParentMobileManualRecoveryService {
     private static final String FEATURE_CODE = "PARENT_MOBILE_MANUAL_RECOVERY";
-    private static final String ORGANIZATION_ADMIN_ROLE = "ORG_ADMIN";
-    private static final String PARENT_ROLE = "PARENT";
     private static final String CONFIRMATION = "已完成线下身份核验";
 
     private final ParentMobileManualRecoveryMapper recoveryMapper;
@@ -48,6 +46,8 @@ public class ParentMobileManualRecoveryService {
     private final FeatureAccessService featureAccessService;
     private final IdGenerator idGenerator;
     private final Clock clock;
+    private final ParentActorAccessService parentActors;
+    private final com.lingdong.learning.permission.application.PermissionDecisionService permissions;
 
     public ParentMobileManualRecoveryService(
             ParentMobileManualRecoveryMapper recoveryMapper,
@@ -61,7 +61,9 @@ public class ParentMobileManualRecoveryService {
             DeviceSessionMapper sessionMapper,
             FeatureAccessService featureAccessService,
             IdGenerator idGenerator,
-            Clock clock
+            Clock clock,
+            ParentActorAccessService parentActors,
+            com.lingdong.learning.permission.application.PermissionDecisionService permissions
     ) {
         this.recoveryMapper = recoveryMapper;
         this.userMapper = userMapper;
@@ -75,11 +77,13 @@ public class ParentMobileManualRecoveryService {
         this.featureAccessService = featureAccessService;
         this.idGenerator = idGenerator;
         this.clock = clock;
+        this.parentActors = parentActors;
+        this.permissions = permissions;
     }
 
     @Transactional(readOnly = true)
     public List<ParentMobileManualRecoveryCandidate> listCandidates(AuthenticatedUser currentUser) {
-        requireOrganizationAdministrator(currentUser);
+        requireOperator(currentUser);
         featureAccessService.requireEnabled(FEATURE_CODE, null);
         return recoveryMapper.findCandidatesByOrganizationAdministrator(currentUser.userId())
                 .stream()
@@ -91,7 +95,7 @@ public class ParentMobileManualRecoveryService {
             AuthenticatedUser currentUser,
             IssueParentMobileManualRecoveryCodeCommand command
     ) {
-        requireOrganizationAdministrator(currentUser);
+        requireOperator(currentUser);
         Objects.requireNonNull(command, "人工换绑验证码请求不能为空");
         featureAccessService.requireEnabled(FEATURE_CODE, null);
         Long studentId = requiredId(command.studentId(), "学生标识");
@@ -109,7 +113,7 @@ public class ParentMobileManualRecoveryService {
 
     @Transactional
     public void recover(AuthenticatedUser currentUser, ParentMobileManualRecoveryCommand command) {
-        requireOrganizationAdministrator(currentUser);
+        requireOperator(currentUser);
         Objects.requireNonNull(command, "人工换绑请求不能为空");
         featureAccessService.requireEnabled(FEATURE_CODE, null);
         Long studentId = requiredId(command.studentId(), "学生标识");
@@ -120,9 +124,10 @@ public class ParentMobileManualRecoveryService {
         }
 
         User parent = userMapper.findByIdForUpdate(parentUserId);
-        if (!isEnabledParent(parent) || !userRoleMapper.hasRoleCode(parentUserId, PARENT_ROLE)) {
+        if (!isEnabledParent(parent)) {
             throw notFound();
         }
+        parentActors.require(new AuthenticatedUser(parentUserId, null, "", "", currentUser.clientType(), List.of()));
         if (lifecycleMapper.findActiveCancellation(parentUserId) != null) {
             throw new ParentAccountCancellationConflictException("目标家长存在活动注销申请，不能人工换绑");
         }
@@ -172,10 +177,13 @@ public class ParentMobileManualRecoveryService {
                 row.relationshipRole());
     }
 
-    private void requireOrganizationAdministrator(AuthenticatedUser currentUser) {
-        if (currentUser == null || !currentUser.roleCodes().contains(ORGANIZATION_ADMIN_ROLE)
+    private void requireOperator(AuthenticatedUser currentUser) {
+        if (currentUser == null || currentUser.userId() == null
                 || (currentUser.clientType() != AuthClientType.WEB
-                && currentUser.clientType() != AuthClientType.MINIAPP)) {
+                && currentUser.clientType() != AuthClientType.MINIAPP)
+                || !permissions.isAllowed(currentUser.userId(),
+                    com.lingdong.learning.permission.domain.PermissionClient.valueOf(currentUser.clientType().name()),
+                    "PARENT_MOBILE_MANUAL_RECOVERY_MANAGE")) {
             throw new ResourceNotFoundException("人工换绑对象不存在或不可访问");
         }
     }

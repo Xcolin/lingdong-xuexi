@@ -1,3 +1,4 @@
+import { Button as PlainButton } from 'antd';
 import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { ViewportTable as Table } from '../../components/ViewportTable';
 import { useEffect, useState } from 'react';
@@ -9,7 +10,7 @@ import { TaskReviewDrawer } from './TaskReviewDrawer';
 import type { LearningTaskSourceType, TaskReview, TaskReviewPage } from './types';
 import { formatDateTime as formatTime } from '../../utils/datetime';
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 const sourceLabels: Record<LearningTaskSourceType, string> = {
   FAMILY: '家庭', ORGANIZATION: '机构', TEACHER: '教师'
 };
@@ -27,12 +28,12 @@ export function TaskReviewQueue() {
     void loadReviews(1);
   }, []);
 
-  async function loadReviews(page: number): Promise<void> {
+  async function loadReviews(page: number, pageSize = directory.pageSize): Promise<void> {
     setLoading(true);
     setErrorMessage(null);
-    setDirectory({ items: [], page, pageSize: PAGE_SIZE, total: 0 });
+    setDirectory({ items: [], page, pageSize, total: 0 });
     try {
-      setDirectory(await taskReviewApi.list(page, PAGE_SIZE));
+      setDirectory(await taskReviewApi.list(page, pageSize));
     } catch (error) {
       setErrorMessage(toMessage(error));
     } finally {
@@ -47,7 +48,7 @@ export function TaskReviewQueue() {
           type="error"
           showIcon
           message={errorMessage}
-          action={<Button actionKey="learning-tasks.task-review-queue.1" size="small" onClick={() => void loadReviews(directory.page)}>重试</Button>}
+          action={<PlainButton  size="small" onClick={() => void loadReviews(directory.page)}>重试</PlainButton>}
         />
       )}
       <ProCard className="content-panel" bordered={false}>
@@ -61,8 +62,8 @@ export function TaskReviewQueue() {
             current: directory.page,
             pageSize: directory.pageSize,
             total: directory.total,
-            showSizeChanger: false,
-            onChange: (page) => void loadReviews(page)
+            showSizeChanger: true,
+            onChange: (page, pageSize) => void loadReviews(page, pageSize)
           }}
           columns={[
             { title: '任务标题', dataIndex: 'title', key: 'title', width: 220 },
@@ -84,7 +85,7 @@ export function TaskReviewQueue() {
               title: '操作', key: 'actions', fixed: 'right', width: 80,
               render: (_, review) => (
                 <Tooltip title="查看审核">
-                  <Button actionKey="learning-tasks.task-review-queue.2"
+                  <Button actionKey="TASK_ASSIGNMENT_REVIEW"
                     type="text"
                     aria-label={`查看审核 ${review.title}`}
                     icon={<Eye size={16} />}

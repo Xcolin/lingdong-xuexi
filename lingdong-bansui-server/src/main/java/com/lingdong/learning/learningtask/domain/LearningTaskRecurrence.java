@@ -16,13 +16,32 @@ public record LearningTaskRecurrence(
         LocalDateTime stoppedAt,
         Integer versionNo,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        java.util.List<Integer> recurrenceWeekdays
 ) {
+    public LearningTaskRecurrence(
+        Long id,
+        Long taskId,
+        String frequencyType,
+        LocalDate startDate,
+        LocalDate endDate,
+        LocalDate nextGenerationDate,
+        LearningTaskRecurrenceStatus status,
+        Long stoppedByUserId,
+        LocalDateTime stoppedAt,
+        Integer versionNo,
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt
+) { this(id, taskId, frequencyType, startDate, endDate, nextGenerationDate, status, stoppedByUserId, stoppedAt, versionNo, createdAt, updatedAt, java.util.List.of()); }
+
     public static LearningTaskRecurrence active(
             Long id, Long taskId, LocalDate startDate, LocalDate endDate
     ) {
         return new LearningTaskRecurrence(
                 id, taskId, "DAILY", startDate, endDate, startDate.plusDays(1),
                 LearningTaskRecurrenceStatus.ACTIVE, null, null, 0, null, null);
+    }
+    public static LearningTaskRecurrence active(Long id, Long taskId, LocalDate startDate, LocalDate endDate, String frequency, java.util.List<Integer> days) {
+        return new LearningTaskRecurrence(id,taskId,TaskRecurrenceCalendar.frequency(frequency),startDate,endDate,TaskRecurrenceCalendar.nextAfter(startDate,frequency,days),LearningTaskRecurrenceStatus.ACTIVE,null,null,0,null,null,TaskRecurrenceCalendar.weekdays(frequency,days));
     }
 }

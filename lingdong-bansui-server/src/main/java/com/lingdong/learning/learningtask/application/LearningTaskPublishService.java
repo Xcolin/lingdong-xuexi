@@ -81,7 +81,7 @@ public class LearningTaskPublishService {
                 task.title(), task.difficultyLevel(), task.durationMinutes(), task.scheduledDate(),
                 task.categoryCode(), tagCodes, task.remark(), targets.stream()
                 .map(target -> new LearningTaskTargetInput(target.targetType(), target.targetId()))
-                .toList(), Boolean.TRUE.equals(task.recurrenceEnabled()), task.recurrenceEndDate()));
+                .toList(), Boolean.TRUE.equals(task.recurrenceEnabled()), task.recurrenceEndDate(), task.recurrenceFrequency(), task.recurrenceWeekdays()));
         Long reviewerUserId = scopeService.validateAndResolveReviewer(
                 currentUser, task.sourceType(), task.sourceOrganizationId(),
                 task.reviewerUserId(), validatedDraft);
@@ -103,7 +103,7 @@ public class LearningTaskPublishService {
         assignmentMapper.insertBatch(assignments);
         if (Boolean.TRUE.equals(task.recurrenceEnabled())) {
             recurrenceMapper.insert(LearningTaskRecurrence.active(
-                    idGenerator.nextId(), task.id(), task.scheduledDate(), task.recurrenceEndDate()));
+                    idGenerator.nextId(), task.id(), task.scheduledDate(), task.recurrenceEndDate(), task.recurrenceFrequency(), task.recurrenceWeekdays()));
         }
         if (taskMapper.markPublished(task.id()) != 1) {
             throw new IllegalStateException("任务状态已变化，发布失败");

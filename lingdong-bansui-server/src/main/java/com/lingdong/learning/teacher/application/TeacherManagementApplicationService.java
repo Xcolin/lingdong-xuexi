@@ -46,6 +46,8 @@ import java.util.stream.Collectors;
 /** 协调既有用户、组织、角色和班级关系完成教师账号维护。 */
 @Service
 public class TeacherManagementApplicationService {
+    @org.springframework.beans.factory.annotation.Autowired private com.lingdong.learning.auth.application.InitialPasswordStateService initialPasswords;
+    @org.springframework.beans.factory.annotation.Autowired private TeacherIdentityService teacherIdentity;
     private static final String TEACHER_ROLE_CODE = "TEACHER";
 
     private final TeacherManagementAccessService accessService;
@@ -117,6 +119,7 @@ public class TeacherManagementApplicationService {
                 currentUser.userId()));
         userAccessApplicationService.associateWithOrganization(new AssociateUserWithOrganizationCommand(
                 user.id(), school.id(), currentUser.userId()));
+        teacherIdentity.register(user.id());
         Role teacherRole = roleMapper.findByCode(TEACHER_ROLE_CODE);
         if (teacherRole == null) {
             throw new IllegalStateException("内置教师角色不存在");
@@ -127,6 +130,7 @@ public class TeacherManagementApplicationService {
                 user.id(), passwordEncoder.encode(command.initialPassword())) != 1) {
             throw new IllegalStateException("教师初始密码保存失败");
         }
+        if(initialPasswords!=null)initialPasswords.require(user.id());
         for (Organization classOrganization : classes) {
             teacherClassAssignmentService.assign(currentUser, user.id(), classOrganization.id());
         }
@@ -148,13 +152,26 @@ public class TeacherManagementApplicationService {
     /** 在数据库分页前应用组织根路径，避免范围外教师影响页数和总数。 */
     public TeacherPage list(AuthenticatedUser currentUser, TeacherQuery query) {
         requirePermission(currentUser, "TEACHER_READ");
-        Objects.requireNonNull(query, "教师目录查询不能为空");
         accessService.requireManager(currentUser);
+        return listScoped(currentUser,query,false);
+    }
+    public static final java.util.Set<String> LOOKUP_ACTIONS=java.util.Set.of("TEACHER_READ","TEACHER_UPDATE","TEACHER_STATUS_CHANGE","TEACHER_PASSWORD_RESET","TEACHER_BATCH_MANAGE","TEACHER_CLASS_ASSIGN","LEARNING_TASK_CREATE","IAM_USER_ROLE_ASSIGN");
+    public record TeacherOption(String id,String displayName,String schoolId,String schoolName,List<String> classOrganizationIds){}
+    public record TeacherLookupPage(List<TeacherOption> items,int page,int pageSize,long total){}
+    public TeacherLookupPage lookup(AuthenticatedUser currentUser,TeacherQuery query,String permission){
+        if(!LOOKUP_ACTIONS.contains(permission))throw new SystemOperationAccessDeniedException("不支持该教师选择动作");
+        accessService.requireLookup(currentUser,permission);
+        TeacherPage page=listScoped(currentUser,query,true);
+        return new TeacherLookupPage(page.items().stream().map(t->new TeacherOption(t.id().toString(),t.displayName(),t.schoolId().toString(),t.schoolName(),t.classOrganizationIds().stream().map(Object::toString).toList())).toList(),page.page(),page.pageSize(),page.total());
+    }
+    private TeacherPage listScoped(AuthenticatedUser currentUser,TeacherQuery query,boolean lookup){
+        Objects.requireNonNull(query, "教师目录查询不能为空");
         int page = query.page() < 1 ? 1 : query.page();
         int pageSize = Math.min(Math.max(query.pageSize(), 1), 100);
         String keyword = optionalText(query.keyword(), 64);
         if (query.schoolId() != null) {
-            accessService.requireManageableSchool(currentUser, query.schoolId());
+            if(lookup)accessService.requireLookupSchool(currentUser,query.schoolId());
+            else accessService.requireManageableSchool(currentUser, query.schoolId());
         }
         if (query.classOrganizationId() != null) {
             Organization classOrganization = organizationMapper.findById(query.classOrganizationId());
@@ -166,13 +183,14 @@ public class TeacherManagementApplicationService {
             }
         }
 
+        String campusPath=TeacherCampusScope.requirePath(currentUser,query.campusOrganizationId(),query.schoolId(),organizationMapper,organizationDataScopeService);
         OrganizationDataScope scope = organizationDataScopeService.resolve(currentUser.userId());
         if (!scope.allOrganizations() && scope.rootPaths().isEmpty()) {
             return new TeacherPage(List.of(), page, pageSize, 0);
         }
         TeacherDirectoryCriteria criteria = new TeacherDirectoryCriteria(
                 keyword, query.schoolId(), query.classOrganizationId(), query.status(),
-                scope.allOrganizations(), scope.rootPaths(), pageSize, (page - 1) * pageSize);
+                scope.allOrganizations(), scope.rootPaths(), pageSize, (page - 1) * pageSize,campusPath,optionalText(query.subjectCode(),64));
         List<TeacherDirectoryRow> rows = teacherManagementMapper.findPage(criteria);
         Map<Long, List<Long>> classIds = rows.isEmpty() ? Map.of() : teacherManagementMapper
                 .findActiveClassIds(rows.stream().map(TeacherDirectoryRow::id).toList(), scope.allOrganizations(), scope.rootPaths())
@@ -243,6 +261,7 @@ public class TeacherManagementApplicationService {
         if (userMapper.updatePasswordHash(teacherUserId, passwordEncoder.encode(newPassword)) != 1) {
             throw new IllegalStateException("教师密码重置失败");
         }
+        if(initialPasswords!=null)initialPasswords.require(teacherUserId);
         authenticationApplicationService.revokeAllActiveSessionsForUser(teacherUserId);
         iamChangeAuditService.record(
                 IamChangeAuditEventType.USER_PASSWORD_RESET,
@@ -330,3 +349,4 @@ public class TeacherManagementApplicationService {
         return normalized;
     }
 }
+

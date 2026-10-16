@@ -16,13 +16,14 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/parent-rewards")
 public class ParentRewardController {
+    private final com.lingdong.learning.auth.application.ParentActorAccessService parentActors;
     private final GrowthRewardService service;
-    public ParentRewardController(GrowthRewardService service) { this.service = service; }
+    public ParentRewardController(GrowthRewardService service, com.lingdong.learning.auth.application.ParentActorAccessService parentActors) { this.service = service; this.parentActors=parentActors; }
 
     @RequirePermission(anyOf = {"MINIAPP_REWARD_MANAGE_CHILD", "MINIAPP_REWARD_EXCHANGE_REVIEW_CHILD"})
     @GetMapping("/students")
     public List<StudentOption> students(@AuthenticationPrincipal AuthenticatedUser user) {
-        requireMiniappParent(user);
+        requireMiniappParent(user,parentActors);
         return service.findParentStudents(user).stream().map(student -> new StudentOption(
                 student.studentId().toString(), student.studentName(), student.relationshipRole())).toList();
     }
@@ -32,7 +33,7 @@ public class ParentRewardController {
     public GrowthRewardPageResponse list(@AuthenticationPrincipal AuthenticatedUser user,
             @PathVariable Long studentId, @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int pageSize) {
-        requireMiniappParent(user);
+        requireMiniappParent(user,parentActors);
         return GrowthRewardPageResponse.from(service.findManaged(user, studentId, page, pageSize));
     }
 
@@ -41,7 +42,7 @@ public class ParentRewardController {
     @ResponseStatus(HttpStatus.CREATED)
     public GrowthRewardResponse create(@AuthenticationPrincipal AuthenticatedUser user,
             @PathVariable Long studentId, @Valid @RequestBody SaveGrowthRewardRequest request) {
-        requireMiniappParent(user);
+        requireMiniappParent(user,parentActors);
         return GrowthRewardResponse.from(service.create(user, studentId, request.toCommand()));
     }
 
@@ -49,7 +50,7 @@ public class ParentRewardController {
     @PutMapping("/{rewardId}")
     public GrowthRewardResponse update(@AuthenticationPrincipal AuthenticatedUser user,
             @PathVariable Long rewardId, @Valid @RequestBody SaveGrowthRewardRequest request) {
-        requireMiniappParent(user);
+        requireMiniappParent(user,parentActors);
         return GrowthRewardResponse.from(service.update(user, rewardId, request.toCommand()));
     }
 
@@ -57,15 +58,15 @@ public class ParentRewardController {
     @DeleteMapping("/{rewardId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable Long rewardId) {
-        requireMiniappParent(user);
+        requireMiniappParent(user,parentActors);
         service.delete(user, rewardId);
     }
 
-    static void requireMiniappParent(AuthenticatedUser user) {
-        if (user == null || user.clientType() != AuthClientType.MINIAPP
-                || !user.roleCodes().contains("PARENT") || user.roleCodes().contains("SYS_AUDITOR")) {
-            throw new SystemOperationAccessDeniedException("仅小程序家长可访问家庭奖励，审核员不能参与业务操作");
+    static void requireMiniappParent(AuthenticatedUser user,com.lingdong.learning.auth.application.ParentActorAccessService parents) {
+        if (user == null || user.clientType() != AuthClientType.MINIAPP) {
+            throw new SystemOperationAccessDeniedException("仅小程序家长可访问家庭奖励");
         }
+        parents.require(user);
     }
 
     public record StudentOption(String studentId, String studentName, ParentRelationshipRole relationshipRole) { }

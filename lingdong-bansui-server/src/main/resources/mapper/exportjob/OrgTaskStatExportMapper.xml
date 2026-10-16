@@ -14,7 +14,10 @@
   </when><otherwise>1=0</otherwise></choose>
  </sql>
  <select id="findOrgOptions" resultType="com.lingdong.learning.exceptionreport.application.ExceptionReportClassOption">
-  SELECT DISTINCT org.id,org.organization_name <include refid="publishedFacts"/>
+  SELECT DISTINCT org.id,
+        (SELECT GROUP_CONCAT(o.organization_name ORDER BY LENGTH(o.organization_path) ASC SEPARATOR '·')
+           FROM sys_organization o
+          WHERE org.organization_path LIKE CONCAT(o.organization_path, '%')) AS organization_name <include refid="publishedFacts"/>
   <if test="!scope.allOrganizations"><include refid="authorizedSource"/></if>
   ORDER BY org.organization_name,org.id
  </select>
@@ -40,7 +43,7 @@
  </sql>
  <sql id="statSelect">
   a.source_organization_id AS org_id,MAX(a.id) AS rep_id,
-  (SELECT o2.organization_name FROM sys_organization o2 WHERE o2.organization_type='SCHOOL' AND org.organization_path LIKE CONCAT(o2.organization_path,'%') ORDER BY LENGTH(o2.organization_path) DESC LIMIT 1) AS school_name,
+  (SELECT o2.organization_name FROM sys_organization o2 WHERE o2.organization_type IN ('SCHOOL', 'TRAINING_INSTITUTION') AND org.organization_path LIKE CONCAT(o2.organization_path,'%') ORDER BY LENGTH(o2.organization_path) DESC LIMIT 1) AS school_name,
   org.organization_name AS class_name,
   CAST(COUNT(*) AS BIGINT) AS task_count,
   CAST(SUM(CASE WHEN a.current_status='COMPLETED' THEN 1 ELSE 0 END) AS BIGINT) AS completed_count,

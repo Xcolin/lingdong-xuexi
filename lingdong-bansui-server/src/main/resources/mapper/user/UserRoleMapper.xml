@@ -50,4 +50,12 @@
         INSERT INTO sys_user_role (id, user_id, role_id, organization_id, organization_scope_key)
         VALUES (#{id}, #{userId}, #{roleId}, #{organizationId, jdbcType=BIGINT}, #{organizationScopeKey})
     </insert>
+    <delete id="deleteScoped">
+        DELETE FROM sys_user_role
+        WHERE user_id = #{userId}
+          AND role_id = #{roleId}
+          AND organization_scope_key = #{organizationScopeKey}
+    </delete>
+    <update id="markAutomaticOrganizationAdmin">UPDATE sys_user_role SET automatic_organization_admin=1 WHERE user_id=#{userId} AND role_id=#{roleId} AND organization_id=#{organizationId}</update>
+    <select id="isAutomaticOrganizationAdmin" resultType="boolean">SELECT EXISTS(SELECT 1 FROM sys_user_role WHERE user_id=#{userId} AND role_id=#{roleId} AND organization_id=#{organizationId} AND automatic_organization_admin=1)</select>
 </mapper>

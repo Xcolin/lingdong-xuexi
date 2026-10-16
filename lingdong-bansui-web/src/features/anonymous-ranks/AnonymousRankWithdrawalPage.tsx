@@ -1,3 +1,4 @@
+import { Button as PlainButton } from 'antd';
 import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Empty, List, Space } from 'antd';
@@ -35,6 +36,6 @@ export function AnonymousRankWithdrawalPage() {
     {error && <Alert type="error" message={error} />}
     <List loading={busy} dataSource={items} locale={{ emptyText: <Empty description="没有已开启的查看授权" /> }}
       renderItem={(item, index) => <List.Item><Space wrap><span>查看授权 {index + 1}</span>
-        <Button actionKey="rank-preferences.anonymous-rank-withdrawal-page.2" disabled={busy || !!error} onClick={() => void withdraw(item)}>撤回授权</Button></Space></List.Item>} />
+        <PlainButton  disabled={busy || !!error} onClick={() => void withdraw(item)}>撤回授权</PlainButton></Space></List.Item>} />
   </div>;
 }

@@ -47,6 +47,14 @@ class GrowthReviewQueryServiceTest {
     private AuthenticatedUser secondaryParent;
     private AuthenticatedUser student;
 
+    @Test void savesThreeDailySectionsAndRejectsIncompleteBatchWithoutWrites() {
+        var commands = new com.lingdong.learning.growthpoint.web.SaveDailyReflectionRequest("收获", "困难", "计划").toCommands();
+        assertThat(service.saveMyDailyReflection(student, REVIEW_ID, commands)).hasSize(3);
+        assertThat(service.findMyReview(student, REVIEW_ID).supplements()).hasSize(3);
+        assertThatThrownBy(()->service.saveMyDailyReflection(student, REVIEW_ID, new com.lingdong.learning.growthpoint.web.SaveDailyReflectionRequest("收获", "困难", " ").toCommands())).isInstanceOf(IllegalArgumentException.class);
+        assertThat(service.findMyReview(student, REVIEW_ID).supplements()).hasSize(3);
+    }
+
     @BeforeEach
     void setUp() {
         today = LocalDate.now();
@@ -199,7 +207,7 @@ class GrowthReviewQueryServiceTest {
     void rejectsOversizedBatchInsteadOfSilentlyTruncating() {
         grantReviewRole(PARENT_ID, id(74));
         createReview(id(80), id(81), today.minusDays(1));
-        var limited = new GrowthReviewExportPreparationService(reviewMapper, service, parentMapper, permissionService, 1);
+        var limited = new GrowthReviewExportPreparationService(reviewMapper, service, parentMapper, permissionService, 1, org.mockito.Mockito.mock(com.lingdong.learning.auth.application.ParentActorAccessService.class));
         assertThatThrownBy(() -> limited.prepare(parent, new GrowthReviewExportSelection(STUDENT_ID, null,
                 GrowthReviewPeriodType.DAY, today.minusDays(1), today)))
                 .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("保护上限");

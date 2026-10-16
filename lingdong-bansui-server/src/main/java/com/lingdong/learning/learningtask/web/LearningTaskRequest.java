@@ -28,14 +28,31 @@ public record LearningTaskRequest(
         Long reviewerUserId,
         @NotEmpty List<@Valid LearningTaskTargetRequest> targets,
         Boolean recurrenceEnabled,
-        LocalDate recurrenceEndDate
+        LocalDate recurrenceEndDate,
+        String recurrenceFrequency, java.util.List<Integer> recurrenceWeekdays
 ) {
+    public LearningTaskRequest(
+        LearningTaskSourceType sourceType,
+        Long sourceOrganizationId,
+        String title,
+        Integer difficultyLevel,
+        Integer durationMinutes,
+        LocalDate scheduledDate,
+        String categoryCode,
+        List<String> tagCodes,
+        String remark,
+        Long reviewerUserId,
+        List<LearningTaskTargetRequest> targets,
+        Boolean recurrenceEnabled,
+        LocalDate recurrenceEndDate
+) { this(sourceType, sourceOrganizationId, title, difficultyLevel, durationMinutes, scheduledDate, categoryCode, tagCodes, remark, reviewerUserId, targets, recurrenceEnabled, recurrenceEndDate, "DAILY", java.util.List.of()); }
+
     CreateLearningTaskCommand toCommand() {
         return new CreateLearningTaskCommand(
                 sourceType, sourceOrganizationId, reviewerUserId,
                 new LearningTaskDraftInput(
                         title, difficultyLevel, durationMinutes, scheduledDate, categoryCode,
                         tagCodes, remark, targets.stream().map(LearningTaskTargetRequest::toInput).toList(),
-                        Boolean.TRUE.equals(recurrenceEnabled), recurrenceEndDate));
+                        Boolean.TRUE.equals(recurrenceEnabled), recurrenceEndDate, recurrenceFrequency, recurrenceWeekdays));
     }
 }

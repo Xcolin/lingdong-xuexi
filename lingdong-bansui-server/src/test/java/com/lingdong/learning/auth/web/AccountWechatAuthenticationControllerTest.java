@@ -1,0 +1,31 @@
+package com.lingdong.learning.auth.web;
+import com.lingdong.learning.auth.application.*;
+import com.lingdong.learning.auth.infrastructure.persistence.ParentWechatBindingMapper;
+import com.lingdong.learning.auth.domain.AuthClientType;
+import com.lingdong.learning.common.id.IdGenerator;
+import com.lingdong.learning.feature.application.FeatureAccessService;
+import org.junit.jupiter.api.Test;
+import static org.mockito.Mockito.*;
+import static org.assertj.core.api.Assertions.*;
+class AccountWechatAuthenticationControllerTest {
+ @Test void wrongEmailCodeCannotRevealRegistrationState(){
+ var codes=mock(RegistrationVerificationService.class);var jdbc=mock(org.springframework.jdbc.core.JdbcTemplate.class);var auth=mock(AuthenticationApplicationService.class);var bindings=mock(ParentWechatBindingMapper.class);var controller=new AccountWechatAuthenticationController(mock(ParentWechatIdentityGateway.class),mock(ParentWechatBindingTicketService.class),bindings,auth,mock(IdGenerator.class),mock(ParentWechatIntegrationAccess.class),mock(FeatureAccessService.class));
+ org.springframework.test.util.ReflectionTestUtils.setField(controller,"codes",codes);org.springframework.test.util.ReflectionTestUtils.setField(controller,"jdbc",jdbc);
+ var request=new org.springframework.mock.web.MockHttpServletRequest();doThrow(new IllegalArgumentException("验证码错误或已失效")).when(codes).verifyForPurpose("EMAIL","new@example.com","wrong",request.getRemoteAddr(),"REGISTRATION");
+ assertThatThrownBy(()->controller.emailBind(new AccountWechatAuthenticationController.EmailBind("ticket","new@example.com","wrong","d","n"),request)).isInstanceOf(IllegalArgumentException.class);verifyNoInteractions(jdbc,auth,bindings);
+ }
+ @Test void unboundWechatReturnsOpaqueTicketWithoutCreatingAccount(){
+ var gateway=mock(ParentWechatIdentityGateway.class);var tickets=mock(ParentWechatBindingTicketService.class);var bindings=mock(ParentWechatBindingMapper.class);var auth=mock(AuthenticationApplicationService.class);var identity=new ParentWechatIdentity("app","open","union","secret");when(gateway.exchange("code")).thenReturn(identity);when(tickets.issue(identity)).thenReturn("opaque");var controller=new AccountWechatAuthenticationController(gateway,tickets,bindings,auth,mock(IdGenerator.class),mock(ParentWechatIntegrationAccess.class),mock(FeatureAccessService.class));var result=controller.exchange(new AccountWechatAuthenticationController.Exchange("code","d","n"));assertThat(result.bindingRequired()).isTrue();assertThat(result.bindingTicket()).isEqualTo("opaque");assertThat(result.session()).isNull();verifyNoInteractions(auth);verify(bindings,never()).insert(any());
+ }
+ @Test void boundWechatUsesUnifiedAccountStatusValidation(){
+ var gateway=mock(ParentWechatIdentityGateway.class);var bindings=mock(ParentWechatBindingMapper.class);var auth=mock(AuthenticationApplicationService.class);when(gateway.exchange("code")).thenReturn(new ParentWechatIdentity("app","open",null,null));when(bindings.findActiveByIdentity("app","open")).thenReturn(new ParentWechatBinding(1L,9L,"app","open",null,ParentWechatBindingStatus.ACTIVE,null,null));doThrow(new AuthenticationFailedException()).when(auth).loginExistingVerifiedAccount(9L,AuthClientType.MINIAPP,"d","n");var controller=new AccountWechatAuthenticationController(gateway,mock(ParentWechatBindingTicketService.class),bindings,auth,mock(IdGenerator.class),mock(ParentWechatIntegrationAccess.class),mock(FeatureAccessService.class));assertThatThrownBy(()->controller.exchange(new AccountWechatAuthenticationController.Exchange("code","d","n"))).isInstanceOf(AuthenticationFailedException.class);
+ }
+ @Test void initialPasswordCannotBindWechatThroughPublicEndpoint(){
+ var users=mock(com.lingdong.learning.user.infrastructure.persistence.UserMapper.class);var initial=mock(InitialPasswordStateService.class);var auth=mock(AuthenticationApplicationService.class);var tickets=mock(ParentWechatBindingTicketService.class);var bindings=mock(ParentWechatBindingMapper.class);var controller=new AccountWechatAuthenticationController(mock(ParentWechatIdentityGateway.class),tickets,bindings,auth,mock(IdGenerator.class),mock(ParentWechatIntegrationAccess.class),mock(FeatureAccessService.class));org.springframework.test.util.ReflectionTestUtils.setField(controller,"users",users);org.springframework.test.util.ReflectionTestUtils.setField(controller,"initial",initial);when(users.findByUsernameForUpdate("account")).thenReturn(com.lingdong.learning.user.domain.User.create(9L,"account","Account",null,com.lingdong.learning.user.domain.UserType.FAMILY));when(initial.required(9L)).thenReturn(true);org.assertj.core.api.Assertions.assertThat(controller.bind(new AccountWechatAuthenticationController.Bind("ticket","account","initial","d","n"),new org.springframework.mock.web.MockHttpServletRequest()).bindingRequired()).isTrue();verifyNoInteractions(tickets);verify(bindings,never()).insert(any());
+ }
+ @Test void currentPasswordProofCanReplaceOwnBindingWithUnoccupiedWechat(){
+ var gateway=mock(ParentWechatIdentityGateway.class);var bindings=mock(ParentWechatBindingMapper.class);var auth=mock(AuthenticationApplicationService.class);var ids=mock(IdGenerator.class);when(ids.nextId()).thenReturn(100L);when(gateway.exchange("new-code")).thenReturn(new ParentWechatIdentity("app","new-open",null,"session-secret"));when(bindings.findByUserId(9L)).thenReturn(new ParentWechatBinding(1L,9L,"app","old-open",null,ParentWechatBindingStatus.ACTIVE,null,null));when(bindings.insert(any())).thenReturn(1);var controller=new AccountWechatAuthenticationController(gateway,mock(ParentWechatBindingTicketService.class),bindings,auth,ids,mock(ParentWechatIntegrationAccess.class),mock(FeatureAccessService.class));controller.current(new AuthenticatedUser(9L,2L,"u","n",AuthClientType.MINIAPP,java.util.List.of()),new AccountWechatAuthenticationController.CurrentBind("new-code","password"));var order=inOrder(auth,gateway,bindings);order.verify(auth).verifyAccountPassword(9L,"password");order.verify(gateway).exchange("new-code");order.verify(bindings).findActiveByIdentity("app","new-open");order.verify(bindings).findByUserId(9L);order.verify(bindings).deleteByUserId(9L);order.verify(bindings).insert(argThat(b->b.openId().equals("new-open")));verify(auth).revokeAllActiveSessionsForUser(9L);
+ }}
+
+
+

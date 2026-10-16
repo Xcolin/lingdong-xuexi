@@ -47,7 +47,7 @@ public class OrganizationWorkbenchQueryService {
             throw accessDenied();
         }
         User user = userMapper.findById(currentUser.userId());
-        if (user == null || user.status() != UserStatus.ENABLED || user.type() != UserType.ORGANIZATION) {
+        if (user == null || user.status() != UserStatus.ENABLED || user.type() == UserType.STUDENT) {
             throw accessDenied();
         }
         List<OrganizationWorkbenchOrganization> organizations = organizationAdminMapper

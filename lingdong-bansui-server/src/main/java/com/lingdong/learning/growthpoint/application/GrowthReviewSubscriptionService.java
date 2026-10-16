@@ -1,6 +1,7 @@
 package com.lingdong.learning.growthpoint.application;
 
 import com.lingdong.learning.auth.application.AuthenticatedUser;
+import com.lingdong.learning.auth.application.ParentActorAccessService;
 import com.lingdong.learning.auth.domain.AuthClientType;
 import com.lingdong.learning.common.id.IdGenerator;
 import com.lingdong.learning.common.security.SystemOperationAccessDeniedException;
@@ -32,10 +33,13 @@ public class GrowthReviewSubscriptionService {
     private final Clock clock;
     private final com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthReviewDeliveryMapper deliveries;
 
+    private final ParentActorAccessService parentActors;
+
     public GrowthReviewSubscriptionService(GrowthReviewSubscriptionMapper subscriptions, UserMapper users,
             UserRoleMapper roles, ParentStudentMapper relations, PermissionDecisionService permissions,
             FeatureAccessService features, IdGenerator ids, Clock clock,
-            com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthReviewDeliveryMapper deliveries) {
+            com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthReviewDeliveryMapper deliveries, ParentActorAccessService parentActors) {
+        this.parentActors = parentActors;
         this.subscriptions=subscriptions; this.users=users; this.roles=roles; this.relations=relations;
         this.permissions=permissions; this.features=features; this.ids=ids; this.clock=clock;
         this.deliveries=deliveries;
@@ -53,7 +57,6 @@ public class GrowthReviewSubscriptionService {
             features.requireEnabled("GROWTH_REVIEW_WEEKLY_SUBSCRIPTION", null);
             features.requireEnabled("PERIODIC_GROWTH_REPORT", null);
             if (!permissions.isAllowed(user.userId(), PermissionClient.WEB, "GROWTH_REVIEW_SUBSCRIBE_CHILD")
-                    || !permissions.isAllowed(user.userId(), PermissionClient.WEB, "GROWTH_REVIEW_READ_CHILD")
                     || !relations.existsActiveByParentAndStudent(user.userId(), studentId)) throw denied();
         }
         var current = subscriptions.find(user.userId(), studentId);
@@ -72,21 +75,24 @@ public class GrowthReviewSubscriptionService {
     }
     /** 后台排程从持久化身份重新鉴权，不使用创建订阅时的会话快照。 */
     public boolean canSchedule(Long parentId, Long studentId) {
+        try {
+            parentActors.require(new AuthenticatedUser(parentId, null, "", "", AuthClientType.WEB, java.util.List.of()));
+        } catch (SystemOperationAccessDeniedException exception) { return false; }
         var account = users.findById(parentId);
         return account != null && account.status() == UserStatus.ENABLED
-                && roles.hasRoleCode(parentId, "PARENT") && !roles.hasRoleCode(parentId, "SYS_AUDITOR")
+                && account.type() == com.lingdong.learning.user.domain.UserType.FAMILY
+                && roles.hasAnyEnabledRole(parentId)
                 && features.isEnabled("GROWTH_REVIEW_WEEKLY_SUBSCRIPTION", null)
                 && features.isEnabled("PERIODIC_GROWTH_REPORT", null)
                 && permissions.isAllowed(parentId, PermissionClient.WEB, "GROWTH_REVIEW_SUBSCRIBE_CHILD")
-                && permissions.isAllowed(parentId, PermissionClient.WEB, "GROWTH_REVIEW_READ_CHILD")
                 && relations.existsActiveByParentAndStudent(parentId, studentId);
     }
     private void requireOwner(AuthenticatedUser user, Long studentId, boolean lock) {
         if (user == null || user.userId() == null || user.clientType() != AuthClientType.WEB) throw denied();
         if (studentId == null || studentId <= 0) throw new IllegalArgumentException("学生标识必须为正整数");
         var account = lock ? users.findByIdForUpdate(user.userId()) : users.findById(user.userId());
-        if (account == null || account.status() != UserStatus.ENABLED || !roles.hasRoleCode(user.userId(), "PARENT")
-                || roles.hasRoleCode(user.userId(), "SYS_AUDITOR")) throw denied();
+        if (account == null || account.status() != UserStatus.ENABLED) throw denied();
+        parentActors.require(user);
     }
     private View view(Long studentId, GrowthReviewSubscription row) {
         return new View(studentId.toString(), row != null && row.enabled(), row == null ? 0 : row.version());

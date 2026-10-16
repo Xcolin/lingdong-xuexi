@@ -28,19 +28,16 @@
 
     <sql id="teacherScopeFilters">
         teacher.user_type = 'ORGANIZATION'
-        AND EXISTS (
-            SELECT 1
-            FROM sys_user_role teacher_role_assignment
-            JOIN sys_role teacher_role ON teacher_role.id = teacher_role_assignment.role_id
-            WHERE teacher_role_assignment.user_id = teacher.id
-              AND teacher_role.role_code = 'TEACHER'
-              AND teacher_role.status = 'ENABLED'
-        )
-        AND school.organization_type = 'SCHOOL'
+        AND EXISTS (SELECT 1 FROM edu_teacher_profile profile WHERE profile.user_id=teacher.id AND profile.status='ENABLED')
+        AND school.organization_type IN ('SCHOOL', 'TRAINING_INSTITUTION')
         <if test="!criteria.allOrganizations">
             AND (
                 <foreach collection="criteria.rootPaths" item="rootPath" separator=" OR ">
-                    school.organization_path LIKE CONCAT(#{rootPath}, '%')
+                    (school.organization_path LIKE CONCAT(#{rootPath}, '%')
+                    OR EXISTS(SELECT 1 FROM sys_user_organization scoped_membership JOIN sys_organization scoped_org ON scoped_org.id=scoped_membership.organization_id
+                      WHERE scoped_membership.user_id=teacher.id AND scoped_org.organization_path LIKE CONCAT(#{rootPath}, '%') AND scoped_org.organization_path LIKE CONCAT(school.organization_path,'%'))
+                    OR EXISTS(SELECT 1 FROM edu_teacher_class scoped_class JOIN sys_organization scoped_org ON scoped_org.id=scoped_class.class_organization_id
+                      WHERE scoped_class.teacher_user_id=teacher.id AND scoped_class.status='ACTIVE' AND scoped_org.organization_path LIKE CONCAT(#{rootPath}, '%') AND scoped_org.organization_path LIKE CONCAT(school.organization_path,'%')))
                 </foreach>
             )
         </if>
@@ -53,6 +50,24 @@
         </if>
         <if test="criteria.status != null">
             AND teacher.status = #{criteria.status}
+        </if>
+        <if test="criteria.subjectCode != null">
+            AND EXISTS (
+                SELECT 1 FROM edu_teacher_subject_metadata subject_filter
+                WHERE subject_filter.teacher_user_id=teacher.id
+                  AND subject_filter.institution_organization_id=school.id
+                  AND subject_filter.subject_code=#{criteria.subjectCode}
+            )
+        </if>
+        <if test="criteria.campusPath != null">
+            AND EXISTS (
+                SELECT 1 FROM edu_teacher_class campus_filter
+                JOIN sys_organization campus_class ON campus_class.id=campus_filter.class_organization_id
+                WHERE campus_filter.teacher_user_id=teacher.id AND campus_filter.status='ACTIVE'
+                  AND campus_filter.effective_to IS NULL AND campus_class.organization_type='CLASS'
+                  AND campus_class.organization_path LIKE CONCAT(#{criteria.campusPath}, '%')
+                  AND campus_class.organization_path LIKE CONCAT(school.organization_path, '%')
+            )
         </if>
         <if test="criteria.classOrganizationId != null">
             AND EXISTS (
@@ -124,19 +139,16 @@
           ON school.id = teacher_membership.organization_id
         WHERE teacher.id = #{teacherUserId}
           AND teacher.user_type = 'ORGANIZATION'
-          AND school.organization_type = 'SCHOOL'
-          AND EXISTS (
-              SELECT 1
-              FROM sys_user_role teacher_role_assignment
-              JOIN sys_role teacher_role ON teacher_role.id = teacher_role_assignment.role_id
-              WHERE teacher_role_assignment.user_id = teacher.id
-                AND teacher_role.role_code = 'TEACHER'
-                AND teacher_role.status = 'ENABLED'
-          )
+          AND school.organization_type IN ('SCHOOL', 'TRAINING_INSTITUTION')
+          AND EXISTS (SELECT 1 FROM edu_teacher_profile profile WHERE profile.user_id=teacher.id AND profile.status='ENABLED')
           <if test="!allOrganizations">
               AND (
                   <foreach collection="rootPaths" item="rootPath" separator=" OR ">
-                      school.organization_path LIKE CONCAT(#{rootPath}, '%')
+                      (school.organization_path LIKE CONCAT(#{rootPath}, '%')
+                    OR EXISTS(SELECT 1 FROM sys_user_organization scoped_membership JOIN sys_organization scoped_org ON scoped_org.id=scoped_membership.organization_id
+                      WHERE scoped_membership.user_id=teacher.id AND scoped_org.organization_path LIKE CONCAT(#{rootPath}, '%') AND scoped_org.organization_path LIKE CONCAT(school.organization_path,'%'))
+                    OR EXISTS(SELECT 1 FROM edu_teacher_class scoped_class JOIN sys_organization scoped_org ON scoped_org.id=scoped_class.class_organization_id
+                      WHERE scoped_class.teacher_user_id=teacher.id AND scoped_class.status='ACTIVE' AND scoped_org.organization_path LIKE CONCAT(#{rootPath}, '%') AND scoped_org.organization_path LIKE CONCAT(school.organization_path,'%')))
                   </foreach>
               )
           </if>

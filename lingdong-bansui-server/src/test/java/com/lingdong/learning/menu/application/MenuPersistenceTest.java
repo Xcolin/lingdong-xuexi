@@ -83,7 +83,11 @@ class MenuPersistenceTest {
         var button=service.list(admin).stream().filter(n->Objects.equals(n.parentId(),core.id()) && n.type()==MenuType.BUTTON).findFirst().orElseThrow();
         assertThatThrownBy(()->service.update(admin,button.id(),new MenuWriteCommand(button.code(),button.name(),button.type(),button.parentId(),null,button.icon(),button.grantable(),button.sortOrder(),MenuStatus.DISABLED,button.version()))).isInstanceOf(IllegalArgumentException.class);
         accounts.assignRole(new AssignRoleToUserCommand(admin.userId(),roles.findByCode("SYS_AUDITOR").id(),null));
-        assertThatThrownBy(()->service.create(admin,command("mixed-role-dir",MenuType.DIRECTORY,null,null))).isInstanceOf(com.lingdong.learning.common.security.SystemOperationAccessDeniedException.class);
+        // 菜单写权限按权限编码判定（固定身份门槛已按权限化设计移除）：混合角色凭 SYS_ADMIN 的 MENU_MANAGE 授权仍可管理菜单；
+        // 纯审核员无 MENU_MANAGE 授权保持只读（本用例上方断言）。
+        var mixedCreated=service.create(admin,command("mixed-role-dir",MenuType.DIRECTORY,null,null));
+        assertThat(mixedCreated.type()).isEqualTo(MenuType.DIRECTORY);
+        assertThat(service.list(admin).stream().filter(n->Objects.equals(n.code(),"mixed-role-dir")).findFirst()).isPresent();
     }
     @Test void validatesParentTypeRouteAndPermissionCodeShape() {
         var admin=principal("SYS_ADMIN");

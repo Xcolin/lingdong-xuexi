@@ -6,6 +6,7 @@ import com.lingdong.learning.organization.application.CreateOrganizationCommand;
 import com.lingdong.learning.organization.application.CreateOrganizationTypeCommand;
 import com.lingdong.learning.organization.application.MoveOrganizationCommand;
 import com.lingdong.learning.organization.application.OrganizationChangeApplicationService;
+import com.lingdong.learning.organization.application.OrganizationNamePathService;
 import com.lingdong.learning.organization.application.OrganizationManagementApplicationService;
 import com.lingdong.learning.organization.application.OrganizationOrderItem;
 import com.lingdong.learning.organization.application.ReorderOrganizationsCommand;
@@ -33,15 +34,20 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1")
 public class OrganizationManagementController {
+    private final com.lingdong.learning.organization.application.OrganizationTypeLifecycleApplicationService organizationTypeLifecycle;
+    private final OrganizationNamePathService namePathService;
     private final OrganizationManagementApplicationService organizationManagementApplicationService;
     private final OrganizationChangeApplicationService organizationChangeApplicationService;
 
     public OrganizationManagementController(
             OrganizationManagementApplicationService organizationManagementApplicationService,
-            OrganizationChangeApplicationService organizationChangeApplicationService
-    ) {
+            OrganizationChangeApplicationService organizationChangeApplicationService,
+            OrganizationNamePathService namePathService,
+            com.lingdong.learning.organization.application.OrganizationTypeLifecycleApplicationService organizationTypeLifecycle) {
+        this.organizationTypeLifecycle = organizationTypeLifecycle;
         this.organizationManagementApplicationService = organizationManagementApplicationService;
         this.organizationChangeApplicationService = organizationChangeApplicationService;
+        this.namePathService = namePathService;
     }
 
     @RequirePermission("ORG_TYPE_READ")
@@ -65,6 +71,31 @@ public class OrganizationManagementController {
                 currentUser.userId(), new CreateOrganizationTypeCommand(request.code(), request.name(), request.sortOrder())
         ));
     }
+
+    @RequirePermission("ORG_TYPE_UPDATE")
+    @org.springframework.web.bind.annotation.PatchMapping("/organization-types/{typeId}")
+    public OrganizationTypeResponse updateOrganizationType(@AuthenticationPrincipal AuthenticatedUser currentUser,
+            @PathVariable Long typeId, @Valid @RequestBody UpdateOrganizationTypeRequest request) {
+        return OrganizationTypeResponse.from(organizationTypeLifecycle.update(currentUser.userId(),typeId,request.name(),request.sortOrder()));
+    }
+
+    @RequirePermission("ORG_TYPE_STATUS_CHANGE")
+    @org.springframework.web.bind.annotation.PatchMapping("/organization-types/{typeId}/status")
+    public OrganizationTypeResponse changeOrganizationTypeStatus(@AuthenticationPrincipal AuthenticatedUser currentUser,
+            @PathVariable Long typeId, @Valid @RequestBody OrganizationTypeStatusRequest request) {
+        return OrganizationTypeResponse.from(organizationTypeLifecycle.changeStatus(currentUser.userId(),typeId,request.status()));
+    }
+
+    @RequirePermission("ORG_TYPE_DELETE")
+    @org.springframework.web.bind.annotation.DeleteMapping("/organization-types/{typeId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteOrganizationType(@AuthenticationPrincipal AuthenticatedUser currentUser,@PathVariable Long typeId) {
+        organizationTypeLifecycle.delete(currentUser.userId(),typeId);
+    }
+
+    public record UpdateOrganizationTypeRequest(@jakarta.validation.constraints.NotBlank @jakarta.validation.constraints.Size(max=32) String name,
+            @jakarta.validation.constraints.NotNull @jakarta.validation.constraints.Min(0) Integer sortOrder) { }
+    public record OrganizationTypeStatusRequest(@jakarta.validation.constraints.NotNull com.lingdong.learning.organization.domain.OrganizationStatus status) { }
 
     @RequirePermission("ORG_NODE_READ")
     @GetMapping("/organizations")
@@ -149,7 +180,11 @@ public class OrganizationManagementController {
             @jakarta.validation.constraints.NotEmpty List<ReorderOrderItemRequest> items) { }
     public record MoveOrganizationPositionRequest(Long targetParentId, Integer expectedVersion) { }
 
-    /** 构建组织树，不容忍迁移或手工数据造成的断裂父子关系；同级展示顺序以拖拽排序写入的 sort_order 为准。 */
+    /**
+     * 构建组织树；同级展示顺序以拖拽排序写入的 sort_order 为准。
+     * 数据范围裁剪（如组织管理员只见自己子树）会使可见集合顶层节点的父不在集合内，
+     * 这些节点按可见根渲染；数据库外键保证父子引用有效，不会出现真正的断裂数据。
+     */
     private List<OrganizationTreeNodeResponse> toTree(List<Organization> organizations) {
         Map<Long, OrganizationTreeNodeBuilder> nodes = new LinkedHashMap<>();
         for (Organization organization : organizations) {
@@ -158,13 +193,10 @@ public class OrganizationManagementController {
 
         List<OrganizationTreeNodeBuilder> roots = new ArrayList<>();
         for (OrganizationTreeNodeBuilder node : nodes.values()) {
-            if (node.organization.parentId() == null) {
+            OrganizationTreeNodeBuilder parent = node.organization.parentId() == null ? null : nodes.get(node.organization.parentId());
+            if (parent == null) {
                 roots.add(node);
                 continue;
-            }
-            OrganizationTreeNodeBuilder parent = nodes.get(node.organization.parentId());
-            if (parent == null) {
-                throw new IllegalStateException("组织树数据不完整");
             }
             parent.children.add(node);
         }
@@ -172,10 +204,14 @@ public class OrganizationManagementController {
                 .comparing((OrganizationTreeNodeBuilder node) -> node.organization.sortOrder() == null
                         ? Integer.MAX_VALUE
                         : node.organization.sortOrder())
-                .thenComparing(node -> node.organization.path());
+                .thenComparing(node -> node.organization.id());
         roots.sort(displayOrder);
         for (OrganizationTreeNodeBuilder node : nodes.values()) {
             node.children.sort(displayOrder);
+        }
+        Map<Long, String> namePaths = namePathService.namePathsById();
+        for (OrganizationTreeNodeBuilder node : nodes.values()) {
+            node.namePath = namePaths.getOrDefault(node.organization.id(), node.organization.name());
         }
         return roots.stream().map(OrganizationTreeNodeBuilder::toResponse).toList();
     }
@@ -183,6 +219,7 @@ public class OrganizationManagementController {
     /** 内部可变节点仅在一次请求的树构造期间使用，响应对象保持不可变。 */
     private static final class OrganizationTreeNodeBuilder {
         private final Organization organization;
+        private String namePath;
         private final List<OrganizationTreeNodeBuilder> children = new ArrayList<>();
 
         private OrganizationTreeNodeBuilder(Organization organization) {
@@ -192,7 +229,7 @@ public class OrganizationManagementController {
         private OrganizationTreeNodeResponse toResponse() {
             return OrganizationTreeNodeResponse.from(organization, children.stream()
                     .map(OrganizationTreeNodeBuilder::toResponse)
-                    .toList());
+                    .toList(), namePath);
         }
     }
 }

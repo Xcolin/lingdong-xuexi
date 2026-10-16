@@ -3,6 +3,60 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.lingdong.learning.student.infrastructure.persistence.StudentOrganizationMapper">
+    <!-- School enrollment is the identity boundary; current class wins over historical IAM membership. -->
+    <sql id="enrollmentInScope">
+      <if test="!${allOrganizations}">
+        AND <choose>
+          <when test="${rootPaths} != null and ${rootPaths}.size() > 0">
+            (
+              <foreach collection="${rootPaths}" item="path" open="(" close=")" separator=" OR ">
+                LEFT(${enrollmentAlias}.organization_path, CHAR_LENGTH(#{path})) = #{path}
+              </foreach>
+              OR EXISTS (SELECT 1 FROM edu_student_organization scope_class_relation
+                JOIN sys_organization scope_class ON scope_class.id = scope_class_relation.organization_id
+                WHERE scope_class_relation.student_id = ${studentAlias}.id
+                  AND scope_class_relation.relation_type = 'CLASS' AND scope_class_relation.status = 'ACTIVE'
+                  AND scope_class.status = 'ENABLED' AND scope_class.effective_status = 'ENABLED'
+                  AND LEFT(scope_class.organization_path, CHAR_LENGTH(${enrollmentAlias}.organization_path)) = ${enrollmentAlias}.organization_path
+                  AND <foreach collection="${rootPaths}" item="path" open="(" close=")" separator=" OR ">
+                    LEFT(scope_class.organization_path, CHAR_LENGTH(#{path})) = #{path}
+                  </foreach>)
+              OR (NOT EXISTS (SELECT 1 FROM edu_student_organization any_class
+                    WHERE any_class.student_id = ${studentAlias}.id AND any_class.relation_type = 'CLASS'
+                      AND any_class.status = 'ACTIVE'
+                      AND EXISTS(SELECT 1 FROM sys_organization any_class_org WHERE any_class_org.id=any_class.organization_id
+                        AND any_class_org.organization_path LIKE CONCAT(${enrollmentAlias}.organization_path,'%')))
+                AND EXISTS (SELECT 1 FROM sys_user_organization grade_member
+                  JOIN sys_organization scope_grade ON scope_grade.id = grade_member.organization_id
+                  WHERE grade_member.user_id = ${studentAlias}.student_user_id
+                    AND scope_grade.organization_type IN ('GRADE', 'CAMPUS')
+                    AND scope_grade.status = 'ENABLED' AND scope_grade.effective_status = 'ENABLED'
+                    AND LEFT(scope_grade.organization_path, CHAR_LENGTH(${enrollmentAlias}.organization_path)) = ${enrollmentAlias}.organization_path
+                    AND <foreach collection="${rootPaths}" item="path" open="(" close=")" separator=" OR ">
+                      LEFT(scope_grade.organization_path, CHAR_LENGTH(#{path})) = #{path}
+                    </foreach>))
+            )
+          </when>
+          <otherwise>1 = 0</otherwise>
+        </choose>
+      </if>
+    </sql>
+    <select id="existsActiveEnrollmentInScope" resultType="boolean">
+      SELECT EXISTS(SELECT 1 FROM edu_student student
+        JOIN edu_student_organization enrollment ON enrollment.student_id = student.id
+          AND enrollment.relation_type = 'ENROLLMENT' AND enrollment.status = 'ACTIVE'
+        JOIN sys_organization enrollment_org ON enrollment_org.id = enrollment.organization_id
+          AND enrollment_org.status = 'ENABLED' AND enrollment_org.effective_status = 'ENABLED'
+        WHERE student.id = #{studentId} AND enrollment.organization_id = #{organizationId}
+        <include refid="enrollmentInScope">
+          <property name="studentAlias" value="student"/><property name="enrollmentAlias" value="enrollment_org"/>
+          <property name="allOrganizations" value="scope.allOrganizations"/><property name="rootPaths" value="scope.rootPaths"/>
+        </include>)
+    </select>
+    <select id="existsEnrollment" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM edu_student_organization WHERE student_id = #{studentId}
+            AND organization_id = #{organizationId} AND relation_type = 'ENROLLMENT')
+    </select>
     <resultMap id="studentOrganizationSummaryMap"
                type="com.lingdong.learning.student.infrastructure.persistence.StudentOrganizationSummaryRow">
         <constructor>
@@ -13,6 +67,8 @@
             <arg column="enrollment_organization_name" javaType="java.lang.String" />
             <arg column="current_class_organization_id" javaType="java.lang.Long" />
             <arg column="current_class_organization_name" javaType="java.lang.String" />
+            <arg column="student_status" javaType="java.lang.String" />
+            <arg column="student_number" javaType="java.lang.String" />
         </constructor>
     </resultMap>
 
@@ -150,6 +206,8 @@
                student.id AS student_id,
                student.student_name,
                student.grade_code,
+               student.status AS student_status,
+               academic.student_number AS student_number,
                enrollment.organization_id AS enrollment_organization_id,
                enrollment_organization.organization_name AS enrollment_organization_name,
                student_class.organization_id AS current_class_organization_id,
@@ -159,6 +217,7 @@
           ON enrollment.student_id = student.id
          AND enrollment.relation_type = 'ENROLLMENT'
          AND enrollment.status = 'ACTIVE'
+        LEFT JOIN edu_student_enrollment_metadata academic ON academic.student_id=student.id AND academic.institution_organization_id=enrollment.organization_id
         JOIN sys_organization enrollment_organization
           ON enrollment_organization.id = enrollment.organization_id
         JOIN sys_organization_admin organization_admin
@@ -171,6 +230,8 @@
           ON student_class.student_id = student.id
          AND student_class.relation_type = 'CLASS'
          AND student_class.status = 'ACTIVE'
+         AND EXISTS (SELECT 1 FROM sys_organization member_class WHERE member_class.id = student_class.organization_id
+              AND member_class.organization_path LIKE CONCAT(enrollment_organization.organization_path, '%'))
         LEFT JOIN sys_organization class_organization
           ON class_organization.id = student_class.organization_id
         WHERE student.status = 'ENABLED'
@@ -314,6 +375,8 @@
                student.id AS student_id,
                student.student_name,
                student.grade_code,
+               student.status AS student_status,
+               academic.student_number AS student_number,
                enrollment.organization_id AS enrollment_organization_id,
                enrollment_organization.organization_name AS enrollment_organization_name,
                student_class.organization_id AS current_class_organization_id,
@@ -323,25 +386,26 @@
           ON enrollment.student_id = student.id
          AND enrollment.relation_type = 'ENROLLMENT'
          AND enrollment.status = 'ACTIVE'
+        LEFT JOIN edu_student_enrollment_metadata academic ON academic.student_id=student.id AND academic.institution_organization_id=enrollment.organization_id
         JOIN sys_organization enrollment_organization
           ON enrollment_organization.id = enrollment.organization_id
         LEFT JOIN edu_student_organization student_class
           ON student_class.student_id = student.id
          AND student_class.relation_type = 'CLASS'
          AND student_class.status = 'ACTIVE'
+         AND EXISTS (SELECT 1 FROM sys_organization member_class WHERE member_class.id = student_class.organization_id
+              AND member_class.organization_path LIKE CONCAT(enrollment_organization.organization_path, '%')
+              <if test="!scope.allOrganizations">
+                AND <choose><when test="scope.rootPaths != null and scope.rootPaths.size()>0"><foreach collection="scope.rootPaths" item="path" open="(" close=")" separator=" OR ">member_class.organization_path LIKE CONCAT(#{path},'%')</foreach></when><otherwise>1=0</otherwise></choose>
+              </if>)
         LEFT JOIN sys_organization class_organization
           ON class_organization.id = student_class.organization_id
         WHERE student.status = 'ENABLED'
-          <if test="!scope.allOrganizations">
-            AND <choose>
-              <when test="scope.rootPaths != null and scope.rootPaths.size() > 0">
-                <foreach collection="scope.rootPaths" item="path" open="(" close=")" separator=" OR ">
-                  enrollment_organization.organization_path LIKE CONCAT(#{path}, '%')
-                </foreach>
-              </when>
-              <otherwise>1 = 0</otherwise>
-            </choose>
-          </if>
+          AND enrollment_organization.status = 'ENABLED' AND enrollment_organization.effective_status = 'ENABLED'
+          <include refid="enrollmentInScope">
+            <property name="studentAlias" value="student"/><property name="enrollmentAlias" value="enrollment_organization"/>
+            <property name="allOrganizations" value="scope.allOrganizations"/><property name="rootPaths" value="scope.rootPaths"/>
+          </include>
         ORDER BY student.student_name, student.id
     </select>
 
@@ -364,4 +428,77 @@
           </if>
         ORDER BY class_organization.organization_name, class_organization.id
     </select>
+    <select id="findClassStudentOptions" resultType="com.lingdong.learning.learningtask.application.StudentOption">
+        SELECT DISTINCT student.id, student.student_name, NULL AS student_account_masked,
+               visible_class.id AS current_class_id, visible_class.organization_name AS current_class_name,
+               NULL AS relationship_role
+        FROM edu_student student
+        JOIN sys_organization target_class ON target_class.id = #{classId}
+        JOIN sys_organization target_institution ON target_institution.organization_type IN ('SCHOOL','TRAINING_INSTITUTION')
+          AND target_class.organization_path LIKE CONCAT(target_institution.organization_path, '%')
+        LEFT JOIN edu_student_organization current_relation ON current_relation.student_id = student.id
+          AND current_relation.relation_type = 'CLASS' AND current_relation.status = 'ACTIVE'
+          AND EXISTS (SELECT 1 FROM sys_organization member_class WHERE member_class.id=current_relation.organization_id
+            AND member_class.organization_path LIKE CONCAT(target_institution.organization_path,'%')
+            AND (target_institution.organization_type='SCHOOL' OR member_class.id=#{classId}))
+        LEFT JOIN sys_organization visible_class ON visible_class.id = current_relation.organization_id
+          <if test="!scope.allOrganizations">
+            AND <choose>
+              <when test="scope.rootPaths.size() > 0"><foreach collection="scope.rootPaths" item="path" open="(" close=")" separator=" OR ">visible_class.organization_path LIKE CONCAT(#{path}, '%')</foreach></when>
+              <otherwise>1 = 0</otherwise>
+            </choose>
+          </if>
+        WHERE student.status = 'ENABLED'
+          <choose>
+            <when test="membersOnly">AND current_relation.organization_id = #{classId}</when>
+            <otherwise>AND EXISTS (
+              SELECT 1 FROM edu_student_organization enrollment
+              JOIN sys_organization enrollment_org ON enrollment_org.id = enrollment.organization_id
+              WHERE enrollment.student_id = student.id AND enrollment.relation_type = 'ENROLLMENT'
+                AND enrollment.status = 'ACTIVE' AND enrollment_org.status = 'ENABLED'
+                AND enrollment_org.effective_status = 'ENABLED'
+                AND LEFT(target_class.organization_path, CHAR_LENGTH(enrollment_org.organization_path)) = enrollment_org.organization_path
+                <include refid="enrollmentInScope">
+                  <property name="studentAlias" value="student"/><property name="enrollmentAlias" value="enrollment_org"/>
+                  <property name="allOrganizations" value="scope.allOrganizations"/><property name="rootPaths" value="scope.rootPaths"/>
+                </include>
+            )</otherwise>
+          </choose>
+        ORDER BY student.student_name, student.id
+    </select>
+    <select id="existsManagedFamilyStudent" resultType="boolean">
+      SELECT EXISTS(SELECT 1 FROM edu_student s
+        JOIN sys_user_organization m ON m.user_id=s.student_user_id
+        JOIN sys_organization family ON family.id=m.organization_id AND family.organization_type='FAMILY'
+          AND family.status='ENABLED' AND family.effective_status='ENABLED'
+        WHERE s.id=#{studentId} AND (
+          EXISTS(SELECT 1 FROM sys_organization_admin a WHERE a.user_id=#{userId} AND a.organization_id=family.id)
+          OR <choose><when test="scope.allOrganizations">1=1</when>
+            <when test="scope.rootPaths != null and scope.rootPaths.size()>0">
+              <foreach collection="scope.rootPaths" item="path" open="(" close=")" separator=" OR ">family.organization_path LIKE CONCAT(#{path},'%')</foreach>
+            </when><otherwise>1=0</otherwise></choose>))
+    </select>
+    <update id="deactivateClass">
+      UPDATE edu_student_organization SET status='INACTIVE',effective_to=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP
+      WHERE student_id=#{studentId} AND organization_id=#{classOrganizationId} AND relation_type='CLASS' AND status='ACTIVE'
+    </update>
+    <delete id="removeInstitutionMemberships">
+        DELETE FROM sys_user_organization WHERE user_id=#{studentUserId} AND organization_id IN (
+          SELECT member_org.id FROM sys_organization member_org JOIN sys_organization institution ON institution.id=#{institutionId}
+          WHERE member_org.organization_path LIKE CONCAT(institution.organization_path,'%')
+            AND member_org.organization_type IN('SCHOOL','TRAINING_INSTITUTION','CAMPUS','GRADE','CLASS'))
+    </delete>
+<select id="existsFamilyAdministratorForStudent" resultType="boolean">
+ SELECT EXISTS(SELECT 1 FROM edu_student s
+ JOIN sys_user_organization member ON member.user_id=s.student_user_id
+ JOIN sys_organization family ON family.id=member.organization_id AND family.organization_type='FAMILY'
+ AND family.status='ENABLED' AND family.effective_status='ENABLED'
+ JOIN sys_organization_admin admin ON admin.organization_id=family.id AND admin.user_id=#{userId}
+ WHERE s.id=#{studentId})
+ </select>
 </mapper>
+
+
+
+
+

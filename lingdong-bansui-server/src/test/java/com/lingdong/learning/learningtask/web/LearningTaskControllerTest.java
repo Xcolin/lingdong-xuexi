@@ -1354,8 +1354,10 @@ class LearningTaskControllerTest {
         User backupTeacher = createUser("task_flow_backup_teacher", "任务闭环备用教师");
         Organization school = organizationApplicationService.createOrganization(
                 new CreateOrganizationCommand("TASK_FLOW_SCHOOL", "任务闭环学校", "SCHOOL", null, 10));
+        Organization schoolGrade = organizationApplicationService.createOrganization(
+                new CreateOrganizationCommand("TASK_FLOW_CLASS_GRADE", "测试年级", "GRADE", school.id(), 10));
         Organization classOrganization = organizationApplicationService.createOrganization(
-                new CreateOrganizationCommand("TASK_FLOW_CLASS", "任务闭环一班", "CLASS", school.id(), 10));
+                new CreateOrganizationCommand("TASK_FLOW_CLASS", "任务闭环一班", "CLASS", schoolGrade.id(), 10));
         userAccessApplicationService.associateWithOrganization(
                 new AssociateUserWithOrganizationCommand(organizationAdministrator.id(), school.id()));
         userAccessApplicationService.associateWithOrganization(

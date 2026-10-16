@@ -7,4 +7,6 @@
   <insert id="insert">INSERT INTO sys_menu (<include refid="columns"/>) VALUES (#{node.id},#{node.code},#{node.name},#{node.type},#{node.parentId},#{node.route},#{node.icon},#{node.permissionCode},#{node.grantable},#{node.sortOrder},#{node.status},#{node.version})</insert>
   <update id="update">UPDATE sys_menu SET code=#{node.code},name=#{node.name},type=#{node.type},parent_id=#{node.parentId},route=#{node.route},icon=#{node.icon},permission_code=#{node.permissionCode},grantable=#{node.grantable},sort_order=#{node.sortOrder},status=#{node.status},version=version+1 WHERE id=#{node.id} AND version=#{node.version}</update>
   <update id="reorder">UPDATE sys_menu SET sort_order=#{sortOrder},version=version+1 WHERE id=#{id} AND version=#{version}</update>
+  <delete id="deleteById">DELETE FROM sys_menu WHERE id=#{id} AND version=#{version}</delete>
+
 </mapper>

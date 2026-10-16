@@ -26,11 +26,14 @@ import static org.mockito.Mockito.when;
 class LearningTaskScopeServiceSecondaryParentTest {
     private final LearningTaskAssignmentMapper assignmentMapper = mock(LearningTaskAssignmentMapper.class);
     private final com.lingdong.learning.permission.application.PermissionDecisionService permissions = mock(com.lingdong.learning.permission.application.PermissionDecisionService.class);
+    private final com.lingdong.learning.teacher.application.TeacherIdentityService teachers = mock(com.lingdong.learning.teacher.application.TeacherIdentityService.class);
+    private final TeacherClassMapper classes = mock(TeacherClassMapper.class);
+    private final OrganizationMapper organizations = mock(OrganizationMapper.class);
     private final LearningTaskScopeService service = new LearningTaskScopeService(
-            mock(OrganizationMapper.class), mock(OrganizationDataScopeService.class),
+            organizations, mock(OrganizationDataScopeService.class),
             mock(ParentStudentMapper.class), mock(StudentOrganizationMapper.class),
-            mock(TeacherClassMapper.class), mock(UserMapper.class), mock(UserRoleMapper.class),
-            assignmentMapper, permissions);
+            classes, mock(UserMapper.class), mock(UserRoleMapper.class),
+            assignmentMapper, permissions, org.mockito.Mockito.mock(com.lingdong.learning.auth.application.ParentActorAccessService.class), teachers);
 
     @Test
     void linkedSecondaryParentReadsPublishedAssignmentButCannotManageTask() {
@@ -38,7 +41,7 @@ class LearningTaskScopeServiceSecondaryParentTest {
         when(permissions.isAllowed(parentId, com.lingdong.learning.permission.domain.PermissionClient.WEB, "LEARNING_TASK_READ_MANAGED")).thenReturn(true);
         long taskId = 8910000000000000832L;
         AuthenticatedUser secondaryParent = new AuthenticatedUser(
-                parentId, 1L, "secondary", "副家长", AuthClientType.WEB, List.of("PARENT"));
+                parentId, 1L, "secondary", "副家长", AuthClientType.WEB, List.of("CUSTOM_FAMILY"));
         LearningTask task = mock(LearningTask.class);
         when(task.id()).thenReturn(taskId);
         when(task.status()).thenReturn(LearningTaskStatus.PUBLISHED);
@@ -56,7 +59,7 @@ class LearningTaskScopeServiceSecondaryParentTest {
         long parentId = 8910000000000000841L;
         long taskId = 8910000000000000842L;
         AuthenticatedUser unrelatedParent = new AuthenticatedUser(
-                parentId, 1L, "other", "无关家长", AuthClientType.WEB, List.of("PARENT"));
+                parentId, 1L, "other", "无关家长", AuthClientType.WEB, List.of("CUSTOM_FAMILY"));
         LearningTask task = mock(LearningTask.class);
         when(task.id()).thenReturn(taskId);
         when(task.status()).thenReturn(LearningTaskStatus.PUBLISHED);
@@ -70,9 +73,14 @@ class LearningTaskScopeServiceSecondaryParentTest {
     @Test
     void teacherReadsPublishedOrganizationTaskOnlyWhenAnActiveClassStudentReceivedIt() {
         long teacherId = 8910000000000000851L;
+        when(teachers.isTeacher(teacherId)).thenReturn(true);
+        when(classes.findActiveByTeacher(teacherId)).thenReturn(java.util.List.of(
+            com.lingdong.learning.learningtask.domain.TeacherClassRelation.active(1L,teacherId,2L)));
+        when(organizations.findById(2L)).thenReturn(com.lingdong.learning.organization.domain.Organization.create(
+            2L,null,"ROOT","CLASS","class","CLASS","/CLASS/",1,null));
         long taskId = 8910000000000000852L;
         AuthenticatedUser teacher = new AuthenticatedUser(
-                teacherId, 1L, "teacher", "教师", AuthClientType.MINIAPP, List.of("TEACHER"));
+                teacherId, 1L, "teacher", "教师", AuthClientType.MINIAPP, List.of("CUSTOM_TEACHER"));
         LearningTask task = mock(LearningTask.class);
         when(task.id()).thenReturn(taskId);
         when(task.status()).thenReturn(LearningTaskStatus.PUBLISHED);
@@ -91,7 +99,7 @@ class LearningTaskScopeServiceSecondaryParentTest {
     void parentCannotReadManagedProgressEvenForAnAssignedPublishedTask() {
         AuthenticatedUser parent = new AuthenticatedUser(
                 8910000000000000861L, 1L, "parent", "家长",
-                AuthClientType.WEB, List.of("PARENT"));
+                AuthClientType.WEB, List.of("CUSTOM_FAMILY"));
         LearningTask task = mock(LearningTask.class);
         when(task.sourceType()).thenReturn(LearningTaskSourceType.ORGANIZATION);
 

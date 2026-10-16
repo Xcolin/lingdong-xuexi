@@ -41,6 +41,14 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 class ParentRelationshipApplicationServiceTest {
+    @Test void disabledFeatureBlocksKnownStudentDirectRelationshipRead() {
+        org.mockito.Mockito.doThrow(new com.lingdong.learning.common.security.SystemOperationAccessDeniedException("closed"))
+                .when(featureAccessService).requireEnabled("PARENT_RELATIONSHIP_MANAGEMENT", null);
+        assertThatThrownBy(() -> service.getRelationships(PRIMARY_USER_ID, STUDENT_ID))
+                .isInstanceOf(com.lingdong.learning.common.security.SystemOperationAccessDeniedException.class);
+        org.mockito.Mockito.verifyNoInteractions(relationshipMapper);
+    }
+
     private static final long PRIMARY_USER_ID = 8910000000000000101L;
     private static final long SECONDARY_USER_ID = 8910000000000000102L;
     private static final long STUDENT_ID = 8910000000000000103L;

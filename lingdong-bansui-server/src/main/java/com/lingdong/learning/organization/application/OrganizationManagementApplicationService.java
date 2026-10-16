@@ -16,6 +16,9 @@ import java.util.List;
  */
 @Service
 public class OrganizationManagementApplicationService {
+    @org.springframework.beans.factory.annotation.Autowired private com.lingdong.learning.user.infrastructure.persistence.UserMapper users;
+    @org.springframework.beans.factory.annotation.Autowired private com.lingdong.learning.auth.infrastructure.persistence.ParentAuthenticationMapper parentProfiles;
+    @org.springframework.beans.factory.annotation.Autowired private com.lingdong.learning.user.infrastructure.persistence.UserOrganizationMapper memberships;
     private final com.lingdong.learning.datascope.application.OrganizationDataScopeService scopes;
     private final com.lingdong.learning.permission.application.PermissionDecisionService decisions;
     private static final String SYSTEM_ADMIN_ROLE = "SYS_ADMIN";
@@ -54,7 +57,20 @@ public class OrganizationManagementApplicationService {
     public List<Organization> listOrganizations(Long operatorId) {
         requireFeatureEnabled();
         requirePermission(operatorId, "ORG_NODE_READ");
-        return scopes.findAccessibleOrganizations(operatorId);
+        List<Organization> accessible=new java.util.ArrayList<>(scopes.findAccessibleOrganizations(operatorId));
+        // Parent membership permits exact family information only; it does not change write scopes.
+        if(isActiveParent(operatorId) && memberships!=null) {
+            var existing=accessible.stream().map(Organization::id).collect(java.util.stream.Collectors.toSet());
+            for(Organization org:organizationQueryApplicationService.listOrganizationsByIds(memberships.findOrganizationIds(operatorId)))
+                if("FAMILY".equals(org.typeCode()) && OrganizationOperationalStatusService.isOperational(org) && existing.add(org.id())) accessible.add(org);
+        }
+        return accessible;
+    }
+
+    private boolean isActiveParent(Long operatorId){
+        var user=operatorId==null?null:users.findById(operatorId);
+        return user!=null&&user.type()==com.lingdong.learning.user.domain.UserType.FAMILY
+            &&user.status()==com.lingdong.learning.user.domain.UserStatus.ENABLED&&parentProfiles.findProfileByUserId(operatorId)!=null;
     }
 
     public Organization createOrganization(Long operatorId, CreateOrganizationCommand command) {
@@ -79,7 +95,7 @@ public class OrganizationManagementApplicationService {
     }
 
     private void requirePermission(Long operatorId, String code) {
-        if (operatorId == null || !decisions.isAllowed(operatorId, com.lingdong.learning.permission.domain.PermissionClient.WEB, code)) {
+        if (operatorId == null || !decisions.isAllowed(operatorId, com.lingdong.learning.common.security.RequestPermissionClient.forOperator(operatorId), code)) {
             throw new SystemOperationAccessDeniedException("当前账号无管理组织权限");
         }
     }

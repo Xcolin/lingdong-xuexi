@@ -11,6 +11,8 @@ import java.util.List;
 /** 家长与学生关系的最小持久化操作。 */
 @Mapper
 public interface ParentStudentMapper {
+    List<com.lingdong.learning.growthpoint.application.GrowthReviewQueryService.ChildOption> findMiniappReviewChildren(@Param("parentUserId") Long parentUserId);
+    boolean existsMiniappReviewChild(@Param("parentUserId") Long parentUserId, @Param("studentId") Long studentId);
     boolean existsActiveByParentAndStudent(@Param("parentUserId") Long parentUserId, @Param("studentId") Long studentId);
 
     boolean existsActivePrimaryByParentAndStudent(

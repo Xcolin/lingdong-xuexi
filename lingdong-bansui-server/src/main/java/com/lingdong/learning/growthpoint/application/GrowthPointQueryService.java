@@ -1,6 +1,7 @@
 package com.lingdong.learning.growthpoint.application;
 
 import com.lingdong.learning.auth.application.AuthenticatedUser;
+import com.lingdong.learning.auth.application.ParentActorAccessService;
 import com.lingdong.learning.auth.domain.AuthClientType;
 import com.lingdong.learning.common.security.SystemOperationAccessDeniedException;
 import com.lingdong.learning.common.web.ResourceNotFoundException;
@@ -38,13 +39,17 @@ public class GrowthPointQueryService {
     private final FeatureAccessService featureAccessService;
     private final Clock clock;
 
+    private final ParentActorAccessService parentActors;
+
     public GrowthPointQueryService(
             GrowthPointQueryMapper queryMapper,
             CurrentStudentAccessService currentStudentAccessService,
             ParentStudentMapper parentStudentMapper,
             FeatureAccessService featureAccessService,
-            Clock clock
+            Clock clock,
+            ParentActorAccessService parentActors
     ) {
+        this.parentActors = parentActors;
         this.queryMapper = queryMapper;
         this.currentStudentAccessService = currentStudentAccessService;
         this.parentStudentMapper = parentStudentMapper;
@@ -72,7 +77,7 @@ public class GrowthPointQueryService {
     public List<GrowthPointStudentOption> findParentStudents(AuthenticatedUser currentUser) {
         featureAccessService.requireEnabled(FEATURE_CODE, null);
         requireWebParent(currentUser);
-        return queryMapper.findPrimaryStudentsByParentUserId(currentUser.userId()).stream()
+        return parentStudentMapper.findActiveStudentsByParent(currentUser.userId()).stream()
                 .map(row -> new GrowthPointStudentOption(row.studentId(), row.studentName()))
                 .toList();
     }
@@ -111,10 +116,18 @@ public class GrowthPointQueryService {
     }
 
     private void requireWebParent(AuthenticatedUser currentUser) {
-        if (currentUser == null || currentUser.clientType() != AuthClientType.WEB
-                || !currentUser.roleCodes().contains("PARENT")) {
+        parentActors.require(currentUser);
+        if (currentUser == null || currentUser.clientType() != AuthClientType.WEB) {
             throw new SystemOperationAccessDeniedException("仅 Web 端活动关系家长可查询孩子积分");
         }
+    }
+
+    static LocalDateTime earnedPeriodStart(Clock clock, boolean week) {
+        var today = java.time.LocalDate.now(clock.withZone(java.time.ZoneId.of("Asia/Shanghai")));
+        return (week ? today.with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY)) : today.withDayOfMonth(1)).atStartOfDay();
+    }
+    static LocalDateTime earnedPeriodEnd(Clock clock) {
+        return java.time.LocalDate.now(clock.withZone(java.time.ZoneId.of("Asia/Shanghai"))).plusDays(1).atStartOfDay();
     }
 
     private GrowthPointAccountView requireAccount(Long studentId) {
@@ -122,8 +135,11 @@ public class GrowthPointQueryService {
         if (row == null) {
             throw new ResourceNotFoundException("学生积分账户不存在或不可访问");
         }
+        Clock snapshotClock = Clock.fixed(clock.instant(), clock.getZone());
         return new GrowthPointAccountView(
-                row.studentId(), row.studentName(), row.totalPoints(), row.availablePoints(), row.updatedAt());
+                row.studentId(), row.studentName(), row.totalPoints(), row.availablePoints(), row.updatedAt(),
+                queryMapper.sumTaskRewards(studentId, earnedPeriodStart(snapshotClock, true), earnedPeriodEnd(snapshotClock)),
+                queryMapper.sumTaskRewards(studentId, earnedPeriodStart(snapshotClock, false), earnedPeriodEnd(snapshotClock)));
     }
 
     private GrowthPointLedgerPage findLedgerPage(

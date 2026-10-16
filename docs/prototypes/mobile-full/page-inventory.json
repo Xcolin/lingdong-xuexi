@@ -1,0 +1,1871 @@
+[
+  {
+    "title": "账号安全",
+    "group": "登录与账号",
+    "source": "lingdong-bansui-miniapp/src/pages/account-security/account-security.vue",
+    "texts": [
+      "发现  条新设备登录提醒",
+      "请核对设备，发现异常时及时下线。",
+      "登录设备",
+      "全部下线",
+      "暂无活动设备",
+      "当前设备",
+      "下线",
+      "安全事件",
+      "全部已读",
+      "暂无安全事件",
+      "标记已读",
+      "已读"
+    ],
+    "apis": [
+      "/auth/student-captchas",
+      "/auth/student-sessions/code",
+      "/auth/student-sessions/qr",
+      "/auth/student-qr-captchas",
+      "/auth/student-wechat-sessions",
+      "/auth/student-wechat-binding-codes",
+      "/auth/student-wechat-bindings",
+      "/auth/sessions/current",
+      "/auth/organization-sessions/password",
+      "/public/parent-auth-context",
+      "/auth/login-sms-codes",
+      "/auth/parent-sms-codes",
+      "/auth/parent-wechat-sessions",
+      "/auth/parent-wechat-bindings",
+      "/auth/sessions/sms",
+      "/auth/parent-sessions/password",
+      "/auth/parent-state",
+      "/auth/parent-agreement-acceptances",
+      "/parent-onboarding/completion",
+      "/auth/devices",
+      "/auth/security-events",
+      "/auth/devices/${sessionId}",
+      "/auth/devices/sign-out-all",
+      "/auth/security-events/${eventId}/read",
+      "/auth/security-events/read-all",
+      "/public/capabilities?client=MINIAPP"
+    ]
+  },
+  {
+    "title": "账号设置",
+    "group": "登录与账号",
+    "source": "lingdong-bansui-miniapp/src/pages/account-settings/account-settings.vue",
+    "texts": [
+      "账号设置",
+      "使用当前账号验证身份，登录方式不会合并到其他账号。",
+      "重新加载",
+      "先验证已绑定的联系方式，设置密码后可继续绑定其他登录方式。",
+      "验证手机",
+      "验证邮箱",
+      "发送验证码"
+    ],
+    "apis": [
+      "/api/v1",
+      "/auth/account-settings",
+      "/auth/password"
+    ]
+  },
+  {
+    "title": "班级匿名排行",
+    "group": "成长陪伴",
+    "source": "lingdong-bansui-miniapp/src/pages/anonymous-ranks/anonymous-ranks.vue",
+    "texts": [
+      "正在加载",
+      "查看授权",
+      "撤回授权",
+      "没有已开启的查看授权"
+    ],
+    "apis": [
+      "/public/capabilities?client=MINIAPP",
+      "/anonymous-ranks/students",
+      "/auth/me",
+      "/anonymous-ranks/preferences"
+    ]
+  },
+  {
+    "title": "考勤记录",
+    "group": "组织与教学",
+    "source": "lingdong-bansui-miniapp/src/pages/attendance/attendance.vue",
+    "texts": [
+      "正在核验考勤权限",
+      "考勤记录",
+      "班级点名",
+      "返回记录",
+      "签到  · 签退",
+      "来源：人工登记 · 登记人：",
+      "创建：",
+      "更新：",
+      "动作历史",
+      "暂无动作历史",
+      "状态： →",
+      "签到： →",
+      "签退： →",
+      "状态：",
+      "查询",
+      "重置",
+      "正在加载",
+      "暂无考勤记录",
+      "上一页",
+      "/  · 共  条",
+      "下一页"
+    ],
+    "apis": [
+      "/public/capabilities?client=MINIAPP",
+      "/api/v1",
+      "/auth/me",
+      "/attendance-records?${query}",
+      "/attendance-records/class-options${operational ? ",
+      "/attendance-records/roster?classOrganizationId=${encodeURIComponent(classOrganizationId)}&attendanceDate=${encodeURIComponent(attendanceDate)}",
+      "/attendance-records/batch",
+      "/attendance-records/${encodeURIComponent(id)}"
+    ]
+  },
+  {
+    "title": "异常报备",
+    "group": "组织与教学",
+    "source": "lingdong-bansui-miniapp/src/pages/exception-reports/exception-reports.vue",
+    "texts": [
+      "正在加载",
+      "新增异常报备",
+      "提交报备",
+      "· 共  项",
+      "暂无报备记录",
+      "处理",
+      "确认处理"
+    ],
+    "apis": [
+      "/auth/me",
+      "/api/v1",
+      "/teacher-workbench/context",
+      "/exception-reports?page=${page}&pageSize=${pageSize}${status?",
+      "/exception-reports/student-options?classOrganizationId=${encodeURIComponent(classId)}",
+      "/exception-reports",
+      "/exception-reports/${encodeURIComponent(id)}",
+      "/exception-reports/${encodeURIComponent(id)}/handle"
+    ]
+  },
+  {
+    "title": "家庭任务",
+    "group": "成长陪伴",
+    "source": "lingdong-bansui-miniapp/src/pages/family-tasks/family-tasks.vue",
+    "texts": [
+      "家庭任务",
+      "新建家庭任务",
+      "正在处理任务",
+      "难度：",
+      "时长（分钟）",
+      "计划日期：",
+      "任务成长小主人",
+      "暂无可创建任务的主监护孩子",
+      "保留原每日重复配置，截止：",
+      "保存草稿",
+      "取消编辑",
+      "共  项家庭任务",
+      "暂无家庭任务",
+      "编辑草稿",
+      "发布任务",
+      "上一页",
+      "第  页",
+      "下一页"
+    ],
+    "apis": [
+      "/learning-tasks/${encodeURIComponent(id)}",
+      "/auth/me",
+      "/learning-tasks?sourceType=FAMILY&page=${page}&pageSize=20",
+      "/learning-task-options/students?sourceType=FAMILY",
+      "/learning-tasks",
+      "/public/capabilities?client=MINIAPP",
+      "/api/v1"
+    ]
+  },
+  {
+    "title": "我的积分",
+    "group": "成长小主人",
+    "source": "lingdong-bansui-miniapp/src/pages/growth-points/growth-points.vue",
+    "texts": [
+      "我的积分",
+      "正在检查功能状态",
+      "累计积分",
+      "可用积分",
+      "重试",
+      "积分明细",
+      "正在加载",
+      "继续上滑加载",
+      "已加载全部积分明细",
+      "暂无积分变动",
+      "完成任务获得积分后会显示在这里"
+    ],
+    "apis": [
+      "/public/capabilities?client=MINIAPP",
+      "/growth-points/me/account",
+      "/growth-points/me/ledgers?page=${page}&pageSize=${pageSize}"
+    ]
+  },
+  {
+    "title": "成长复盘",
+    "group": "成长小主人",
+    "source": "lingdong-bansui-miniapp/src/pages/growth-reviews/growth-reviews.vue",
+    "texts": [
+      "正在检查功能状态",
+      "重试",
+      "第  版",
+      "完成率",
+      "获取积分",
+      "进行中",
+      "待优化",
+      "暂停次数",
+      "任务分类",
+      "暂无分类统计",
+      "补录记录",
+      "暂无补录",
+      "暂无成长复盘",
+      "正在加载"
+    ],
+    "apis": [
+      "/public/capabilities?client=MINIAPP",
+      "/growth-reviews/me?periodType=DAY&page=1&pageSize=20",
+      "/growth-reviews/me/${reviewId}",
+      "/growth-reviews/me/${reviewId}/supplements"
+    ]
+  },
+  {
+    "title": "灵动伴随",
+    "group": "成长陪伴",
+    "source": "lingdong-bansui-miniapp/src/pages/index/index.vue",
+    "texts": [
+      "灵动伴随",
+      "自律成长，家校相伴",
+      "正在加载",
+      "微信登录",
+      "家长、教师与机构 · 首次验证邮箱",
+      "审核任务 · 家庭奖励 · 成长周报",
+      "今日任务 · 积分 · 成长复盘",
+      "班级管理 · 点名 · 任务发布",
+      "服务暂不可用",
+      "请稍后重试，或联系管理员确认服务状态",
+      "灵动伴随 · 自律成长管理系统"
+    ],
+    "apis": [
+      "/public/capabilities?client=MINIAPP",
+      "/auth/student-captchas",
+      "/auth/student-sessions/code",
+      "/auth/student-sessions/qr",
+      "/auth/student-qr-captchas",
+      "/auth/student-wechat-sessions",
+      "/auth/student-wechat-binding-codes",
+      "/auth/student-wechat-bindings",
+      "/auth/sessions/current",
+      "/auth/organization-sessions/password",
+      "/public/parent-auth-context",
+      "/auth/login-sms-codes",
+      "/auth/parent-sms-codes",
+      "/auth/parent-wechat-sessions",
+      "/auth/parent-wechat-bindings",
+      "/auth/sessions/sms",
+      "/auth/parent-sessions/password",
+      "/auth/parent-state",
+      "/auth/parent-agreement-acceptances",
+      "/parent-onboarding/completion",
+      "/auth/devices",
+      "/auth/security-events",
+      "/auth/devices/${sessionId}",
+      "/auth/devices/sign-out-all",
+      "/auth/security-events/${eventId}/read",
+      "/auth/security-events/read-all"
+    ]
+  },
+  {
+    "title": "任务管理",
+    "group": "组织与教学",
+    "source": "lingdong-bansui-miniapp/src/pages/managed-tasks/managed-tasks.vue",
+    "texts": [
+      "新增",
+      "正在加载",
+      "暂无审核待办",
+      "暂无任务",
+      "· 积分 ·",
+      "编辑",
+      "下发",
+      "进度",
+      "共  项待审核任务",
+      "· 积分",
+      "查看附件：",
+      "取消",
+      "确认驳回",
+      "驳回",
+      "通过",
+      "上一页",
+      "第  页",
+      "下一页",
+      "任务标题",
+      "下发范围",
+      "难度",
+      "时长（分钟）",
+      "计划日期",
+      "备注",
+      "保存草稿",
+      "· 成长小主人进度",
+      "关闭",
+      "暂无进度"
+    ],
+    "apis": [
+      "/api/v1",
+      "/auth/me",
+      "/learning-tasks?page=${page}&pageSize=20",
+      "/learning-tasks/${encodeURIComponent(taskId)}",
+      "/learning-tasks",
+      "/learning-tasks/${encodeURIComponent(taskId)}/publish",
+      "/learning-task-options/organizations?sourceType=ORGANIZATION",
+      "/learning-tasks/${encodeURIComponent(taskId)}/progress?page=1&pageSize=100",
+      "/task-reviews?page=${page}&pageSize=${pageSize}",
+      "/task-reviews/${encodeURIComponent(assignmentId)}/approve",
+      "/task-reviews/${encodeURIComponent(assignmentId)}/reject",
+      "/teacher-workbench/context"
+    ]
+  },
+  {
+    "title": "入驻进度",
+    "group": "成长陪伴",
+    "source": "lingdong-bansui-miniapp/src/pages/my-organizations/my-organizations.vue",
+    "texts": [
+      "账号设置",
+      "正在加载",
+      "重试",
+      "暂无组织，可以创建家庭或申请机构入驻。",
+      "进入组织",
+      "创建家庭",
+      "学校 / 培训机构入驻",
+      "接受家长关系邀请"
+    ],
+    "apis": [
+      "/auth/student-captchas",
+      "/auth/student-sessions/code",
+      "/auth/student-sessions/qr",
+      "/auth/student-qr-captchas",
+      "/auth/student-wechat-sessions",
+      "/auth/student-wechat-binding-codes",
+      "/auth/student-wechat-bindings",
+      "/auth/sessions/current",
+      "/auth/organization-sessions/password",
+      "/public/parent-auth-context",
+      "/auth/login-sms-codes",
+      "/auth/parent-sms-codes",
+      "/auth/parent-wechat-sessions",
+      "/auth/parent-wechat-bindings",
+      "/auth/sessions/sms",
+      "/auth/parent-sessions/password",
+      "/auth/parent-state",
+      "/auth/parent-agreement-acceptances",
+      "/parent-onboarding/completion",
+      "/auth/devices",
+      "/auth/security-events",
+      "/auth/devices/${sessionId}",
+      "/auth/devices/sign-out-all",
+      "/auth/security-events/${eventId}/read",
+      "/auth/security-events/read-all",
+      "/api/v1",
+      "/organization-onboarding${path}",
+      "/mobile-code",
+      "/mobile-verify",
+      "/context",
+      "/regions",
+      "/my-organizations",
+      "/applications",
+      "/applications/${encodeURIComponent(id)}",
+      "/families",
+      "/applications/${encodeURIComponent(item.id)}/resubmit",
+      "/applications/${encodeURIComponent(item.id)}/withdraw"
+    ]
+  },
+  {
+    "title": "入驻申请",
+    "group": "组织与教学",
+    "source": "lingdong-bansui-miniapp/src/pages/organization-application/organization-application.vue",
+    "texts": [
+      "正在加载",
+      "联系人：",
+      "驳回原因：",
+      "撤回申请",
+      "修改并重新提交",
+      "查看入驻进度",
+      "重试"
+    ],
+    "apis": [
+      "/organization-onboarding${path}",
+      "/mobile-code",
+      "/mobile-verify",
+      "/context",
+      "/regions",
+      "/my-organizations",
+      "/applications",
+      "/applications/${encodeURIComponent(id)}",
+      "/families",
+      "/applications/${encodeURIComponent(item.id)}/resubmit",
+      "/applications/${encodeURIComponent(item.id)}/withdraw"
+    ]
+  },
+  {
+    "title": "班级管理",
+    "group": "组织与教学",
+    "source": "lingdong-bansui-miniapp/src/pages/organization-classes/organization-classes.vue",
+    "texts": [
+      "班级维护",
+      "教师班级",
+      "正在加载",
+      "学员关系",
+      "新增班级",
+      "所属学校",
+      "所属年级"
+    ],
+    "apis": [
+      "/public/capabilities?client=MINIAPP",
+      "/api/v1",
+      "/classes/schools",
+      "/classes",
+      "/classes/grades",
+      "/classes/${classId}",
+      "/classes/${item.id}/${action}",
+      "/learning-task-options/teachers?classId=${encodeURIComponent(classId)}",
+      "/teachers/${teacherUserId}/classes/${classId}"
+    ]
+  },
+  {
+    "title": "组织工作台",
+    "group": "组织与教学",
+    "source": "lingdong-bansui-miniapp/src/pages/organization-home/organization-home.vue",
+    "texts": [
+      "退出",
+      "任务审核"
+    ],
+    "apis": [
+      "/auth/student-captchas",
+      "/auth/student-sessions/code",
+      "/auth/student-sessions/qr",
+      "/auth/student-qr-captchas",
+      "/auth/student-wechat-sessions",
+      "/auth/student-wechat-binding-codes",
+      "/auth/student-wechat-bindings",
+      "/auth/sessions/current",
+      "/auth/organization-sessions/password",
+      "/public/parent-auth-context",
+      "/auth/login-sms-codes",
+      "/auth/parent-sms-codes",
+      "/auth/parent-wechat-sessions",
+      "/auth/parent-wechat-bindings",
+      "/auth/sessions/sms",
+      "/auth/parent-sessions/password",
+      "/auth/parent-state",
+      "/auth/parent-agreement-acceptances",
+      "/parent-onboarding/completion",
+      "/auth/devices",
+      "/auth/security-events",
+      "/auth/devices/${sessionId}",
+      "/auth/devices/sign-out-all",
+      "/auth/security-events/${eventId}/read",
+      "/auth/security-events/read-all",
+      "/public/capabilities?client=MINIAPP",
+      "/api/v1",
+      "/organization-workbench/context"
+    ]
+  },
+  {
+    "title": "机构登录",
+    "group": "组织与教学",
+    "source": "lingdong-bansui-miniapp/src/pages/organization-login/organization-login.vue",
+    "texts": [
+      "注册 / 账号登录",
+      "机构与教师登录",
+      "使用机构管理员或教师账号密码登录工作台",
+      "正在加载",
+      "服务暂不可用",
+      "请联系管理员确认机构小程序登录开关",
+      "账号",
+      "密码"
+    ],
+    "apis": [
+      "/auth/student-captchas",
+      "/auth/student-sessions/code",
+      "/auth/student-sessions/qr",
+      "/auth/student-qr-captchas",
+      "/auth/student-wechat-sessions",
+      "/auth/student-wechat-binding-codes",
+      "/auth/student-wechat-bindings",
+      "/auth/sessions/current",
+      "/auth/organization-sessions/password",
+      "/public/parent-auth-context",
+      "/auth/login-sms-codes",
+      "/auth/parent-sms-codes",
+      "/auth/parent-wechat-sessions",
+      "/auth/parent-wechat-bindings",
+      "/auth/sessions/sms",
+      "/auth/parent-sessions/password",
+      "/auth/parent-state",
+      "/auth/parent-agreement-acceptances",
+      "/parent-onboarding/completion",
+      "/auth/devices",
+      "/auth/security-events",
+      "/auth/devices/${sessionId}",
+      "/auth/devices/sign-out-all",
+      "/auth/security-events/${eventId}/read",
+      "/auth/security-events/read-all",
+      "/public/capabilities?client=MINIAPP",
+      "/api/v1",
+      "/organization-workbench/context",
+      "/teacher-workbench/context"
+    ]
+  },
+  {
+    "title": "组织入驻",
+    "group": "组织与教学",
+    "source": "lingdong-bansui-miniapp/src/pages/organization-onboarding/organization-onboarding.vue",
+    "texts": [
+      "正在加载",
+      "所属区域：",
+      "类型：",
+      "已验证邮箱：",
+      "已验证手机号：",
+      "发送验证码",
+      "验证手机号",
+      "审核通过后创建组织，入驻不等于认证。"
+    ],
+    "apis": [
+      "/organization-onboarding${path}",
+      "/mobile-code",
+      "/mobile-verify",
+      "/context",
+      "/regions",
+      "/my-organizations",
+      "/applications",
+      "/applications/${encodeURIComponent(id)}",
+      "/families",
+      "/applications/${encodeURIComponent(item.id)}/resubmit",
+      "/applications/${encodeURIComponent(item.id)}/withdraw"
+    ]
+  },
+  {
+    "title": "家长换号核验",
+    "group": "组织与教学",
+    "source": "lingdong-bansui-miniapp/src/pages/organization-parent-mobile-recovery/organization-parent-mobile-recovery.vue",
+    "texts": [
+      "家长换号核验",
+      "仅用于原手机号不可用且已完成线下身份核验的家长。提交后将撤销该家长全部活动会话。",
+      "正在加载",
+      "成长小主人与家长",
+      "新手机号",
+      "验证码",
+      "核验原因",
+      "确认语句"
+    ],
+    "apis": [
+      "/public/capabilities?client=MINIAPP",
+      "/organization-parent-mobile-recoveries/candidates",
+      "/organization-parent-mobile-recoveries/codes",
+      "/organization-parent-mobile-recoveries"
+    ]
+  },
+  {
+    "title": "学生账号注销",
+    "group": "组织与教学",
+    "source": "lingdong-bansui-miniapp/src/pages/organization-student-cancellation/organization-student-cancellation.vue",
+    "texts": [
+      "成长小主人账号注销",
+      "仅可注销已退学且已解除全部家长关系的成长小主人。账号身份将永久匿名化，所有登录凭据立即失效。",
+      "正在加载",
+      "暂无可注销成长小主人",
+      "成长小主人账号",
+      "注销原因",
+      "确认语句"
+    ],
+    "apis": [
+      "/public/capabilities?client=MINIAPP",
+      "/student-account-cancellations/candidates",
+      "/students/${studentId}/cancellations"
+    ]
+  },
+  {
+    "title": "学员关系",
+    "group": "组织与教学",
+    "source": "lingdong-bansui-miniapp/src/pages/organization-students/organization-students.vue",
+    "texts": [
+      "校内转班",
+      "离校或转学转出",
+      "正在加载",
+      "成长小主人",
+      "目标班级"
+    ],
+    "apis": [
+      "/public/capabilities?client=MINIAPP",
+      "/students/organization-relationships",
+      "/students/organization-relationship-classes",
+      "/students/${studentId}/class-transfers",
+      "/students/${studentId}/organization-deactivations"
+    ]
+  },
+  {
+    "title": "教师管理",
+    "group": "组织与教学",
+    "source": "lingdong-bansui-miniapp/src/pages/organization-teachers/organization-teachers.vue",
+    "texts": [
+      "查询",
+      "新增",
+      "正在加载",
+      "教师账号",
+      "教师姓名",
+      "手机号",
+      "初始密码",
+      "所属学校",
+      "初始班级"
+    ],
+    "apis": [
+      "/public/capabilities?client=MINIAPP",
+      "/api/v1",
+      "/classes/schools",
+      "/classes",
+      "/classes/grades",
+      "/classes/${classId}",
+      "/classes/${item.id}/${action}",
+      "/learning-task-options/teachers?classId=${encodeURIComponent(classId)}",
+      "/teachers/${teacherUserId}/classes/${classId}",
+      "/organization-workbench/context",
+      "/organization-teachers?${parameters.join(",
+      "/organization-teachers",
+      "/organization-teachers/${teacherUserId}/profile",
+      "/organization-teachers/${teacherUserId}/status",
+      "/organization-teachers/${teacherUserId}/password-resets",
+      "/teachers/${teacherUserId}/classes/${classOrganizationId}"
+    ]
+  },
+  {
+    "title": "账号与手机号",
+    "group": "登录与账号",
+    "source": "lingdong-bansui-miniapp/src/pages/parent-account-lifecycle/parent-account-lifecycle.vue",
+    "texts": [
+      "加载中",
+      "重试",
+      "账号与手机号",
+      "当前手机号",
+      "活动成长小主人关系",
+      "注销状态",
+      "更换手机号",
+      "开始",
+      "先验证当前手机号",
+      "发送当前手机号验证码",
+      "验证当前手机号"
+    ],
+    "apis": [
+      "/public/capabilities?client=MINIAPP",
+      "/auth/parent-account-lifecycle",
+      "/auth/parent-mobile-change/current-codes",
+      "/auth/parent-mobile-change-tickets",
+      "/auth/parent-mobile-change/new-codes",
+      "/auth/parent-mobile-changes",
+      "/auth/parent-account-cancellation-codes",
+      "/auth/parent-account-cancellations",
+      "/auth/parent-account-cancellations/current"
+    ]
+  },
+  {
+    "title": "成长陪伴首页",
+    "group": "成长陪伴",
+    "source": "lingdong-bansui-miniapp/src/pages/parent-home/parent-home.vue",
+    "texts": [
+      "退出",
+      "任务审核",
+      "查看",
+      "快捷入口",
+      "审核任务、奖励与孩子的成长动态",
+      "家庭奖励与兑换",
+      "上架奖励并处理孩子的兑换申请",
+      "班级匿名排行",
+      "主动开启后查看班级名次",
+      "排行查看授权",
+      "撤回已开启的查看授权",
+      "考勤记录",
+      "查看孩子的到离园记录"
+    ],
+    "apis": [
+      "/auth/student-captchas",
+      "/auth/student-sessions/code",
+      "/auth/student-sessions/qr",
+      "/auth/student-qr-captchas",
+      "/auth/student-wechat-sessions",
+      "/auth/student-wechat-binding-codes",
+      "/auth/student-wechat-bindings",
+      "/auth/sessions/current",
+      "/auth/organization-sessions/password",
+      "/public/parent-auth-context",
+      "/auth/login-sms-codes",
+      "/auth/parent-sms-codes",
+      "/auth/parent-wechat-sessions",
+      "/auth/parent-wechat-bindings",
+      "/auth/sessions/sms",
+      "/auth/parent-sessions/password",
+      "/auth/parent-state",
+      "/auth/parent-agreement-acceptances",
+      "/parent-onboarding/completion",
+      "/auth/devices",
+      "/auth/security-events",
+      "/auth/devices/${sessionId}",
+      "/auth/devices/sign-out-all",
+      "/auth/security-events/${eventId}/read",
+      "/auth/security-events/read-all",
+      "/public/capabilities?client=MINIAPP",
+      "/anonymous-ranks/students",
+      "/auth/me",
+      "/anonymous-ranks/preferences",
+      "/task-reviews/${encodeURIComponent(id)}",
+      "/task-reviews?page=${page}&pageSize=20",
+      "/growth-reviews/miniapp/students",
+      "/parent-rewards/students",
+      "/parent-rewards/students/${id(studentId)}?page=${page}&pageSize=20",
+      "/parent-reward-exchanges/students/${id(studentId)}?page=${page}&pageSize=20",
+      "/parent-rewards/${id(rewardId)}",
+      "/parent-rewards/students/${id(studentId)}",
+      "/parent-reward-exchanges/${id(exchangeId)}/${action}"
+    ]
+  },
+  {
+    "title": "家长登录",
+    "group": "登录与账号",
+    "source": "lingdong-bansui-miniapp/src/pages/parent-login/parent-login.vue",
+    "texts": [
+      "注册 / 账号登录",
+      "账号登录",
+      "正在加载",
+      "服务暂不可用",
+      "请联系管理员确认家长登录开关",
+      "微信登录已有账号",
+      "或使用手机号",
+      "绑定家长手机号",
+      "完成验证后即绑定当前微信",
+      "返回",
+      "验证码登录",
+      "密码登录",
+      "手机号",
+      "验证码",
+      "密码",
+      "我已阅读并同意当前用户协议"
+    ],
+    "apis": [
+      "/auth/student-captchas",
+      "/auth/student-sessions/code",
+      "/auth/student-sessions/qr",
+      "/auth/student-qr-captchas",
+      "/auth/student-wechat-sessions",
+      "/auth/student-wechat-binding-codes",
+      "/auth/student-wechat-bindings",
+      "/auth/sessions/current",
+      "/auth/organization-sessions/password",
+      "/public/parent-auth-context",
+      "/auth/login-sms-codes",
+      "/auth/parent-sms-codes",
+      "/auth/parent-wechat-sessions",
+      "/auth/parent-wechat-bindings",
+      "/auth/sessions/sms",
+      "/auth/parent-sessions/password",
+      "/auth/parent-state",
+      "/auth/parent-agreement-acceptances",
+      "/parent-onboarding/completion",
+      "/auth/devices",
+      "/auth/security-events",
+      "/auth/devices/${sessionId}",
+      "/auth/devices/sign-out-all",
+      "/auth/security-events/${eventId}/read",
+      "/auth/security-events/read-all",
+      "/api/v1"
+    ]
+  },
+  {
+    "title": "陪伴端 · 我的",
+    "group": "成长陪伴",
+    "source": "lingdong-bansui-miniapp/src/pages/parent-me/parent-me.vue",
+    "texts": [
+      "成长陪伴端",
+      "退出",
+      "我的",
+      "账号、关系与安全设置",
+      "正在加载",
+      "账号设置",
+      "密码、登录方式与组织选择",
+      "家长关系",
+      "主家长与副家长的关系管理",
+      "账号安全",
+      "登录设备与安全事件",
+      "账号与手机号",
+      "换绑手机号与账号注销",
+      "成长小主人微信绑定",
+      "管理孩子的微信快捷登录"
+    ],
+    "apis": [
+      "/public/capabilities?client=MINIAPP",
+      "/auth/student-captchas",
+      "/auth/student-sessions/code",
+      "/auth/student-sessions/qr",
+      "/auth/student-qr-captchas",
+      "/auth/student-wechat-sessions",
+      "/auth/student-wechat-binding-codes",
+      "/auth/student-wechat-bindings",
+      "/auth/sessions/current",
+      "/auth/organization-sessions/password",
+      "/public/parent-auth-context",
+      "/auth/login-sms-codes",
+      "/auth/parent-sms-codes",
+      "/auth/parent-wechat-sessions",
+      "/auth/parent-wechat-bindings",
+      "/auth/sessions/sms",
+      "/auth/parent-sessions/password",
+      "/auth/parent-state",
+      "/auth/parent-agreement-acceptances",
+      "/parent-onboarding/completion",
+      "/auth/devices",
+      "/auth/security-events",
+      "/auth/devices/${sessionId}",
+      "/auth/devices/sign-out-all",
+      "/auth/security-events/${eventId}/read",
+      "/auth/security-events/read-all"
+    ]
+  },
+  {
+    "title": "家长首次引导",
+    "group": "登录与账号",
+    "source": "lingdong-bansui-miniapp/src/pages/parent-onboarding/parent-onboarding.vue",
+    "texts": [
+      "正在加载",
+      "用户协议更新",
+      "当前协议版本",
+      "请确认接受当前用户协议后继续使用成长陪伴端。",
+      "同意并继续",
+      "家长首次引导",
+      "上一步",
+      "下一步",
+      "完成引导"
+    ],
+    "apis": [
+      "/auth/student-captchas",
+      "/auth/student-sessions/code",
+      "/auth/student-sessions/qr",
+      "/auth/student-qr-captchas",
+      "/auth/student-wechat-sessions",
+      "/auth/student-wechat-binding-codes",
+      "/auth/student-wechat-bindings",
+      "/auth/sessions/current",
+      "/auth/organization-sessions/password",
+      "/public/parent-auth-context",
+      "/auth/login-sms-codes",
+      "/auth/parent-sms-codes",
+      "/auth/parent-wechat-sessions",
+      "/auth/parent-wechat-bindings",
+      "/auth/sessions/sms",
+      "/auth/parent-sessions/password",
+      "/auth/parent-state",
+      "/auth/parent-agreement-acceptances",
+      "/parent-onboarding/completion",
+      "/auth/devices",
+      "/auth/security-events",
+      "/auth/devices/${sessionId}",
+      "/auth/devices/sign-out-all",
+      "/auth/security-events/${eventId}/read",
+      "/auth/security-events/read-all"
+    ]
+  },
+  {
+    "title": "关系邀请",
+    "group": "成长陪伴",
+    "source": "lingdong-bansui-miniapp/src/pages/parent-relationship-invitation/parent-relationship-invitation.vue",
+    "texts": [
+      "家长关系邀请",
+      "正在加载",
+      "家长关系功能未启用",
+      "手机号",
+      "验证码",
+      "我已阅读并同意当前用户协议",
+      "拒绝邀请",
+      "确认接受"
+    ],
+    "apis": [
+      "/auth/student-captchas",
+      "/auth/student-sessions/code",
+      "/auth/student-sessions/qr",
+      "/auth/student-qr-captchas",
+      "/auth/student-wechat-sessions",
+      "/auth/student-wechat-binding-codes",
+      "/auth/student-wechat-bindings",
+      "/auth/sessions/current",
+      "/auth/organization-sessions/password",
+      "/public/parent-auth-context",
+      "/auth/login-sms-codes",
+      "/auth/parent-sms-codes",
+      "/auth/parent-wechat-sessions",
+      "/auth/parent-wechat-bindings",
+      "/auth/sessions/sms",
+      "/auth/parent-sessions/password",
+      "/auth/parent-state",
+      "/auth/parent-agreement-acceptances",
+      "/parent-onboarding/completion",
+      "/auth/devices",
+      "/auth/security-events",
+      "/auth/devices/${sessionId}",
+      "/auth/devices/sign-out-all",
+      "/auth/security-events/${eventId}/read",
+      "/auth/security-events/read-all",
+      "/public/capabilities?client=MINIAPP",
+      "/parent-relationships/students",
+      "/students/${studentId}/parent-relationships",
+      "/students/${studentId}/secondary-parent-invitations",
+      "/students/${studentId}/primary-transfer-invitations",
+      "/students/${studentId}/secondary-parent-relationships/${parentUserId}",
+      "/students/${studentId}/primary-parent-relationship",
+      "/parent-relationship-invitations/${invitationId}/acceptance",
+      "/parent-relationship-invitations/${invitationId}/rejection"
+    ]
+  },
+  {
+    "title": "家长关系",
+    "group": "成长陪伴",
+    "source": "lingdong-bansui-miniapp/src/pages/parent-relationships/parent-relationships.vue",
+    "texts": [
+      "正在加载",
+      "家长关系功能未启用",
+      "返回成长陪伴端",
+      "家长关系",
+      "解除",
+      "暂无家长关系",
+      "邀请副家长",
+      "转移监护权",
+      "解除我的主家长关系",
+      "目标家长手机号",
+      "取消"
+    ],
+    "apis": [
+      "/public/capabilities?client=MINIAPP",
+      "/parent-relationships/students",
+      "/students/${studentId}/parent-relationships",
+      "/students/${studentId}/secondary-parent-invitations",
+      "/students/${studentId}/primary-transfer-invitations",
+      "/students/${studentId}/secondary-parent-relationships/${parentUserId}",
+      "/students/${studentId}/primary-parent-relationship",
+      "/parent-relationship-invitations/${invitationId}/acceptance",
+      "/parent-relationship-invitations/${invitationId}/rejection"
+    ]
+  },
+  {
+    "title": "家庭奖励与兑换",
+    "group": "成长陪伴",
+    "source": "lingdong-bansui-miniapp/src/pages/parent-rewards/parent-rewards.vue",
+    "texts": [
+      "家庭奖励与兑换",
+      "正在加载或处理",
+      "当前孩子：（）",
+      "暂无可查看的孩子",
+      "奖励库",
+      "兑换处理",
+      "新增奖励",
+      "奖励名称",
+      "所需积分",
+      "说明",
+      "有效期（留空为不限，格式：2026-12-31T23:59:59）",
+      "保存奖励",
+      "取消编辑",
+      "共  项",
+      "暂无",
+      "积分 ·",
+      "有效期：",
+      "编辑奖励",
+      "删除奖励"
+    ],
+    "apis": [
+      "/auth/me",
+      "/parent-rewards/students",
+      "/parent-rewards/students/${id(studentId)}?page=${page}&pageSize=20",
+      "/parent-reward-exchanges/students/${id(studentId)}?page=${page}&pageSize=20",
+      "/parent-rewards/${id(rewardId)}",
+      "/parent-rewards/students/${id(studentId)}",
+      "/parent-reward-exchanges/${id(exchangeId)}/${action}",
+      "/rewards/me/summary",
+      "/rewards/me?page=${page}&pageSize=100",
+      "/reward-exchanges",
+      "/reward-exchanges/me?page=${page}&pageSize=100",
+      "/public/capabilities?client=MINIAPP",
+      "/api/v1"
+    ]
+  },
+  {
+    "title": "学生微信绑定",
+    "group": "成长陪伴",
+    "source": "lingdong-bansui-miniapp/src/pages/parent-student-wechat/parent-student-wechat.vue",
+    "texts": [
+      "成长小主人微信绑定",
+      "正在加载",
+      "暂无可管理成长小主人"
+    ],
+    "apis": [
+      "/public/capabilities?client=MINIAPP",
+      "/student-wechat-bindings",
+      "/students/${studentId}/wechat-unbindings"
+    ]
+  },
+  {
+    "title": "待审核任务",
+    "group": "成长陪伴",
+    "source": "lingdong-bansui-miniapp/src/pages/parent-task-reviews/parent-task-reviews.vue",
+    "texts": [
+      "待审核任务",
+      "正在处理…",
+      "基础积分：",
+      "提交时间：",
+      "查看附件：",
+      "审核通过",
+      "退回修改",
+      "返回列表"
+    ],
+    "apis": [
+      "/task-reviews/${encodeURIComponent(id)}",
+      "/auth/me",
+      "/task-reviews?page=${page}&pageSize=20",
+      "/public/capabilities?client=MINIAPP",
+      "/api/v1"
+    ]
+  },
+  {
+    "title": "孩子成长周报",
+    "group": "成长陪伴",
+    "source": "lingdong-bansui-miniapp/src/pages/parent-weekly-reviews/parent-weekly-reviews.vue",
+    "texts": [
+      "孩子成长周报",
+      "正在加载周报",
+      "孩子： ▾",
+      "暂无可查看的孩子",
+      "的周报",
+      "任务： 项，完成： 项",
+      "进行中：，待优化：，免执行：",
+      "完成率：",
+      "获得积分：，暂停次数：",
+      "数据截至：",
+      "生成时间：",
+      "分类统计",
+      "暂无分类统计",
+      "： 项，完成  项",
+      "每日趋势",
+      "暂无每日趋势",
+      "：完成 / 项，完成率 ，积分 ，待优化  项，暂停  次",
+      "返回周报列表",
+      "共  份周报",
+      "暂无已生成周报",
+      "查看周报",
+      "上一页",
+      "第  页",
+      "下一页"
+    ],
+    "apis": [
+      "/growth-reviews/miniapp/students",
+      "/auth/me"
+    ]
+  },
+  {
+    "title": "注册伙伴账号",
+    "group": "登录与账号",
+    "source": "lingdong-bansui-miniapp/src/pages/public-registration/public-registration.vue",
+    "texts": [
+      "填写联系方式",
+      "设置账号",
+      "邮箱验证",
+      "手机验证",
+      "验证码",
+      "0?remaining+'秒':'发送验证码'}}",
+      "下一步",
+      "已有账号？",
+      "返回登录",
+      "验证码将在创建账号时核验",
+      "账号",
+      "昵称",
+      "密码",
+      "确认密码",
+      "我已阅读并同意",
+      "《用户协议》",
+      "创建账号",
+      "上一步"
+    ],
+    "apis": [
+      "/api/v1",
+      "/auth/student-captchas",
+      "/auth/student-sessions/code",
+      "/auth/student-sessions/qr",
+      "/auth/student-qr-captchas",
+      "/auth/student-wechat-sessions",
+      "/auth/student-wechat-binding-codes",
+      "/auth/student-wechat-bindings",
+      "/auth/sessions/current",
+      "/auth/organization-sessions/password",
+      "/public/parent-auth-context",
+      "/auth/login-sms-codes",
+      "/auth/parent-sms-codes",
+      "/auth/parent-wechat-sessions",
+      "/auth/parent-wechat-bindings",
+      "/auth/sessions/sms",
+      "/auth/parent-sessions/password",
+      "/auth/parent-state",
+      "/auth/parent-agreement-acceptances",
+      "/parent-onboarding/completion",
+      "/auth/devices",
+      "/auth/security-events",
+      "/auth/devices/${sessionId}",
+      "/auth/devices/sign-out-all",
+      "/auth/security-events/${eventId}/read",
+      "/auth/security-events/read-all"
+    ]
+  },
+  {
+    "title": "奖励兑换",
+    "group": "成长小主人",
+    "source": "lingdong-bansui-miniapp/src/pages/rewards/rewards.vue",
+    "texts": [
+      "正在检查功能状态",
+      "奖励兑换",
+      "当前可用积分",
+      "可兑换奖励",
+      "我的兑换",
+      "积分明细",
+      "重试",
+      "暂无可兑换奖励",
+      "家长上架奖励后会显示在这里",
+      "兑换积分：",
+      "申请时间：",
+      "处理时间：",
+      "核销时间：",
+      "暂无兑换记录",
+      "正在加载奖励数据"
+    ],
+    "apis": [
+      "/public/capabilities?client=MINIAPP",
+      "/rewards/me/summary",
+      "/rewards/me?page=${page}&pageSize=100",
+      "/reward-exchanges",
+      "/reward-exchanges/me?page=${page}&pageSize=100"
+    ]
+  },
+  {
+    "title": "成长小主人首页",
+    "group": "成长小主人",
+    "source": "lingdong-bansui-miniapp/src/pages/student-home/student-home.vue",
+    "texts": [
+      "灵动伴随",
+      "退出",
+      "我的",
+      "账号信息与个人功能",
+      "我的考勤",
+      "查看到离园记录",
+      "账号安全",
+      "查看设备和登录提醒"
+    ],
+    "apis": [
+      "/auth/student-captchas",
+      "/auth/student-sessions/code",
+      "/auth/student-sessions/qr",
+      "/auth/student-qr-captchas",
+      "/auth/student-wechat-sessions",
+      "/auth/student-wechat-binding-codes",
+      "/auth/student-wechat-bindings",
+      "/auth/sessions/current",
+      "/auth/organization-sessions/password",
+      "/public/parent-auth-context",
+      "/auth/login-sms-codes",
+      "/auth/parent-sms-codes",
+      "/auth/parent-wechat-sessions",
+      "/auth/parent-wechat-bindings",
+      "/auth/sessions/sms",
+      "/auth/parent-sessions/password",
+      "/auth/parent-state",
+      "/auth/parent-agreement-acceptances",
+      "/parent-onboarding/completion",
+      "/auth/devices",
+      "/auth/security-events",
+      "/auth/devices/${sessionId}",
+      "/auth/devices/sign-out-all",
+      "/auth/security-events/${eventId}/read",
+      "/auth/security-events/read-all",
+      "/public/capabilities?client=MINIAPP"
+    ]
+  },
+  {
+    "title": "成长小主人登录",
+    "group": "登录与账号",
+    "source": "lingdong-bansui-miniapp/src/pages/student-login/student-login.vue",
+    "texts": [
+      "成长小主人登录",
+      "正在加载",
+      "服务暂不可用",
+      "请联系管理员确认登录服务已启用",
+      "账号登录",
+      "扫码登录",
+      "微信登录",
+      "成长账号",
+      "扫描登录二维码",
+      "二维码已识别",
+      "重新扫码",
+      "登录码",
+      "主监护人短信验证码",
+      "图形验证码"
+    ],
+    "apis": [
+      "/api/v1",
+      "/public/capabilities?client=MINIAPP",
+      "/auth/student-captchas",
+      "/auth/student-sessions/code",
+      "/auth/student-sessions/qr",
+      "/auth/student-qr-captchas",
+      "/auth/student-wechat-sessions",
+      "/auth/student-wechat-binding-codes",
+      "/auth/student-wechat-bindings",
+      "/auth/sessions/current",
+      "/auth/organization-sessions/password",
+      "/public/parent-auth-context",
+      "/auth/login-sms-codes",
+      "/auth/parent-sms-codes",
+      "/auth/parent-wechat-sessions",
+      "/auth/parent-wechat-bindings",
+      "/auth/sessions/sms",
+      "/auth/parent-sessions/password",
+      "/auth/parent-state",
+      "/auth/parent-agreement-acceptances",
+      "/parent-onboarding/completion",
+      "/auth/devices",
+      "/auth/security-events",
+      "/auth/devices/${sessionId}",
+      "/auth/devices/sign-out-all",
+      "/auth/security-events/${eventId}/read",
+      "/auth/security-events/read-all"
+    ]
+  },
+  {
+    "title": "任务详情",
+    "group": "成长小主人",
+    "source": "lingdong-bansui-miniapp/src/pages/task-detail/task-detail.vue",
+    "texts": [
+      "正在加载任务",
+      "学习任务暂不可用",
+      "重试",
+      "隔夜迁移",
+      "计划日期",
+      "截止时间",
+      "任务难度",
+      "基础积分",
+      "执行时长",
+      "分钟",
+      "审核人",
+      "任务分类",
+      "任务标签",
+      "任务备注",
+      "最近打卡",
+      "第  次",
+      "认领任务",
+      "添加图片",
+      "支持 JPG、PNG，最多 9 张，单张不超过 10MB",
+      "提交打卡",
+      "暂停时长：",
+      "情绪暂停",
+      "难题搁置",
+      "放弃任务"
+    ],
+    "apis": [
+      "/public/capabilities?client=MINIAPP",
+      "/task-assignments?${queryString(filters)}",
+      "/task-assignments/${encodeURIComponent(id)}",
+      "/task-assignments/${encodeURIComponent(id)}/${action}",
+      "/attachments/uploads",
+      "/attachments/${encodeURIComponent(fileId)}"
+    ]
+  },
+  {
+    "title": "学习任务",
+    "group": "成长小主人",
+    "source": "lingdong-bansui-miniapp/src/pages/task-list/task-list.vue",
+    "texts": [
+      "学习任务",
+      "来自家庭、机构和教师的任务安排",
+      "正在检查功能状态",
+      "学习任务暂不可用",
+      "请联系管理员确认任务功能开关",
+      "重试",
+      "隔夜迁移",
+      "分钟",
+      "正在加载",
+      "加载更多",
+      "已加载全部任务",
+      "暂无学习任务",
+      "有新任务时会在这里出现"
+    ],
+    "apis": [
+      "/public/capabilities?client=MINIAPP",
+      "/task-assignments?${queryString(filters)}",
+      "/task-assignments/${encodeURIComponent(id)}",
+      "/task-assignments/${encodeURIComponent(id)}/${action}"
+    ]
+  },
+  {
+    "title": "教师工作台",
+    "group": "组织与教学",
+    "source": "lingdong-bansui-miniapp/src/pages/teacher-home/teacher-home.vue",
+    "texts": [
+      "退出",
+      "正在加载",
+      "我的",
+      "任教班级与账号设置",
+      "账号",
+      "账号安全",
+      "登录设备与安全事件"
+    ],
+    "apis": [
+      "/auth/student-captchas",
+      "/auth/student-sessions/code",
+      "/auth/student-sessions/qr",
+      "/auth/student-qr-captchas",
+      "/auth/student-wechat-sessions",
+      "/auth/student-wechat-binding-codes",
+      "/auth/student-wechat-bindings",
+      "/auth/sessions/current",
+      "/auth/organization-sessions/password",
+      "/public/parent-auth-context",
+      "/auth/login-sms-codes",
+      "/auth/parent-sms-codes",
+      "/auth/parent-wechat-sessions",
+      "/auth/parent-wechat-bindings",
+      "/auth/sessions/sms",
+      "/auth/parent-sessions/password",
+      "/auth/parent-state",
+      "/auth/parent-agreement-acceptances",
+      "/parent-onboarding/completion",
+      "/auth/devices",
+      "/auth/security-events",
+      "/auth/devices/${sessionId}",
+      "/auth/devices/sign-out-all",
+      "/auth/security-events/${eventId}/read",
+      "/auth/security-events/read-all",
+      "/public/capabilities?client=MINIAPP",
+      "/teacher-workbench/context"
+    ]
+  },
+  {
+    "title": "成长伙伴与小主人登录",
+    "group": "登录与账号",
+    "source": "lingdong-bansui-miniapp/src/pages/unified-login/unified-login.vue",
+    "texts": [
+      "一起陪伴，让成长发生",
+      "记录每一步成长，连接每一份陪伴",
+      "账号登录",
+      "成长小主人登录",
+      "专属成长空间 · 登录码 / 扫码",
+      "验证码登录",
+      "密码登录",
+      "手机验证",
+      "邮箱验证",
+      "密码",
+      "验证码"
+    ],
+    "apis": [
+      "/api/v1",
+      "/auth/student-captchas",
+      "/auth/student-sessions/code",
+      "/auth/student-sessions/qr",
+      "/auth/student-qr-captchas",
+      "/auth/student-wechat-sessions",
+      "/auth/student-wechat-binding-codes",
+      "/auth/student-wechat-bindings",
+      "/auth/sessions/current",
+      "/auth/organization-sessions/password",
+      "/public/parent-auth-context",
+      "/auth/login-sms-codes",
+      "/auth/parent-sms-codes",
+      "/auth/parent-wechat-sessions",
+      "/auth/parent-wechat-bindings",
+      "/auth/sessions/sms",
+      "/auth/parent-sessions/password",
+      "/auth/parent-state",
+      "/auth/parent-agreement-acceptances",
+      "/parent-onboarding/completion",
+      "/auth/devices",
+      "/auth/security-events",
+      "/auth/devices/${sessionId}",
+      "/auth/devices/sign-out-all",
+      "/auth/security-events/${eventId}/read",
+      "/auth/security-events/read-all"
+    ]
+  },
+  {
+    "title": "首次微信 · 关联已有账号",
+    "group": "登录与账号",
+    "texts": [
+      "验证邮箱",
+      "邮箱地址",
+      "获取验证码",
+      "验证并绑定",
+      "已有账号没有邮箱？账号密码绑定"
+    ],
+    "source": "操作页设计：依据所属模块现有流程；拆分页面不代表新增API",
+    "apis": []
+  },
+  {
+    "title": "首次微信 · 账号凭据绑定",
+    "group": "登录与账号",
+    "texts": [
+      "已有账号",
+      "账号",
+      "密码",
+      "绑定邮箱",
+      "邮箱验证码",
+      "验证并绑定"
+    ],
+    "source": "操作页设计：依据所属模块现有流程；拆分页面不代表新增API",
+    "apis": []
+  },
+  {
+    "title": "首次微信 · 明确注册",
+    "group": "登录与账号",
+    "texts": [
+      "设置账号",
+      "昵称",
+      "邮箱验证码",
+      "密码",
+      "确认密码",
+      "用户协议 · 隐私条款",
+      "注册并绑定"
+    ],
+    "source": "操作页设计：依据所属模块现有流程；拆分页面不代表新增API",
+    "apis": []
+  },
+  {
+    "title": "发布任务 · 填写",
+    "group": "组织与教学",
+    "texts": [
+      "下发范围",
+      "任务标题",
+      "任务要求",
+      "任务日期",
+      "基础积分",
+      "保存草稿",
+      "下一步"
+    ],
+    "source": "操作页设计：依据所属模块现有流程；拆分页面不代表新增API",
+    "apis": []
+  },
+  {
+    "title": "发布任务 · 选择范围",
+    "group": "组织与教学",
+    "texts": [
+      "搜索组织或班级",
+      "当前学校 / 机构",
+      "校区",
+      "年级 / 课程分类",
+      "班级",
+      "已选择范围",
+      "确定"
+    ],
+    "source": "操作页设计：依据所属模块现有流程；拆分页面不代表新增API",
+    "apis": []
+  },
+  {
+    "title": "发布任务 · 确认",
+    "group": "组织与教学",
+    "texts": [
+      "任务内容",
+      "下发范围",
+      "任务日期",
+      "基础积分",
+      "返回修改",
+      "发布任务"
+    ],
+    "source": "操作页设计：依据所属模块现有流程；拆分页面不代表新增API",
+    "apis": []
+  },
+  {
+    "title": "任务进度 · 详情",
+    "group": "组织与教学",
+    "texts": [
+      "筛选班级",
+      "完成情况",
+      "待完成",
+      "待审核",
+      "已完成",
+      "查看记录"
+    ],
+    "source": "操作页设计：依据所属模块现有流程；拆分页面不代表新增API",
+    "apis": []
+  },
+  {
+    "title": "任务审核 · 详情",
+    "group": "成长陪伴",
+    "texts": [
+      "成长记录",
+      "文字记录",
+      "图片附件",
+      "驳回",
+      "通过"
+    ],
+    "source": "操作页设计：依据所属模块现有流程；拆分页面不代表新增API",
+    "apis": []
+  },
+  {
+    "title": "任务审核 · 驳回",
+    "group": "成长陪伴",
+    "texts": [
+      "记录说明",
+      "驳回意见",
+      "请填写可帮助孩子改进的意见",
+      "取消",
+      "确认驳回"
+    ],
+    "source": "操作页设计：依据所属模块现有流程；拆分页面不代表新增API",
+    "apis": []
+  },
+  {
+    "title": "奖励管理 · 新增编辑",
+    "group": "成长陪伴",
+    "texts": [
+      "奖励名称",
+      "所需积分",
+      "奖励说明",
+      "状态",
+      "保存"
+    ],
+    "source": "操作页设计：依据所属模块现有流程；拆分页面不代表新增API",
+    "apis": []
+  },
+  {
+    "title": "兑换申请 · 审批",
+    "group": "成长陪伴",
+    "texts": [
+      "申请记录",
+      "奖励详情",
+      "所需积分",
+      "驳回",
+      "批准"
+    ],
+    "source": "操作页设计：依据所属模块现有流程；拆分页面不代表新增API",
+    "apis": []
+  },
+  {
+    "title": "奖励核销 · 确认",
+    "group": "成长陪伴",
+    "texts": [
+      "兑换记录",
+      "领取信息",
+      "取消",
+      "确认核销"
+    ],
+    "source": "操作页设计：依据所属模块现有流程；拆分页面不代表新增API",
+    "apis": []
+  },
+  {
+    "title": "任务打卡 · 提交",
+    "group": "成长小主人",
+    "texts": [
+      "任务要求",
+      "我的记录",
+      "上传图片",
+      "提交完成"
+    ],
+    "source": "操作页设计：依据所属模块现有流程；拆分页面不代表新增API",
+    "apis": []
+  },
+  {
+    "title": "情绪暂停",
+    "group": "成长小主人",
+    "texts": [
+      "先照顾好自己",
+      "选择暂停原因",
+      "暂停时长",
+      "确认暂停"
+    ],
+    "source": "操作页设计：依据所属模块现有流程；拆分页面不代表新增API",
+    "apis": []
+  },
+  {
+    "title": "难题搁置",
+    "group": "成长小主人",
+    "texts": [
+      "记录遇到的困难",
+      "先做其他任务",
+      "确认搁置"
+    ],
+    "source": "操作页设计：依据所属模块现有流程；拆分页面不代表新增API",
+    "apis": []
+  },
+  {
+    "title": "奖励兑换 · 确认",
+    "group": "成长小主人",
+    "texts": [
+      "奖励信息",
+      "可用积分",
+      "兑换所需积分",
+      "取消",
+      "申请兑换"
+    ],
+    "source": "操作页设计：依据所属模块现有流程；拆分页面不代表新增API",
+    "apis": []
+  },
+  {
+    "title": "每日复盘 · 填写",
+    "group": "成长小主人",
+    "texts": [
+      "今天的心情",
+      "今日收获",
+      "遇到的困难",
+      "明天的小目标",
+      "保存复盘"
+    ],
+    "source": "操作页设计：依据所属模块现有流程；拆分页面不代表新增API",
+    "apis": []
+  },
+  {
+    "title": "成长积分 · 明细",
+    "group": "成长小主人",
+    "texts": [
+      "积分余额",
+      "来源筛选",
+      "积分记录",
+      "查看详情"
+    ],
+    "source": "操作页设计：依据所属模块现有流程；拆分页面不代表新增API",
+    "apis": []
+  },
+  {
+    "title": "班级 · 新增编辑",
+    "group": "组织与教学",
+    "texts": [
+      "所属校区",
+      "年级 / 课程分类",
+      "班级名称",
+      "班级编码",
+      "保存"
+    ],
+    "source": "操作页设计：依据所属模块现有流程；拆分页面不代表新增API",
+    "apis": []
+  },
+  {
+    "title": "成员 · 新增账号",
+    "group": "组织与教学",
+    "texts": [
+      "名称",
+      "账号",
+      "邮箱（选填）",
+      "手机号（选填）",
+      "所属组织",
+      "创建账号"
+    ],
+    "source": "操作页设计：依据所属模块现有流程；拆分页面不代表新增API",
+    "apis": []
+  },
+  {
+    "title": "教师班级 · 配置",
+    "group": "组织与教学",
+    "texts": [
+      "选择教师",
+      "同校班级",
+      "已配置班级",
+      "保存"
+    ],
+    "source": "操作页设计：依据所属模块现有流程；拆分页面不代表新增API",
+    "apis": []
+  },
+  {
+    "title": "学员关系 · 转班",
+    "group": "组织与教学",
+    "texts": [
+      "当前班级",
+      "同校目标班级",
+      "确认转班"
+    ],
+    "source": "操作页设计：依据所属模块现有流程；拆分页面不代表新增API",
+    "apis": []
+  },
+  {
+    "title": "学员关系 · 转学",
+    "group": "组织与教学",
+    "texts": [
+      "当前关系",
+      "接收学校",
+      "申请状态",
+      "提交申请"
+    ],
+    "source": "操作页设计：依据所属模块现有流程；拆分页面不代表新增API",
+    "apis": []
+  },
+  {
+    "title": "班级邀请码 · 创建",
+    "group": "组织与教学",
+    "texts": [
+      "所属班级",
+      "有效期至",
+      "年月日 时分秒",
+      "生成邀请码"
+    ],
+    "source": "操作页设计：依据所属模块现有流程；拆分页面不代表新增API",
+    "apis": []
+  },
+  {
+    "title": "入学申请 · 审核",
+    "group": "组织与教学",
+    "texts": [
+      "申请信息",
+      "目标班级",
+      "驳回",
+      "通过"
+    ],
+    "source": "操作页设计：依据所属模块现有流程；拆分页面不代表新增API",
+    "apis": []
+  },
+  {
+    "title": "关联教育组织 · 申请",
+    "group": "成长陪伴",
+    "texts": [
+      "邀请码",
+      "查看目标班级",
+      "申请关联"
+    ],
+    "source": "操作页设计：依据所属模块现有流程；拆分页面不代表新增API",
+    "apis": []
+  },
+  {
+    "title": "亲子关系 · 邀请",
+    "group": "成长陪伴",
+    "texts": [
+      "选择成长账号",
+      "邀请信息",
+      "邀请二维码",
+      "发送邀请"
+    ],
+    "source": "操作页设计：依据所属模块现有流程；拆分页面不代表新增API",
+    "apis": []
+  },
+  {
+    "title": "考勤 · 人工确认",
+    "group": "组织与教学",
+    "texts": [
+      "班级",
+      "日期",
+      "考勤记录",
+      "确认到场",
+      "查看变更"
+    ],
+    "source": "操作页设计：依据所属模块现有流程；拆分页面不代表新增API",
+    "apis": []
+  },
+  {
+    "title": "异常报备 · 新增",
+    "group": "组织与教学",
+    "texts": [
+      "班级",
+      "成长账号",
+      "异常类型",
+      "情况说明",
+      "提交"
+    ],
+    "source": "操作页设计：依据所属模块现有流程；拆分页面不代表新增API",
+    "apis": []
+  },
+  {
+    "title": "入驻 · 家庭创建",
+    "group": "登录与账号",
+    "texts": [
+      "家庭名称",
+      "所属区域",
+      "创建家庭"
+    ],
+    "source": "操作页设计：依据所属模块现有流程；拆分页面不代表新增API",
+    "apis": []
+  },
+  {
+    "title": "入驻 · 学校培训申请",
+    "group": "登录与账号",
+    "texts": [
+      "组织类型",
+      "组织名称",
+      "所属区域",
+      "联系信息",
+      "提交审核"
+    ],
+    "source": "操作页设计：依据所属模块现有流程；拆分页面不代表新增API",
+    "apis": []
+  },
+  {
+    "title": "入驻 · 进度详情",
+    "group": "登录与账号",
+    "texts": [
+      "申请信息",
+      "当前状态",
+      "审核意见",
+      "修改重新提交"
+    ],
+    "source": "操作页设计：依据所属模块现有流程；拆分页面不代表新增API",
+    "apis": []
+  },
+  {
+    "title": "负责人 · 转交确认",
+    "group": "登录与账号",
+    "texts": [
+      "当前负责人",
+      "选择接收人",
+      "确认转交"
+    ],
+    "source": "操作页设计：依据所属模块现有流程；拆分页面不代表新增API",
+    "apis": []
+  },
+  {
+    "title": "账号安全 · 修改密码",
+    "group": "登录与账号",
+    "texts": [
+      "原密码",
+      "新密码",
+      "确认密码",
+      "保存"
+    ],
+    "source": "操作页设计：依据所属模块现有流程；拆分页面不代表新增API",
+    "apis": []
+  },
+  {
+    "title": "联系方式 · 验证绑定",
+    "group": "登录与账号",
+    "texts": [
+      "当前联系方式验证",
+      "新邮箱 / 手机号",
+      "验证码",
+      "确认绑定"
+    ],
+    "source": "操作页设计：依据所属模块现有流程；拆分页面不代表新增API",
+    "apis": []
+  },
+  {
+    "title": "登录设备 · 管理",
+    "group": "登录与账号",
+    "texts": [
+      "当前设备",
+      "其他设备",
+      "退出指定设备"
+    ],
+    "source": "操作页设计：依据所属模块现有流程；拆分页面不代表新增API",
+    "apis": []
+  },
+  {
+    "title": "成员密码 · 重置",
+    "group": "登录与账号",
+    "texts": [
+      "成员信息",
+      "随机初始密码",
+      "确认重置"
+    ],
+    "source": "操作页设计：依据所属模块现有流程；拆分页面不代表新增API",
+    "apis": []
+  },
+  {
+    "title": "成长周报 · 详情",
+    "group": "成长陪伴",
+    "texts": [
+      "选择孩子",
+      "选择周次",
+      "任务完成摘要",
+      "成长积分",
+      "复盘记录"
+    ],
+    "source": "操作页设计：依据所属模块现有流程；拆分页面不代表新增API",
+    "apis": []
+  }
+]

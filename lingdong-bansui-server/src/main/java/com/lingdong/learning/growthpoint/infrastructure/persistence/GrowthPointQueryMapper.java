@@ -16,6 +16,8 @@ public interface GrowthPointQueryMapper {
             @Param("limit") int limit
     );
 
+    long sumTaskRewards(@Param("studentId") Long studentId, @Param("start") java.time.LocalDateTime start, @Param("end") java.time.LocalDateTime end);
+
     long countLedgersByStudentId(@Param("studentId") Long studentId);
 
     List<GrowthPointStudentOptionRow> findPrimaryStudentsByParentUserId(

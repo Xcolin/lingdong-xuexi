@@ -64,7 +64,15 @@ export interface TeacherBatchResult {
   }>;
 }
 
+export interface TeacherLookupItem {id:string;displayName:string;schoolId:string;schoolName:string;classOrganizationIds:string[];}
 export const teachersApi = {
+  lookup(permission: string, query: Pick<TeacherQuery,'schoolId'|'classOrganizationId'|'keyword'|'page'|'pageSize'>): Promise<{items:TeacherLookupItem[];page:number;pageSize:number;total:number}> {
+    const parameters = new URLSearchParams({permission,page:String(query.page),pageSize:String(query.pageSize)});
+    if(query.schoolId)parameters.set('schoolId',query.schoolId);
+    if(query.classOrganizationId)parameters.set('classOrganizationId',query.classOrganizationId);
+    if(query.keyword)parameters.set('keyword',query.keyword);
+    return apiClient.get(`/organization-teachers/lookup?${parameters}`);
+  },
   list(query: TeacherQuery): Promise<TeacherPage> {
     const parameters = new URLSearchParams({ page: String(query.page), pageSize: String(query.pageSize) });
     if (query.keyword) parameters.set('keyword', query.keyword);

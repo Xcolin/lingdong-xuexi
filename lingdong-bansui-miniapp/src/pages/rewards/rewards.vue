@@ -1,5 +1,16 @@
 <template>
-  <view class="ld-page has-tabbar">
+  <view class="prototype-workspace ld-page has-tabbar">
+    <PrototypePageHeader :title="selectedReward?'兑换确认':selectedExchange?'兑换记录详情':'成长奖励'" icon="gift"/>
+    <view v-if="selectedReward||selectedExchange" class="exchange-screen">
+      <button class="screen-back" :disabled="!!applyingRewardId" @tap="closeExchange">‹ 返回奖励</button>
+      <view v-if="selectedReward" class="exchange-summary"><PrototypeIcon name="gift" tone="amber" :size="56"/><view><text class="item-title">{{selectedReward.rewardName}}</text><text class="item-description">{{selectedReward.description}}</text><text class="exchange-price">{{selectedReward.requiredPoints}} 分</text></view></view>
+      <view v-if="selectedReward" class="exchange-facts"><view><text>可用积分</text><text>{{summary?.availablePoints??'—'}}</text></view><view><text>有效期</text><text>{{selectedReward.expiresAt?formatDateTime(selectedReward.expiresAt):'长期有效'}}</text></view></view>
+      <view v-if="selectedReward" class="exchange-note">申请由家长审核，同意后扣除 {{selectedReward.requiredPoints}} 积分。实际兑现后由家长核销。</view>
+      <button v-if="selectedReward" class="screen-submit" :disabled="isExchangeDisabled(selectedReward)" @tap="submitExchange(selectedReward)">{{applyingRewardId?'正在提交':'确认申请兑换'}}</button>
+      <template v-if="selectedExchange"><view class="exchange-summary"><PrototypeIcon name="gift" tone="amber" :size="56"/><view><text class="item-title">{{selectedExchange.rewardName}}</text><text class="exchange-price">{{selectedExchange.requiredPoints}} 分</text><text class="item-description">{{statusLabel(selectedExchange.status)}}</text></view></view><view class="exchange-timeline"><view><text>兑换申请</text><text>{{formatDateTime(selectedExchange.requestedAt)}}</text></view><view v-if="selectedExchange.reviewedAt"><text>{{selectedExchange.rejectReason?'审核驳回':'审核处理'}}</text><text>{{formatDateTime(selectedExchange.reviewedAt)}}</text></view><view v-if="selectedExchange.verifiedAt"><text>已核销</text><text>{{formatDateTime(selectedExchange.verifiedAt)}}</text></view><view v-if="selectedExchange.status==='PENDING_APPROVAL'"><text>审批截止</text><text>{{formatDateTime(selectedExchange.approvalDeadline)}}</text></view></view><view v-if="selectedExchange.rejectReason" class="exchange-note">{{selectedExchange.rejectReason}}</view><view v-if="selectedExchange.description" class="exchange-facts">{{selectedExchange.description}}</view></template>
+      <text v-if="errorMessage" class="error-band">{{errorMessage}}</text>
+    </view>
+    <template v-else>
     <view v-if="capabilityLoading" class="state-view">
       <text>正在检查功能状态</text>
     </view>
@@ -8,10 +19,10 @@
         <text class="ld-heading-title">奖励兑换</text>
         <view class="ld-heading-rule" />
       </view>
-      <view class="balance-band">
-        <text class="balance-label">当前可用积分</text>
+      <view class="balance-band"><PrototypeIcon name="gift" :size="36" />
+        <text class="balance-label">我的成长积分</text>
         <view class="balance-value-row">
-          <text class="balance-value">{{ summary?.availablePoints ?? 0 }}</text>
+          <text class="balance-value">{{ summary?.availablePoints ?? '—' }}</text>
           <text class="balance-unit">分</text>
         </view>
         <text class="balance-time">
@@ -25,7 +36,7 @@
           :class="{ active: activeTab === 'rewards' }"
           :aria-selected="activeTab === 'rewards'"
           @tap="activeTab = 'rewards'"
-        >可兑换奖励</button>
+        >全部奖励</button>
         <button
           class="tab-button"
           :class="{ active: activeTab === 'exchanges' }"
@@ -51,7 +62,7 @@
 
       <view v-if="activeTab === 'rewards'" class="content-list">
         <view v-for="reward in rewards" :key="reward.id" class="reward-item">
-          <view class="item-heading">
+          <view class="visual-tile"><PrototypeIcon name="gift" :size="30" tone="amber" /></view><view class="item-heading">
             <text class="item-title">{{ reward.rewardName }}</text>
             <text class="points-badge">{{ reward.requiredPoints }} 分</text>
           </view>
@@ -64,7 +75,7 @@
             :disabled="isExchangeDisabled(reward)"
             @tap="confirmExchange(reward)"
           >
-            {{ summary && summary.availablePoints < reward.requiredPoints ? '积分不足' : '申请兑换' }}
+            {{ summary && summary.availablePoints < reward.requiredPoints ? '积分不足' : '兑换' }}
           </button>
         </view>
         <view v-if="!loading && rewards.length === 0 && !errorMessage" class="state-view compact">
@@ -73,8 +84,8 @@
         </view>
       </view>
 
-      <view v-else class="content-list">
-        <view v-for="exchange in exchanges" :key="exchange.id" class="exchange-item">
+      <view v-if="activeTab === 'exchanges'" class="content-list">
+        <view v-for="exchange in exchanges" :key="exchange.id" class="exchange-item" @tap="selectedExchange=exchange">
           <view class="item-heading">
             <text class="item-title">{{ exchange.rewardName }}</text>
             <text class="status-badge" :class="`status-${exchange.status.toLowerCase()}`">
@@ -102,13 +113,16 @@
 
       <view v-if="loading" class="loading-footer">正在加载奖励数据</view>
     </template>
-  <AppTabBar :items="STUDENT_TABS" :active="1" />
+  </template>
   </view>
 </template>
 
 <script setup lang="ts">
+import {createExchangeFlight} from './exchange-flight';
+import PrototypePageHeader from "@/components/PrototypePageHeader.vue";
+import PrototypeIcon from '@/components/PrototypeIcon.vue';
 import { ref } from 'vue';
-import { onPullDownRefresh, onShow } from '@dcloudio/uni-app';
+import { onPullDownRefresh, onShow, onHide, onUnload } from '@dcloudio/uni-app';
 import { getMiniappCapabilities } from '@/api/capability';
 import {
   applyRewardExchange,
@@ -125,6 +139,12 @@ import AppTabBar from '@/components/AppTabBar.vue';
 import PointLedger from '@/components/PointLedger.vue';
 import { STUDENT_TABS } from '@/config/tabbar';
 
+const selectedReward=ref<StudentReward|null>(null),selectedExchange=ref<StudentRewardExchange|null>(null);
+let sessionRevision=0;
+const exchangeFlight=createExchangeFlight(()=>getStudentSession()?.accessToken);
+function closeExchange(){if(applyingRewardId.value)return;selectedReward.value=null;selectedExchange.value=null;}
+function invalidate(){sessionRevision++;selectedReward.value=null;selectedExchange.value=null;summary.value=null;rewards.value=[];exchanges.value=[];applyingRewardId.value='';loading.value=false;}
+onHide(invalidate);onUnload(invalidate);
 const capabilityLoading = ref(true);
 const rewardExchangeEnabled = ref(false);
 const loading = ref(false);
@@ -145,6 +165,8 @@ onPullDownRefresh(async () => {
 });
 
 async function initialize(): Promise<void> {
+  const token=getStudentSession()?.accessToken,current=++sessionRevision;
+  selectedReward.value=null;selectedExchange.value=null;summary.value=null;rewards.value=[];exchanges.value=[];
   capabilityLoading.value = true;
   errorMessage.value = '';
   if (!getStudentSession()) {
@@ -153,21 +175,23 @@ async function initialize(): Promise<void> {
   }
   try {
     const capabilities = await getMiniappCapabilities();
+    if(current!==sessionRevision||getStudentSession()?.accessToken!==token)return;
     rewardExchangeEnabled.value = capabilities.rewardExchangeEnabled;
     if (!rewardExchangeEnabled.value) {
-      await uni.reLaunch({ url: '/pages/student-home/student-home' });
+      await uni.reLaunch({ url: '/pages/student-dashboard/student-dashboard' });
       return;
     }
     await loadRewardData();
   } catch (error) {
-    errorMessage.value = toMessage(error);
+    if(current===sessionRevision&&getStudentSession()?.accessToken===token)errorMessage.value = toMessage(error);
   } finally {
-    capabilityLoading.value = false;
+    if(current===sessionRevision)capabilityLoading.value = false;
   }
 }
 
 async function loadRewardData(): Promise<void> {
   if (loading.value) return;
+  const token=getStudentSession()?.accessToken,current=sessionRevision;
   loading.value = true;
   try {
     const [nextSummary, nextRewards, nextExchanges] = await Promise.all([
@@ -175,11 +199,12 @@ async function loadRewardData(): Promise<void> {
       listMyRewards(),
       listMyRewardExchanges()
     ]);
+    if(current!==sessionRevision||getStudentSession()?.accessToken!==token)return;
     summary.value = nextSummary;
     rewards.value = nextRewards;
     exchanges.value = nextExchanges;
   } finally {
-    loading.value = false;
+    if(current===sessionRevision)loading.value = false;
   }
 }
 
@@ -190,34 +215,23 @@ function isExchangeDisabled(reward: StudentReward): boolean {
     || summary.value.availablePoints < reward.requiredPoints;
 }
 
-function confirmExchange(reward: StudentReward): void {
-  if (isExchangeDisabled(reward)) return;
-  uni.showModal({
-    title: '确认兑换奖励',
-    content: `申请“${reward.rewardName}”需要 ${reward.requiredPoints} 积分，家长同意后扣除。`,
-    confirmText: '确认申请',
-    confirmColor: '#167c5a',
-    success: (result) => {
-      if (result.confirm) {
-        void submitExchange(reward);
-      }
-    }
-  });
-}
+function confirmExchange(reward: StudentReward): void { if(isExchangeDisabled(reward))return;errorMessage.value='';selectedReward.value=reward; }
 
 async function submitExchange(reward: StudentReward): Promise<void> {
   if (isExchangeDisabled(reward) || !getStudentSession()) return;
+  const token=getStudentSession()?.accessToken,current=sessionRevision;
   applyingRewardId.value = reward.id;
   errorMessage.value = '';
   try {
-    await applyRewardExchange(reward.id);
+    const applied=await exchangeFlight(true,()=>applyRewardExchange(reward.id),created=>{if(current===sessionRevision){selectedReward.value=null;selectedExchange.value=created;}});
+    if(!applied||current!==sessionRevision||getStudentSession()?.accessToken!==token)return;
     uni.showToast({ title: '申请已提交', icon: 'success' });
     activeTab.value = 'exchanges';
     await loadRewardData();
   } catch (error) {
-    errorMessage.value = toMessage(error);
+    if(current===sessionRevision&&getStudentSession()?.accessToken===token)errorMessage.value = toMessage(error);
   } finally {
-    applyingRewardId.value = '';
+    if(current===sessionRevision)applyingRewardId.value = '';
   }
 }
 
@@ -246,7 +260,18 @@ function toMessage(error: unknown): string {
 }
 </script>
 
+
+
+
+
+
+
+
+
+
+
 <style lang="scss" scoped>
+
 .balance-band {
   margin-top: 24rpx;
   padding: 36rpx 32rpx;
@@ -323,4 +348,25 @@ function toMessage(error: unknown): string {
 .state-view { padding: 64rpx 32rpx; text-align: center; }
 .state-title { display: block; color: $ld-text-secondary; font-size: 30rpx; font-weight: 600; }
 .state-description { display: block; margin-top: 12rpx; color: $ld-text-muted; font-size: $ld-font-caption; }
+
+@import "@/styles/workspace-prototype.scss";
+
+.prototype-workspace{background:#f4f8f3;color:#163d30;}
+.profile-hero{display:flex;align-items:center;gap:24rpx;padding:44rpx 18rpx;}
+.task-card{position:relative;padding:24rpx 24rpx 24rpx 108rpx!important;border:0!important;border-radius:24rpx!important;background:#fff!important;margin-bottom:16rpx!important;box-shadow:none!important;}
+.task-symbol{position:absolute;left:22rpx;top:30rpx;width:66rpx;height:66rpx;display:flex;align-items:center;justify-content:center;background:#edf6ed;border-radius:16rpx;color:#126044;}
+.task-title{font-size:30rpx!important;font-weight:650;}
+.source-button{border-radius:40rpx!important;}
+.source-button.active{background:#125e43!important;color:white!important;}
+.balance-band,.account-band,.summary-band{background:linear-gradient(125deg,#d9ebd5,#f2f7e9)!important;border-radius:28rpx!important;border:0!important;padding:32rpx!important;}
+.balance-band{position:relative;}
+.balance-value{font-size:56rpx!important;color:#12533d!important;}
+.reward-item,.ledger-card,.detail-band{border:0!important;border-radius:24rpx!important;background:#fff!important;margin-bottom:18rpx!important;box-shadow:none!important;}
+.title-band{background:#fff!important;border-radius:26rpx!important;padding:28rpx!important;}
+.detail-symbol{width:76rpx;height:76rpx;background:#e5f3ed;border-radius:20rpx;display:flex;align-items:center;justify-content:center;color:#0e6547;margin-bottom:18rpx;}
+
+.reward-item,.ledger-card{position:relative;padding-left:116rpx!important;min-height:100rpx;}.visual-tile{position:absolute;left:22rpx;top:26rpx;width:74rpx;height:74rpx;border-radius:18rpx;background:#fff2d6;display:flex;align-items:center;justify-content:center;}.exchange-button{background:linear-gradient(110deg,#ffb43e,#ed920c)!important;color:white!important;border-radius:32rpx!important;}.points-badge{color:#ec9315!important;background:#fff6e8!important;}
+.prototype-workspace{background:#F6F8F5!important;padding:28rpx 28rpx calc(160rpx + env(safe-area-inset-bottom))!important;box-sizing:border-box;}.ld-heading{display:none;}.summary-band,.section-band,.balance-band,.reward-item,.exchange-item{border:1rpx solid #e1e9e2!important;border-radius:24rpx!important;background:#fffefa!important;box-sizing:border-box;}.metric-grid{min-width:0;}.category-row{gap:14rpx;}.category-row>text:first-child{max-width:180rpx;overflow-wrap:anywhere;}.category-track{min-width:0;}.date-option{flex-shrink:0;}.tab-button{min-width:0;padding-left:8rpx;padding-right:8rpx;}.item-title{overflow-wrap:anywhere;}.supplement-form textarea{box-sizing:border-box;width:100%;}.state-view{background:#fffefa;border-radius:24rpx;color:#809486;}
+.prototype-workspace{padding:24rpx 28rpx 80rpx!important;background:#f5f8f3!important;}.balance-band{background:linear-gradient(110deg,#679472,#d8e9c8)!important;color:white!important;min-height:180rpx;padding:30rpx 32rpx 24rpx 166rpx!important;position:relative;}.balance-band>.prototype-icon{position:absolute;left:36rpx;top:46rpx;}.balance-label{color:white!important;font-size:26rpx;}.balance-value{font-size:44rpx!important;color:white!important;}.balance-time{font-size:18rpx;color:#f2f8ef;}.tab-bar{background:transparent;border:0;gap:18rpx;margin:24rpx 0;}.tab-button{font-size:23rpx;border-radius:30rpx;background:#edf2ec;padding:10rpx 16rpx;}.tab-button.active{background:white;color:#145940;}.reward-item{min-height:190rpx;padding:24rpx 22rpx 24rpx 188rpx!important;border:0!important;background:white!important;border-radius:24rpx!important;}.visual-tile{left:22rpx;top:30rpx;width:140rpx;height:140rpx;border-radius:22rpx;}.item-heading{display:block;}.item-title{display:block;font-size:28rpx;}.points-badge{display:block;margin-top:12rpx;background:transparent!important;color:#f89c0f!important;font-size:28rpx;padding:0;}.item-description{font-size:23rpx;color:#80877f;margin-top:8rpx;}.item-meta{font-size:18rpx;color:#818b84;}.exchange-button{width:140rpx;margin:12rpx 0 0 auto;font-size:24rpx;padding:0;line-height:60rpx;}.exchange-item{padding:26rpx!important;}.ld-heading{display:none;}
+.exchange-summary{display:flex;align-items:center;gap:28rpx;background:white;border-radius:24rpx;padding:28rpx;margin:24rpx 0;}.exchange-price{display:block;color:#f69508;font-size:34rpx;font-weight:600;margin-top:14rpx;}.exchange-facts,.exchange-timeline{background:white;border-radius:24rpx;padding:28rpx;margin:24rpx 0;font-size:26rpx;}.exchange-facts>view,.exchange-timeline>view{display:flex;justify-content:space-between;gap:20rpx;padding:24rpx 0;border-bottom:1rpx solid #edf0e8;}.exchange-note{background:#fff4df;color:#936534;border-radius:20rpx;padding:28rpx;line-height:1.7;font-size:25rpx;}.screen-submit{background:#13674e;color:white;border-radius:20rpx;margin-top:28rpx;font-size:30rpx;}.screen-back{background:transparent;color:#176c51;text-align:left;font-size:25rpx;padding:0;}
 </style>

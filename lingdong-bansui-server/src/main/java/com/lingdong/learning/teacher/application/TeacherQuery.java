@@ -9,6 +9,10 @@ public record TeacherQuery(
         Long classOrganizationId,
         UserStatus status,
         int page,
-        int pageSize
+        int pageSize,
+        Long campusOrganizationId,
+        String subjectCode
 ) {
+    public TeacherQuery(String keyword,Long schoolId,Long classOrganizationId,UserStatus status,int page,int pageSize){this(keyword,schoolId,classOrganizationId,status,page,pageSize,null,null);}
+    public TeacherQuery(String keyword,Long schoolId,Long classOrganizationId,UserStatus status,int page,int pageSize,Long campusOrganizationId){this(keyword,schoolId,classOrganizationId,status,page,pageSize,campusOrganizationId,null);}
 }

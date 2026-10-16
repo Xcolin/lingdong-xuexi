@@ -16,15 +16,19 @@ import java.io.IOException;
 /** 在家长协议和首次引导完成前阻断直接访问普通业务接口。 */
 @Component
 public class ParentOnboardingAccessInterceptor implements HandlerInterceptor {
+    private final com.lingdong.learning.user.infrastructure.persistence.UserMapper users;
+    private final com.lingdong.learning.auth.infrastructure.persistence.ParentAuthenticationMapper profiles;
     private final ParentPhoneAuthenticationService authenticationService;
     private final SecurityErrorResponseWriter errorResponseWriter;
 
     public ParentOnboardingAccessInterceptor(
             ParentPhoneAuthenticationService authenticationService,
-            SecurityErrorResponseWriter errorResponseWriter
+            SecurityErrorResponseWriter errorResponseWriter,
+            com.lingdong.learning.user.infrastructure.persistence.UserMapper users,
+            com.lingdong.learning.auth.infrastructure.persistence.ParentAuthenticationMapper profiles
     ) {
         this.authenticationService = authenticationService;
-        this.errorResponseWriter = errorResponseWriter;
+        this.errorResponseWriter = errorResponseWriter; this.users=users;this.profiles=profiles;
     }
 
     @Override
@@ -32,7 +36,8 @@ public class ParentOnboardingAccessInterceptor implements HandlerInterceptor {
             throws IOException {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !(authentication.getPrincipal() instanceof AuthenticatedUser currentUser)
-                || !currentUser.roleCodes().contains("PARENT") || isPrerequisitePath(request.getRequestURI())) {
+                || !isActualParent(currentUser) || isPrerequisitePath(request.getRequestURI())
+                || !requiresFamilyPrerequisites(currentUser,request)) {
             return true;
         }
 
@@ -53,8 +58,23 @@ public class ParentOnboardingAccessInterceptor implements HandlerInterceptor {
         return true;
     }
 
+    private boolean isActualParent(AuthenticatedUser actor) {
+        var user=actor.userId()==null?null:users.findById(actor.userId());
+        return user!=null && user.status()==com.lingdong.learning.user.domain.UserStatus.ENABLED
+                && user.type()!=com.lingdong.learning.user.domain.UserType.STUDENT
+                && profiles.findProfileByUserId(user.id())!=null;
+    }
+    private boolean requiresFamilyPrerequisites(AuthenticatedUser actor,HttpServletRequest request) {
+        var user=users.findById(actor.userId());
+        if(user.type()==com.lingdong.learning.user.domain.UserType.FAMILY)return true;
+        Object selected=request.getAttribute(SelectedOrganizationContext.ATTRIBUTE);
+        if(selected instanceof com.lingdong.learning.organization.domain.Organization org && "FAMILY".equals(org.typeCode()))return true;
+        String uri=request.getRequestURI();
+        return uri.startsWith("/api/v1/parents/") || uri.startsWith("/api/v1/parent-") || "FAMILY".equals(request.getParameter("sourceType"));
+    }
     private boolean isPrerequisitePath(String requestUri) {
         return requestUri.startsWith("/api/v1/auth/")
+                || requestUri.startsWith("/api/v1/organization-onboarding/")
                 || requestUri.startsWith("/api/v1/parent-onboarding/")
                 || requestUri.startsWith("/api/v1/public/")
                 || requestUri.equals("/api/v1/health");

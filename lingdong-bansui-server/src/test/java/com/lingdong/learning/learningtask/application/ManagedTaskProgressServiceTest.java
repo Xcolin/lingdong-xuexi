@@ -23,6 +23,15 @@ class ManagedTaskProgressServiceTest {
     private final ManagedTaskProgressMapper progressMapper = mock(ManagedTaskProgressMapper.class);
     private final LearningTaskScopeService scopeService = mock(LearningTaskScopeService.class);
     private final FeatureAccessService featureAccessService = mock(FeatureAccessService.class);
+    private final com.lingdong.learning.user.infrastructure.persistence.UserMapper teacherUsers = mock(com.lingdong.learning.user.infrastructure.persistence.UserMapper.class);
+    private final com.lingdong.learning.teacher.infrastructure.persistence.TeacherProfileMapper teacherProfiles = mock(com.lingdong.learning.teacher.infrastructure.persistence.TeacherProfileMapper.class);
+    private final com.lingdong.learning.teacher.application.TeacherIdentityService teacherIdentity = new com.lingdong.learning.teacher.application.TeacherIdentityService(teacherProfiles,teacherUsers,featureAccessService);
+    private void actualTeacher(AuthenticatedUser teacher) {
+        when(teacherUsers.findById(teacher.userId())).thenReturn(com.lingdong.learning.user.domain.User.create(
+            teacher.userId(),"custom_teacher","teacher",null,com.lingdong.learning.user.domain.UserType.ORGANIZATION));
+        when(teacherProfiles.enabled(teacher.userId())).thenReturn(true);
+        when(scopeService.isTeacher(teacher)).thenAnswer(invocation -> teacherIdentity.isTeacher(teacher.userId()));
+    }
     private final ManagedTaskProgressService service = new ManagedTaskProgressService(
             taskMapper, progressMapper, scopeService, featureAccessService);
 
@@ -31,8 +40,9 @@ class ManagedTaskProgressServiceTest {
         long taskId = 8910000000000000921L;
         AuthenticatedUser teacher = new AuthenticatedUser(
                 8910000000000000922L, 1L, "teacher", "张老师",
-                AuthClientType.MINIAPP, List.of("TEACHER"));
+                AuthClientType.MINIAPP, List.of("CUSTOM_TEACHER"));
         LearningTask task = mock(LearningTask.class);
+        actualTeacher(teacher);
         when(task.id()).thenReturn(taskId);
         when(taskMapper.findById(taskId)).thenReturn(task);
         when(progressMapper.findPage(any())).thenReturn(List.of(new ManagedTaskProgressRow(
@@ -53,8 +63,9 @@ class ManagedTaskProgressServiceTest {
     void webTeacherWithProgressPermissionKeepsClassFilterUnlessSourceOrganizationIsInScope() {
         long taskId = 8910000000000000941L;
         var teacher = new AuthenticatedUser(8910000000000000942L, 1L, "teacher", "教师",
-                AuthClientType.WEB, List.of("TEACHER"));
+                AuthClientType.WEB, List.of("CUSTOM_TEACHER"));
         LearningTask task = mock(LearningTask.class);
+        actualTeacher(teacher);
         when(task.id()).thenReturn(taskId);
         when(taskMapper.findById(taskId)).thenReturn(task);
         when(progressMapper.findPage(any())).thenReturn(List.of());
@@ -74,7 +85,7 @@ class ManagedTaskProgressServiceTest {
         long taskId = 8910000000000000931L;
         AuthenticatedUser administrator = new AuthenticatedUser(
                 8910000000000000932L, 1L, "admin", "机构管理员",
-                AuthClientType.WEB, List.of("ORG_ADMIN"));
+                AuthClientType.WEB, List.of("CUSTOM_ORGANIZATION"));
         LearningTask task = mock(LearningTask.class);
         when(task.id()).thenReturn(taskId);
         when(taskMapper.findById(taskId)).thenReturn(task);

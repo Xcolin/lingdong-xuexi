@@ -1,0 +1,744 @@
+2026-10-09 08:39:24.799 INFO  [main] c.l.l.s.a.ManagedStudentAccountIntegrationTest - Starting ManagedStudentAccountIntegrationTest using Java 17.0.20 with PID 215580 (started by Administrator in E:\apps\lingdong-xuexi-code\lingdong-bansui-server)
+2026-10-09 08:39:24.802 INFO  [main] c.l.l.s.a.ManagedStudentAccountIntegrationTest - The following 1 profile is active: "test"
+2026-10-09 08:39:27.325 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-10-09 08:39:27.331 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-10-09 08:39:27.443 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 82 ms. Found 0 Redis repository interfaces.
+2026-10-09 08:39:28.857 INFO  [main] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2026-10-09 08:39:29.211 INFO  [main] com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection conn0: url=jdbc:h2:mem:lingdong_learning user=SA
+2026-10-09 08:39:29.216 INFO  [main] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2026-10-09 08:39:29.295 INFO  [main] org.flywaydb.core.FlywayExecutor - Database: jdbc:h2:mem:lingdong_learning (H2 2.3)
+2026-10-09 08:39:29.308 WARN  [main] o.f.c.i.database.base.Database - Flyway upgrade recommended: H2 2.3.232 is newer than this version of Flyway and support has not been tested. The latest supported version of H2 is 2.2.224.
+2026-10-09 08:39:29.438 INFO  [main] o.f.c.i.s.JdbcTableSchemaHistory - Schema history table "public"."flyway_schema_history" does not exist yet
+2026-10-09 08:39:29.447 INFO  [main] o.f.core.internal.command.DbValidate - Successfully validated 109 migrations (execution time 00:00.106s)
+2026-10-09 08:39:29.465 INFO  [main] o.f.c.i.s.JdbcTableSchemaHistory - Creating Schema History table "public"."flyway_schema_history" ...
+2026-10-09 08:39:29.538 INFO  [main] o.f.core.internal.command.DbMigrate - Current version of schema "public": << Empty Schema >>
+2026-10-09 08:39:29.551 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "1 - create system config"
+2026-10-09 08:39:29.609 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "2 - create iam rbac tables"
+2026-10-09 08:39:29.700 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "3 - create organization types"
+2026-10-09 08:39:29.726 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "4 - create user organization relations"
+2026-10-09 08:39:29.742 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "5 - create system task audit"
+2026-10-09 08:39:29.759 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "6 - create feature toggles"
+2026-10-09 08:39:29.771 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "7 - create feature toggle changes"
+2026-10-09 08:39:29.785 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "8 - create user permissions"
+2026-10-09 08:39:29.797 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "9 - create role data scopes"
+2026-10-09 08:39:29.810 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "10 - create dictionary tables"
+2026-10-09 08:39:29.823 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "11 - create cache operation log"
+2026-10-09 08:39:29.836 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "12 - create interface service tables"
+2026-10-09 08:39:29.856 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "13 - create attachment core tables"
+2026-10-09 08:39:29.872 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "14 - create import export template table"
+2026-10-09 08:39:29.885 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "15 - create auth device session"
+2026-10-09 08:39:29.897 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "16 - seed iam management permissions"
+2026-10-09 08:39:29.912 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "17 - seed organization management permissions"
+2026-10-09 08:39:29.920 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "18 - seed user directory permissions"
+2026-10-09 08:39:29.928 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "19 - create student relationship foundation"
+2026-10-09 08:39:29.945 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "20 - create parent binding invitation"
+2026-10-09 08:39:29.964 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "21 - create student code login"
+2026-10-09 08:39:30.005 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "22 - create learning task foundation"
+2026-10-09 08:39:30.051 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "23 - create task execution foundation"
+2026-10-09 08:39:30.128 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "24 - create growth point account and ledger"
+2026-10-09 08:39:30.159 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "25 - seed growth point query access"
+2026-10-09 08:39:30.170 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "26 - add growth point correction"
+2026-10-09 08:39:30.188 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "27 - add reward exchange"
+2026-10-09 08:39:30.237 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "28 - add growth review"
+2026-10-09 08:39:30.263 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "28.1 - support learning task foreign key"
+2026-10-09 08:39:30.281 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "29 - add point lifecycle"
+2026-10-09 08:39:30.410 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "30 - add recurring task"
+2026-10-09 08:39:30.442 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "31 - add task checkin attachment"
+2026-10-09 08:39:30.469 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "32 - add task overdue defer"
+2026-10-09 08:39:30.543 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "33 - add previous day task copy"
+2026-10-09 08:39:30.562 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "34 - add learning task template"
+2026-10-09 08:39:30.574 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "35 - add student qr login"
+2026-10-09 08:39:30.582 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "36 - add parent phone auth"
+2026-10-09 08:39:30.588 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "37 - add parent wechat auth"
+2026-10-09 08:39:30.596 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "38 - add parent relationship lifecycle"
+2026-10-09 08:39:30.609 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "39 - add account security event"
+2026-10-09 08:39:30.615 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "40 - add organization miniapp auth"
+2026-10-09 08:39:30.619 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "41 - add student organization lifecycle"
+2026-10-09 08:39:30.629 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "42 - add parent account lifecycle"
+2026-10-09 08:39:30.638 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "43 - finalize parent account cancellation"
+2026-10-09 08:39:30.654 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "44 - add parent mobile manual recovery"
+2026-10-09 08:39:30.662 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "45 - add student account cancellation"
+2026-10-09 08:39:30.671 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "46 - add student wechat auth"
+2026-10-09 08:39:30.682 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "47 - add organization node lifecycle"
+2026-10-09 08:39:30.705 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "48 - add class management"
+2026-10-09 08:39:30.712 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "49 - add permission grant boundary"
+2026-10-09 08:39:30.725 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "50 - add iam change audit"
+2026-10-09 08:39:30.733 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "51 - add dictionary management"
+2026-10-09 08:39:30.740 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "52 - add cache management"
+2026-10-09 08:39:30.747 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "53 - add interface service management"
+2026-10-09 08:39:30.756 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "54 - add attachment management"
+2026-10-09 08:39:30.768 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "55 - add import export template management"
+2026-10-09 08:39:30.779 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "56 - add import validation job"
+2026-10-09 08:39:30.797 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "57 - add async export job"
+2026-10-09 08:39:30.815 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "58 - add student batch import"
+2026-10-09 08:39:30.833 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "59 - add teacher management"
+2026-10-09 08:39:30.843 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "60 - complete organization teacher tasks"
+2026-10-09 08:39:30.853 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "61 - add student exception report"
+2026-10-09 08:39:30.871 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "62 - add manual attendance"
+2026-10-09 08:39:30.885 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "63 - add export job payload"
+2026-10-09 08:39:30.893 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "64 - add growth review pdf feature"
+2026-10-09 08:39:30.900 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "65 - add growth review pdf job type"
+2026-10-09 08:39:30.910 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "66 - add growth review subscription"
+2026-10-09 08:39:30.919 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "67 - add growth review delivery queue"
+2026-10-09 08:39:30.928 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "68 - add anonymous rank preference"
+2026-10-09 08:39:30.936 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "69 - add miniapp anonymous rank permission"
+2026-10-09 08:39:30.940 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "70 - add miniapp parent weekly review permission"
+2026-10-09 08:39:30.945 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "71 - add miniapp parent reward permissions"
+2026-10-09 08:39:30.951 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "72 - add web system task read permission"
+2026-10-09 08:39:30.957 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "73 - add feature toggle management"
+2026-10-09 08:39:30.975 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "74 - add interface change execution audit"
+2026-10-09 08:39:30.988 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "75 - add interface change before snapshot"
+2026-10-09 08:39:31.010 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "76 - add dictionary ledger export"
+2026-10-09 08:39:31.021 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "77 - add template ledger export"
+2026-10-09 08:39:31.033 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "78 - add interface service ledger export"
+2026-10-09 08:39:31.048 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "79 - add cache operation log export"
+2026-10-09 08:39:31.062 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "80 - add system task ledger export"
+2026-10-09 08:39:31.070 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "81 - add reward exchange ledger export"
+2026-10-09 08:39:31.081 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "82 - add exception report ledger export"
+2026-10-09 08:39:31.092 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "83 - add attachment ledger export"
+2026-10-09 08:39:31.101 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "84 - add student task report export"
+2026-10-09 08:39:31.110 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "85 - add organization task statistics export"
+2026-10-09 08:39:31.118 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "86 - add attendance ledger export"
+2026-10-09 08:39:31.131 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "87 - add menu management"
+2026-10-09 08:39:31.153 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "88 - initialize web menu catalog"
+2026-10-09 08:39:31.185 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "89 - complete web button catalog"
+2026-10-09 08:39:31.227 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "90 - add admin division and chongqing organization"
+2026-10-09 08:39:31.301 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "91 - unify menu permission codes"
+2026-10-09 08:39:31.362 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "92 - allow direct reorder move audit events"
+2026-10-09 08:39:31.369 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "93 - add menu management page ui buttons"
+2026-10-09 08:39:31.380 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "94 - add iam page quick grant buttons"
+2026-10-09 08:39:31.388 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "95 - add system task inline review buttons"
+2026-10-09 08:39:31.396 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "96 - menu batch button actions"
+2026-10-09 08:39:31.412 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "97 - user role organization actions"
+2026-10-09 08:39:31.436 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "98 - grant all configured buttons"
+2026-10-09 08:39:31.526 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "99 - management usability actions"
+2026-10-09 08:39:31.545 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "100 - unified menu permission modules"
+2026-10-09 08:39:31.606 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "101 - managed user password actions"
+2026-10-09 08:39:31.616 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "102 - remove stale ui buttons"
+2026-10-09 08:39:31.626 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "103 - organization member revoke menu delete"
+2026-10-09 08:39:31.645 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "104 - minimal default account roles"
+2026-10-09 08:39:31.655 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "105 - user profile edit"
+2026-10-09 08:39:31.675 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "106 - management lifecycle"
+2026-10-09 08:39:31.705 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "107 - training institution type"
+2026-10-09 08:39:31.712 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "108 - institution enrollment invitations"
+2026-10-09 08:39:31.740 INFO  [main] o.f.core.internal.command.DbMigrate - Successfully applied 109 migrations to schema "public", now at version v108 (execution time 00:01.269s)
+2026-10-09 08:39:37.309 INFO  [main] c.l.l.s.a.ManagedStudentAccountIntegrationTest - Started ManagedStudentAccountIntegrationTest in 13.321 seconds (process running for 40.133)
+2026-10-09 08:39:37.313 WARN  [main] o.s.c.events.SpringDocAppInitializer - SpringDoc /api/v1/openapi endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=false'
+2026-10-09 08:39:38.374 INFO  [main] o.s.t.c.s.AnnotationConfigContextLoaderUtils - Could not detect default configuration classes for test class [com.lingdong.learning.student.web.StudentManagementControllerTest]: StudentManagementControllerTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-09 08:39:38.491 INFO  [main] o.s.b.t.c.SpringBootTestContextBootstrapper - Found @SpringBootConfiguration com.lingdong.learning.LingdongLearningApplication for test class com.lingdong.learning.student.web.StudentManagementControllerTest
+2026-10-09 08:39:38.545 INFO  [main] c.l.l.s.w.StudentManagementControllerTest - Starting StudentManagementControllerTest using Java 17.0.20 with PID 215580 (started by Administrator in E:\apps\lingdong-xuexi-code\lingdong-bansui-server)
+2026-10-09 08:39:38.545 INFO  [main] c.l.l.s.w.StudentManagementControllerTest - The following 1 profile is active: "test"
+2026-10-09 08:39:39.336 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-10-09 08:39:39.337 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-10-09 08:39:39.424 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 84 ms. Found 0 Redis repository interfaces.
+2026-10-09 08:39:39.714 INFO  [main] com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Starting...
+2026-10-09 08:39:39.716 INFO  [main] com.zaxxer.hikari.pool.HikariPool - HikariPool-2 - Added connection conn10: url=jdbc:h2:mem:lingdong_learning user=SA
+2026-10-09 08:39:39.717 INFO  [main] com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Start completed.
+2026-10-09 08:39:39.720 INFO  [main] org.flywaydb.core.FlywayExecutor - Database: jdbc:h2:mem:lingdong_learning (H2 2.3)
+2026-10-09 08:39:39.721 WARN  [main] o.f.c.i.database.base.Database - Flyway upgrade recommended: H2 2.3.232 is newer than this version of Flyway and support has not been tested. The latest supported version of H2 is 2.2.224.
+2026-10-09 08:39:39.782 INFO  [main] o.f.core.internal.command.DbValidate - Successfully validated 109 migrations (execution time 00:00.055s)
+2026-10-09 08:39:39.787 INFO  [main] o.f.core.internal.command.DbMigrate - Current version of schema "public": 108
+2026-10-09 08:39:39.787 INFO  [main] o.f.core.internal.command.DbMigrate - Schema "public" is up to date. No migration necessary.
+2026-10-09 08:39:41.466 INFO  [main] o.s.b.t.m.w.SpringBootMockServletContext - Initializing Spring TestDispatcherServlet ''
+2026-10-09 08:39:41.466 INFO  [main] o.s.t.w.s.TestDispatcherServlet - Initializing Servlet ''
+2026-10-09 08:39:41.469 INFO  [main] o.s.t.w.s.TestDispatcherServlet - Completed initialization in 2 ms
+2026-10-09 08:39:41.492 INFO  [main] c.l.l.s.w.StudentManagementControllerTest - Started StudentManagementControllerTest in 2.997 seconds (process running for 44.316)
+2026-10-09 08:39:41.493 WARN  [main] o.s.c.events.SpringDocAppInitializer - SpringDoc /api/v1/openapi endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=false'
+2026-10-09 08:39:44.152 INFO  [main] o.s.t.c.s.AnnotationConfigContextLoaderUtils - Could not detect default configuration classes for test class [com.lingdong.learning.user.application.UserAccessApplicationServiceTest]: UserAccessApplicationServiceTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-09 08:39:44.220 INFO  [main] o.s.b.t.c.SpringBootTestContextBootstrapper - Found @SpringBootConfiguration com.lingdong.learning.LingdongLearningApplication for test class com.lingdong.learning.user.application.UserAccessApplicationServiceTest
+2026-10-09 08:39:44.253 INFO  [main] c.l.l.u.a.UserAccessApplicationServiceTest - Starting UserAccessApplicationServiceTest using Java 17.0.20 with PID 215580 (started by Administrator in E:\apps\lingdong-xuexi-code\lingdong-bansui-server)
+2026-10-09 08:39:44.254 INFO  [main] c.l.l.u.a.UserAccessApplicationServiceTest - The following 1 profile is active: "test"
+2026-10-09 08:39:44.931 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-10-09 08:39:44.931 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-10-09 08:39:44.998 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 64 ms. Found 0 Redis repository interfaces.
+2026-10-09 08:39:45.197 INFO  [main] com.zaxxer.hikari.HikariDataSource - HikariPool-3 - Starting...
+2026-10-09 08:39:45.198 INFO  [main] com.zaxxer.hikari.pool.HikariPool - HikariPool-3 - Added connection conn20: url=jdbc:h2:mem:lingdong_learning user=SA
+2026-10-09 08:39:45.198 INFO  [main] com.zaxxer.hikari.HikariDataSource - HikariPool-3 - Start completed.
+2026-10-09 08:39:45.200 INFO  [main] org.flywaydb.core.FlywayExecutor - Database: jdbc:h2:mem:lingdong_learning (H2 2.3)
+2026-10-09 08:39:45.201 WARN  [main] o.f.c.i.database.base.Database - Flyway upgrade recommended: H2 2.3.232 is newer than this version of Flyway and support has not been tested. The latest supported version of H2 is 2.2.224.
+2026-10-09 08:39:45.241 INFO  [main] o.f.core.internal.command.DbValidate - Successfully validated 109 migrations (execution time 00:00.038s)
+2026-10-09 08:39:45.244 INFO  [main] o.f.core.internal.command.DbMigrate - Current version of schema "public": 108
+2026-10-09 08:39:45.245 INFO  [main] o.f.core.internal.command.DbMigrate - Schema "public" is up to date. No migration necessary.
+2026-10-09 08:39:46.612 INFO  [main] c.l.l.u.a.UserAccessApplicationServiceTest - Started UserAccessApplicationServiceTest in 2.388 seconds (process running for 49.436)
+2026-10-09 08:39:46.613 WARN  [main] o.s.c.events.SpringDocAppInitializer - SpringDoc /api/v1/openapi endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=false'
+2026-10-09 08:39:46.770 INFO  [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2026-10-09 08:39:46.772 INFO  [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
+2026-10-09 08:39:46.791 INFO  [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Shutdown initiated...
+2026-10-09 08:39:46.792 INFO  [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Shutdown completed.
+2026-10-09 08:39:46.809 INFO  [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource - HikariPool-3 - Shutdown initiated...
+2026-10-09 08:39:46.810 INFO  [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource - HikariPool-3 - Shutdown completed.
+2026-10-09 08:41:03.655 INFO  [main] c.l.l.s.a.ManagedStudentAccountIntegrationTest - Starting ManagedStudentAccountIntegrationTest using Java 17.0.20 with PID 219020 (started by Administrator in E:\apps\lingdong-xuexi-code\lingdong-bansui-server)
+2026-10-09 08:41:03.658 INFO  [main] c.l.l.s.a.ManagedStudentAccountIntegrationTest - The following 1 profile is active: "test"
+2026-10-09 08:41:06.080 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-10-09 08:41:06.084 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-10-09 08:41:06.192 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 76 ms. Found 0 Redis repository interfaces.
+2026-10-09 08:41:07.505 INFO  [main] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2026-10-09 08:41:07.833 INFO  [main] com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection conn0: url=jdbc:h2:mem:lingdong_learning user=SA
+2026-10-09 08:41:07.837 INFO  [main] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2026-10-09 08:41:07.928 INFO  [main] org.flywaydb.core.FlywayExecutor - Database: jdbc:h2:mem:lingdong_learning (H2 2.3)
+2026-10-09 08:41:07.945 WARN  [main] o.f.c.i.database.base.Database - Flyway upgrade recommended: H2 2.3.232 is newer than this version of Flyway and support has not been tested. The latest supported version of H2 is 2.2.224.
+2026-10-09 08:41:08.067 INFO  [main] o.f.c.i.s.JdbcTableSchemaHistory - Schema history table "public"."flyway_schema_history" does not exist yet
+2026-10-09 08:41:08.074 INFO  [main] o.f.core.internal.command.DbValidate - Successfully validated 109 migrations (execution time 00:00.098s)
+2026-10-09 08:41:08.092 INFO  [main] o.f.c.i.s.JdbcTableSchemaHistory - Creating Schema History table "public"."flyway_schema_history" ...
+2026-10-09 08:41:08.179 INFO  [main] o.f.core.internal.command.DbMigrate - Current version of schema "public": << Empty Schema >>
+2026-10-09 08:41:08.198 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "1 - create system config"
+2026-10-09 08:41:08.262 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "2 - create iam rbac tables"
+2026-10-09 08:41:08.314 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "3 - create organization types"
+2026-10-09 08:41:08.345 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "4 - create user organization relations"
+2026-10-09 08:41:08.358 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "5 - create system task audit"
+2026-10-09 08:41:08.371 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "6 - create feature toggles"
+2026-10-09 08:41:08.381 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "7 - create feature toggle changes"
+2026-10-09 08:41:08.389 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "8 - create user permissions"
+2026-10-09 08:41:08.398 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "9 - create role data scopes"
+2026-10-09 08:41:08.408 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "10 - create dictionary tables"
+2026-10-09 08:41:08.420 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "11 - create cache operation log"
+2026-10-09 08:41:08.434 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "12 - create interface service tables"
+2026-10-09 08:41:08.452 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "13 - create attachment core tables"
+2026-10-09 08:41:08.466 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "14 - create import export template table"
+2026-10-09 08:41:08.477 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "15 - create auth device session"
+2026-10-09 08:41:08.487 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "16 - seed iam management permissions"
+2026-10-09 08:41:08.497 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "17 - seed organization management permissions"
+2026-10-09 08:41:08.504 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "18 - seed user directory permissions"
+2026-10-09 08:41:08.517 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "19 - create student relationship foundation"
+2026-10-09 08:41:08.534 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "20 - create parent binding invitation"
+2026-10-09 08:41:08.547 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "21 - create student code login"
+2026-10-09 08:41:08.571 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "22 - create learning task foundation"
+2026-10-09 08:41:08.605 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "23 - create task execution foundation"
+2026-10-09 08:41:08.664 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "24 - create growth point account and ledger"
+2026-10-09 08:41:08.684 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "25 - seed growth point query access"
+2026-10-09 08:41:08.692 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "26 - add growth point correction"
+2026-10-09 08:41:08.708 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "27 - add reward exchange"
+2026-10-09 08:41:08.749 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "28 - add growth review"
+2026-10-09 08:41:08.772 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "28.1 - support learning task foreign key"
+2026-10-09 08:41:08.787 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "29 - add point lifecycle"
+2026-10-09 08:41:08.889 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "30 - add recurring task"
+2026-10-09 08:41:08.917 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "31 - add task checkin attachment"
+2026-10-09 08:41:08.942 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "32 - add task overdue defer"
+2026-10-09 08:41:09.014 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "33 - add previous day task copy"
+2026-10-09 08:41:09.031 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "34 - add learning task template"
+2026-10-09 08:41:09.047 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "35 - add student qr login"
+2026-10-09 08:41:09.059 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "36 - add parent phone auth"
+2026-10-09 08:41:09.070 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "37 - add parent wechat auth"
+2026-10-09 08:41:09.078 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "38 - add parent relationship lifecycle"
+2026-10-09 08:41:09.093 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "39 - add account security event"
+2026-10-09 08:41:09.103 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "40 - add organization miniapp auth"
+2026-10-09 08:41:09.110 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "41 - add student organization lifecycle"
+2026-10-09 08:41:09.122 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "42 - add parent account lifecycle"
+2026-10-09 08:41:09.133 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "43 - finalize parent account cancellation"
+2026-10-09 08:41:09.152 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "44 - add parent mobile manual recovery"
+2026-10-09 08:41:09.163 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "45 - add student account cancellation"
+2026-10-09 08:41:09.171 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "46 - add student wechat auth"
+2026-10-09 08:41:09.183 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "47 - add organization node lifecycle"
+2026-10-09 08:41:09.209 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "48 - add class management"
+2026-10-09 08:41:09.218 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "49 - add permission grant boundary"
+2026-10-09 08:41:09.233 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "50 - add iam change audit"
+2026-10-09 08:41:09.241 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "51 - add dictionary management"
+2026-10-09 08:41:09.248 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "52 - add cache management"
+2026-10-09 08:41:09.257 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "53 - add interface service management"
+2026-10-09 08:41:09.264 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "54 - add attachment management"
+2026-10-09 08:41:09.274 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "55 - add import export template management"
+2026-10-09 08:41:09.286 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "56 - add import validation job"
+2026-10-09 08:41:09.304 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "57 - add async export job"
+2026-10-09 08:41:09.321 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "58 - add student batch import"
+2026-10-09 08:41:09.334 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "59 - add teacher management"
+2026-10-09 08:41:09.348 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "60 - complete organization teacher tasks"
+2026-10-09 08:41:09.357 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "61 - add student exception report"
+2026-10-09 08:41:09.370 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "62 - add manual attendance"
+2026-10-09 08:41:09.382 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "63 - add export job payload"
+2026-10-09 08:41:09.388 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "64 - add growth review pdf feature"
+2026-10-09 08:41:09.393 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "65 - add growth review pdf job type"
+2026-10-09 08:41:09.399 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "66 - add growth review subscription"
+2026-10-09 08:41:09.405 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "67 - add growth review delivery queue"
+2026-10-09 08:41:09.415 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "68 - add anonymous rank preference"
+2026-10-09 08:41:09.422 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "69 - add miniapp anonymous rank permission"
+2026-10-09 08:41:09.428 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "70 - add miniapp parent weekly review permission"
+2026-10-09 08:41:09.432 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "71 - add miniapp parent reward permissions"
+2026-10-09 08:41:09.437 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "72 - add web system task read permission"
+2026-10-09 08:41:09.443 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "73 - add feature toggle management"
+2026-10-09 08:41:09.456 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "74 - add interface change execution audit"
+2026-10-09 08:41:09.467 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "75 - add interface change before snapshot"
+2026-10-09 08:41:09.480 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "76 - add dictionary ledger export"
+2026-10-09 08:41:09.487 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "77 - add template ledger export"
+2026-10-09 08:41:09.495 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "78 - add interface service ledger export"
+2026-10-09 08:41:09.504 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "79 - add cache operation log export"
+2026-10-09 08:41:09.511 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "80 - add system task ledger export"
+2026-10-09 08:41:09.520 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "81 - add reward exchange ledger export"
+2026-10-09 08:41:09.528 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "82 - add exception report ledger export"
+2026-10-09 08:41:09.536 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "83 - add attachment ledger export"
+2026-10-09 08:41:09.542 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "84 - add student task report export"
+2026-10-09 08:41:09.549 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "85 - add organization task statistics export"
+2026-10-09 08:41:09.556 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "86 - add attendance ledger export"
+2026-10-09 08:41:09.563 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "87 - add menu management"
+2026-10-09 08:41:09.580 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "88 - initialize web menu catalog"
+2026-10-09 08:41:09.602 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "89 - complete web button catalog"
+2026-10-09 08:41:09.631 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "90 - add admin division and chongqing organization"
+2026-10-09 08:41:09.690 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "91 - unify menu permission codes"
+2026-10-09 08:41:09.730 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "92 - allow direct reorder move audit events"
+2026-10-09 08:41:09.736 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "93 - add menu management page ui buttons"
+2026-10-09 08:41:09.743 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "94 - add iam page quick grant buttons"
+2026-10-09 08:41:09.747 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "95 - add system task inline review buttons"
+2026-10-09 08:41:09.753 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "96 - menu batch button actions"
+2026-10-09 08:41:09.762 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "97 - user role organization actions"
+2026-10-09 08:41:09.778 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "98 - grant all configured buttons"
+2026-10-09 08:41:09.842 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "99 - management usability actions"
+2026-10-09 08:41:09.864 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "100 - unified menu permission modules"
+2026-10-09 08:41:09.930 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "101 - managed user password actions"
+2026-10-09 08:41:09.941 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "102 - remove stale ui buttons"
+2026-10-09 08:41:09.954 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "103 - organization member revoke menu delete"
+2026-10-09 08:41:09.970 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "104 - minimal default account roles"
+2026-10-09 08:41:09.982 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "105 - user profile edit"
+2026-10-09 08:41:09.999 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "106 - management lifecycle"
+2026-10-09 08:41:10.026 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "107 - training institution type"
+2026-10-09 08:41:10.034 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "108 - institution enrollment invitations"
+2026-10-09 08:41:10.057 INFO  [main] o.f.core.internal.command.DbMigrate - Successfully applied 109 migrations to schema "public", now at version v108 (execution time 00:01.050s)
+2026-10-09 08:41:15.165 INFO  [main] c.l.l.s.a.ManagedStudentAccountIntegrationTest - Started ManagedStudentAccountIntegrationTest in 12.356 seconds (process running for 39.683)
+2026-10-09 08:41:15.170 WARN  [main] o.s.c.events.SpringDocAppInitializer - SpringDoc /api/v1/openapi endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=false'
+2026-10-09 08:41:16.239 INFO  [main] o.s.t.c.s.AnnotationConfigContextLoaderUtils - Could not detect default configuration classes for test class [com.lingdong.learning.student.web.StudentManagementControllerTest]: StudentManagementControllerTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-09 08:41:16.326 INFO  [main] o.s.b.t.c.SpringBootTestContextBootstrapper - Found @SpringBootConfiguration com.lingdong.learning.LingdongLearningApplication for test class com.lingdong.learning.student.web.StudentManagementControllerTest
+2026-10-09 08:41:16.375 INFO  [main] c.l.l.s.w.StudentManagementControllerTest - Starting StudentManagementControllerTest using Java 17.0.20 with PID 219020 (started by Administrator in E:\apps\lingdong-xuexi-code\lingdong-bansui-server)
+2026-10-09 08:41:16.375 INFO  [main] c.l.l.s.w.StudentManagementControllerTest - The following 1 profile is active: "test"
+2026-10-09 08:41:17.153 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-10-09 08:41:17.154 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-10-09 08:41:17.236 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 80 ms. Found 0 Redis repository interfaces.
+2026-10-09 08:41:17.456 INFO  [main] com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Starting...
+2026-10-09 08:41:17.457 INFO  [main] com.zaxxer.hikari.pool.HikariPool - HikariPool-2 - Added connection conn10: url=jdbc:h2:mem:lingdong_learning user=SA
+2026-10-09 08:41:17.458 INFO  [main] com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Start completed.
+2026-10-09 08:41:17.459 INFO  [main] org.flywaydb.core.FlywayExecutor - Database: jdbc:h2:mem:lingdong_learning (H2 2.3)
+2026-10-09 08:41:17.461 WARN  [main] o.f.c.i.database.base.Database - Flyway upgrade recommended: H2 2.3.232 is newer than this version of Flyway and support has not been tested. The latest supported version of H2 is 2.2.224.
+2026-10-09 08:41:17.505 INFO  [main] o.f.core.internal.command.DbValidate - Successfully validated 109 migrations (execution time 00:00.039s)
+2026-10-09 08:41:17.509 INFO  [main] o.f.core.internal.command.DbMigrate - Current version of schema "public": 108
+2026-10-09 08:41:17.510 INFO  [main] o.f.core.internal.command.DbMigrate - Schema "public" is up to date. No migration necessary.
+2026-10-09 08:41:18.951 INFO  [main] o.s.b.t.m.w.SpringBootMockServletContext - Initializing Spring TestDispatcherServlet ''
+2026-10-09 08:41:18.952 INFO  [main] o.s.t.w.s.TestDispatcherServlet - Initializing Servlet ''
+2026-10-09 08:41:18.954 INFO  [main] o.s.t.w.s.TestDispatcherServlet - Completed initialization in 2 ms
+2026-10-09 08:41:18.979 INFO  [main] c.l.l.s.w.StudentManagementControllerTest - Started StudentManagementControllerTest in 2.648 seconds (process running for 43.498)
+2026-10-09 08:41:18.981 WARN  [main] o.s.c.events.SpringDocAppInitializer - SpringDoc /api/v1/openapi endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=false'
+2026-10-09 08:41:21.556 INFO  [main] o.s.t.c.s.AnnotationConfigContextLoaderUtils - Could not detect default configuration classes for test class [com.lingdong.learning.user.application.UserAccessApplicationServiceTest]: UserAccessApplicationServiceTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-09 08:41:21.609 INFO  [main] o.s.b.t.c.SpringBootTestContextBootstrapper - Found @SpringBootConfiguration com.lingdong.learning.LingdongLearningApplication for test class com.lingdong.learning.user.application.UserAccessApplicationServiceTest
+2026-10-09 08:41:21.636 INFO  [main] c.l.l.u.a.UserAccessApplicationServiceTest - Starting UserAccessApplicationServiceTest using Java 17.0.20 with PID 219020 (started by Administrator in E:\apps\lingdong-xuexi-code\lingdong-bansui-server)
+2026-10-09 08:41:21.637 INFO  [main] c.l.l.u.a.UserAccessApplicationServiceTest - The following 1 profile is active: "test"
+2026-10-09 08:41:22.311 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-10-09 08:41:22.311 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-10-09 08:41:22.377 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 63 ms. Found 0 Redis repository interfaces.
+2026-10-09 08:41:22.587 INFO  [main] com.zaxxer.hikari.HikariDataSource - HikariPool-3 - Starting...
+2026-10-09 08:41:22.588 INFO  [main] com.zaxxer.hikari.pool.HikariPool - HikariPool-3 - Added connection conn20: url=jdbc:h2:mem:lingdong_learning user=SA
+2026-10-09 08:41:22.589 INFO  [main] com.zaxxer.hikari.HikariDataSource - HikariPool-3 - Start completed.
+2026-10-09 08:41:22.591 INFO  [main] org.flywaydb.core.FlywayExecutor - Database: jdbc:h2:mem:lingdong_learning (H2 2.3)
+2026-10-09 08:41:22.592 WARN  [main] o.f.c.i.database.base.Database - Flyway upgrade recommended: H2 2.3.232 is newer than this version of Flyway and support has not been tested. The latest supported version of H2 is 2.2.224.
+2026-10-09 08:41:22.638 INFO  [main] o.f.core.internal.command.DbValidate - Successfully validated 109 migrations (execution time 00:00.042s)
+2026-10-09 08:41:22.641 INFO  [main] o.f.core.internal.command.DbMigrate - Current version of schema "public": 108
+2026-10-09 08:41:22.641 INFO  [main] o.f.core.internal.command.DbMigrate - Schema "public" is up to date. No migration necessary.
+2026-10-09 08:41:24.049 INFO  [main] c.l.l.u.a.UserAccessApplicationServiceTest - Started UserAccessApplicationServiceTest in 2.437 seconds (process running for 48.568)
+2026-10-09 08:41:24.051 WARN  [main] o.s.c.events.SpringDocAppInitializer - SpringDoc /api/v1/openapi endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=false'
+2026-10-09 08:41:24.210 INFO  [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2026-10-09 08:41:24.213 INFO  [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
+2026-10-09 08:41:24.229 INFO  [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Shutdown initiated...
+2026-10-09 08:41:24.230 INFO  [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Shutdown completed.
+2026-10-09 08:41:24.261 INFO  [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource - HikariPool-3 - Shutdown initiated...
+2026-10-09 08:41:24.263 INFO  [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource - HikariPool-3 - Shutdown completed.
+2026-10-09 08:42:10.798 INFO  [main] c.l.l.l.w.LearningTaskOptionControllerTest - Starting LearningTaskOptionControllerTest using Java 17.0.20 with PID 213596 (started by Administrator in E:\apps\lingdong-xuexi-code\lingdong-bansui-server)
+2026-10-09 08:42:10.800 INFO  [main] c.l.l.l.w.LearningTaskOptionControllerTest - The following 1 profile is active: "test"
+2026-10-09 08:42:13.881 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-10-09 08:42:13.887 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-10-09 08:42:14.037 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 116 ms. Found 0 Redis repository interfaces.
+2026-10-09 08:42:15.528 INFO  [main] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2026-10-09 08:42:15.916 INFO  [main] com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection conn0: url=jdbc:h2:mem:lingdong_learning user=SA
+2026-10-09 08:42:15.921 INFO  [main] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2026-10-09 08:42:16.021 INFO  [main] org.flywaydb.core.FlywayExecutor - Database: jdbc:h2:mem:lingdong_learning (H2 2.3)
+2026-10-09 08:42:16.038 WARN  [main] o.f.c.i.database.base.Database - Flyway upgrade recommended: H2 2.3.232 is newer than this version of Flyway and support has not been tested. The latest supported version of H2 is 2.2.224.
+2026-10-09 08:42:16.158 INFO  [main] o.f.c.i.s.JdbcTableSchemaHistory - Schema history table "public"."flyway_schema_history" does not exist yet
+2026-10-09 08:42:16.166 INFO  [main] o.f.core.internal.command.DbValidate - Successfully validated 109 migrations (execution time 00:00.098s)
+2026-10-09 08:42:16.184 INFO  [main] o.f.c.i.s.JdbcTableSchemaHistory - Creating Schema History table "public"."flyway_schema_history" ...
+2026-10-09 08:42:16.255 INFO  [main] o.f.core.internal.command.DbMigrate - Current version of schema "public": << Empty Schema >>
+2026-10-09 08:42:16.268 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "1 - create system config"
+2026-10-09 08:42:16.312 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "2 - create iam rbac tables"
+2026-10-09 08:42:16.366 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "3 - create organization types"
+2026-10-09 08:42:16.390 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "4 - create user organization relations"
+2026-10-09 08:42:16.404 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "5 - create system task audit"
+2026-10-09 08:42:16.419 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "6 - create feature toggles"
+2026-10-09 08:42:16.433 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "7 - create feature toggle changes"
+2026-10-09 08:42:16.442 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "8 - create user permissions"
+2026-10-09 08:42:16.449 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "9 - create role data scopes"
+2026-10-09 08:42:16.460 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "10 - create dictionary tables"
+2026-10-09 08:42:16.469 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "11 - create cache operation log"
+2026-10-09 08:42:16.481 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "12 - create interface service tables"
+2026-10-09 08:42:16.498 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "13 - create attachment core tables"
+2026-10-09 08:42:16.509 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "14 - create import export template table"
+2026-10-09 08:42:16.517 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "15 - create auth device session"
+2026-10-09 08:42:16.526 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "16 - seed iam management permissions"
+2026-10-09 08:42:16.537 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "17 - seed organization management permissions"
+2026-10-09 08:42:16.543 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "18 - seed user directory permissions"
+2026-10-09 08:42:16.553 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "19 - create student relationship foundation"
+2026-10-09 08:42:16.568 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "20 - create parent binding invitation"
+2026-10-09 08:42:16.579 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "21 - create student code login"
+2026-10-09 08:42:16.601 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "22 - create learning task foundation"
+2026-10-09 08:42:16.632 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "23 - create task execution foundation"
+2026-10-09 08:42:16.681 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "24 - create growth point account and ledger"
+2026-10-09 08:42:16.700 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "25 - seed growth point query access"
+2026-10-09 08:42:16.706 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "26 - add growth point correction"
+2026-10-09 08:42:16.723 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "27 - add reward exchange"
+2026-10-09 08:42:16.760 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "28 - add growth review"
+2026-10-09 08:42:16.779 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "28.1 - support learning task foreign key"
+2026-10-09 08:42:16.789 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "29 - add point lifecycle"
+2026-10-09 08:42:16.867 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "30 - add recurring task"
+2026-10-09 08:42:16.894 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "31 - add task checkin attachment"
+2026-10-09 08:42:16.915 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "32 - add task overdue defer"
+2026-10-09 08:42:16.981 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "33 - add previous day task copy"
+2026-10-09 08:42:17.006 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "34 - add learning task template"
+2026-10-09 08:42:17.019 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "35 - add student qr login"
+2026-10-09 08:42:17.028 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "36 - add parent phone auth"
+2026-10-09 08:42:17.037 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "37 - add parent wechat auth"
+2026-10-09 08:42:17.044 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "38 - add parent relationship lifecycle"
+2026-10-09 08:42:17.060 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "39 - add account security event"
+2026-10-09 08:42:17.069 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "40 - add organization miniapp auth"
+2026-10-09 08:42:17.074 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "41 - add student organization lifecycle"
+2026-10-09 08:42:17.083 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "42 - add parent account lifecycle"
+2026-10-09 08:42:17.091 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "43 - finalize parent account cancellation"
+2026-10-09 08:42:17.105 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "44 - add parent mobile manual recovery"
+2026-10-09 08:42:17.115 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "45 - add student account cancellation"
+2026-10-09 08:42:17.126 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "46 - add student wechat auth"
+2026-10-09 08:42:17.142 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "47 - add organization node lifecycle"
+2026-10-09 08:42:17.180 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "48 - add class management"
+2026-10-09 08:42:17.189 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "49 - add permission grant boundary"
+2026-10-09 08:42:17.206 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "50 - add iam change audit"
+2026-10-09 08:42:17.217 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "51 - add dictionary management"
+2026-10-09 08:42:17.224 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "52 - add cache management"
+2026-10-09 08:42:17.234 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "53 - add interface service management"
+2026-10-09 08:42:17.243 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "54 - add attachment management"
+2026-10-09 08:42:17.255 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "55 - add import export template management"
+2026-10-09 08:42:17.268 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "56 - add import validation job"
+2026-10-09 08:42:17.290 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "57 - add async export job"
+2026-10-09 08:42:17.307 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "58 - add student batch import"
+2026-10-09 08:42:17.325 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "59 - add teacher management"
+2026-10-09 08:42:17.340 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "60 - complete organization teacher tasks"
+2026-10-09 08:42:17.351 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "61 - add student exception report"
+2026-10-09 08:42:17.369 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "62 - add manual attendance"
+2026-10-09 08:42:17.380 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "63 - add export job payload"
+2026-10-09 08:42:17.386 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "64 - add growth review pdf feature"
+2026-10-09 08:42:17.393 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "65 - add growth review pdf job type"
+2026-10-09 08:42:17.402 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "66 - add growth review subscription"
+2026-10-09 08:42:17.412 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "67 - add growth review delivery queue"
+2026-10-09 08:42:17.420 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "68 - add anonymous rank preference"
+2026-10-09 08:42:17.429 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "69 - add miniapp anonymous rank permission"
+2026-10-09 08:42:17.437 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "70 - add miniapp parent weekly review permission"
+2026-10-09 08:42:17.444 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "71 - add miniapp parent reward permissions"
+2026-10-09 08:42:17.452 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "72 - add web system task read permission"
+2026-10-09 08:42:17.458 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "73 - add feature toggle management"
+2026-10-09 08:42:17.473 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "74 - add interface change execution audit"
+2026-10-09 08:42:17.483 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "75 - add interface change before snapshot"
+2026-10-09 08:42:17.495 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "76 - add dictionary ledger export"
+2026-10-09 08:42:17.504 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "77 - add template ledger export"
+2026-10-09 08:42:17.511 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "78 - add interface service ledger export"
+2026-10-09 08:42:17.517 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "79 - add cache operation log export"
+2026-10-09 08:42:17.526 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "80 - add system task ledger export"
+2026-10-09 08:42:17.536 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "81 - add reward exchange ledger export"
+2026-10-09 08:42:17.546 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "82 - add exception report ledger export"
+2026-10-09 08:42:17.556 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "83 - add attachment ledger export"
+2026-10-09 08:42:17.563 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "84 - add student task report export"
+2026-10-09 08:42:17.572 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "85 - add organization task statistics export"
+2026-10-09 08:42:17.580 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "86 - add attendance ledger export"
+2026-10-09 08:42:17.587 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "87 - add menu management"
+2026-10-09 08:42:17.614 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "88 - initialize web menu catalog"
+2026-10-09 08:42:17.658 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "89 - complete web button catalog"
+2026-10-09 08:42:17.715 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "90 - add admin division and chongqing organization"
+2026-10-09 08:42:17.806 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "91 - unify menu permission codes"
+2026-10-09 08:42:17.862 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "92 - allow direct reorder move audit events"
+2026-10-09 08:42:17.870 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "93 - add menu management page ui buttons"
+2026-10-09 08:42:17.881 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "94 - add iam page quick grant buttons"
+2026-10-09 08:42:17.890 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "95 - add system task inline review buttons"
+2026-10-09 08:42:17.904 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "96 - menu batch button actions"
+2026-10-09 08:42:17.924 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "97 - user role organization actions"
+2026-10-09 08:42:17.965 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "98 - grant all configured buttons"
+2026-10-09 08:42:18.067 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "99 - management usability actions"
+2026-10-09 08:42:18.088 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "100 - unified menu permission modules"
+2026-10-09 08:42:18.149 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "101 - managed user password actions"
+2026-10-09 08:42:18.159 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "102 - remove stale ui buttons"
+2026-10-09 08:42:18.172 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "103 - organization member revoke menu delete"
+2026-10-09 08:42:18.189 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "104 - minimal default account roles"
+2026-10-09 08:42:18.197 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "105 - user profile edit"
+2026-10-09 08:42:18.214 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "106 - management lifecycle"
+2026-10-09 08:42:18.244 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "107 - training institution type"
+2026-10-09 08:42:18.251 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "108 - institution enrollment invitations"
+2026-10-09 08:42:18.282 INFO  [main] o.f.core.internal.command.DbMigrate - Successfully applied 109 migrations to schema "public", now at version v108 (execution time 00:01.157s)
+2026-10-09 08:42:26.794 INFO  [main] o.s.b.t.m.w.SpringBootMockServletContext - Initializing Spring TestDispatcherServlet ''
+2026-10-09 08:42:26.795 INFO  [main] o.s.t.w.s.TestDispatcherServlet - Initializing Servlet ''
+2026-10-09 08:42:26.832 INFO  [main] o.s.t.w.s.TestDispatcherServlet - Completed initialization in 37 ms
+2026-10-09 08:42:27.027 INFO  [main] c.l.l.l.w.LearningTaskOptionControllerTest - Started LearningTaskOptionControllerTest in 17.28 seconds (process running for 35.314)
+2026-10-09 08:42:27.034 WARN  [main] o.s.c.events.SpringDocAppInitializer - SpringDoc /api/v1/openapi endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=false'
+2026-10-09 08:42:38.783 INFO  [main] o.s.t.c.s.AnnotationConfigContextLoaderUtils - Could not detect default configuration classes for test class [com.lingdong.learning.student.application.ManagedStudentAccountIntegrationTest]: ManagedStudentAccountIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-09 08:42:39.340 INFO  [main] o.s.b.t.c.SpringBootTestContextBootstrapper - Found @SpringBootConfiguration com.lingdong.learning.LingdongLearningApplication for test class com.lingdong.learning.student.application.ManagedStudentAccountIntegrationTest
+2026-10-09 08:42:39.514 INFO  [main] c.l.l.s.a.ManagedStudentAccountIntegrationTest - Starting ManagedStudentAccountIntegrationTest using Java 17.0.20 with PID 213596 (started by Administrator in E:\apps\lingdong-xuexi-code\lingdong-bansui-server)
+2026-10-09 08:42:39.515 INFO  [main] c.l.l.s.a.ManagedStudentAccountIntegrationTest - The following 1 profile is active: "test"
+2026-10-09 08:42:46.486 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-10-09 08:42:46.487 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-10-09 08:42:46.645 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 155 ms. Found 0 Redis repository interfaces.
+2026-10-09 08:42:47.502 INFO  [main] com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Starting...
+2026-10-09 08:42:47.505 INFO  [main] com.zaxxer.hikari.pool.HikariPool - HikariPool-2 - Added connection conn10: url=jdbc:h2:mem:lingdong_learning user=SA
+2026-10-09 08:42:47.506 INFO  [main] com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Start completed.
+2026-10-09 08:42:47.555 INFO  [main] org.flywaydb.core.FlywayExecutor - Database: jdbc:h2:mem:lingdong_learning (H2 2.3)
+2026-10-09 08:42:47.560 WARN  [main] o.f.c.i.database.base.Database - Flyway upgrade recommended: H2 2.3.232 is newer than this version of Flyway and support has not been tested. The latest supported version of H2 is 2.2.224.
+2026-10-09 08:42:47.908 INFO  [main] o.f.core.internal.command.DbValidate - Successfully validated 109 migrations (execution time 00:00.336s)
+2026-10-09 08:42:47.924 INFO  [main] o.f.core.internal.command.DbMigrate - Current version of schema "public": 108
+2026-10-09 08:42:47.928 INFO  [main] o.f.core.internal.command.DbMigrate - Schema "public" is up to date. No migration necessary.
+2026-10-09 08:42:52.583 INFO  [main] c.l.l.s.a.ManagedStudentAccountIntegrationTest - Started ManagedStudentAccountIntegrationTest in 13.229 seconds (process running for 60.87)
+2026-10-09 08:42:52.586 WARN  [main] o.s.c.events.SpringDocAppInitializer - SpringDoc /api/v1/openapi endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=false'
+2026-10-09 08:42:53.757 INFO  [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2026-10-09 08:42:53.764 INFO  [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
+2026-10-09 08:42:53.806 INFO  [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Shutdown initiated...
+2026-10-09 08:42:53.828 INFO  [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Shutdown completed.
+2026-10-09 08:43:57.682 INFO  [main] c.l.l.s.a.ManagedStudentAccountIntegrationTest - Starting ManagedStudentAccountIntegrationTest using Java 17.0.20 with PID 215628 (started by Administrator in E:\apps\lingdong-xuexi-code\lingdong-bansui-server)
+2026-10-09 08:43:57.684 INFO  [main] c.l.l.s.a.ManagedStudentAccountIntegrationTest - The following 1 profile is active: "test"
+2026-10-09 08:44:00.009 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-10-09 08:44:00.016 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-10-09 08:44:00.130 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 85 ms. Found 0 Redis repository interfaces.
+2026-10-09 08:44:03.172 INFO  [main] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2026-10-09 08:44:03.598 INFO  [main] com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection conn0: url=jdbc:h2:mem:lingdong_learning user=SA
+2026-10-09 08:44:03.603 INFO  [main] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2026-10-09 08:44:03.705 INFO  [main] org.flywaydb.core.FlywayExecutor - Database: jdbc:h2:mem:lingdong_learning (H2 2.3)
+2026-10-09 08:44:03.720 WARN  [main] o.f.c.i.database.base.Database - Flyway upgrade recommended: H2 2.3.232 is newer than this version of Flyway and support has not been tested. The latest supported version of H2 is 2.2.224.
+2026-10-09 08:44:03.837 INFO  [main] o.f.c.i.s.JdbcTableSchemaHistory - Schema history table "public"."flyway_schema_history" does not exist yet
+2026-10-09 08:44:03.845 INFO  [main] o.f.core.internal.command.DbValidate - Successfully validated 109 migrations (execution time 00:00.094s)
+2026-10-09 08:44:03.862 INFO  [main] o.f.c.i.s.JdbcTableSchemaHistory - Creating Schema History table "public"."flyway_schema_history" ...
+2026-10-09 08:44:03.930 INFO  [main] o.f.core.internal.command.DbMigrate - Current version of schema "public": << Empty Schema >>
+2026-10-09 08:44:03.942 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "1 - create system config"
+2026-10-09 08:44:03.983 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "2 - create iam rbac tables"
+2026-10-09 08:44:04.034 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "3 - create organization types"
+2026-10-09 08:44:04.063 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "4 - create user organization relations"
+2026-10-09 08:44:04.077 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "5 - create system task audit"
+2026-10-09 08:44:04.092 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "6 - create feature toggles"
+2026-10-09 08:44:04.105 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "7 - create feature toggle changes"
+2026-10-09 08:44:04.116 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "8 - create user permissions"
+2026-10-09 08:44:04.130 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "9 - create role data scopes"
+2026-10-09 08:44:04.144 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "10 - create dictionary tables"
+2026-10-09 08:44:04.155 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "11 - create cache operation log"
+2026-10-09 08:44:04.169 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "12 - create interface service tables"
+2026-10-09 08:44:04.188 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "13 - create attachment core tables"
+2026-10-09 08:44:04.209 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "14 - create import export template table"
+2026-10-09 08:44:04.222 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "15 - create auth device session"
+2026-10-09 08:44:04.236 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "16 - seed iam management permissions"
+2026-10-09 08:44:04.250 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "17 - seed organization management permissions"
+2026-10-09 08:44:04.259 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "18 - seed user directory permissions"
+2026-10-09 08:44:04.272 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "19 - create student relationship foundation"
+2026-10-09 08:44:04.298 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "20 - create parent binding invitation"
+2026-10-09 08:44:04.318 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "21 - create student code login"
+2026-10-09 08:44:04.350 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "22 - create learning task foundation"
+2026-10-09 08:44:04.407 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "23 - create task execution foundation"
+2026-10-09 08:44:04.476 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "24 - create growth point account and ledger"
+2026-10-09 08:44:04.502 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "25 - seed growth point query access"
+2026-10-09 08:44:04.511 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "26 - add growth point correction"
+2026-10-09 08:44:04.530 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "27 - add reward exchange"
+2026-10-09 08:44:04.569 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "28 - add growth review"
+2026-10-09 08:44:04.594 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "28.1 - support learning task foreign key"
+2026-10-09 08:44:04.609 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "29 - add point lifecycle"
+2026-10-09 08:44:04.717 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "30 - add recurring task"
+2026-10-09 08:44:04.745 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "31 - add task checkin attachment"
+2026-10-09 08:44:04.775 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "32 - add task overdue defer"
+2026-10-09 08:44:04.864 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "33 - add previous day task copy"
+2026-10-09 08:44:04.885 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "34 - add learning task template"
+2026-10-09 08:44:04.907 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "35 - add student qr login"
+2026-10-09 08:44:04.919 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "36 - add parent phone auth"
+2026-10-09 08:44:04.927 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "37 - add parent wechat auth"
+2026-10-09 08:44:04.939 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "38 - add parent relationship lifecycle"
+2026-10-09 08:44:04.955 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "39 - add account security event"
+2026-10-09 08:44:04.964 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "40 - add organization miniapp auth"
+2026-10-09 08:44:04.971 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "41 - add student organization lifecycle"
+2026-10-09 08:44:04.982 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "42 - add parent account lifecycle"
+2026-10-09 08:44:04.994 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "43 - finalize parent account cancellation"
+2026-10-09 08:44:05.012 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "44 - add parent mobile manual recovery"
+2026-10-09 08:44:05.024 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "45 - add student account cancellation"
+2026-10-09 08:44:05.034 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "46 - add student wechat auth"
+2026-10-09 08:44:05.051 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "47 - add organization node lifecycle"
+2026-10-09 08:44:05.083 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "48 - add class management"
+2026-10-09 08:44:05.096 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "49 - add permission grant boundary"
+2026-10-09 08:44:05.116 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "50 - add iam change audit"
+2026-10-09 08:44:05.127 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "51 - add dictionary management"
+2026-10-09 08:44:05.136 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "52 - add cache management"
+2026-10-09 08:44:05.148 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "53 - add interface service management"
+2026-10-09 08:44:05.157 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "54 - add attachment management"
+2026-10-09 08:44:05.171 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "55 - add import export template management"
+2026-10-09 08:44:05.188 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "56 - add import validation job"
+2026-10-09 08:44:05.203 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "57 - add async export job"
+2026-10-09 08:44:05.219 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "58 - add student batch import"
+2026-10-09 08:44:05.232 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "59 - add teacher management"
+2026-10-09 08:44:05.245 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "60 - complete organization teacher tasks"
+2026-10-09 08:44:05.261 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "61 - add student exception report"
+2026-10-09 08:44:05.281 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "62 - add manual attendance"
+2026-10-09 08:44:05.295 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "63 - add export job payload"
+2026-10-09 08:44:05.303 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "64 - add growth review pdf feature"
+2026-10-09 08:44:05.311 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "65 - add growth review pdf job type"
+2026-10-09 08:44:05.318 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "66 - add growth review subscription"
+2026-10-09 08:44:05.329 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "67 - add growth review delivery queue"
+2026-10-09 08:44:05.338 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "68 - add anonymous rank preference"
+2026-10-09 08:44:05.346 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "69 - add miniapp anonymous rank permission"
+2026-10-09 08:44:05.351 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "70 - add miniapp parent weekly review permission"
+2026-10-09 08:44:05.359 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "71 - add miniapp parent reward permissions"
+2026-10-09 08:44:05.365 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "72 - add web system task read permission"
+2026-10-09 08:44:05.371 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "73 - add feature toggle management"
+2026-10-09 08:44:05.385 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "74 - add interface change execution audit"
+2026-10-09 08:44:05.398 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "75 - add interface change before snapshot"
+2026-10-09 08:44:05.415 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "76 - add dictionary ledger export"
+2026-10-09 08:44:05.426 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "77 - add template ledger export"
+2026-10-09 08:44:05.436 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "78 - add interface service ledger export"
+2026-10-09 08:44:05.446 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "79 - add cache operation log export"
+2026-10-09 08:44:05.454 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "80 - add system task ledger export"
+2026-10-09 08:44:05.464 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "81 - add reward exchange ledger export"
+2026-10-09 08:44:05.473 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "82 - add exception report ledger export"
+2026-10-09 08:44:05.484 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "83 - add attachment ledger export"
+2026-10-09 08:44:05.496 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "84 - add student task report export"
+2026-10-09 08:44:05.508 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "85 - add organization task statistics export"
+2026-10-09 08:44:05.517 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "86 - add attendance ledger export"
+2026-10-09 08:44:05.527 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "87 - add menu management"
+2026-10-09 08:44:05.568 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "88 - initialize web menu catalog"
+2026-10-09 08:44:05.605 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "89 - complete web button catalog"
+2026-10-09 08:44:05.646 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "90 - add admin division and chongqing organization"
+2026-10-09 08:44:05.708 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "91 - unify menu permission codes"
+2026-10-09 08:44:05.751 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "92 - allow direct reorder move audit events"
+2026-10-09 08:44:05.755 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "93 - add menu management page ui buttons"
+2026-10-09 08:44:05.762 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "94 - add iam page quick grant buttons"
+2026-10-09 08:44:05.770 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "95 - add system task inline review buttons"
+2026-10-09 08:44:05.778 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "96 - menu batch button actions"
+2026-10-09 08:44:05.797 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "97 - user role organization actions"
+2026-10-09 08:44:05.820 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "98 - grant all configured buttons"
+2026-10-09 08:44:05.915 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "99 - management usability actions"
+2026-10-09 08:44:05.939 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "100 - unified menu permission modules"
+2026-10-09 08:44:06.079 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "101 - managed user password actions"
+2026-10-09 08:44:06.101 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "102 - remove stale ui buttons"
+2026-10-09 08:44:06.125 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "103 - organization member revoke menu delete"
+2026-10-09 08:44:06.152 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "104 - minimal default account roles"
+2026-10-09 08:44:06.168 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "105 - user profile edit"
+2026-10-09 08:44:06.188 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "106 - management lifecycle"
+2026-10-09 08:44:06.213 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "107 - training institution type"
+2026-10-09 08:44:06.222 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "108 - institution enrollment invitations"
+2026-10-09 08:44:06.251 INFO  [main] o.f.core.internal.command.DbMigrate - Successfully applied 109 migrations to schema "public", now at version v108 (execution time 00:01.287s)
+2026-10-09 08:44:11.876 INFO  [main] c.l.l.s.a.ManagedStudentAccountIntegrationTest - Started ManagedStudentAccountIntegrationTest in 15.002 seconds (process running for 32.953)
+2026-10-09 08:44:11.881 WARN  [main] o.s.c.events.SpringDocAppInitializer - SpringDoc /api/v1/openapi endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=false'
+2026-10-09 08:44:12.529 INFO  [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2026-10-09 08:44:12.531 INFO  [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
+2026-10-09 08:45:35.673 INFO  [main] c.l.l.s.a.ManagedStudentAccountIntegrationTest - Starting ManagedStudentAccountIntegrationTest using Java 17.0.20 with PID 202132 (started by Administrator in E:\apps\lingdong-xuexi-code\lingdong-bansui-server)
+2026-10-09 08:45:35.675 INFO  [main] c.l.l.s.a.ManagedStudentAccountIntegrationTest - The following 1 profile is active: "test"
+2026-10-09 08:45:37.712 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-10-09 08:45:37.716 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-10-09 08:45:37.810 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 69 ms. Found 0 Redis repository interfaces.
+2026-10-09 08:45:40.565 INFO  [main] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2026-10-09 08:45:40.900 INFO  [main] com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection conn0: url=jdbc:h2:mem:lingdong_learning user=SA
+2026-10-09 08:45:40.904 INFO  [main] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2026-10-09 08:45:41.002 INFO  [main] org.flywaydb.core.FlywayExecutor - Database: jdbc:h2:mem:lingdong_learning (H2 2.3)
+2026-10-09 08:45:41.017 WARN  [main] o.f.c.i.database.base.Database - Flyway upgrade recommended: H2 2.3.232 is newer than this version of Flyway and support has not been tested. The latest supported version of H2 is 2.2.224.
+2026-10-09 08:45:41.147 INFO  [main] o.f.c.i.s.JdbcTableSchemaHistory - Schema history table "public"."flyway_schema_history" does not exist yet
+2026-10-09 08:45:41.155 INFO  [main] o.f.core.internal.command.DbValidate - Successfully validated 109 migrations (execution time 00:00.107s)
+2026-10-09 08:45:41.171 INFO  [main] o.f.c.i.s.JdbcTableSchemaHistory - Creating Schema History table "public"."flyway_schema_history" ...
+2026-10-09 08:45:41.239 INFO  [main] o.f.core.internal.command.DbMigrate - Current version of schema "public": << Empty Schema >>
+2026-10-09 08:45:41.252 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "1 - create system config"
+2026-10-09 08:45:41.290 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "2 - create iam rbac tables"
+2026-10-09 08:45:41.331 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "3 - create organization types"
+2026-10-09 08:45:41.357 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "4 - create user organization relations"
+2026-10-09 08:45:41.370 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "5 - create system task audit"
+2026-10-09 08:45:41.381 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "6 - create feature toggles"
+2026-10-09 08:45:41.391 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "7 - create feature toggle changes"
+2026-10-09 08:45:41.402 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "8 - create user permissions"
+2026-10-09 08:45:41.411 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "9 - create role data scopes"
+2026-10-09 08:45:41.422 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "10 - create dictionary tables"
+2026-10-09 08:45:41.432 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "11 - create cache operation log"
+2026-10-09 08:45:41.446 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "12 - create interface service tables"
+2026-10-09 08:45:41.463 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "13 - create attachment core tables"
+2026-10-09 08:45:41.479 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "14 - create import export template table"
+2026-10-09 08:45:41.489 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "15 - create auth device session"
+2026-10-09 08:45:41.501 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "16 - seed iam management permissions"
+2026-10-09 08:45:41.512 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "17 - seed organization management permissions"
+2026-10-09 08:45:41.520 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "18 - seed user directory permissions"
+2026-10-09 08:45:41.529 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "19 - create student relationship foundation"
+2026-10-09 08:45:41.546 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "20 - create parent binding invitation"
+2026-10-09 08:45:41.563 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "21 - create student code login"
+2026-10-09 08:45:41.588 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "22 - create learning task foundation"
+2026-10-09 08:45:41.620 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "23 - create task execution foundation"
+2026-10-09 08:45:41.668 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "24 - create growth point account and ledger"
+2026-10-09 08:45:41.687 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "25 - seed growth point query access"
+2026-10-09 08:45:41.697 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "26 - add growth point correction"
+2026-10-09 08:45:41.712 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "27 - add reward exchange"
+2026-10-09 08:45:41.753 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "28 - add growth review"
+2026-10-09 08:45:41.776 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "28.1 - support learning task foreign key"
+2026-10-09 08:45:41.788 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "29 - add point lifecycle"
+2026-10-09 08:45:41.881 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "30 - add recurring task"
+2026-10-09 08:45:41.908 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "31 - add task checkin attachment"
+2026-10-09 08:45:41.930 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "32 - add task overdue defer"
+2026-10-09 08:45:42.004 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "33 - add previous day task copy"
+2026-10-09 08:45:42.023 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "34 - add learning task template"
+2026-10-09 08:45:42.037 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "35 - add student qr login"
+2026-10-09 08:45:42.049 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "36 - add parent phone auth"
+2026-10-09 08:45:42.059 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "37 - add parent wechat auth"
+2026-10-09 08:45:42.072 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "38 - add parent relationship lifecycle"
+2026-10-09 08:45:42.097 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "39 - add account security event"
+2026-10-09 08:45:42.106 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "40 - add organization miniapp auth"
+2026-10-09 08:45:42.113 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "41 - add student organization lifecycle"
+2026-10-09 08:45:42.130 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "42 - add parent account lifecycle"
+2026-10-09 08:45:42.143 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "43 - finalize parent account cancellation"
+2026-10-09 08:45:42.165 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "44 - add parent mobile manual recovery"
+2026-10-09 08:45:42.177 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "45 - add student account cancellation"
+2026-10-09 08:45:42.191 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "46 - add student wechat auth"
+2026-10-09 08:45:42.210 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "47 - add organization node lifecycle"
+2026-10-09 08:45:42.244 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "48 - add class management"
+2026-10-09 08:45:42.252 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "49 - add permission grant boundary"
+2026-10-09 08:45:42.267 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "50 - add iam change audit"
+2026-10-09 08:45:42.276 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "51 - add dictionary management"
+2026-10-09 08:45:42.282 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "52 - add cache management"
+2026-10-09 08:45:42.288 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "53 - add interface service management"
+2026-10-09 08:45:42.295 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "54 - add attachment management"
+2026-10-09 08:45:42.304 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "55 - add import export template management"
+2026-10-09 08:45:42.318 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "56 - add import validation job"
+2026-10-09 08:45:42.338 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "57 - add async export job"
+2026-10-09 08:45:42.357 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "58 - add student batch import"
+2026-10-09 08:45:42.373 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "59 - add teacher management"
+2026-10-09 08:45:42.383 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "60 - complete organization teacher tasks"
+2026-10-09 08:45:42.392 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "61 - add student exception report"
+2026-10-09 08:45:42.405 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "62 - add manual attendance"
+2026-10-09 08:45:42.416 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "63 - add export job payload"
+2026-10-09 08:45:42.424 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "64 - add growth review pdf feature"
+2026-10-09 08:45:42.432 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "65 - add growth review pdf job type"
+2026-10-09 08:45:42.438 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "66 - add growth review subscription"
+2026-10-09 08:45:42.446 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "67 - add growth review delivery queue"
+2026-10-09 08:45:42.453 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "68 - add anonymous rank preference"
+2026-10-09 08:45:42.461 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "69 - add miniapp anonymous rank permission"
+2026-10-09 08:45:42.466 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "70 - add miniapp parent weekly review permission"
+2026-10-09 08:45:42.470 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "71 - add miniapp parent reward permissions"
+2026-10-09 08:45:42.478 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "72 - add web system task read permission"
+2026-10-09 08:45:42.486 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "73 - add feature toggle management"
+2026-10-09 08:45:42.504 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "74 - add interface change execution audit"
+2026-10-09 08:45:42.515 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "75 - add interface change before snapshot"
+2026-10-09 08:45:42.536 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "76 - add dictionary ledger export"
+2026-10-09 08:45:42.545 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "77 - add template ledger export"
+2026-10-09 08:45:42.554 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "78 - add interface service ledger export"
+2026-10-09 08:45:42.561 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "79 - add cache operation log export"
+2026-10-09 08:45:42.572 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "80 - add system task ledger export"
+2026-10-09 08:45:42.579 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "81 - add reward exchange ledger export"
+2026-10-09 08:45:42.588 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "82 - add exception report ledger export"
+2026-10-09 08:45:42.598 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "83 - add attachment ledger export"
+2026-10-09 08:45:42.604 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "84 - add student task report export"
+2026-10-09 08:45:42.613 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "85 - add organization task statistics export"
+2026-10-09 08:45:42.621 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "86 - add attendance ledger export"
+2026-10-09 08:45:42.629 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "87 - add menu management"
+2026-10-09 08:45:42.654 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "88 - initialize web menu catalog"
+2026-10-09 08:45:42.678 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "89 - complete web button catalog"
+2026-10-09 08:45:42.715 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "90 - add admin division and chongqing organization"
+2026-10-09 08:45:42.777 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "91 - unify menu permission codes"
+2026-10-09 08:45:42.820 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "92 - allow direct reorder move audit events"
+2026-10-09 08:45:42.828 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "93 - add menu management page ui buttons"
+2026-10-09 08:45:42.835 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "94 - add iam page quick grant buttons"
+2026-10-09 08:45:42.843 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "95 - add system task inline review buttons"
+2026-10-09 08:45:42.851 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "96 - menu batch button actions"
+2026-10-09 08:45:42.867 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "97 - user role organization actions"
+2026-10-09 08:45:42.888 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "98 - grant all configured buttons"
+2026-10-09 08:45:42.967 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "99 - management usability actions"
+2026-10-09 08:45:42.999 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "100 - unified menu permission modules"
+2026-10-09 08:45:43.078 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "101 - managed user password actions"
+2026-10-09 08:45:43.089 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "102 - remove stale ui buttons"
+2026-10-09 08:45:43.102 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "103 - organization member revoke menu delete"
+2026-10-09 08:45:43.123 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "104 - minimal default account roles"
+2026-10-09 08:45:43.138 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "105 - user profile edit"
+2026-10-09 08:45:43.156 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "106 - management lifecycle"
+2026-10-09 08:45:43.189 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "107 - training institution type"
+2026-10-09 08:45:43.196 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "108 - institution enrollment invitations"
+2026-10-09 08:45:43.216 INFO  [main] o.f.core.internal.command.DbMigrate - Successfully applied 109 migrations to schema "public", now at version v108 (execution time 00:01.058s)
+2026-10-09 08:45:48.739 INFO  [main] c.l.l.s.a.ManagedStudentAccountIntegrationTest - Started ManagedStudentAccountIntegrationTest in 13.782 seconds (process running for 30.669)
+2026-10-09 08:45:48.745 WARN  [main] o.s.c.events.SpringDocAppInitializer - SpringDoc /api/v1/openapi endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=false'
+2026-10-09 08:45:49.414 INFO  [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2026-10-09 08:45:49.416 INFO  [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.

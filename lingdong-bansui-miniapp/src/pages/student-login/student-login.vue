@@ -1,14 +1,14 @@
 <template>
-  <view class="ld-page">
+  <view class="ld-page access-page">
     <view class="ld-heading">
-      <text class="ld-heading-title">学生登录</text>
+      <text class="ld-heading-title">成长小主人登录</text>
       <view class="ld-heading-rule" />
     </view>
 
     <view v-if="capabilityLoading" class="ld-loading">正在加载</view>
     <view v-else-if="!serviceEnabled" class="ld-empty">
       <text class="ld-empty-main">服务暂不可用</text>
-      <text class="ld-empty-sub">请联系管理员确认学生登录开关</text>
+      <text class="ld-empty-sub">请联系管理员确认登录服务已启用</text>
     </view>
     <template v-else>
       <view v-if="modeCount > 1" class="ld-tabs">
@@ -21,9 +21,9 @@
 
       <view class="ld-card">
         <view v-if="loginMode === 'ACCOUNT'" class="ld-field first-field">
-          <text class="ld-field-label">学生账号</text>
-          <input v-model="studentAccount" class="ld-input" type="number" maxlength="8"
-                 placeholder="8位学生账号" :disabled="submitting" />
+          <text class="ld-field-label">成长账号</text>
+          <input v-model="studentAccount" class="ld-input" type="text" maxlength="64"
+                 placeholder="成长账号" :disabled="submitting" />
         </view>
 
         <view v-else-if="loginMode === 'QR'" class="qr-login-section">
@@ -40,7 +40,7 @@
             微信授权登录
           </button>
           <text v-else-if="!wechatVerificationTicket" class="wechat-binding-hint">
-            首次绑定需验证学生账号、登录码和主监护人手机号
+            首次绑定需验证成长账号、登录码和主监护人手机号
           </text>
           <text v-else class="wechat-binding-hint">
             验证码已发送至 {{ wechatMaskedMobile }}
@@ -79,10 +79,14 @@
         </button>
       </view>
     </template>
+    <LoginConsent v-model="consent"/>
   </view>
 </template>
 
 <script setup lang="ts">
+import LoginConsent from "@/components/LoginConsent.vue";
+const consent=ref(false);
+function agreed(){if(consent.value)return true;uni.showToast({title:"请先阅读并同意协议及隐私条款",icon:"none"});return false;}
 import { computed, onBeforeUnmount, ref } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { ApiError } from '@/api/http';
@@ -149,8 +153,8 @@ onLoad(async () => {
     // #ifdef MP-WEIXIN
     studentWechatAuthEnabled.value = capabilities.studentWechatAuthEnabled === true;
     // #endif
-    loginMode.value = studentWechatAuthEnabled.value ? 'WECHAT'
-      : capabilities.studentQrLoginEnabled ? 'QR' : 'ACCOUNT';
+    loginMode.value = studentLoginEnabled.value ? 'ACCOUNT'
+      : studentQrLoginEnabled.value ? 'QR' : 'WECHAT';
   } catch {
     studentLoginEnabled.value = false;
   } finally {
@@ -167,12 +171,13 @@ onBeforeUnmount(() => {
 });
 
 async function submitLogin(): Promise<void> {
+  if(!agreed())return;
   errorMessage.value = '';
   if (loginMode.value === 'WECHAT') {
     await submitWechatLogin();
     return;
   }
-  if (loginMode.value === 'ACCOUNT' && !/^\d{8}$/.test(studentAccount.value)) {
+  if (loginMode.value === 'ACCOUNT' && !/^[A-Za-z0-9_.@-]{1,64}$/.test(studentAccount.value)) {
     errorMessage.value = '账号或登录码格式不正确';
     return;
   }
@@ -202,7 +207,7 @@ async function submitLogin(): Promise<void> {
       });
       clearSensitiveInputs();
       saveStudentSession(session, session.studentAccount);
-      await uni.redirectTo({ url: '/pages/student-home/student-home' });
+      await uni.redirectTo({ url: '/pages/student-dashboard/student-dashboard' });
       return;
     }
     const session = await loginStudentByCode({
@@ -217,7 +222,7 @@ async function submitLogin(): Promise<void> {
     loginCode.value = '';
     captchaAnswer.value = '';
     saveStudentSession(session, account);
-    await uni.redirectTo({ url: '/pages/student-home/student-home' });
+    await uni.redirectTo({ url: '/pages/student-dashboard/student-dashboard' });
   } catch (error) {
     await handleLoginError(error);
   } finally {
@@ -226,10 +231,11 @@ async function submitLogin(): Promise<void> {
 }
 
 async function submitWechatLogin(): Promise<void> {
+  if(!agreed())return;
   if (!studentWechatAuthEnabled.value || submitting.value) return;
   if (wechatBindingTicket.value && !wechatVerificationTicket.value) {
-    if (!/^\d{8}$/.test(studentAccount.value) || !/^\d{4}$/.test(loginCode.value)) {
-      errorMessage.value = '请输入8位学生账号和4位登录码';
+    if (!/^[A-Za-z0-9_.@-]{1,64}$/.test(studentAccount.value) || !/^\d{4}$/.test(loginCode.value)) {
+      errorMessage.value = '请输入成长账号和4位登录码';
       return;
     }
     if (captchaVisible.value && !captchaAnswer.value.trim()) {
@@ -251,7 +257,7 @@ async function submitWechatLogin(): Promise<void> {
       });
       if (exchange.session) {
         saveStudentSession(exchange.session, exchange.session.studentAccount);
-        await uni.redirectTo({ url: '/pages/student-home/student-home' });
+        await uni.redirectTo({ url: '/pages/student-dashboard/student-dashboard' });
         return;
       }
       wechatBindingTicket.value = exchange.bindingTicket || '';
@@ -283,7 +289,7 @@ async function submitWechatLogin(): Promise<void> {
     });
     saveStudentSession(session, session.studentAccount);
     resetWechatBinding();
-    await uni.redirectTo({ url: '/pages/student-home/student-home' });
+    await uni.redirectTo({ url: '/pages/student-dashboard/student-dashboard' });
   } catch (error) {
     await handleLoginError(error);
   } finally {
@@ -381,8 +387,8 @@ async function refreshCaptcha(): Promise<void> {
     await refreshQrCaptcha();
     return;
   }
-  if (!/^\d{8}$/.test(studentAccount.value)) {
-    errorMessage.value = '请输入8位学生账号';
+  if (!/^[A-Za-z0-9_.@-]{1,64}$/.test(studentAccount.value)) {
+    errorMessage.value = '请输入成长账号';
     return;
   }
   captchaLoading.value = true;
@@ -487,7 +493,11 @@ function startLockTimer(): void {
 }
 </script>
 
+
 <style lang="scss" scoped>
+
+@import "@/styles/account-access.scss";
+.ld-card { background:#fffefa; border-radius:28rpx; border:1rpx solid #e4e5d9; } .ld-btn-primary { background:#194f3b; }
 .first-field { margin-top: 0; }
 
 .qr-login-section { min-height: 100rpx; display: flex; align-items: center; }
@@ -544,4 +554,6 @@ function startLockTimer(): void {
 
 .error-gap { margin-top: $ld-gap-block; }
 .submit-button { margin-top: $ld-gap-block; }
+
+.access-page{background:#f3f9f2;padding:64rpx 36rpx 50rpx;}.ld-heading{margin-bottom:40rpx;}.ld-heading-title{font-size:40rpx;color:#164d3a;}.ld-heading-rule{display:none;}.ld-card{background:#fff;border:0;box-shadow:none;border-radius:26rpx;padding:30rpx;}.ld-tabs{background:#eaf3e9;border-radius:28rpx;padding:8rpx;margin-bottom:24rpx;}.ld-tab.active{background:white;color:#14664c;border-radius:24rpx;}.ld-input{border:1rpx solid #dfe7e1;border-radius:16rpx;background:#fafcfb;min-height:84rpx;padding:0 24rpx;box-sizing:border-box;}.ld-btn-primary{background:#14664c;border-radius:18rpx;}.ld-field-label{font-size:28rpx;}
 </style>

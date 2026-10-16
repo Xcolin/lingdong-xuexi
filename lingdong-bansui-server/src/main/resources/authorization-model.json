@@ -1,0 +1,3326 @@
+{
+  "version": 1,
+  "modules": [
+    {
+      "code": "PERMISSION_MANAGEMENT",
+      "name": "权限管理",
+      "routes": [
+        "/iam",
+        "/users",
+        "/menu-management",
+        "/organizations"
+      ]
+    },
+    {
+      "code": "SYSTEM_SETTINGS",
+      "name": "系统设置管理",
+      "routes": [
+        "/dictionaries",
+        "/cache-management",
+        "/feature-management"
+      ]
+    },
+    {
+      "code": "IMPORT_EXPORT_MANAGEMENT",
+      "name": "导入导出管理",
+      "routes": [
+        "/import-export-templates",
+        "/import-jobs",
+        "/export-jobs"
+      ]
+    },
+    {
+      "code": "SYSTEM_OPERATIONS",
+      "name": "系统运维",
+      "routes": [
+        "/system-tasks",
+        "/interface-services",
+        "/attachment-management"
+      ]
+    },
+    {
+      "code": "EDUCATION_MANAGEMENT",
+      "name": "教育管理",
+      "routes": [
+        "/attendance-records",
+        "/learning-tasks",
+        "/exception-reports",
+        "/student-login",
+        "/parent-relationships",
+        "/teachers"
+      ]
+    },
+    {
+      "code": "GROWTH_MANAGEMENT",
+      "name": "成长管理",
+      "routes": [
+        "/growth-points",
+        "/rewards",
+        "/growth-reviews",
+        "/anonymous-ranks",
+        "/rank-preferences"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "code": "DASHBOARD_READ",
+      "name": "工作台",
+      "route": "/dashboard",
+      "icon": "LayoutDashboard",
+      "permissionCode": "DASHBOARD_READ"
+    },
+    {
+      "code": "SYSTEM_TASK_READ",
+      "name": "系统任务",
+      "route": "/system-tasks",
+      "icon": "ClipboardList",
+      "permissionCode": "SYSTEM_TASK_READ"
+    },
+    {
+      "code": "FEATURE_TOGGLE_READ",
+      "name": "功能开关",
+      "route": "/feature-management",
+      "icon": "Gauge",
+      "permissionCode": "FEATURE_TOGGLE_READ"
+    },
+    {
+      "code": "ATTENDANCE_READ",
+      "name": "考勤台账",
+      "route": "/attendance-records",
+      "icon": "BookOpenCheck",
+      "permissionCode": "ATTENDANCE_READ"
+    },
+    {
+      "code": "LEARNING_TASK_READ_MANAGED",
+      "name": "学习任务",
+      "route": "/learning-tasks",
+      "icon": "ClipboardList",
+      "permissionCode": "LEARNING_TASK_READ_MANAGED"
+    },
+    {
+      "code": "EXCEPTION_REPORT_READ",
+      "name": "异常报备",
+      "route": "/exception-reports",
+      "icon": "CircleAlert",
+      "permissionCode": "EXCEPTION_REPORT_READ"
+    },
+    {
+      "code": "GROWTH_POINT_READ_CHILD",
+      "name": "积分台账",
+      "route": "/growth-points",
+      "icon": "Coins",
+      "permissionCode": "GROWTH_POINT_READ_CHILD"
+    },
+    {
+      "code": "REWARD_READ",
+      "name": "奖励管理",
+      "route": "/rewards",
+      "icon": "Gift",
+      "permissionCode": "REWARD_READ"
+    },
+    {
+      "code": "GROWTH_REVIEW_READ_CHILD",
+      "name": "成长复盘",
+      "route": "/growth-reviews",
+      "icon": "BookOpenCheck",
+      "permissionCode": "GROWTH_REVIEW_READ_CHILD"
+    },
+    {
+      "code": "ANONYMOUS_CLASS_RANK_READ",
+      "name": "班级匿名排行",
+      "route": "/anonymous-ranks",
+      "icon": "Coins",
+      "permissionCode": "ANONYMOUS_CLASS_RANK_READ"
+    },
+    {
+      "code": "ANONYMOUS_RANK_PREFERENCE_MANAGE",
+      "name": "排行查看授权",
+      "route": "/rank-preferences",
+      "icon": "ShieldCheck",
+      "permissionCode": "ANONYMOUS_RANK_PREFERENCE_MANAGE"
+    },
+    {
+      "code": "STUDENT_READ",
+      "name": "学生登录",
+      "route": "/student-login",
+      "icon": "QrCode",
+      "permissionCode": "STUDENT_READ"
+    },
+    {
+      "code": "PARENT_RELATIONSHIP_READ",
+      "name": "家长关系",
+      "route": "/parent-relationships",
+      "icon": "UserRoundCog",
+      "permissionCode": "PARENT_RELATIONSHIP_READ"
+    },
+    {
+      "code": "TEACHER_READ",
+      "name": "教师管理",
+      "route": "/teachers",
+      "icon": "GraduationCap",
+      "permissionCode": "TEACHER_READ"
+    },
+    {
+      "code": "IAM_USER_LIST",
+      "name": "用户管理",
+      "route": "/users",
+      "icon": "UsersRound",
+      "permissionCode": "IAM_USER_LIST"
+    },
+    {
+      "code": "IAM_ROLE_READ",
+      "name": "角色与权限",
+      "route": "/iam",
+      "icon": "ShieldCheck",
+      "permissionCode": "IAM_ROLE_READ"
+    },
+    {
+      "code": "DICTIONARY_READ",
+      "name": "数据字典",
+      "route": "/dictionaries",
+      "icon": "Database",
+      "permissionCode": "DICTIONARY_READ"
+    },
+    {
+      "code": "CACHE_READ",
+      "name": "缓存管理",
+      "route": "/cache-management",
+      "icon": "Gauge",
+      "permissionCode": "CACHE_READ"
+    },
+    {
+      "code": "INTERFACE_SERVICE_READ",
+      "name": "接口服务",
+      "route": "/interface-services",
+      "icon": "Cable",
+      "permissionCode": "INTERFACE_SERVICE_READ"
+    },
+    {
+      "code": "ATTACHMENT_RULE_READ",
+      "name": "附件管理",
+      "route": "/attachment-management",
+      "icon": "Paperclip",
+      "permissionCode": "ATTACHMENT_RULE_READ"
+    },
+    {
+      "code": "IMPORT_EXPORT_TEMPLATE_READ",
+      "name": "导入导出模板",
+      "route": "/import-export-templates",
+      "icon": "Files",
+      "permissionCode": "IMPORT_EXPORT_TEMPLATE_READ"
+    },
+    {
+      "code": "IMPORT_JOB_READ",
+      "name": "导入校验作业",
+      "route": "/import-jobs",
+      "icon": "FileCheck2",
+      "permissionCode": "IMPORT_JOB_READ"
+    },
+    {
+      "code": "EXPORT_JOB_READ",
+      "name": "数据导出中心",
+      "route": "/export-jobs",
+      "icon": "FileDown",
+      "permissionCode": "EXPORT_JOB_READ"
+    },
+    {
+      "code": "ORG_NODE_READ",
+      "name": "组织管理",
+      "route": "/organizations",
+      "icon": "Network",
+      "permissionCode": "ORG_NODE_READ"
+    },
+    {
+      "code": "MENU_READ",
+      "name": "菜单管理",
+      "route": "/menu-management",
+      "icon": "ListTree",
+      "permissionCode": "MENU_READ"
+    },
+    {
+      "code": "ORGANIZATION_ONBOARDING_READ",
+      "name": "我的组织",
+      "route": "/my-organizations",
+      "icon": "Building2",
+      "permissionCode": "ORGANIZATION_ONBOARDING_READ"
+    }
+  ],
+  "actions": [
+    {
+      "code": "PARENT_ACCOUNT_LIFECYCLE_MANAGE",
+      "name": "家长账号维护 · 更换手机号",
+      "route": "/dashboard",
+      "source": "dashboard/ParentAccountLifecyclePanel.tsx",
+      "label": "更换手机号",
+      "pagePermissionCode": "DASHBOARD_READ",
+      "features": []
+    },
+    {
+      "code": "ORGANIZATION_ONBOARDING_REVIEW",
+      "name": "机构入驻 · 审核申请",
+      "label": "审核申请",
+      "route": "/system-tasks",
+      "permissionCode": "ORGANIZATION_ONBOARDING_REVIEW"
+    },
+    {
+      "code": "FEATURE_TOGGLE_MANAGE",
+      "name": "功能开关 · 申请变更",
+      "route": "/feature-management",
+      "source": "feature-management/FeatureManagementPage.tsx",
+      "label": "申请变更",
+      "pagePermissionCode": "FEATURE_TOGGLE_READ",
+      "features": []
+    },
+    {
+      "code": "FEATURE_TOGGLE_REVIEW",
+      "name": "功能开关 · 审核变更",
+      "route": "/feature-management",
+      "source": "feature-management/FeatureManagementPage.tsx",
+      "label": "审核变更",
+      "pagePermissionCode": "FEATURE_TOGGLE_READ",
+      "features": []
+    },
+    {
+      "code": "ATTENDANCE_RECORD",
+      "name": "考勤记录 · 班级点名",
+      "route": "/attendance-records",
+      "source": "attendance/AttendancePage.tsx",
+      "label": "班级点名",
+      "pagePermissionCode": "ATTENDANCE_READ",
+      "features": []
+    },
+    {
+      "code": "TASK_ASSIGNMENT_EXEMPT",
+      "name": "任务实例 · 任务实例免执行",
+      "label": "任务实例免执行",
+      "route": "/learning-tasks",
+      "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/learningtask/web/ManagedTaskAssignmentController.java",
+      "apiOnly": true,
+      "pagePermissionCode": "LEARNING_TASK_READ_MANAGED"
+    },
+    {
+      "code": "TASK_ASSIGNMENT_REVIEW",
+      "name": "任务打卡审核 · 审核通过并发放积分",
+      "route": "/learning-tasks",
+      "source": "learning-tasks/TaskReviewDrawer.tsx",
+      "label": "审核通过并发放积分",
+      "pagePermissionCode": "LEARNING_TASK_READ_MANAGED",
+      "features": []
+    },
+    {
+      "code": "LEARNING_TASK_CREATE",
+      "name": "任务编辑 · 保存草稿",
+      "route": "/learning-tasks",
+      "source": "learning-tasks/LearningTaskEditorDrawer.tsx",
+      "label": "保存草稿",
+      "pagePermissionCode": "LEARNING_TASK_READ_MANAGED",
+      "features": []
+    },
+    {
+      "code": "LEARNING_TASK_TEMPLATE_MANAGE_PERSONAL",
+      "name": "任务编辑 · 保存为个人模板",
+      "route": "/learning-tasks",
+      "source": "learning-tasks/LearningTaskEditorDrawer.tsx",
+      "label": "保存为个人模板",
+      "pagePermissionCode": "LEARNING_TASK_READ_MANAGED",
+      "features": []
+    },
+    {
+      "code": "TASK_ASSIGNMENT_DEFER",
+      "name": "任务顺延 · 顺延",
+      "route": "/learning-tasks",
+      "source": "learning-tasks/TaskDeferQueue.tsx",
+      "label": "顺延",
+      "pagePermissionCode": "LEARNING_TASK_READ_MANAGED",
+      "features": []
+    },
+    {
+      "code": "LEARNING_TASK_COPY_PREVIOUS_DAY",
+      "name": "学习任务 · 复制昨日任务",
+      "route": "/learning-tasks",
+      "source": "learning-tasks/LearningTaskManagementPage.tsx",
+      "label": "复制昨日任务",
+      "pagePermissionCode": "LEARNING_TASK_READ_MANAGED",
+      "features": []
+    },
+    {
+      "code": "LEARNING_TASK_PUBLISH",
+      "name": "学习任务 · 批量发布",
+      "route": "/learning-tasks",
+      "source": "learning-tasks/LearningTaskManagementPage.tsx",
+      "label": "批量发布",
+      "pagePermissionCode": "LEARNING_TASK_READ_MANAGED",
+      "features": []
+    },
+    {
+      "code": "LEARNING_TASK_PROGRESS_READ",
+      "name": "学习任务 · 学生进度",
+      "route": "/learning-tasks",
+      "source": "learning-tasks/LearningTaskManagementPage.tsx",
+      "label": "学生进度",
+      "pagePermissionCode": "LEARNING_TASK_READ_MANAGED",
+      "features": []
+    },
+    {
+      "code": "LEARNING_TASK_TEMPLATE_READ",
+      "name": "学习任务 · 任务模板",
+      "route": "/learning-tasks",
+      "source": "learning-tasks/LearningTaskManagementPage.tsx",
+      "label": "任务模板",
+      "pagePermissionCode": "LEARNING_TASK_READ_MANAGED",
+      "features": []
+    },
+    {
+      "code": "ATTACHMENT_READ",
+      "name": "打卡附件 · 受控打卡附件查看/下载",
+      "label": "受控打卡附件查看/下载",
+      "route": "/learning-tasks",
+      "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/attachment/web/TaskAttachmentController.java",
+      "apiOnly": true,
+      "pagePermissionCode": "LEARNING_TASK_READ_MANAGED"
+    },
+    {
+      "code": "EXCEPTION_REPORT_CREATE",
+      "name": "异常报备 · 新增报备",
+      "route": "/exception-reports",
+      "source": "exception-reports/ExceptionReportPage.tsx",
+      "label": "新增报备",
+      "pagePermissionCode": "EXCEPTION_REPORT_READ",
+      "features": []
+    },
+    {
+      "code": "EXCEPTION_REPORT_HANDLE",
+      "name": "异常报备 · 确认处理",
+      "route": "/exception-reports",
+      "source": "exception-reports/ExceptionReportPage.tsx",
+      "label": "确认处理",
+      "pagePermissionCode": "EXCEPTION_REPORT_READ",
+      "features": []
+    },
+    {
+      "code": "GROWTH_POINT_CORRECT_CHILD",
+      "name": "成长积分 · 纠错",
+      "route": "/growth-points",
+      "source": "growth-points/GrowthPointPage.tsx",
+      "label": "纠错",
+      "features": [
+        "GROWTH_POINT_CORRECTION"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "activePrimaryGuardian"
+      ],
+      "pagePermissionCode": "GROWTH_POINT_READ_CHILD"
+    },
+    {
+      "code": "REWARD_EXCHANGE_REVIEW",
+      "name": "奖励兑换 · 审核兑换申请",
+      "route": "/rewards",
+      "source": "rewards/RewardManagementPage.tsx",
+      "label": "审核兑换申请",
+      "features": [
+        "REWARD_EXCHANGE"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "activePrimaryGuardian"
+      ],
+      "pagePermissionCode": "REWARD_READ"
+    },
+    {
+      "code": "REWARD_EXCHANGE_READ",
+      "name": "奖励兑换 · 查询兑换申请",
+      "route": "/rewards",
+      "source": "API controller",
+      "label": "查询兑换申请",
+      "features": [
+        "REWARD_EXCHANGE"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "activeGuardian"
+      ],
+      "pagePermissionCode": "REWARD_READ"
+    },
+    {
+      "code": "REWARD_CREATE",
+      "name": "奖励管理 · 新建奖励",
+      "route": "/rewards",
+      "source": "rewards/RewardManagementPage.tsx",
+      "label": "新建奖励",
+      "features": [
+        "REWARD_EXCHANGE"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "activePrimaryGuardian"
+      ],
+      "pagePermissionCode": "REWARD_READ"
+    },
+    {
+      "code": "REWARD_UPDATE",
+      "name": "奖励管理 · 编辑奖励",
+      "route": "/rewards",
+      "source": "rewards/RewardManagementPage.tsx",
+      "label": "编辑奖励",
+      "features": [
+        "REWARD_EXCHANGE"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "activePrimaryGuardian"
+      ],
+      "pagePermissionCode": "REWARD_READ"
+    },
+    {
+      "code": "REWARD_DELETE",
+      "name": "奖励管理 · 删除奖励",
+      "route": "/rewards",
+      "source": "rewards/RewardManagementPage.tsx",
+      "label": "删除奖励",
+      "features": [
+        "REWARD_EXCHANGE"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "activePrimaryGuardian"
+      ],
+      "pagePermissionCode": "REWARD_READ"
+    },
+    {
+      "code": "GROWTH_REVIEW_SUBSCRIBE_CHILD",
+      "name": "成长复盘 · 启用周订阅",
+      "label": "启用周订阅",
+      "route": "/growth-reviews",
+      "source": "growth-reviews/GrowthReviewSubscriptionPanel.tsx",
+      "pagePermissionCode": "GROWTH_REVIEW_READ_CHILD"
+    },
+    {
+      "code": "GROWTH_REVIEW_SUPPLEMENT_CHILD",
+      "name": "成长复盘 · 补录复盘",
+      "route": "/growth-reviews",
+      "source": "growth-reviews/GrowthReviewPage.tsx",
+      "label": "补录复盘",
+      "features": [
+        "DAY:DAILY_GROWTH_REVIEW",
+        "OTHER:PERIODIC_GROWTH_REPORT"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "activePrimaryGuardian"
+      ],
+      "pagePermissionCode": "GROWTH_REVIEW_READ_CHILD"
+    },
+    {
+      "code": "STUDENT_CREATE",
+      "name": "学生档案 · 独立创建学生档案",
+      "label": "独立创建学生档案",
+      "route": "/student-login",
+      "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/student/web/StudentManagementController.java",
+      "apiOnly": true,
+      "pagePermissionCode": "STUDENT_READ"
+    },
+    {
+      "code": "STUDENT_CREDENTIAL_INITIALIZE",
+      "name": "学生档案 · 历史学生登录凭据初始化",
+      "label": "历史学生登录凭据初始化",
+      "route": "/student-login",
+      "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/student/web/StudentManagementController.java",
+      "apiOnly": true,
+      "pagePermissionCode": "STUDENT_READ"
+    },
+    {
+      "code": "STUDENT_LOGIN_CODE_RESET",
+      "name": "学生档案 · 重置学生登录码并撤销会话",
+      "label": "重置学生登录码并撤销会话",
+      "route": "/student-login",
+      "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/student/web/StudentManagementController.java",
+      "apiOnly": true,
+      "pagePermissionCode": "STUDENT_READ"
+    },
+    {
+      "code": "STUDENT_LOGIN_QR_CREATE",
+      "name": "学生登录凭证 · 生成",
+      "route": "/student-login",
+      "source": "student-login/StudentLoginManagementPage.tsx",
+      "label": "生成",
+      "pagePermissionCode": "STUDENT_READ",
+      "features": []
+    },
+    {
+      "code": "STUDENT_WECHAT_UNBIND",
+      "name": "学生登录凭证 · 解绑",
+      "route": "/student-login",
+      "source": "student-login/StudentLoginManagementPage.tsx",
+      "label": "解绑",
+      "pagePermissionCode": "STUDENT_READ",
+      "features": []
+    },
+    {
+      "code": "PRIMARY_PARENT_TRANSFER_CREATE",
+      "name": "家长关系 · 转移监护权",
+      "route": "/parent-relationships",
+      "source": "parent-relationships/ParentRelationshipPage.tsx",
+      "label": "转移监护权",
+      "features": [
+        "PARENT_RELATIONSHIP_MANAGEMENT"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "activePrimaryGuardian"
+      ],
+      "pagePermissionCode": "PARENT_RELATIONSHIP_READ"
+    },
+    {
+      "code": "SECONDARY_PARENT_INVITE_CREATE",
+      "name": "家长关系 · 邀请副家长",
+      "route": "/parent-relationships",
+      "source": "parent-relationships/ParentRelationshipPage.tsx",
+      "label": "邀请副家长",
+      "features": [
+        "PARENT_RELATIONSHIP_MANAGEMENT"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "activePrimaryGuardian"
+      ],
+      "pagePermissionCode": "PARENT_RELATIONSHIP_READ"
+    },
+    {
+      "code": "PRIMARY_PARENT_SELF_UNBIND",
+      "name": "家长关系 · 解除我的主家长关系",
+      "route": "/parent-relationships",
+      "source": "parent-relationships/ParentRelationshipPage.tsx",
+      "label": "解除我的主家长关系",
+      "features": [
+        "PARENT_RELATIONSHIP_MANAGEMENT"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "activePrimaryGuardian"
+      ],
+      "pagePermissionCode": "PARENT_RELATIONSHIP_READ"
+    },
+    {
+      "code": "SECONDARY_PARENT_UNBIND",
+      "name": "家长关系 · 解除副家长",
+      "route": "/parent-relationships",
+      "source": "parent-relationships/ParentRelationshipPage.tsx",
+      "label": "解除副家长",
+      "features": [
+        "PARENT_RELATIONSHIP_MANAGEMENT"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "activePrimaryGuardian"
+      ],
+      "pagePermissionCode": "PARENT_RELATIONSHIP_READ"
+    },
+    {
+      "code": "STUDENT_PARENT_INVITE_CREATE",
+      "name": "家长绑定 · 机构创建家长绑定邀请",
+      "label": "机构创建家长绑定邀请",
+      "route": "/parent-relationships",
+      "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/student/web/StudentManagementController.java",
+      "apiOnly": true,
+      "pagePermissionCode": "PARENT_RELATIONSHIP_READ"
+    },
+    {
+      "code": "STUDENT_PARENT_INVITE_RESPOND",
+      "name": "家长绑定 · 接受/拒绝机构家长绑定邀请",
+      "label": "接受/拒绝机构家长绑定邀请",
+      "route": "/parent-relationships",
+      "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/student/web/ParentBindingInvitationController.java",
+      "apiOnly": true,
+      "pagePermissionCode": "PARENT_RELATIONSHIP_READ"
+    },
+    {
+      "code": "TEACHER_CREATE",
+      "name": "教师管理 · 新增教师",
+      "route": "/teachers",
+      "source": "teachers/TeacherManagementPage.tsx",
+      "label": "新增教师",
+      "pagePermissionCode": "TEACHER_READ",
+      "features": []
+    },
+    {
+      "code": "TEACHER_BATCH_MANAGE",
+      "name": "教师管理 · 批量操作",
+      "route": "/teachers",
+      "source": "teachers/TeacherManagementPage.tsx",
+      "label": "批量操作",
+      "pagePermissionCode": "TEACHER_READ",
+      "features": []
+    },
+    {
+      "code": "TEACHER_UPDATE",
+      "name": "教师管理 · 编辑资料",
+      "route": "/teachers",
+      "source": "teachers/TeacherManagementPage.tsx",
+      "label": "编辑资料",
+      "pagePermissionCode": "TEACHER_READ",
+      "features": []
+    },
+    {
+      "code": "TEACHER_PASSWORD_RESET",
+      "name": "教师管理 · 重置密码",
+      "route": "/teachers",
+      "source": "teachers/TeacherManagementPage.tsx",
+      "label": "重置密码",
+      "pagePermissionCode": "TEACHER_READ",
+      "features": []
+    },
+    {
+      "code": "TEACHER_STATUS_CHANGE",
+      "name": "教师账号状态 · 启用账号",
+      "route": "/teachers",
+      "source": "teachers/*",
+      "label": "启用账号",
+      "pagePermissionCode": "TEACHER_READ",
+      "features": []
+    },
+    {
+      "code": "IAM_USER_CREATE",
+      "name": "用户管理 · 新增用户",
+      "route": "/users",
+      "source": "users/UserManagementPage.tsx",
+      "label": "新增用户",
+      "pagePermissionCode": "IAM_USER_LIST",
+      "features": []
+    },
+    {
+      "code": "IAM_USER_UPDATE",
+      "name": "用户管理 · 编辑",
+      "route": "/users",
+      "source": "users/UserManagementPage.tsx",
+      "label": "编辑",
+      "pagePermissionCode": "IAM_USER_LIST",
+      "features": []
+    },
+    {
+      "source": "users/UserManagementPage.tsx",
+      "code": "IAM_USER_PASSWORD_SET",
+      "name": "用户管理 · 重置密码",
+      "route": "/users",
+      "label": "重置密码",
+      "pagePermissionCode": "IAM_USER_LIST",
+      "features": []
+    },
+    {
+      "code": "IAM_USER_STATUS_CHANGE",
+      "name": "用户管理 · 用户启停与锁定",
+      "route": "/users",
+      "source": "users/UserManagementPage.tsx",
+      "label": "用户启停与锁定",
+      "pagePermissionCode": "IAM_USER_LIST",
+      "features": []
+    },
+    {
+      "code": "IAM_USER_READ",
+      "name": "用户资料 · 用户详情读取",
+      "label": "用户详情读取",
+      "route": "/users",
+      "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/iam/web/UserManagementController.java",
+      "apiOnly": true,
+      "pagePermissionCode": "IAM_USER_LIST"
+    },
+    {
+      "code": "IAM_AUDIT_READ",
+      "name": "权限审计 · 查询审计日志",
+      "route": "/iam",
+      "source": "iam/IamAuditPanel.tsx",
+      "label": "查询审计日志",
+      "pagePermissionCode": "IAM_ROLE_READ",
+      "features": []
+    },
+    {
+      "code": "IAM_PERMISSION_READ",
+      "name": "规范权限目录 · 权限目录查询",
+      "label": "权限目录查询",
+      "route": "/iam",
+      "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/iam/web/PermissionManagementController.java",
+      "apiOnly": true,
+      "pagePermissionCode": "IAM_ROLE_READ"
+    },
+    {
+      "code": "IAM_DATA_SCOPE_CONFIGURE",
+      "name": "角色数据范围 · 角色自定义数据范围配置",
+      "label": "角色自定义数据范围配置",
+      "route": "/iam",
+      "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/iam/web/DataScopeManagementController.java",
+      "apiOnly": true,
+      "pagePermissionCode": "IAM_ROLE_READ"
+    },
+    {
+      "code": "IAM_ROLE_CREATE",
+      "name": "角色管理 · 新增角色",
+      "route": "/iam",
+      "source": "iam/IamManagementPage.tsx",
+      "label": "新增角色",
+      "pagePermissionCode": "IAM_ROLE_READ",
+      "features": []
+    },
+    {
+      "code": "IAM_ROLE_UPDATE",
+      "name": "角色管理 · 编辑角色",
+      "route": "/iam",
+      "source": "iam/IamManagementPage.tsx",
+      "label": "编辑角色",
+      "pagePermissionCode": "IAM_ROLE_READ",
+      "features": []
+    },
+    {
+      "code": "IAM_ROLE_PERMISSION_GRANT",
+      "name": "角色管理 · 配置角色权限",
+      "route": "/iam",
+      "source": "iam/IamManagementPage.tsx",
+      "label": "配置角色权限",
+      "pagePermissionCode": "IAM_ROLE_READ",
+      "features": []
+    },
+    {
+      "code": "IAM_USER_PERMISSION_CONFIGURE",
+      "name": "角色管理 · 配置用户权限",
+      "route": "/iam",
+      "source": "iam/IamManagementPage.tsx",
+      "label": "配置用户权限",
+      "pagePermissionCode": "IAM_ROLE_READ",
+      "features": []
+    },
+    {
+      "code": "IAM_USER_ROLE_ASSIGN",
+      "name": "角色管理 · 关联用户",
+      "route": "/iam",
+      "source": "iam/IamManagementPage.tsx",
+      "label": "关联用户",
+      "pagePermissionCode": "IAM_ROLE_READ",
+      "features": []
+    },
+    {
+      "code": "IAM_ROLE_STATUS_CHANGE",
+      "name": "角色管理 · 角色启停",
+      "route": "/iam",
+      "source": "iam/IamManagementPage.tsx",
+      "label": "角色启停",
+      "pagePermissionCode": "IAM_ROLE_READ",
+      "features": []
+    },
+    {
+      "code": "IAM_ROLE_DELETE",
+      "name": "角色管理 · 删除角色",
+      "route": "/iam",
+      "source": "iam/IamManagementPage.tsx",
+      "label": "删除角色",
+      "pagePermissionCode": "IAM_ROLE_READ",
+      "features": []
+    },
+    {
+      "code": "DICTIONARY_MANAGE",
+      "name": "数据字典 · 新增类型",
+      "route": "/dictionaries",
+      "source": "dictionaries/DictionaryManagementPage.tsx",
+      "label": "新增类型",
+      "pagePermissionCode": "DICTIONARY_READ",
+      "features": []
+    },
+    {
+      "code": "CACHE_MANAGE",
+      "name": "缓存操作 · 执行缓存操作",
+      "route": "/cache-management",
+      "source": "cache/CacheManagementPage.tsx",
+      "label": "执行缓存操作",
+      "pagePermissionCode": "CACHE_READ",
+      "features": []
+    },
+    {
+      "code": "CACHE_REVIEW",
+      "name": "缓存操作 · 批准",
+      "route": "/cache-management",
+      "source": "cache/CacheManagementPage.tsx",
+      "label": "批准",
+      "pagePermissionCode": "CACHE_READ",
+      "features": []
+    },
+    {
+      "code": "INTERFACE_SERVICE_MANAGE",
+      "name": "接口服务 · 调整授权",
+      "route": "/interface-services",
+      "source": "interface-services/InterfaceServiceManagementPage.tsx",
+      "label": "调整授权",
+      "pagePermissionCode": "INTERFACE_SERVICE_READ",
+      "features": []
+    },
+    {
+      "code": "INTERFACE_SERVICE_REVIEW",
+      "name": "接口服务 · 批准",
+      "route": "/interface-services",
+      "source": "interface-services/InterfaceServiceManagementPage.tsx",
+      "label": "批准",
+      "pagePermissionCode": "INTERFACE_SERVICE_READ",
+      "features": []
+    },
+    {
+      "code": "ATTACHMENT_RULE_MANAGE",
+      "name": "附件管理 · 编辑",
+      "route": "/attachment-management",
+      "source": "attachments/AttachmentManagementPage.tsx",
+      "label": "编辑",
+      "pagePermissionCode": "ATTACHMENT_RULE_READ",
+      "features": []
+    },
+    {
+      "code": "ATTACHMENT_FILE_LEDGER_READ",
+      "name": "附件管理 · 查询文件",
+      "route": "/attachment-management",
+      "source": "attachments/AttachmentManagementPage.tsx",
+      "label": "查询文件",
+      "pagePermissionCode": "ATTACHMENT_RULE_READ",
+      "features": []
+    },
+    {
+      "code": "IMPORT_EXPORT_TEMPLATE_MANAGE",
+      "name": "导入导出模板 · 设为默认",
+      "route": "/import-export-templates",
+      "source": "import-export-templates/ImportExportTemplateManagementPage.tsx",
+      "label": "设为默认",
+      "pagePermissionCode": "IMPORT_EXPORT_TEMPLATE_READ",
+      "features": []
+    },
+    {
+      "code": "STUDENT_IMPORT_RESULT_READ",
+      "name": "学员导入 · 批量学员导入执行/行级结果查询",
+      "label": "批量学员导入执行/行级结果查询",
+      "route": "/import-jobs",
+      "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/studentimport/web/StudentImportController.java",
+      "apiOnly": true,
+      "pagePermissionCode": "IMPORT_JOB_READ"
+    },
+    {
+      "code": "IMPORT_JOB_CREATE",
+      "name": "导入校验 · 新建校验作业",
+      "route": "/import-jobs",
+      "source": "import-jobs/ImportJobManagementPage.tsx",
+      "label": "新建校验作业",
+      "pagePermissionCode": "IMPORT_JOB_READ",
+      "features": []
+    },
+    {
+      "code": "STUDENT_IMPORT_CREDENTIAL_DOWNLOAD",
+      "name": "导入校验 · 下载初始凭证",
+      "route": "/import-jobs",
+      "source": "import-jobs/ImportJobManagementPage.tsx",
+      "label": "下载初始凭证",
+      "pagePermissionCode": "IMPORT_JOB_READ",
+      "features": []
+    },
+    {
+      "code": "STUDENT_IMPORT_EXECUTE",
+      "name": "导入校验 · 执行学员导入",
+      "route": "/import-jobs",
+      "source": "import-jobs/ImportJobManagementPage.tsx",
+      "label": "执行学员导入",
+      "pagePermissionCode": "IMPORT_JOB_READ",
+      "features": []
+    },
+    {
+      "code": "EXPORT_SENSITIVE_SUBMIT",
+      "name": "业务数据导出 · 申请敏感数据导出",
+      "label": "申请敏感数据导出",
+      "route": "/export-jobs",
+      "source": "exportjob/application",
+      "apiOnly": true,
+      "pagePermissionCode": "EXPORT_JOB_READ"
+    },
+    {
+      "code": "ATTACHMENT_FILE_LEDGER_EXPORT",
+      "name": "业务数据导出 · 文件台账导出",
+      "label": "文件台账导出",
+      "route": "/export-jobs",
+      "source": "exportjob/application",
+      "apiOnly": true,
+      "pagePermissionCode": "EXPORT_JOB_READ"
+    },
+    {
+      "code": "ATTENDANCE_LEDGER_EXPORT",
+      "name": "业务数据导出 · 考勤台账导出",
+      "label": "考勤台账导出",
+      "route": "/export-jobs",
+      "source": "exportjob/application",
+      "apiOnly": true,
+      "pagePermissionCode": "EXPORT_JOB_READ"
+    },
+    {
+      "code": "CACHE_EXPORT",
+      "name": "业务数据导出 · 缓存日志导出",
+      "label": "缓存日志导出",
+      "route": "/export-jobs",
+      "source": "exportjob/application",
+      "apiOnly": true,
+      "pagePermissionCode": "EXPORT_JOB_READ"
+    },
+    {
+      "code": "DICTIONARY_EXPORT",
+      "name": "业务数据导出 · 数据字典导出",
+      "label": "数据字典导出",
+      "route": "/export-jobs",
+      "source": "exportjob/application",
+      "apiOnly": true,
+      "pagePermissionCode": "EXPORT_JOB_READ"
+    },
+    {
+      "code": "EXCEPTION_REPORT_EXPORT",
+      "name": "业务数据导出 · 异常报备台账导出",
+      "label": "异常报备台账导出",
+      "route": "/export-jobs",
+      "source": "exportjob/application",
+      "apiOnly": true,
+      "pagePermissionCode": "EXPORT_JOB_READ"
+    },
+    {
+      "code": "IMPORT_EXPORT_TEMPLATE_EXPORT",
+      "name": "业务数据导出 · 导入导出模板导出",
+      "label": "导入导出模板导出",
+      "route": "/export-jobs",
+      "source": "exportjob/application",
+      "apiOnly": true,
+      "pagePermissionCode": "EXPORT_JOB_READ"
+    },
+    {
+      "code": "INTERFACE_SERVICE_EXPORT",
+      "name": "业务数据导出 · 接口服务台账导出",
+      "label": "接口服务台账导出",
+      "route": "/export-jobs",
+      "source": "exportjob/application",
+      "apiOnly": true,
+      "pagePermissionCode": "EXPORT_JOB_READ"
+    },
+    {
+      "code": "ORGANIZATION_TASK_STATISTICS_EXPORT",
+      "name": "业务数据导出 · 机构任务统计导出",
+      "label": "机构任务统计导出",
+      "route": "/export-jobs",
+      "source": "exportjob/application",
+      "apiOnly": true,
+      "pagePermissionCode": "EXPORT_JOB_READ"
+    },
+    {
+      "code": "REWARD_EXCHANGE_EXPORT",
+      "name": "业务数据导出 · 奖励兑换台账导出",
+      "label": "奖励兑换台账导出",
+      "route": "/export-jobs",
+      "source": "exportjob/application",
+      "apiOnly": true,
+      "pagePermissionCode": "EXPORT_JOB_READ"
+    },
+    {
+      "code": "STUDENT_TASK_REPORT_EXPORT",
+      "name": "业务数据导出 · 学生任务报表导出",
+      "label": "学生任务报表导出",
+      "route": "/export-jobs",
+      "source": "exportjob/application",
+      "apiOnly": true,
+      "pagePermissionCode": "EXPORT_JOB_READ"
+    },
+    {
+      "code": "SYSTEM_TASK_EXPORT",
+      "name": "业务数据导出 · 系统任务台账导出",
+      "label": "系统任务台账导出",
+      "route": "/export-jobs",
+      "source": "exportjob/application",
+      "apiOnly": true,
+      "pagePermissionCode": "EXPORT_JOB_READ"
+    },
+    {
+      "code": "EXPORT_SENSITIVE_REVIEW",
+      "name": "导出审核 · 批准",
+      "route": "/export-jobs",
+      "source": "export-jobs/ExportJobReviewPanel.tsx",
+      "label": "批准",
+      "pagePermissionCode": "EXPORT_JOB_READ",
+      "features": []
+    },
+    {
+      "code": "EXPORT_JOB_CREATE",
+      "name": "数据导出 · 新建导出",
+      "route": "/export-jobs",
+      "source": "export-jobs/ExportJobManagementPage.tsx",
+      "label": "新建导出",
+      "pagePermissionCode": "EXPORT_JOB_READ",
+      "features": []
+    },
+    {
+      "code": "STUDENT_ENROLLMENT_REVIEW",
+      "name": "入学申请审核 · 入学申请审核",
+      "source": "organizations/InstitutionEnrollmentReviewDrawer.tsx",
+      "route": "/organizations",
+      "label": "入学申请审核",
+      "pagePermissionCode": "ORG_NODE_READ",
+      "features": []
+    },
+    {
+      "code": "STUDENT_CLASS_ASSIGN",
+      "name": "学生入班 · 确认配置",
+      "route": "/organizations",
+      "source": "organizations/StudentClassAssignmentDrawer.tsx",
+      "label": "确认配置",
+      "pagePermissionCode": "ORG_NODE_READ",
+      "features": []
+    },
+    {
+      "code": "CLASS_CREATE",
+      "name": "班级管理 · 新增班级",
+      "route": "/organizations",
+      "source": "organizations/ClassManagementPanel.tsx",
+      "label": "新增班级",
+      "pagePermissionCode": "ORG_NODE_READ",
+      "features": []
+    },
+    {
+      "code": "CLASS_UPDATE",
+      "name": "班级管理 · 编辑",
+      "route": "/organizations",
+      "source": "organizations/ClassManagementPanel.tsx",
+      "label": "编辑",
+      "pagePermissionCode": "ORG_NODE_READ",
+      "features": []
+    },
+    {
+      "code": "CLASS_STATUS_CHANGE",
+      "name": "班级管理 · 停用 / 启用",
+      "route": "/organizations",
+      "source": "organizations/ClassManagementPanel.tsx",
+      "label": "停用 / 启用",
+      "pagePermissionCode": "ORG_NODE_READ",
+      "features": []
+    },
+    {
+      "code": "CLASS_READ",
+      "name": "班级管理 · 查询班级",
+      "route": "/organizations",
+      "source": "API controller",
+      "label": "查询班级",
+      "pagePermissionCode": "ORG_NODE_READ",
+      "features": []
+    },
+    {
+      "code": "STUDENT_ENROLLMENT_INVITE_CREATE",
+      "name": "班级邀请码 · 班级邀请码",
+      "source": "organizations/InstitutionEnrollmentReviewDrawer.tsx",
+      "route": "/organizations",
+      "label": "班级邀请码",
+      "pagePermissionCode": "ORG_NODE_READ",
+      "features": []
+    },
+    {
+      "code": "STUDENT_ENROLLMENT_REQUEST_CREATE",
+      "name": "申请关联学校或培训机构 · 关联机构申请",
+      "source": "organizations/InstitutionEnrollmentModal.tsx",
+      "route": "/organizations",
+      "label": "关联机构申请",
+      "pagePermissionCode": "ORG_NODE_READ",
+      "features": []
+    },
+    {
+      "code": "ORG_NODE_CHANGE_REVIEW",
+      "name": "组织变更审核 · 批准",
+      "route": "/organizations",
+      "source": "organizations/OrganizationChangeReviewPanel.tsx",
+      "label": "批准",
+      "pagePermissionCode": "ORG_NODE_READ",
+      "features": []
+    },
+    {
+      "code": "ORG_NODE_CHANGE_SUBMIT",
+      "name": "组织架构 · 申请停用",
+      "route": "/organizations",
+      "source": "organizations/OrganizationManagementPage.tsx",
+      "label": "申请停用",
+      "pagePermissionCode": "ORG_NODE_READ",
+      "features": []
+    },
+    {
+      "code": "ORG_NODE_CREATE",
+      "name": "组织架构 · 新增组织节点",
+      "route": "/organizations",
+      "source": "organizations/OrganizationManagementPage.tsx",
+      "label": "新增组织节点",
+      "pagePermissionCode": "ORG_NODE_READ",
+      "features": []
+    },
+    {
+      "code": "ORG_NODE_UPDATE",
+      "name": "组织架构 · 编辑",
+      "route": "/organizations",
+      "source": "organizations/OrganizationManagementPage.tsx",
+      "label": "编辑",
+      "pagePermissionCode": "ORG_NODE_READ",
+      "features": []
+    },
+    {
+      "code": "PARENT_MOBILE_MANUAL_RECOVERY_MANAGE",
+      "name": "组织架构 · 家长换号核验",
+      "route": "/organizations",
+      "source": "organizations/OrganizationManagementPage.tsx",
+      "label": "家长换号核验",
+      "pagePermissionCode": "ORG_NODE_READ",
+      "features": []
+    },
+    {
+      "code": "STUDENT_ACCOUNT_CANCELLATION_MANAGE",
+      "name": "组织架构 · 学生账号注销",
+      "route": "/organizations",
+      "source": "organizations/OrganizationManagementPage.tsx",
+      "label": "学生账号注销",
+      "pagePermissionCode": "ORG_NODE_READ",
+      "features": []
+    },
+    {
+      "code": "STUDENT_ORGANIZATION_MANAGE",
+      "name": "组织架构 · 学员关系",
+      "route": "/organizations",
+      "source": "organizations/OrganizationManagementPage.tsx",
+      "label": "学员关系",
+      "pagePermissionCode": "ORG_NODE_READ",
+      "features": []
+    },
+    {
+      "code": "TEACHER_CLASS_ASSIGN",
+      "name": "组织架构 · 配置教师班级",
+      "route": "/organizations",
+      "source": "organizations/OrganizationManagementPage.tsx",
+      "label": "配置教师班级",
+      "pagePermissionCode": "ORG_NODE_READ",
+      "features": []
+    },
+    {
+      "code": "ORG_ADMIN_ASSIGN",
+      "name": "组织用户 · 添加组织管理员",
+      "route": "/organizations",
+      "source": "organizations/OrganizationMembersDrawer.tsx",
+      "label": "添加组织管理员",
+      "pagePermissionCode": "ORG_NODE_READ",
+      "features": []
+    },
+    {
+      "code": "ORG_MEMBER_ASSOCIATE",
+      "name": "组织用户 · 关联已有用户",
+      "route": "/organizations",
+      "source": "organizations/OrganizationMembersDrawer.tsx",
+      "label": "关联已有用户",
+      "pagePermissionCode": "ORG_NODE_READ",
+      "features": []
+    },
+    {
+      "code": "ORG_ADMIN_REVOKE",
+      "name": "组织用户 · 取消管理员",
+      "route": "/organizations",
+      "source": "organizations/OrganizationMembersDrawer.tsx",
+      "label": "取消管理员",
+      "pagePermissionCode": "ORG_NODE_READ",
+      "features": []
+    },
+    {
+      "code": "ORG_MEMBER_REMOVE",
+      "name": "组织用户 · 取消关联",
+      "route": "/organizations",
+      "source": "organizations/OrganizationMembersDrawer.tsx",
+      "label": "取消关联",
+      "pagePermissionCode": "ORG_NODE_READ",
+      "features": []
+    },
+    {
+      "code": "ORG_MEMBER_READ",
+      "name": "组织用户 · 查询",
+      "route": "/organizations",
+      "source": "organizations/OrganizationMembersDrawer.tsx",
+      "label": "查询",
+      "pagePermissionCode": "ORG_NODE_READ",
+      "features": []
+    },
+    {
+      "code": "ORG_TYPE_CREATE",
+      "name": "组织类型 · 新增组织类型",
+      "route": "/organizations",
+      "source": "organizations/OrganizationManagementPage.tsx",
+      "label": "新增组织类型",
+      "pagePermissionCode": "ORG_NODE_READ",
+      "features": []
+    },
+    {
+      "code": "ORG_TYPE_UPDATE",
+      "name": "组织类型 · 编辑组织类型",
+      "route": "/organizations",
+      "source": "organizations/OrganizationManagementPage.tsx",
+      "label": "编辑组织类型",
+      "pagePermissionCode": "ORG_NODE_READ",
+      "features": []
+    },
+    {
+      "code": "ORG_TYPE_STATUS_CHANGE",
+      "name": "组织类型 · 组织类型启停",
+      "route": "/organizations",
+      "source": "organizations/OrganizationManagementPage.tsx",
+      "label": "组织类型启停",
+      "pagePermissionCode": "ORG_NODE_READ",
+      "features": []
+    },
+    {
+      "code": "ORG_TYPE_DELETE",
+      "name": "组织类型 · 删除组织类型",
+      "route": "/organizations",
+      "source": "organizations/OrganizationManagementPage.tsx",
+      "label": "删除组织类型",
+      "pagePermissionCode": "ORG_NODE_READ",
+      "features": []
+    },
+    {
+      "code": "ORG_TYPE_READ",
+      "name": "组织类型 · 查询组织类型",
+      "route": "/organizations",
+      "source": "API controller",
+      "label": "查询组织类型",
+      "pagePermissionCode": "ORG_NODE_READ",
+      "features": []
+    },
+    {
+      "code": "MENU_MANAGE",
+      "name": "菜单配置 · 新增菜单",
+      "route": "/menu-management",
+      "source": "menus/MenuManagementPage.tsx",
+      "label": "新增菜单",
+      "pagePermissionCode": "MENU_READ",
+      "features": []
+    },
+    {
+      "code": "ORGANIZATION_ONBOARDING_SUBMIT",
+      "name": "组织入驻 · 创建家庭或申请机构",
+      "label": "创建家庭或申请机构",
+      "route": "/my-organizations",
+      "permissionCode": "ORGANIZATION_ONBOARDING_SUBMIT"
+    },
+    {
+      "code": "ORGANIZATION_OWNER_TRANSFER",
+      "name": "组织负责人 · 转交负责人",
+      "label": "转交负责人",
+      "route": "/my-organizations",
+      "permissionCode": "ORGANIZATION_OWNER_TRANSFER"
+    },
+    {
+      "code": "STUDENT_TRANSFER_VIEW",
+      "name": "转学申请 · 查看申请",
+      "source": "student/web/TransferApplicationController.java",
+      "route": "/organizations",
+      "label": "转学申请 · 查看申请",
+      "pagePermissionCode": "ORG_NODE_READ",
+      "features": [
+        "STUDENT_ORGANIZATION_RELATIONSHIP"
+      ]
+    },
+    {
+      "code": "STUDENT_TRANSFER_REQUEST_CREATE",
+      "name": "转学申请 · 提交与撤销",
+      "source": "student/web/TransferApplicationController.java",
+      "route": "/organizations",
+      "label": "转学申请 · 提交与撤销",
+      "pagePermissionCode": "ORG_NODE_READ",
+      "features": [
+        "STUDENT_ORGANIZATION_RELATIONSHIP"
+      ]
+    },
+    {
+      "code": "STUDENT_TRANSFER_REVIEW",
+      "name": "转学申请 · 审核申请",
+      "source": "student/web/TransferApplicationController.java",
+      "route": "/organizations",
+      "label": "转学申请 · 审核申请",
+      "pagePermissionCode": "ORG_NODE_READ",
+      "features": [
+        "STUDENT_ORGANIZATION_RELATIONSHIP"
+      ]
+    }
+  ],
+  "policies": [
+    {
+      "code": "REWARD_READ",
+      "features": [
+        "REWARD_EXCHANGE"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "activeGuardian"
+      ]
+    },
+    {
+      "code": "REWARD_EXCHANGE_READ",
+      "features": [
+        "REWARD_EXCHANGE"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "activeGuardian"
+      ]
+    },
+    {
+      "code": "REWARD_CREATE",
+      "features": [
+        "REWARD_EXCHANGE"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "activePrimaryGuardian"
+      ]
+    },
+    {
+      "code": "REWARD_UPDATE",
+      "features": [
+        "REWARD_EXCHANGE"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "activePrimaryGuardian"
+      ]
+    },
+    {
+      "code": "REWARD_DELETE",
+      "features": [
+        "REWARD_EXCHANGE"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "activePrimaryGuardian"
+      ]
+    },
+    {
+      "code": "REWARD_EXCHANGE_REVIEW",
+      "features": [
+        "REWARD_EXCHANGE"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "activePrimaryGuardian"
+      ],
+      "impliedReads": [
+        "REWARD_EXCHANGE_READ"
+      ]
+    },
+    {
+      "code": "GROWTH_POINT_READ_CHILD",
+      "features": [
+        "GROWTH_POINT_QUERY"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "activeGuardian"
+      ]
+    },
+    {
+      "code": "GROWTH_POINT_CORRECT_CHILD",
+      "features": [
+        "GROWTH_POINT_CORRECTION"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "activePrimaryGuardian"
+      ]
+    },
+    {
+      "code": "GROWTH_REVIEW_READ_CHILD",
+      "features": [
+        "DAY:DAILY_GROWTH_REVIEW",
+        "OTHER:PERIODIC_GROWTH_REPORT"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "activeGuardian"
+      ]
+    },
+    {
+      "code": "GROWTH_REVIEW_SUPPLEMENT_CHILD",
+      "features": [
+        "DAY:DAILY_GROWTH_REVIEW",
+        "OTHER:PERIODIC_GROWTH_REPORT"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "activePrimaryGuardian"
+      ]
+    },
+    {
+      "code": "PARENT_RELATIONSHIP_READ",
+      "features": [
+        "PARENT_RELATIONSHIP_MANAGEMENT"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "activeGuardian"
+      ]
+    },
+    {
+      "code": "SECONDARY_PARENT_INVITE_CREATE",
+      "features": [
+        "PARENT_RELATIONSHIP_MANAGEMENT"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "activePrimaryGuardian"
+      ]
+    },
+    {
+      "code": "SECONDARY_PARENT_UNBIND",
+      "features": [
+        "PARENT_RELATIONSHIP_MANAGEMENT"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "activePrimaryGuardian"
+      ]
+    },
+    {
+      "code": "PRIMARY_PARENT_TRANSFER_CREATE",
+      "features": [
+        "PARENT_RELATIONSHIP_MANAGEMENT"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "activePrimaryGuardian"
+      ]
+    },
+    {
+      "code": "PRIMARY_PARENT_SELF_UNBIND",
+      "features": [
+        "PARENT_RELATIONSHIP_MANAGEMENT"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "activePrimaryGuardian"
+      ]
+    },
+    {
+      "code": "GROWTH_REVIEW_SUBSCRIBE_CHILD",
+      "features": [
+        "GROWTH_REVIEW_WEEKLY_SUBSCRIPTION",
+        "PERIODIC_GROWTH_REPORT"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "activeGuardian"
+      ]
+    },
+    {
+      "code": "STUDENT_PARENT_INVITE_RESPOND",
+      "features": [
+        "PARENT_RELATIONSHIP_MANAGEMENT"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "INVITATION"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "validOneTimeInvitationToken",
+        "studentHasNoActivePrimaryGuardianForAccept"
+      ]
+    },
+    {
+      "code": "ATTACHMENT_RULE_READ",
+      "features": [
+        "ATTACHMENT_SERVICE"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "ATTACHMENT_RULE_MANAGE",
+      "features": [
+        "ATTACHMENT_SERVICE"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "ATTACHMENT_FILE_LEDGER_READ",
+      "features": [
+        "ATTACHMENT_SERVICE"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "ATTENDANCE_RECORD",
+      "features": [
+        "ATTENDANCE_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "ATTENDANCE_READ",
+      "features": [
+        "ATTENDANCE_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "CACHE_REVIEW",
+      "features": [
+        "CACHE_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "CACHE_MANAGE",
+      "features": [
+        "CACHE_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "PARENT_ACCOUNT_LIFECYCLE_MANAGE",
+      "features": [
+        "PARENT_ACCOUNT_LIFECYCLE"
+      ],
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "SELF"
+      ]
+    },
+    {
+      "code": "DICTIONARY_MANAGE",
+      "features": [
+        "DICTIONARY_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "EXCEPTION_REPORT_CREATE",
+      "features": [
+        "STUDENT_EXCEPTION_REPORT"
+      ],
+      "allowedUserTypes": [
+        "ORGANIZATION"
+      ],
+      "scopeKinds": [],
+      "actorPrerequisites": [
+        "teacherProfile"
+      ]
+    },
+    {
+      "code": "EXCEPTION_REPORT_READ",
+      "features": [
+        "STUDENT_EXCEPTION_REPORT"
+      ],
+      "allowedUserTypes": [
+        "ORGANIZATION",
+        "PLATFORM"
+      ],
+      "scopeKinds": []
+    },
+    {
+      "code": "EXCEPTION_REPORT_HANDLE",
+      "features": [
+        "STUDENT_EXCEPTION_REPORT"
+      ],
+      "allowedUserTypes": [
+        "ORGANIZATION",
+        "PLATFORM"
+      ],
+      "scopeKinds": []
+    },
+    {
+      "code": "EXPORT_JOB_CREATE",
+      "features": [
+        "DATA_EXPORT",
+        "ATTACHMENT_SERVICE",
+        "IMPORT_EXPORT_TEMPLATE_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "EXPORT_JOB_READ",
+      "features": [
+        "DATA_EXPORT",
+        "ATTACHMENT_SERVICE",
+        "IMPORT_EXPORT_TEMPLATE_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "EXPORT_SENSITIVE_REVIEW",
+      "features": [
+        "DATA_EXPORT",
+        "ATTACHMENT_SERVICE",
+        "IMPORT_EXPORT_TEMPLATE_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "FEATURE_TOGGLE_MANAGE",
+      "features": [],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "FEATURE_TOGGLE_REVIEW",
+      "features": [],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "IAM_AUDIT_READ",
+      "features": [],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "IAM_ROLE_CREATE",
+      "features": [],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "IAM_ROLE_PERMISSION_GRANT",
+      "features": [],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "IAM_USER_PERMISSION_CONFIGURE",
+      "features": [],
+      "allowedUserTypes": [],
+      "scopeKinds": [
+        "ALL",
+        "REGION",
+        "SCHOOL",
+        "CLASS",
+        "FAMILY",
+        "CUSTOM"
+      ]
+    },
+    {
+      "code": "IMPORT_EXPORT_TEMPLATE_READ",
+      "features": [
+        "IMPORT_EXPORT_TEMPLATE_MANAGEMENT",
+        "ATTACHMENT_SERVICE"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "IMPORT_EXPORT_TEMPLATE_MANAGE",
+      "features": [
+        "IMPORT_EXPORT_TEMPLATE_MANAGEMENT",
+        "ATTACHMENT_SERVICE"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": [],
+      "impliedReads": [
+        "IMPORT_EXPORT_TEMPLATE_READ"
+      ]
+    },
+    {
+      "code": "IMPORT_JOB_READ",
+      "features": [
+        "DATA_IMPORT_VALIDATION",
+        "ATTACHMENT_SERVICE",
+        "IMPORT_EXPORT_TEMPLATE_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "IMPORT_JOB_CREATE",
+      "features": [
+        "DATA_IMPORT_VALIDATION",
+        "ATTACHMENT_SERVICE",
+        "IMPORT_EXPORT_TEMPLATE_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": [],
+      "impliedReads": [
+        "IMPORT_JOB_READ",
+        "IMPORT_EXPORT_TEMPLATE_READ"
+      ]
+    },
+    {
+      "code": "STUDENT_IMPORT_EXECUTE",
+      "features": [
+        "DATA_IMPORT_VALIDATION",
+        "ATTACHMENT_SERVICE",
+        "IMPORT_EXPORT_TEMPLATE_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "STUDENT_IMPORT_CREDENTIAL_DOWNLOAD",
+      "features": [
+        "DATA_IMPORT_VALIDATION",
+        "ATTACHMENT_SERVICE",
+        "IMPORT_EXPORT_TEMPLATE_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "INTERFACE_SERVICE_READ",
+      "features": [
+        "INTERFACE_SERVICE_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "INTERFACE_SERVICE_MANAGE",
+      "features": [
+        "INTERFACE_SERVICE_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "INTERFACE_SERVICE_REVIEW",
+      "features": [
+        "INTERFACE_SERVICE_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "LEARNING_TASK_TEMPLATE_MANAGE_PERSONAL",
+      "features": [
+        "LEARNING_TASK_MANAGEMENT"
+      ],
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ]
+    },
+    {
+      "code": "LEARNING_TASK_CREATE",
+      "features": [
+        "LEARNING_TASK_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "LEARNING_TASK_COPY_PREVIOUS_DAY",
+      "features": [
+        "LEARNING_TASK_MANAGEMENT"
+      ],
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ]
+    },
+    {
+      "code": "LEARNING_TASK_TEMPLATE_READ",
+      "features": [
+        "LEARNING_TASK_MANAGEMENT"
+      ],
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ]
+    },
+    {
+      "code": "LEARNING_TASK_PUBLISH",
+      "features": [
+        "LEARNING_TASK_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "LEARNING_TASK_READ_MANAGED",
+      "features": [
+        "LEARNING_TASK_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "LEARNING_TASK_PROGRESS_READ",
+      "features": [
+        "LEARNING_TASK_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "TASK_ASSIGNMENT_DEFER",
+      "features": [
+        "LEARNING_TASK_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "TASK_ASSIGNMENT_REVIEW",
+      "features": [
+        "LEARNING_TASK_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": [],
+      "optionalReads": [
+        "ATTACHMENT_READ"
+      ]
+    },
+    {
+      "code": "MENU_MANAGE",
+      "features": [],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "MENU_READ",
+      "features": [],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "CLASS_UPDATE",
+      "features": [
+        "CLASS_MANAGEMENT"
+      ],
+      "allowedUserTypes": [
+        "PLATFORM",
+        "ORGANIZATION"
+      ],
+      "scopeKinds": [
+        "ALL",
+        "REGION",
+        "SCHOOL",
+        "CLASS",
+        "CUSTOM"
+      ],
+      "impliedReads": [
+        "CLASS_READ"
+      ]
+    },
+    {
+      "code": "CLASS_STATUS_CHANGE",
+      "features": [
+        "CLASS_MANAGEMENT"
+      ],
+      "allowedUserTypes": [
+        "PLATFORM",
+        "ORGANIZATION"
+      ],
+      "scopeKinds": [
+        "ALL",
+        "REGION",
+        "SCHOOL",
+        "CLASS",
+        "CUSTOM"
+      ],
+      "impliedReads": [
+        "CLASS_READ"
+      ]
+    },
+    {
+      "code": "CLASS_CREATE",
+      "features": [
+        "CLASS_MANAGEMENT"
+      ],
+      "allowedUserTypes": [
+        "PLATFORM",
+        "ORGANIZATION"
+      ],
+      "scopeKinds": [
+        "ALL",
+        "REGION",
+        "SCHOOL",
+        "CLASS",
+        "CUSTOM"
+      ],
+      "impliedReads": [
+        "CLASS_READ"
+      ]
+    },
+    {
+      "code": "ORG_NODE_CHANGE_REVIEW",
+      "features": [
+        "ORGANIZATION_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": [
+        "ALL",
+        "REGION",
+        "SCHOOL",
+        "CLASS",
+        "FAMILY",
+        "CUSTOM"
+      ]
+    },
+    {
+      "code": "ORG_TYPE_CREATE",
+      "features": [
+        "ORGANIZATION_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": [
+        "ALL"
+      ],
+      "allowedRoleCodes": [
+        "SYS_ADMIN"
+      ]
+    },
+    {
+      "code": "ORG_NODE_CREATE",
+      "features": [
+        "ORGANIZATION_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": [
+        "ALL",
+        "REGION",
+        "SCHOOL",
+        "CLASS",
+        "FAMILY",
+        "CUSTOM"
+      ]
+    },
+    {
+      "code": "ORG_NODE_UPDATE",
+      "features": [
+        "ORGANIZATION_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": [
+        "ALL",
+        "REGION",
+        "SCHOOL",
+        "CLASS",
+        "FAMILY",
+        "CUSTOM"
+      ]
+    },
+    {
+      "code": "ORG_NODE_CHANGE_SUBMIT",
+      "features": [
+        "ORGANIZATION_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": [
+        "ALL",
+        "REGION",
+        "SCHOOL",
+        "CLASS",
+        "FAMILY",
+        "CUSTOM"
+      ]
+    },
+    {
+      "code": "STUDENT_ORGANIZATION_MANAGE",
+      "features": [
+        "STUDENT_ORGANIZATION_RELATIONSHIP"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "PARENT_MOBILE_MANUAL_RECOVERY_MANAGE",
+      "features": [],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "STUDENT_ACCOUNT_CANCELLATION_MANAGE",
+      "features": [],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "TEACHER_CLASS_ASSIGN",
+      "features": [
+        "TEACHER_MANAGEMENT",
+        "CLASS_MANAGEMENT"
+      ],
+      "allowedUserTypes": [
+        "PLATFORM",
+        "ORGANIZATION"
+      ],
+      "scopeKinds": [
+        "ALL",
+        "REGION",
+        "SCHOOL",
+        "CLASS",
+        "CUSTOM"
+      ],
+      "impliedReads": [
+        "CLASS_READ",
+        "TEACHER_READ"
+      ]
+    },
+    {
+      "code": "STUDENT_CLASS_ASSIGN",
+      "features": [],
+      "allowedUserTypes": [],
+      "scopeKinds": [
+        "ALL",
+        "REGION",
+        "SCHOOL",
+        "CLASS",
+        "CUSTOM"
+      ]
+    },
+    {
+      "code": "STUDENT_READ",
+      "features": [],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "STUDENT_LOGIN_QR_CREATE",
+      "features": [
+        "STUDENT_QR_LOGIN"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "STUDENT_WECHAT_UNBIND",
+      "features": [
+        "STUDENT_WECHAT_AUTH"
+      ],
+      "allowedUserTypes": [
+        "FAMILY",
+        "ORGANIZATION",
+        "PLATFORM"
+      ],
+      "scopeKinds": []
+    },
+    {
+      "code": "SYSTEM_TASK_READ",
+      "features": [],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "TEACHER_BATCH_MANAGE",
+      "features": [
+        "TEACHER_MANAGEMENT"
+      ],
+      "allowedUserTypes": [
+        "PLATFORM",
+        "ORGANIZATION"
+      ],
+      "scopeKinds": [
+        "ALL",
+        "REGION",
+        "SCHOOL",
+        "CLASS",
+        "CUSTOM"
+      ],
+      "impliedReads": [
+        "TEACHER_READ"
+      ]
+    },
+    {
+      "code": "TEACHER_CREATE",
+      "features": [
+        "TEACHER_MANAGEMENT"
+      ],
+      "allowedUserTypes": [
+        "PLATFORM",
+        "ORGANIZATION"
+      ],
+      "scopeKinds": [
+        "ALL",
+        "REGION",
+        "SCHOOL",
+        "CLASS",
+        "CUSTOM"
+      ],
+      "impliedReads": [
+        "TEACHER_READ"
+      ]
+    },
+    {
+      "code": "TEACHER_READ",
+      "features": [
+        "TEACHER_MANAGEMENT"
+      ],
+      "allowedUserTypes": [
+        "PLATFORM",
+        "ORGANIZATION"
+      ],
+      "scopeKinds": []
+    },
+    {
+      "code": "TEACHER_UPDATE",
+      "features": [
+        "TEACHER_MANAGEMENT"
+      ],
+      "allowedUserTypes": [
+        "PLATFORM",
+        "ORGANIZATION"
+      ],
+      "scopeKinds": [
+        "ALL",
+        "REGION",
+        "SCHOOL",
+        "CLASS",
+        "CUSTOM"
+      ],
+      "impliedReads": [
+        "TEACHER_READ"
+      ]
+    },
+    {
+      "code": "TEACHER_PASSWORD_RESET",
+      "features": [
+        "TEACHER_MANAGEMENT"
+      ],
+      "allowedUserTypes": [
+        "PLATFORM",
+        "ORGANIZATION"
+      ],
+      "scopeKinds": [
+        "ALL",
+        "REGION",
+        "SCHOOL",
+        "CLASS",
+        "CUSTOM"
+      ],
+      "impliedReads": [
+        "TEACHER_READ"
+      ]
+    },
+    {
+      "code": "IAM_USER_UPDATE",
+      "features": [],
+      "allowedUserTypes": [],
+      "scopeKinds": [
+        "ALL",
+        "REGION",
+        "SCHOOL",
+        "CLASS",
+        "FAMILY",
+        "CUSTOM"
+      ]
+    },
+    {
+      "code": "IAM_USER_CREATE",
+      "features": [],
+      "allowedUserTypes": [],
+      "scopeKinds": [
+        "ALL",
+        "REGION",
+        "SCHOOL",
+        "CLASS",
+        "FAMILY",
+        "CUSTOM"
+      ]
+    },
+    {
+      "code": "IAM_USER_LIST",
+      "features": [],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "TEACHER_STATUS_CHANGE",
+      "features": [
+        "TEACHER_MANAGEMENT"
+      ],
+      "allowedUserTypes": [
+        "PLATFORM",
+        "ORGANIZATION"
+      ],
+      "scopeKinds": [
+        "ALL",
+        "REGION",
+        "SCHOOL",
+        "CLASS",
+        "CUSTOM"
+      ],
+      "impliedReads": [
+        "TEACHER_READ"
+      ]
+    },
+    {
+      "code": "IAM_USER_ROLE_ASSIGN",
+      "features": [],
+      "allowedUserTypes": [],
+      "scopeKinds": [
+        "ALL",
+        "REGION",
+        "SCHOOL",
+        "CLASS",
+        "FAMILY",
+        "CUSTOM"
+      ]
+    },
+    {
+      "code": "ORG_MEMBER_READ",
+      "features": [
+        "ORGANIZATION_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": [
+        "ALL",
+        "REGION",
+        "SCHOOL",
+        "CLASS",
+        "FAMILY",
+        "CUSTOM"
+      ]
+    },
+    {
+      "code": "ORG_MEMBER_ASSOCIATE",
+      "features": [
+        "ORGANIZATION_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": [
+        "ALL",
+        "REGION",
+        "SCHOOL",
+        "CLASS",
+        "FAMILY",
+        "CUSTOM"
+      ]
+    },
+    {
+      "code": "ORG_ADMIN_ASSIGN",
+      "features": [
+        "ORGANIZATION_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": [
+        "ALL",
+        "REGION",
+        "SCHOOL",
+        "CLASS",
+        "FAMILY",
+        "CUSTOM"
+      ]
+    },
+    {
+      "code": "ORG_MEMBER_REMOVE",
+      "features": [
+        "ORGANIZATION_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": [
+        "ALL",
+        "REGION",
+        "SCHOOL",
+        "CLASS",
+        "FAMILY",
+        "CUSTOM"
+      ]
+    },
+    {
+      "code": "ORG_ADMIN_REVOKE",
+      "features": [
+        "ORGANIZATION_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": [
+        "ALL",
+        "REGION",
+        "SCHOOL",
+        "CLASS",
+        "FAMILY",
+        "CUSTOM"
+      ]
+    },
+    {
+      "code": "IAM_USER_PASSWORD_SET",
+      "features": [],
+      "allowedUserTypes": [],
+      "scopeKinds": [
+        "ALL",
+        "REGION",
+        "SCHOOL",
+        "CLASS",
+        "FAMILY",
+        "CUSTOM"
+      ]
+    },
+    {
+      "code": "IAM_ROLE_UPDATE",
+      "features": [],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "IAM_ROLE_DELETE",
+      "features": [],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "IAM_ROLE_STATUS_CHANGE",
+      "features": [],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "ORG_TYPE_UPDATE",
+      "features": [
+        "ORGANIZATION_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": [
+        "ALL"
+      ],
+      "allowedRoleCodes": [
+        "SYS_ADMIN"
+      ]
+    },
+    {
+      "code": "ORG_TYPE_DELETE",
+      "features": [
+        "ORGANIZATION_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": [
+        "ALL"
+      ],
+      "allowedRoleCodes": [
+        "SYS_ADMIN"
+      ]
+    },
+    {
+      "code": "ORG_TYPE_STATUS_CHANGE",
+      "features": [
+        "ORGANIZATION_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": [
+        "ALL"
+      ],
+      "allowedRoleCodes": [
+        "SYS_ADMIN"
+      ]
+    },
+    {
+      "code": "IAM_USER_STATUS_CHANGE",
+      "features": [],
+      "allowedUserTypes": [],
+      "scopeKinds": [
+        "ALL",
+        "REGION",
+        "SCHOOL",
+        "CLASS",
+        "FAMILY",
+        "CUSTOM"
+      ]
+    },
+    {
+      "code": "STUDENT_ENROLLMENT_INVITE_CREATE",
+      "features": [
+        "STUDENT_ORGANIZATION_RELATIONSHIP"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": [
+        "ALL",
+        "REGION",
+        "SCHOOL",
+        "CLASS",
+        "CUSTOM"
+      ]
+    },
+    {
+      "code": "STUDENT_ENROLLMENT_REQUEST_CREATE",
+      "features": [
+        "STUDENT_ORGANIZATION_RELATIONSHIP"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "STUDENT_ENROLLMENT_REVIEW",
+      "features": [
+        "STUDENT_ORGANIZATION_RELATIONSHIP"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": [
+        "ALL",
+        "REGION",
+        "SCHOOL",
+        "CLASS",
+        "CUSTOM"
+      ]
+    },
+    {
+      "code": "CLASS_READ",
+      "features": [
+        "CLASS_MANAGEMENT"
+      ],
+      "allowedUserTypes": [
+        "PLATFORM",
+        "ORGANIZATION"
+      ],
+      "scopeKinds": [
+        "ALL",
+        "REGION",
+        "SCHOOL",
+        "CLASS",
+        "CUSTOM"
+      ]
+    },
+    {
+      "code": "ORG_TYPE_READ",
+      "features": [
+        "ORGANIZATION_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": [
+        "ALL"
+      ],
+      "allowedRoleCodes": [
+        "SYS_ADMIN"
+      ]
+    },
+    {
+      "code": "DASHBOARD_READ",
+      "features": [],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "FEATURE_TOGGLE_READ",
+      "features": [],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "ANONYMOUS_CLASS_RANK_READ",
+      "features": [
+        "ANONYMOUS_CLASS_RANK"
+      ],
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ]
+    },
+    {
+      "code": "ANONYMOUS_RANK_PREFERENCE_MANAGE",
+      "features": [
+        "ANONYMOUS_CLASS_RANK"
+      ],
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ]
+    },
+    {
+      "code": "IAM_ROLE_READ",
+      "features": [],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "DICTIONARY_READ",
+      "features": [
+        "DICTIONARY_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "CACHE_READ",
+      "features": [
+        "CACHE_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "ORG_NODE_READ",
+      "features": [
+        "ORGANIZATION_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": []
+    },
+    {
+      "code": "ATTACHMENT_READ",
+      "features": [
+        "ATTACHMENT_SERVICE",
+        "LEARNING_TASK_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": [],
+      "client": "BOTH"
+    },
+    {
+      "code": "IAM_DATA_SCOPE_CONFIGURE",
+      "features": [],
+      "allowedUserTypes": [],
+      "scopeKinds": [
+        "ALL"
+      ],
+      "client": "WEB"
+    },
+    {
+      "code": "IAM_PERMISSION_READ",
+      "features": [],
+      "allowedUserTypes": [],
+      "scopeKinds": [],
+      "client": "WEB"
+    },
+    {
+      "code": "IAM_USER_READ",
+      "features": [],
+      "allowedUserTypes": [],
+      "scopeKinds": [],
+      "client": "WEB"
+    },
+    {
+      "code": "TASK_ASSIGNMENT_EXEMPT",
+      "features": [
+        "LEARNING_TASK_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": [],
+      "client": "WEB"
+    },
+    {
+      "code": "STUDENT_CREATE",
+      "features": [],
+      "allowedUserTypes": [],
+      "scopeKinds": [],
+      "client": "WEB"
+    },
+    {
+      "code": "STUDENT_CREDENTIAL_INITIALIZE",
+      "features": [],
+      "allowedUserTypes": [],
+      "scopeKinds": [],
+      "client": "WEB"
+    },
+    {
+      "code": "STUDENT_LOGIN_CODE_RESET",
+      "features": [],
+      "allowedUserTypes": [],
+      "scopeKinds": [],
+      "client": "WEB"
+    },
+    {
+      "code": "STUDENT_PARENT_INVITE_CREATE",
+      "features": [
+        "PARENT_RELATIONSHIP_MANAGEMENT"
+      ],
+      "allowedUserTypes": [
+        "PLATFORM",
+        "ORGANIZATION"
+      ],
+      "scopeKinds": [
+        "ALL",
+        "REGION",
+        "SCHOOL",
+        "CLASS",
+        "CUSTOM"
+      ],
+      "client": "WEB"
+    },
+    {
+      "code": "STUDENT_IMPORT_RESULT_READ",
+      "features": [
+        "STUDENT_BATCH_IMPORT",
+        "DATA_IMPORT_VALIDATION",
+        "ATTACHMENT_SERVICE",
+        "IMPORT_EXPORT_TEMPLATE_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": [],
+      "client": "WEB"
+    },
+    {
+      "code": "EXCEPTION_REPORT_EXPORT",
+      "features": [
+        "DATA_EXPORT",
+        "IMPORT_EXPORT_TEMPLATE_MANAGEMENT",
+        "ATTACHMENT_SERVICE",
+        "STUDENT_EXCEPTION_REPORT"
+      ],
+      "allowedUserTypes": [
+        "ORGANIZATION",
+        "PLATFORM"
+      ],
+      "scopeKinds": [],
+      "impliedReads": [
+        "EXCEPTION_REPORT_READ",
+        "EXPORT_JOB_CREATE"
+      ]
+    },
+    {
+      "code": "SYSTEM_TASK_EXPORT",
+      "features": [
+        "DATA_EXPORT",
+        "IMPORT_EXPORT_TEMPLATE_MANAGEMENT",
+        "ATTACHMENT_SERVICE"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": [],
+      "impliedReads": [
+        "SYSTEM_TASK_READ",
+        "EXPORT_JOB_CREATE"
+      ]
+    },
+    {
+      "code": "REWARD_EXCHANGE_EXPORT",
+      "features": [
+        "DATA_EXPORT",
+        "IMPORT_EXPORT_TEMPLATE_MANAGEMENT",
+        "ATTACHMENT_SERVICE",
+        "REWARD_EXCHANGE"
+      ],
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "impliedReads": [
+        "REWARD_EXCHANGE_READ",
+        "EXPORT_JOB_CREATE"
+      ]
+    },
+    {
+      "code": "DICTIONARY_EXPORT",
+      "features": [
+        "DATA_EXPORT",
+        "IMPORT_EXPORT_TEMPLATE_MANAGEMENT",
+        "ATTACHMENT_SERVICE",
+        "DICTIONARY_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": [],
+      "impliedReads": [
+        "DICTIONARY_READ",
+        "EXPORT_JOB_CREATE"
+      ]
+    },
+    {
+      "code": "IMPORT_EXPORT_TEMPLATE_EXPORT",
+      "features": [
+        "DATA_EXPORT",
+        "IMPORT_EXPORT_TEMPLATE_MANAGEMENT",
+        "ATTACHMENT_SERVICE"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": [],
+      "impliedReads": [
+        "IMPORT_EXPORT_TEMPLATE_READ",
+        "EXPORT_JOB_CREATE"
+      ]
+    },
+    {
+      "code": "ATTACHMENT_FILE_LEDGER_EXPORT",
+      "features": [
+        "DATA_EXPORT",
+        "IMPORT_EXPORT_TEMPLATE_MANAGEMENT",
+        "ATTACHMENT_SERVICE"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": [],
+      "impliedReads": [
+        "ATTACHMENT_FILE_LEDGER_READ",
+        "EXPORT_JOB_CREATE"
+      ]
+    },
+    {
+      "code": "CACHE_EXPORT",
+      "features": [
+        "DATA_EXPORT",
+        "IMPORT_EXPORT_TEMPLATE_MANAGEMENT",
+        "ATTACHMENT_SERVICE",
+        "CACHE_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": [],
+      "impliedReads": [
+        "CACHE_READ",
+        "EXPORT_JOB_CREATE"
+      ]
+    },
+    {
+      "code": "INTERFACE_SERVICE_EXPORT",
+      "features": [
+        "DATA_EXPORT",
+        "IMPORT_EXPORT_TEMPLATE_MANAGEMENT",
+        "ATTACHMENT_SERVICE",
+        "INTERFACE_SERVICE_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": [],
+      "impliedReads": [
+        "INTERFACE_SERVICE_READ",
+        "EXPORT_JOB_CREATE"
+      ]
+    },
+    {
+      "code": "EXPORT_SENSITIVE_SUBMIT",
+      "features": [
+        "DATA_EXPORT",
+        "IMPORT_EXPORT_TEMPLATE_MANAGEMENT",
+        "ATTACHMENT_SERVICE"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": [],
+      "impliedReads": [
+        "IAM_AUDIT_READ",
+        "EXPORT_JOB_CREATE"
+      ]
+    },
+    {
+      "code": "STUDENT_TASK_REPORT_EXPORT",
+      "features": [
+        "DATA_EXPORT",
+        "IMPORT_EXPORT_TEMPLATE_MANAGEMENT",
+        "ATTACHMENT_SERVICE",
+        "LEARNING_TASK_MANAGEMENT"
+      ],
+      "allowedUserTypes": [
+        "FAMILY",
+        "ORGANIZATION",
+        "PLATFORM"
+      ],
+      "scopeKinds": [],
+      "impliedReads": [
+        "EXPORT_JOB_CREATE"
+      ],
+      "conditionalReads": {
+        "FAMILY": [
+          "LEARNING_TASK_READ_MANAGED"
+        ],
+        "ORGANIZATION": [
+          "LEARNING_TASK_PROGRESS_READ"
+        ],
+        "PLATFORM": [
+          "LEARNING_TASK_PROGRESS_READ"
+        ]
+      }
+    },
+    {
+      "code": "ORGANIZATION_TASK_STATISTICS_EXPORT",
+      "features": [
+        "DATA_EXPORT",
+        "IMPORT_EXPORT_TEMPLATE_MANAGEMENT",
+        "ATTACHMENT_SERVICE",
+        "LEARNING_TASK_MANAGEMENT"
+      ],
+      "allowedUserTypes": [
+        "ORGANIZATION",
+        "PLATFORM"
+      ],
+      "scopeKinds": [
+        "ALL",
+        "REGION",
+        "SCHOOL",
+        "CLASS",
+        "CUSTOM"
+      ],
+      "impliedReads": [
+        "LEARNING_TASK_PROGRESS_READ",
+        "EXPORT_JOB_CREATE"
+      ]
+    },
+    {
+      "code": "ATTENDANCE_LEDGER_EXPORT",
+      "features": [
+        "DATA_EXPORT",
+        "IMPORT_EXPORT_TEMPLATE_MANAGEMENT",
+        "ATTACHMENT_SERVICE",
+        "ATTENDANCE_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": [],
+      "impliedReads": [
+        "ATTENDANCE_READ",
+        "EXPORT_JOB_CREATE"
+      ]
+    },
+    {
+      "code": "ATTACHMENT_UPLOAD",
+      "client": "MINIAPP",
+      "features": [
+        "ATTACHMENT_SERVICE",
+        "LEARNING_TASK_MANAGEMENT"
+      ],
+      "allowedUserTypes": [
+        "STUDENT"
+      ],
+      "scopeKinds": [
+        "SELF"
+      ]
+    },
+    {
+      "code": "GROWTH_POINT_READ_SELF",
+      "client": "MINIAPP",
+      "features": [
+        "GROWTH_POINT_QUERY"
+      ],
+      "allowedUserTypes": [
+        "STUDENT"
+      ],
+      "scopeKinds": [
+        "SELF"
+      ]
+    },
+    {
+      "code": "GROWTH_REVIEW_READ_SELF",
+      "client": "MINIAPP",
+      "features": [
+        "DAY:DAILY_GROWTH_REVIEW",
+        "OTHER:PERIODIC_GROWTH_REPORT"
+      ],
+      "allowedUserTypes": [
+        "STUDENT"
+      ],
+      "scopeKinds": [
+        "SELF"
+      ]
+    },
+    {
+      "code": "GROWTH_REVIEW_SUPPLEMENT_SELF",
+      "client": "MINIAPP",
+      "features": [
+        "DAILY_GROWTH_REVIEW"
+      ],
+      "allowedUserTypes": [
+        "STUDENT"
+      ],
+      "scopeKinds": [
+        "SELF"
+      ]
+    },
+    {
+      "code": "REWARD_EXCHANGE_SELF",
+      "client": "MINIAPP",
+      "features": [
+        "REWARD_EXCHANGE"
+      ],
+      "allowedUserTypes": [
+        "STUDENT"
+      ],
+      "scopeKinds": [
+        "SELF"
+      ]
+    },
+    {
+      "code": "MINIAPP_REWARD_MANAGE_CHILD",
+      "client": "MINIAPP",
+      "features": [
+        "REWARD_EXCHANGE"
+      ],
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ]
+    },
+    {
+      "code": "MINIAPP_REWARD_EXCHANGE_REVIEW_CHILD",
+      "client": "MINIAPP",
+      "features": [
+        "REWARD_EXCHANGE"
+      ],
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ]
+    },
+    {
+      "code": "TASK_ASSIGNMENT_READ_SELF",
+      "client": "MINIAPP",
+      "features": [
+        "LEARNING_TASK_MANAGEMENT"
+      ],
+      "allowedUserTypes": [
+        "STUDENT"
+      ],
+      "scopeKinds": [
+        "SELF"
+      ]
+    },
+    {
+      "code": "TASK_ASSIGNMENT_EXECUTE_SELF",
+      "client": "MINIAPP",
+      "features": [
+        "LEARNING_TASK_MANAGEMENT"
+      ],
+      "allowedUserTypes": [
+        "STUDENT"
+      ],
+      "scopeKinds": [
+        "SELF"
+      ]
+    },
+    {
+      "code": "ORGANIZATION_ONBOARDING_READ",
+      "features": [],
+      "allowedUserTypes": [
+        "PLATFORM",
+        "ORGANIZATION",
+        "FAMILY",
+        "PERSONAL"
+      ],
+      "scopeKinds": [],
+      "impliedReads": []
+    },
+    {
+      "code": "ORGANIZATION_ONBOARDING_SUBMIT",
+      "features": [
+        "ORGANIZATION_MANAGEMENT"
+      ],
+      "allowedUserTypes": [
+        "PLATFORM",
+        "ORGANIZATION",
+        "FAMILY",
+        "PERSONAL"
+      ],
+      "scopeKinds": [],
+      "impliedReads": [
+        "ORGANIZATION_ONBOARDING_READ"
+      ]
+    },
+    {
+      "code": "ORGANIZATION_OWNER_TRANSFER",
+      "features": [
+        "ORGANIZATION_MANAGEMENT"
+      ],
+      "allowedUserTypes": [
+        "PLATFORM",
+        "ORGANIZATION",
+        "FAMILY"
+      ],
+      "scopeKinds": [],
+      "impliedReads": [
+        "ORGANIZATION_ONBOARDING_READ"
+      ]
+    },
+    {
+      "code": "ORGANIZATION_ONBOARDING_REVIEW",
+      "features": [],
+      "allowedUserTypes": [
+        "PLATFORM",
+        "ORGANIZATION",
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "ALL"
+      ],
+      "impliedReads": []
+    },
+    {
+      "code": "STUDENT_TRANSFER_VIEW",
+      "features": [
+        "STUDENT_ORGANIZATION_RELATIONSHIP"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": [],
+      "impliedReads": [
+        "ORG_NODE_READ"
+      ]
+    },
+    {
+      "code": "STUDENT_TRANSFER_REQUEST_CREATE",
+      "features": [
+        "STUDENT_ORGANIZATION_RELATIONSHIP"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": [],
+      "impliedReads": [
+        "ORG_NODE_READ",
+        "STUDENT_TRANSFER_VIEW"
+      ],
+      "miniappImpliedReads": [
+        "STUDENT_TRANSFER_VIEW"
+      ]
+    },
+    {
+      "code": "STUDENT_TRANSFER_REVIEW",
+      "features": [
+        "STUDENT_ORGANIZATION_RELATIONSHIP"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": [],
+      "impliedReads": [
+        "ORG_NODE_READ",
+        "STUDENT_TRANSFER_VIEW"
+      ],
+      "miniappImpliedReads": [
+        "STUDENT_TRANSFER_VIEW"
+      ]
+    }
+  ]
+}

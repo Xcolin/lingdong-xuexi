@@ -38,4 +38,6 @@ public record PublicCapabilityResponse(
         boolean growthReviewSubscriptionEnabled,
         boolean anonymousClassRankEnabled
 ) {
+    @com.fasterxml.jackson.annotation.JsonProperty("taskWeekdayRecurrenceEnabled")
+    public boolean taskWeekdayRecurrenceEnabled() { return learningTaskManagementEnabled; }
 }

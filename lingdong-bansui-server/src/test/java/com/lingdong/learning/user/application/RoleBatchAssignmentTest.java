@@ -40,8 +40,14 @@ class RoleBatchAssignmentTest {
                 "batch_" + UUID.randomUUID().toString().substring(0, 10), "批量授予测试", null, UserType.PLATFORM));
     }
 
+    private User newOperator() {
+        User operator=newUser();
+        service.assignRole(new AssignRoleToUserCommand(operator.id(),roles.findByCode("SYS_ADMIN").id(),null));
+        return operator;
+    }
+
     @Test void batchAssignsGlobalRoleToMultipleUsers() {
-        var operator = newUser();
+        var operator = newOperator();
         var role = roleService.createCustomRole(new CreateCustomRoleCommand(
                 "BATCH_GLOBAL_" + suffix(), "批量全局角色", null, RoleDataScope.ALL));
         var u1 = newUser();
@@ -55,7 +61,7 @@ class RoleBatchAssignmentTest {
     }
 
     @Test void organizationScopedRoleRequiresOrganizationAndRelation() {
-        var operator = newUser();
+        var operator = newOperator();
         var role = roleService.createCustomRole(new CreateCustomRoleCommand(
                 "BATCH_ORG_" + suffix(), "批量组织角色", null, RoleDataScope.REGION));
         var u1 = newUser();
@@ -75,7 +81,7 @@ class RoleBatchAssignmentTest {
     }
 
     @Test void anyFailureRollsBackEntireBatchAndReportsReasons() {
-        var operator = newUser();
+        var operator = newOperator();
         var role = roleService.createCustomRole(new CreateCustomRoleCommand(
                 "BATCH_ROLL_" + suffix(), "批量回滚角色", null, RoleDataScope.ALL));
         var u1 = newUser();
@@ -94,5 +100,21 @@ class RoleBatchAssignmentTest {
         Integer after = jdbc.queryForObject(
                 "select count(*) from sys_user_role where role_id=?", Integer.class, role.id());
         assertThat(after).isEqualTo(1);
+    }
+
+    @Test void removesMismatchedExistingGrantButRejectsNewGrantAndOutOfScopeRemoval() {
+        var operator=newOperator();
+        var role=roleService.createCustomRole(new CreateCustomRoleCommand("REMOVE_OLD_"+suffix(),"清理旧授权",null,RoleDataScope.SCHOOL));
+        var user=newUser();
+        var region=organizations.findByCode("500101");
+        jdbc.update("insert into sys_user_role(id,user_id,role_id,organization_id,organization_scope_key) values(?,?,?,?,?)",ids.nextId(),user.id(),role.id(),region.id(),"ORG:"+region.id());
+        var item=new BatchRoleAssignmentItem(user.id(),region.id());
+        assertThatThrownBy(()->service.batchAssignRole(new BatchAssignRoleToRoleCommand(operator.id(),role.id(),List.of(item))))
+                .isInstanceOf(BatchRoleAssignmentException.class).hasMessageContaining("角色授权组织类型不匹配");
+        assertThatThrownBy(()->service.batchRemoveRole(new BatchAssignRoleToRoleCommand(user.id(),role.id(),List.of(item))))
+                .isInstanceOf(com.lingdong.learning.common.security.SystemOperationAccessDeniedException.class);
+        assertThat(jdbc.queryForObject("select count(*) from sys_user_role where user_id=? and role_id=?",Integer.class,user.id(),role.id())).isEqualTo(1);
+        service.batchRemoveRole(new BatchAssignRoleToRoleCommand(operator.id(),role.id(),List.of(item)));
+        assertThat(jdbc.queryForObject("select count(*) from sys_user_role where user_id=? and role_id=?",Integer.class,user.id(),role.id())).isZero();
     }
 }

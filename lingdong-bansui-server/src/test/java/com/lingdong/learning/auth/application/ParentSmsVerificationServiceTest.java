@@ -21,6 +21,25 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class ParentSmsVerificationServiceTest {
+    @Test void failingOlderDeliveryDoesNotRemoveNewerChallenge() {
+        var clock=new MutableClock();var properties=new ParentSmsProperties();
+        properties.setHmacSecret("parent-sms-test-secret-with-at-least-32-bytes");
+        var hasher=new ParentSmsCodeHasher(properties);
+        var store=new InMemoryParentSmsVerificationStore(properties,clock);
+        String newer=hasher.codeDigest("13800138000",ParentSmsPurpose.ACCOUNT_LOGIN,AuthClientType.WEB,"765432");
+        ParentSmsSender delayedFailure=(mobile,purpose,code)->{store.save(hasher.mobileDigest(mobile),purpose,AuthClientType.WEB,newer,Duration.ofMinutes(5));throw new SmsDeliveryUnavailableException();};
+        var service=new ParentSmsVerificationService(()->"384291",delayedFailure,store,hasher,properties,clock);
+        assertThatThrownBy(()->service.issue("13800138000",ParentSmsPurpose.ACCOUNT_LOGIN,AuthClientType.WEB,"source")).isInstanceOf(SmsDeliveryUnavailableException.class);
+        assertThat(store.consumeIfMatches(hasher.mobileDigest("13800138000"),ParentSmsPurpose.ACCOUNT_LOGIN,AuthClientType.WEB,newer)).isTrue();
+    }
+    @Test void failedDeliveryDoesNotLeaveItsChallengeUsable() {
+        var clock=new MutableClock();var properties=new ParentSmsProperties();
+        properties.setHmacSecret("parent-sms-test-secret-with-at-least-32-bytes");
+        var hasher=new ParentSmsCodeHasher(properties);var store=new InMemoryParentSmsVerificationStore(properties,clock);
+        var service=new ParentSmsVerificationService(()->"384291",(mobile,purpose,code)->{throw new SmsDeliveryUnavailableException();},store,hasher,properties,clock);
+        assertThatThrownBy(()->service.issue("13800138000",ParentSmsPurpose.ACCOUNT_LOGIN,AuthClientType.WEB,"source")).isInstanceOf(SmsDeliveryUnavailableException.class);
+        assertThat(store.consumeIfMatches(hasher.mobileDigest("13800138000"),ParentSmsPurpose.ACCOUNT_LOGIN,AuthClientType.WEB,hasher.codeDigest("13800138000",ParentSmsPurpose.ACCOUNT_LOGIN,AuthClientType.WEB,"384291"))).isFalse();
+    }
     private static final String MOBILE = "13800138000";
     private static final String SOURCE_DIGEST = "source-digest";
     private static final String CODE = "384291";

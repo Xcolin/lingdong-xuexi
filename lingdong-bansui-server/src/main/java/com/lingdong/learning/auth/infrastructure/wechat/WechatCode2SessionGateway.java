@@ -31,7 +31,7 @@ public class WechatCode2SessionGateway implements ParentWechatIdentityGateway {
             throw new WechatAuthenticationUnavailableException();
         }
         try {
-            Code2SessionResponse response = restClient.get()
+            String payload = restClient.get()
                     .uri(uriBuilder -> uriBuilder.path("/sns/jscode2session")
                             .queryParam("appid", properties.getAppId())
                             .queryParam("secret", properties.getAppSecret())
@@ -39,8 +39,9 @@ public class WechatCode2SessionGateway implements ParentWechatIdentityGateway {
                             .queryParam("grant_type", "authorization_code")
                             .build())
                     .retrieve()
-                    .body(Code2SessionResponse.class);
-            if (response == null || response.errcode() != null || isBlank(response.openId())
+                    .body(String.class);
+            Code2SessionResponse response = payload == null ? null : new com.fasterxml.jackson.databind.ObjectMapper().readValue(payload, Code2SessionResponse.class);
+            if (response == null || (response.errcode() != null && response.errcode() != 0) || isBlank(response.openId())
                     || isBlank(response.sessionKey())) {
                 throw new WechatAuthenticationUnavailableException();
             }
@@ -48,7 +49,7 @@ public class WechatCode2SessionGateway implements ParentWechatIdentityGateway {
                     properties.getAppId(), response.openId(), response.unionId(), response.sessionKey());
         } catch (WechatAuthenticationUnavailableException exception) {
             throw exception;
-        } catch (RestClientException exception) {
+        } catch (RestClientException | com.fasterxml.jackson.core.JsonProcessingException exception) {
             // 第三方异常可能包含带密钥和临时凭证的完整请求 URI，不保留原始异常链。
             throw new WechatAuthenticationUnavailableException();
         }
@@ -58,6 +59,7 @@ public class WechatCode2SessionGateway implements ParentWechatIdentityGateway {
         return value == null || value.isBlank();
     }
 
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
     private record Code2SessionResponse(
             @JsonProperty("openid") String openId,
             @JsonProperty("unionid") String unionId,
@@ -66,3 +68,4 @@ public class WechatCode2SessionGateway implements ParentWechatIdentityGateway {
     ) {
     }
 }
+

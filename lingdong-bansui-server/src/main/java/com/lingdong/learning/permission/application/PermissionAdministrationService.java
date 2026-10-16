@@ -31,6 +31,7 @@ import com.lingdong.learning.permission.domain.PermissionEffect;
 /** 管理 RBAC 权限目录、角色权限效果和用户显式权限效果。 */
 @Service
 public class PermissionAdministrationService {
+    @org.springframework.beans.factory.annotation.Autowired private PermissionAvailabilityService availability;
     private final com.lingdong.learning.permission.application.PermissionDecisionService decisions;
     private static final Pattern CODE_PATTERN = Pattern.compile("[A-Z][A-Z0-9_]{2,127}");
 
@@ -64,6 +65,27 @@ public class PermissionAdministrationService {
         this.idGenerator = idGenerator;
         this.auditService = auditService;
         this.menuMapper = menuMapper;
+    }
+
+    public java.util.List<com.lingdong.learning.iam.web.PermissionResponse> roleCatalog(Long operatorId,Long roleId) {
+        requirePermission(operatorId,"IAM_ROLE_PERMISSION_GRANT");
+        if(roleMapper.findById(roleId)==null) throw new ResourceNotFoundException("角色不存在");
+        return permissionMapper.findAll().stream().filter(p->p.client()!=com.lingdong.learning.permission.domain.PermissionClient.MINIAPP)
+          .map(p->com.lingdong.learning.iam.web.PermissionResponse.availability(p,availability.roleReason(p,roleId),availability.rule(p.code()))).toList();
+    }
+    public java.util.List<com.lingdong.learning.iam.web.PermissionResponse> userCatalog(Long operatorId,Long userId) {
+        requirePermission(operatorId,"IAM_USER_PERMISSION_CONFIGURE");
+        if(userMapper.findById(userId)==null) throw new ResourceNotFoundException("用户不存在");
+        return permissionMapper.findAll().stream().filter(p->p.client()!=com.lingdong.learning.permission.domain.PermissionClient.MINIAPP)
+          .map(p->com.lingdong.learning.iam.web.PermissionResponse.availability(p,availability.userReason(p,userId),availability.rule(p.code()))).toList();
+    }
+    private void requireRoleAvailable(Long permissionId,Long roleId) {
+        Permission p=requireEnabledPermission(permissionId);String reason=availability.roleReason(p,roleId);
+        if(reason!=null) throw new IllegalArgumentException("权限不可授予："+p.name()+"，"+reason);
+    }
+    private void requireUserAvailable(Long permissionId,Long userId) {
+        Permission p=requireEnabledPermission(permissionId);String reason=availability.userReason(p,userId);
+        if(reason!=null) throw new IllegalArgumentException("权限不可授予："+p.name()+"，"+reason);
     }
 
     @Transactional
@@ -103,7 +125,7 @@ public class PermissionAdministrationService {
         if (roleMapper.findById(command.roleId()) == null) {
             throw new ResourceNotFoundException("角色不存在：" + command.roleId());
         }
-        requireEnabledPermission(command.permissionId());
+        requireRoleAvailable(command.permissionId(),command.roleId());
         if (rolePermissionMapper.exists(command.roleId(), command.permissionId())) {
             throw new IllegalStateException("角色已拥有该权限");
         }
@@ -126,6 +148,7 @@ public class PermissionAdministrationService {
         if (command.effect() == null) {
             throw new IllegalArgumentException("权限效果不能为空");
         }
+        if(command.effect()==PermissionEffect.ALLOW) requireRoleAvailable(command.permissionId(),command.roleId());
         var previousEffect = rolePermissionMapper.findEffect(command.roleId(), command.permissionId());
         if (previousEffect != null) {
             if (previousEffect == command.effect()) return;
@@ -183,7 +206,7 @@ public class PermissionAdministrationService {
         for (Long id : managed) {
             if (permissionMapper.findById(id) == null) throw new ResourceNotFoundException("权限不存在：" + id);
         }
-        selected.forEach(this::requireEnabledPermission);
+        selected.forEach(id -> requireRoleAvailable(id,command.roleId()));
         Map<Long, PermissionEffect> expected = assignmentEffects(command.expectedAssignments());
         // Locking reads see the latest committed assignments even on MySQL REPEATABLE READ.
         Map<Long, PermissionEffect> current = assignmentEffects(rolePermissionMapper.lockByRoleId(command.roleId()));
@@ -227,7 +250,7 @@ public class PermissionAdministrationService {
         for (Long id : managed) {
             if (permissionMapper.findById(id) == null) throw new ResourceNotFoundException("权限不存在：" + id);
         }
-        selected.forEach(this::requireEnabledPermission);
+        selected.forEach(id -> requireUserAvailable(id,command.userId()));
         Map<Long, PermissionEffect> expected = assignmentEffects(command.expectedAssignments());
         Map<Long, PermissionEffect> current = assignmentEffects(userPermissionMapper.lockByUserId(command.userId()));
         if (!expected.equals(current)) throw new IllegalStateException("用户权限已变更，请重新加载后再保存");
@@ -282,6 +305,7 @@ public class PermissionAdministrationService {
         if (command.effect() == null) {
             throw new IllegalArgumentException("权限效果不能为空");
         }
+        if(command.effect()==PermissionEffect.ALLOW) requireUserAvailable(command.permissionId(),command.userId());
         if (command.effect() == com.lingdong.learning.permission.domain.PermissionEffect.ALLOW
                 && !userRoleMapper.hasAnyEnabledRole(command.userId())) {
             throw new IllegalStateException("用户补充允许必须建立在活动角色基础上");

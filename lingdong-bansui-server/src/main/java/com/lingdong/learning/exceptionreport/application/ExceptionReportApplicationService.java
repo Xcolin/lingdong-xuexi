@@ -29,21 +29,28 @@ import java.util.List;
 /** 编排异常报备的对象范围、单向状态、不可变历史和本地消息事件。 */
 @Service
 public class ExceptionReportApplicationService {
+    private final com.lingdong.learning.teacher.application.TeacherIdentityService teacherIdentity;
+    private final com.lingdong.learning.user.infrastructure.persistence.UserMapper users;
     private final PermissionDecisionService operationPermissions;
     private static final String FEATURE_CODE = "STUDENT_EXCEPTION_REPORT";
     private final ExceptionReportMapper mapper;
     private final OrganizationDataScopeService dataScopeService;
+    private final com.lingdong.learning.organization.application.OrganizationNamePathService namePathService;
     private final FeatureAccessService featureAccessService;
     private final IdGenerator idGenerator;
     private final Clock clock;
 
     public ExceptionReportApplicationService(ExceptionReportMapper mapper,
             OrganizationDataScopeService dataScopeService, FeatureAccessService featureAccessService,
-            IdGenerator idGenerator, Clock clock, PermissionDecisionService operationPermissions
+            IdGenerator idGenerator, Clock clock, PermissionDecisionService operationPermissions,
+            com.lingdong.learning.organization.application.OrganizationNamePathService namePathService,
+            com.lingdong.learning.teacher.application.TeacherIdentityService teacherIdentity,
+            com.lingdong.learning.user.infrastructure.persistence.UserMapper users
     ) {
-        this.operationPermissions = operationPermissions;
+        this.operationPermissions = operationPermissions;this.teacherIdentity=teacherIdentity;this.users=users;
         this.mapper = mapper;
         this.dataScopeService = dataScopeService;
+        this.namePathService = namePathService;
         this.featureAccessService = featureAccessService;
         this.idGenerator = idGenerator;
         this.clock = clock;
@@ -126,15 +133,15 @@ public class ExceptionReportApplicationService {
     public List<ExceptionReportClassOption> findClassOptions(AuthenticatedUser user) {
         featureAccessService.requireEnabled(FEATURE_CODE, null);
         requireOperation(user, "EXCEPTION_REPORT_READ");
-        if (user.roleCodes().contains("TEACHER") && !user.roleCodes().contains("ORG_ADMIN")) {
+        if (teacherOnlyScope(user)) {
             return mapper.findTeacherClassOptions(user.userId());
         }
-        if (user.clientType() != AuthClientType.WEB && !user.roleCodes().contains("ORG_ADMIN")) throw denied();
+        if (!hasOrganizationScope(user)) throw denied();
         return dataScopeService.findAccessibleOrganizations(user.userId()).stream()
                 .filter(organization -> "CLASS".equals(organization.typeCode()))
                 .filter(organization -> organization.status() == OrganizationStatus.ENABLED)
                 .filter(organization -> organization.effectiveStatus() == OrganizationEffectiveStatus.ENABLED)
-                .map(organization -> new ExceptionReportClassOption(organization.id(), organization.name()))
+                .map(organization -> new ExceptionReportClassOption(organization.id(), namePathService.namePathsById().getOrDefault(organization.id(), organization.name())))
                 .toList();
     }
 
@@ -149,19 +156,31 @@ public class ExceptionReportApplicationService {
             com.lingdong.learning.exceptionreport.domain.ExceptionReportType type,
             ExceptionReportStatus status, int limit, int offset) {
         requireOperation(user, "EXCEPTION_REPORT_READ");
-        boolean teacher = user.roleCodes().contains("TEACHER") && !user.roleCodes().contains("ORG_ADMIN");
+        boolean teacher = teacherOnlyScope(user);
         if (teacher) return new ExceptionReportQuery(user.userId(), true, false, List.of(), classId, studentId, type, status, limit, offset);
-        if (user.clientType() != AuthClientType.WEB && !user.roleCodes().contains("ORG_ADMIN")) throw denied();
+        if (!hasOrganizationScope(user)) throw denied();
         OrganizationDataScope scope = dataScopeService.resolve(user.userId());
         if (!scope.allOrganizations() && scope.rootPaths().isEmpty()) throw denied();
         return new ExceptionReportQuery(user.userId(), false, scope.allOrganizations(), scope.rootPaths(), classId, studentId, type, status, limit, offset);
+    }
+    private boolean hasOrganizationScope(AuthenticatedUser user) {
+        var account=user==null?null:users.findById(user.userId());
+        if(account==null || account.status()!=com.lingdong.learning.user.domain.UserStatus.ENABLED
+                || (account.type()!=com.lingdong.learning.user.domain.UserType.ORGANIZATION
+                && account.type()!=com.lingdong.learning.user.domain.UserType.PLATFORM))return false;
+        var scope=dataScopeService.resolve(user.userId());
+        return scope!=null && (scope.allOrganizations() || !scope.rootPaths().isEmpty());
+    }
+    public boolean teacherOnlyScope(AuthenticatedUser user) {
+        return !hasOrganizationScope(user) && user!=null && teacherIdentity.isTeacher(user.userId())
+                && !mapper.findTeacherClassOptions(user.userId()).isEmpty();
     }
     private void requireOperation(AuthenticatedUser user, String code) {
         if (user == null || user.clientType() == null || !operationPermissions.isAllowed(user.userId(), PermissionClient.valueOf(user.clientType().name()), code)) throw denied();
     }
     private void requireRole(AuthenticatedUser user, String role) {
         requireOperation(user, "EXCEPTION_REPORT_CREATE");
-        if (user.clientType() != AuthClientType.WEB && !user.roleCodes().contains(role)) throw denied();
+        if (!teacherIdentity.isTeacher(user.userId())) throw denied();
     }
     private SystemOperationAccessDeniedException denied() { return new SystemOperationAccessDeniedException("当前身份不能访问异常报备"); }
     private String requireText(String value, int min, int max, String name) {

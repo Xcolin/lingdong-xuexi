@@ -24,7 +24,7 @@ describe('学员机构关系抽屉', () => {
       currentClassOrganizationName: '一班'
     }]);
     classAssignmentApi.listRelationshipClasses.mockResolvedValue([{
-      id: '1874244142494646604', name: '二班'
+      id: '1874244142494646604', name: '二班', schoolOrganizationId:'1874244142494646602'
     }]);
     classAssignmentApi.transferStudent.mockResolvedValue({
       studentId: '1874244142494646601',
@@ -40,7 +40,7 @@ describe('学员机构关系抽屉', () => {
     render(<StudentOrganizationLifecycleDrawer open onClose={vi.fn()} />);
 
     await user.click(await screen.findByLabelText('学生'));
-    await user.click(await screen.findByText('小明 · 当前 一班'));
+    await user.click(await screen.findByText('小明 · 示例学校 · 一班'));
     await user.click(screen.getByLabelText('目标班级'));
     await user.click(await screen.findByText('二班'));
     await user.type(screen.getByLabelText('变更原因'), '调整学习班级');
@@ -54,4 +54,10 @@ describe('学员机构关系抽屉', () => {
       );
     });
   });
+});
+
+it('目标班级只显示所选学员所在学校，切换学校清除目标班级',async()=>{
+ classAssignmentApi.listRelationships.mockResolvedValue([{studentId:'student-a',studentName:'甲',enrollmentOrganizationId:'school-a',enrollmentOrganizationName:'甲校'},{studentId:'student-b',studentName:'乙',enrollmentOrganizationId:'school-b',enrollmentOrganizationName:'乙校'}]);
+ classAssignmentApi.listRelationshipClasses.mockResolvedValue([{id:'class-a',name:'甲校班级',schoolOrganizationId:'school-a'},{id:'class-b',name:'乙校班级',schoolOrganizationId:'school-b'}]);
+ render(<StudentOrganizationLifecycleDrawer open onClose={()=>{}}/>);const actor=userEvent.setup();await actor.click(await screen.findByLabelText('学生'));await actor.click(await screen.findByText('甲 · 甲校 · 未分班'));await actor.click(screen.getByLabelText('目标班级'));expect(await screen.findByText('甲校班级')).toBeInTheDocument();expect(screen.queryByText('乙校班级')).not.toBeInTheDocument();
 });

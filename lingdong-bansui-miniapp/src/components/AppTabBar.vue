@@ -7,7 +7,7 @@
         :class="['tab-item', { active: index === active }]"
         @tap="switchTab(index)"
       >
-        <text class="tab-icon">{{ item.icon }}</text>
+        <view class="tab-icon"><PrototypeIcon :name="item.label==='首页'?'home':item.label==='我的'?'user':item.label==='成长'?'growth':item.label==='考勤'?'calendar':'task'" :tone="index===active?'green':'muted'" :size="38"/></view>
         <text class="tab-label">{{ item.label }}</text>
       </view>
     </view>
@@ -15,6 +15,7 @@
 </template>
 
 <script setup lang="ts">
+import PrototypeIcon from '@/components/PrototypeIcon.vue';
 import type { TabItem } from '@/config/tabbar';
 
 const props = defineProps<{
@@ -31,52 +32,6 @@ function switchTab(index: number): void {
 }
 </script>
 
-<style lang="scss" scoped>
-.tabbar {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 90;
-  background: rgba(255, 255, 255, 0.97);
-  border-top: 2rpx solid $ld-line;
-  padding-bottom: env(safe-area-inset-bottom);
-  backdrop-filter: blur(10px);
-}
-.tabbar-inner {
-  display: flex;
-  height: 108rpx;
-}
-.tab-item {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4rpx;
-}
-.tab-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 56rpx;
-  height: 56rpx;
-  border-radius: 16rpx;
-  font-size: 26rpx;
-  font-weight: 700;
-  color: $ld-text-muted;
-  background: transparent;
-}
-.tab-label {
-  color: $ld-text-muted;
-  font-size: $ld-font-mini;
-}
-.tab-item.active .tab-icon {
-  background: $ld-primary-soft;
-  color: $ld-primary;
-}
-.tab-item.active .tab-label {
-  color: $ld-primary;
-  font-weight: 650;
-}
+<style scoped>
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:90;background:#fff;border-top:1rpx solid #e9eee8;padding-bottom:env(safe-area-inset-bottom);box-sizing:border-box;}.tabbar-inner{display:flex;height:104rpx;}.tab-item{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6rpx;}.tab-icon{display:flex;align-items:center;justify-content:center;width:42rpx;height:42rpx;background:transparent;}.tab-label{font-size:22rpx;line-height:1.25;color:#7b857e;}.tab-item.active .tab-label{color:#145940;font-weight:650;}
 </style>

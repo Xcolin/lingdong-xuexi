@@ -181,6 +181,17 @@ class TaskAttachmentApplicationServiceTest {
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 
+    @Test
+    void transferProofCannotBypassBusinessAuthorizationThroughTaskEndpoints() {
+        var now=LocalDateTime.now();
+        when(fileMapper.findById(FILE_ID)).thenReturn(new ManagedFileRecord(FILE_ID,"fixture/proof","proof.pdf","pdf","application/pdf",10L,student.userId(),"STUDENT_TRANSFER","MATERIAL",null,FileStatus.AVAILABLE,now,now,now));
+        assertThatThrownBy(()->service.findMetadata(student,FILE_ID)).isInstanceOf(ResourceNotFoundException.class);
+        assertThatThrownBy(()->service.readContent(student,FILE_ID)).isInstanceOf(ResourceNotFoundException.class);
+        assertThatThrownBy(()->service.deleteUnattached(student,FILE_ID)).isInstanceOf(ResourceNotFoundException.class);
+        verify(contentService,never()).read(anyLong());
+        verify(fileMapper,never()).markRetired(anyLong());
+    }
+
     private ManagedFile file(FileStatus status, String contentSha256) {
         return new ManagedFile(
                 FILE_ID, "attachment/test/reading", "reading.jpg", "jpg",

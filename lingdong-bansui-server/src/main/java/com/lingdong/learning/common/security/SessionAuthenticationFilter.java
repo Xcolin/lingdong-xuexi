@@ -22,6 +22,7 @@ public class SessionAuthenticationFilter extends OncePerRequestFilter {
     private static final String BEARER_PREFIX = "Bearer ";
 
     private final AuthenticationApplicationService authenticationApplicationService;
+    @org.springframework.beans.factory.annotation.Autowired private com.lingdong.learning.auth.application.InitialPasswordStateService initialPasswords;
     private final AuthenticationRequiredEntryPoint entryPoint;
 
     public SessionAuthenticationFilter(
@@ -43,6 +44,10 @@ public class SessionAuthenticationFilter extends OncePerRequestFilter {
         String accessToken = authorization.substring(BEARER_PREFIX.length());
         try {
             AuthenticatedUser user = authenticationApplicationService.authenticateAccessToken(accessToken);
+            String path=request.getRequestURI();
+            if(initialPasswords!=null && initialPasswords.required(user.userId()) && !("GET".equals(request.getMethod()) && "/api/v1/auth/account-settings".equals(path)) && !java.util.Set.of("/api/v1/auth/me","/api/v1/auth/password","/api/v1/auth/sessions/current","/api/v1/auth/sessions/refresh","/api/v1/auth/devices").contains(path)) {
+                response.setStatus(403);response.setContentType("application/json;charset=UTF-8");response.getWriter().write("{\"code\":\"INITIAL_PASSWORD_CHANGE_REQUIRED\",\"message\":\"请先修改初始密码\"}");return;
+            }
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                     user,
                     null,
@@ -57,3 +62,6 @@ public class SessionAuthenticationFilter extends OncePerRequestFilter {
         }
     }
 }
+
+
+

@@ -125,7 +125,7 @@ class ParentPhoneAuthenticationServiceTest {
     void verifiesExistingParentForRelationshipWithoutCreatingSession() {
         User parent = user(UserType.FAMILY, UserStatus.ENABLED);
         when(userMapper.findByMobileForUpdate(MOBILE)).thenReturn(parent);
-        when(userRoleMapper.hasRoleCode(parent.id(), "PARENT")).thenReturn(true);
+        when(userRoleMapper.hasAnyEnabledRole(parent.id())).thenReturn(true);
         when(parentMapper.findProfileByUserId(parent.id())).thenReturn(pendingProfile(parent.id()));
         when(parentMapper.hasAgreementAcceptance(parent.id(), AGREEMENT_VERSION)).thenReturn(true);
 
@@ -176,7 +176,7 @@ class ParentPhoneAuthenticationServiceTest {
     void logsInExistingEnabledParentWithoutDuplicatingIdentityData() {
         User parent = user(UserType.FAMILY, UserStatus.ENABLED);
         when(userMapper.findByMobileForUpdate(MOBILE)).thenReturn(parent);
-        when(userRoleMapper.hasRoleCode(parent.id(), "PARENT")).thenReturn(true);
+        when(userRoleMapper.hasAnyEnabledRole(parent.id())).thenReturn(true);
         when(parentMapper.findProfileByUserId(parent.id())).thenReturn(
                 new ParentProfile(31L, parent.id(), ParentOnboardingStatus.COMPLETED,
                         LocalDateTime.now(clock), LocalDateTime.now(clock)));
@@ -228,7 +228,7 @@ class ParentPhoneAuthenticationServiceTest {
     void acceptsCurrentAgreementOnceForExistingParent() {
         User parent = user(UserType.FAMILY, UserStatus.ENABLED);
         when(userMapper.findByIdForUpdate(parent.id())).thenReturn(parent);
-        when(userRoleMapper.hasRoleCode(parent.id(), "PARENT")).thenReturn(true);
+        when(userRoleMapper.hasAnyEnabledRole(parent.id())).thenReturn(true);
         when(parentMapper.findProfileByUserId(parent.id())).thenReturn(pendingProfile(parent.id()));
         when(parentMapper.hasAgreementAcceptance(parent.id(), AGREEMENT_VERSION)).thenReturn(false, true);
 
@@ -244,7 +244,7 @@ class ParentPhoneAuthenticationServiceTest {
     void completesPendingOnboardingIdempotently() {
         User parent = user(UserType.FAMILY, UserStatus.ENABLED);
         when(userMapper.findByIdForUpdate(parent.id())).thenReturn(parent);
-        when(userRoleMapper.hasRoleCode(parent.id(), "PARENT")).thenReturn(true);
+        when(userRoleMapper.hasAnyEnabledRole(parent.id())).thenReturn(true);
         when(parentMapper.findProfileByUserId(parent.id()))
                 .thenReturn(pendingProfile(parent.id()))
                 .thenReturn(new ParentProfile(31L, parent.id(), ParentOnboardingStatus.COMPLETED,
@@ -261,7 +261,7 @@ class ParentPhoneAuthenticationServiceTest {
     void storesOnlyEncodedPasswordForAuthenticatedParent() {
         User parent = user(UserType.FAMILY, UserStatus.ENABLED);
         when(userMapper.findByIdForUpdate(parent.id())).thenReturn(parent);
-        when(userRoleMapper.hasRoleCode(parent.id(), "PARENT")).thenReturn(true);
+        when(userRoleMapper.hasAnyEnabledRole(parent.id())).thenReturn(true);
         when(parentMapper.findProfileByUserId(parent.id())).thenReturn(pendingProfile(parent.id()));
         when(passwordEncoder.encode("ParentPassword1")).thenReturn("encoded-parent-password");
         when(userMapper.updatePasswordHash(parent.id(), "encoded-parent-password")).thenReturn(1);
@@ -277,7 +277,7 @@ class ParentPhoneAuthenticationServiceTest {
     void resetsParentPasswordAfterPurposeBoundSmsVerification() {
         User parent = user(UserType.FAMILY, UserStatus.ENABLED);
         when(userMapper.findByMobileForUpdate(MOBILE)).thenReturn(parent);
-        when(userRoleMapper.hasRoleCode(parent.id(), "PARENT")).thenReturn(true);
+        when(userRoleMapper.hasAnyEnabledRole(parent.id())).thenReturn(true);
         when(parentMapper.findProfileByUserId(parent.id())).thenReturn(pendingProfile(parent.id()));
         when(passwordEncoder.encode("ResetPassword1")).thenReturn("encoded-reset-password");
         when(userMapper.updatePasswordHash(parent.id(), "encoded-reset-password")).thenReturn(1);
@@ -303,7 +303,7 @@ class ParentPhoneAuthenticationServiceTest {
         User parent = new User(21L, MOBILE, "家长用户", MOBILE, "encoded-password",
                 UserType.FAMILY, UserStatus.ENABLED, null, null);
         when(userMapper.findByUsernameForUpdate(MOBILE)).thenReturn(parent);
-        when(userRoleMapper.hasRoleCode(parent.id(), "PARENT")).thenReturn(true);
+        when(userRoleMapper.hasAnyEnabledRole(parent.id())).thenReturn(true);
         when(parentMapper.findProfileByUserId(parent.id())).thenReturn(pendingProfile(parent.id()));
         when(parentMapper.hasAgreementAcceptance(parent.id(), AGREEMENT_VERSION)).thenReturn(false);
         when(passwordEncoder.matches("ParentPassword1", "encoded-password")).thenReturn(true);
@@ -326,7 +326,7 @@ class ParentPhoneAuthenticationServiceTest {
         User parent = new User(21L, MOBILE, "家长用户", MOBILE, "encoded-password",
                 UserType.FAMILY, UserStatus.ENABLED, null, null);
         when(userMapper.findByUsernameForUpdate(MOBILE)).thenReturn(parent);
-        when(userRoleMapper.hasRoleCode(parent.id(), "PARENT")).thenReturn(true);
+        when(userRoleMapper.hasAnyEnabledRole(parent.id())).thenReturn(true);
         when(parentMapper.findProfileByUserId(parent.id())).thenReturn(pendingProfile(parent.id()));
         when(passwordEncoder.matches("wrong-password", "encoded-password")).thenReturn(false);
         assertThatThrownBy(() -> service.loginByPassword(new ParentPasswordLoginCommand(

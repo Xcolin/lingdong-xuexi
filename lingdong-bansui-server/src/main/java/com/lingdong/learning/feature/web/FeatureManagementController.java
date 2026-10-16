@@ -21,6 +21,8 @@ public class FeatureManagementController {
     public FeatureManagementController(FeatureManagementService service){this.service=service;}
     @GetMapping("/toggles") @RequirePermission("FEATURE_TOGGLE_READ")
     public List<ToggleView> toggles(@AuthenticationPrincipal AuthenticatedUser user){return service.listToggles(user);}
+    @GetMapping("/toggle-options")
+    public List<ToggleView> toggleOptions(@AuthenticationPrincipal AuthenticatedUser user,@RequestParam String permission){return service.toggleOptions(user,permission);}
     @GetMapping("/changes") @RequirePermission("FEATURE_TOGGLE_READ")
     public Page changes(@AuthenticationPrincipal AuthenticatedUser user,@RequestParam(required=false) SystemTaskStatus taskStatus,
             @RequestParam(defaultValue="1") int page,@RequestParam(defaultValue="20") int pageSize){return service.listChanges(user,taskStatus,page,pageSize,false);}

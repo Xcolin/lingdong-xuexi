@@ -2,7 +2,9 @@ package com.lingdong.learning.auth.application;
 
 /** 家长短信验证码用途，不同用途之间严格隔离。 */
 public enum ParentSmsPurpose {
+    ACCOUNT_LOGIN,
     REGISTER_OR_LOGIN,
+    ORGANIZATION_ONBOARDING,
     RESET_PASSWORD,
     WECHAT_BIND,
     STUDENT_WECHAT_BIND,
@@ -13,3 +15,4 @@ public enum ParentSmsPurpose {
     ACCOUNT_CANCELLATION,
     MANUAL_MOBILE_RECOVERY_NEW
 }
+

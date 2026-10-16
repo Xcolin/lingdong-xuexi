@@ -36,7 +36,6 @@ public class ParentMobileManualRecoveryController {
         this.tokenService = tokenService;
     }
 
-    @RequirePermission(PERMISSION)
     @GetMapping("/candidates")
     public List<ParentMobileManualRecoveryCandidateResponse> candidates(
             @AuthenticationPrincipal AuthenticatedUser currentUser
@@ -46,7 +45,6 @@ public class ParentMobileManualRecoveryController {
                 .toList();
     }
 
-    @RequirePermission(PERMISSION)
     @PostMapping("/codes")
     @ResponseStatus(HttpStatus.CREATED)
     public ParentSmsCodeResponse issueCode(
@@ -61,7 +59,6 @@ public class ParentMobileManualRecoveryController {
                         tokenService.hash(servletRequest.getRemoteAddr()))));
     }
 
-    @RequirePermission(PERMISSION)
     @PostMapping
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void recover(

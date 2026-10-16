@@ -1,4 +1,5 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { fireEvent, render as renderTestingLibrary, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { authApi, type CurrentUser } from '../../api/auth';
 import { capabilityApi, type ClientCapabilities } from '../../api/capability';
@@ -11,6 +12,16 @@ const user: CurrentUser = { userId: '1900000000000000001', sessionId: 's', usern
 const caps = { client: 'WEB', cacheManagementEnabled: true } as ClientCapabilities;
 const item = { id: '1900000000000000002', code: 'T1', type: 'CACHE_CLEAR', title: '清理缓存申请', description: '变更说明', impactScope: 'ALL', status: 'PENDING_REVIEW' as const, submittedBy: '1900000000000000003', submittedAt: null, reviewedBy: null, reviewedAt: null, reviewComment: null, createdAt: null, updatedAt: null };
 describe('系统任务工作台', () => {
+  it('从工作台进入指定任务时自动打开详情并保留列表', async () => {
+    render(<SystemTaskWorkbench currentUser={user} onNavigate={vi.fn()} />, `/system-tasks?taskId=${item.id}`);
+    expect(await screen.findByText('系统任务详情')).toBeInTheDocument();
+    expect(systemTasksApi.detail).toHaveBeenCalledWith(item.id);
+    expect(systemTasksApi.list).toHaveBeenCalled();
+  });
+  it('使用申请人标识而非显示姓名判断自己的任务', () => {
+    const reviewer={...user,permissionCodes:['SYSTEM_TASK_READ','FEATURE_TOGGLE_READ','FEATURE_TOGGLE_REVIEW']};
+    expect(systemTaskDestination({...item,type:'GLOBAL_FEATURE_TOGGLE',submittedBy:'显示姓名',submittedById:reviewer.userId},reviewer,caps)).toBeNull();
+  });
   it('详情展示业务字段、前后差异及执行结果', async () => {
     vi.mocked(systemTasksApi.detail).mockResolvedValue({ ...item, payload: {
       fields: [{ label: '功能编码', value: 'TEST_FEATURE' }],
@@ -38,7 +49,7 @@ describe('系统任务工作台', () => {
     vi.resetAllMocks();
     vi.mocked(authApi.currentUser).mockResolvedValue(user);
     vi.mocked(capabilityApi.web).mockResolvedValue(caps);
-    vi.mocked(systemTasksApi.list).mockResolvedValue({ items: [item], page: 1, pageSize: 20, total: 41 });
+    vi.mocked(systemTasksApi.list).mockResolvedValue({ items: [item], page: 1, pageSize: 10, total: 41 });
     vi.mocked(systemTasksApi.detail).mockResolvedValue(item);
   });
   it('使用服务端总数分页，并复核身份后展示详情和领域入口', async () => {
@@ -47,7 +58,7 @@ describe('系统任务工作台', () => {
     expect(await screen.findByText('清理缓存申请')).toBeInTheDocument();
     expect(screen.getByText('共 41 条')).toBeInTheDocument();
     fireEvent.click(screen.getByTitle('2'));
-    await waitFor(() => expect(systemTasksApi.list).toHaveBeenLastCalledWith({ page: 2, pageSize: 20, status: undefined }));
+    await waitFor(() => expect(systemTasksApi.list).toHaveBeenLastCalledWith({ page: 2, pageSize: 10, status: undefined }));
     fireEvent.click(screen.getByRole('button', { name: '查看详情' }));
     expect(await screen.findByText('变更说明')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '前往领域处理页' }));
@@ -80,3 +91,5 @@ describe('系统任务工作台', () => {
     expect(systemTasksApi.list).not.toHaveBeenCalled();
   });
 });
+
+function render(ui: React.ReactElement, path = '/system-tasks') { return renderTestingLibrary(<MemoryRouter initialEntries={[path]}>{ui}</MemoryRouter>); }

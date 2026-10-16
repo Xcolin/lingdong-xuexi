@@ -3,8 +3,25 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.lingdong.learning.user.infrastructure.persistence.UserOrganizationMapper">
+    <select id="findRoleIdentities" resultType="com.lingdong.learning.user.infrastructure.persistence.UserOrganizationMapper$RoleIdentity">
+        SELECT ur.user_id, r.role_code, r.role_name, CAST(ur.organization_id AS CHAR(20)) AS organization_id,
+               o.organization_name
+        FROM sys_user_role ur JOIN sys_role r ON r.id=ur.role_id
+        LEFT JOIN sys_organization o ON o.id=ur.organization_id
+        WHERE r.status='ENABLED' AND (ur.organization_id IS NULL OR o.id IS NOT NULL)
+        AND ur.user_id IN <foreach collection="userIds" item="id" open="(" close=")" separator=",">#{id}</foreach>
+        <if test="organizationIds != null">
+            <choose><when test="!organizationIds.isEmpty()">
+                AND (ur.organization_id IS NULL OR ur.organization_id IN <foreach collection="organizationIds" item="id" open="(" close=")" separator=",">#{id}</foreach>)
+            </when><otherwise>AND 1=0</otherwise></choose>
+        </if>
+        ORDER BY ur.user_id, o.organization_path, o.id, r.role_code
+    </select>
     <select id="findNamesByUserIds" resultType="com.lingdong.learning.user.infrastructure.persistence.UserOrganizationMapper$OrganizationName">
-        SELECT membership.user_id, organization.organization_name AS name
+        SELECT membership.user_id,
+               (SELECT GROUP_CONCAT(o.organization_name ORDER BY LENGTH(o.organization_path) ASC SEPARATOR '·')
+                  FROM sys_organization o
+                 WHERE organization.organization_path LIKE CONCAT(o.organization_path, '%')) AS name
         FROM sys_user_organization membership
         JOIN sys_organization organization ON organization.id = membership.organization_id
         WHERE membership.user_id IN
@@ -12,6 +29,23 @@
         ORDER BY membership.user_id, organization.organization_name, organization.id
     </select>
 
+    <select id="isEnabledSystemAdmin" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM sys_user_role ur JOIN sys_role r ON r.id=ur.role_id
+        JOIN sys_user u ON u.id=ur.user_id WHERE ur.user_id=#{userId}
+        AND r.role_code='SYS_ADMIN' AND r.status='ENABLED' AND u.status='ENABLED')
+    </select>
+    <select id="findDirectoryOrganizationIds" resultType="long">
+        SELECT DISTINCT child.id FROM sys_user_organization membership
+        JOIN sys_organization root ON root.id=membership.organization_id
+        JOIN sys_organization child ON child.id=root.id OR (root.organization_path IS NOT NULL AND CHAR_LENGTH(root.organization_path)&gt;0 AND LEFT(child.organization_path,CHAR_LENGTH(root.organization_path))=root.organization_path)
+        WHERE membership.user_id=#{userId}
+    </select>
+    <select id="findScopedNamesByUserIds" resultType="com.lingdong.learning.user.infrastructure.persistence.UserOrganizationMapper$OrganizationName">
+        SELECT m.user_id, o.organization_name AS name FROM sys_user_organization m JOIN sys_organization o ON o.id=m.organization_id
+        WHERE m.user_id IN <foreach collection="userIds" item="id" open="(" close=")" separator=",">#{id}</foreach>
+        <choose><when test="organizationIds != null and !organizationIds.isEmpty()">AND m.organization_id IN <foreach collection="organizationIds" item="id" open="(" close=")" separator=",">#{id}</foreach></when><otherwise>AND 1=0</otherwise></choose>
+        ORDER BY m.user_id,o.organization_name,o.id
+    </select>
     <select id="lockRelation" resultType="java.lang.Long">SELECT id FROM sys_user_organization WHERE user_id = #{userId} AND organization_id = #{organizationId} FOR UPDATE</select>
     <select id="exists" resultType="boolean">
         SELECT EXISTS(
@@ -26,6 +60,9 @@
         INSERT INTO sys_user_organization (id, user_id, organization_id)
         VALUES (#{id}, #{userId}, #{organizationId})
     </insert>
+    <delete id="delete">
+        DELETE FROM sys_user_organization WHERE user_id = #{userId} AND organization_id = #{organizationId}
+    </delete>
     <select id="findOrganizationIds" resultType="long">
         SELECT organization_id FROM sys_user_organization WHERE user_id = #{userId}
     </select>

@@ -26,14 +26,48 @@
         </constructor>
     </resultMap>
 
+    <sql id="selectedStudentScope">
+        <bind name="selectedOrganizationId" value="@com.lingdong.learning.common.security.SelectedOrganizationContext@organizationId()"/>
+        <if test="selectedOrganizationId != null">
+          AND EXISTS (SELECT 1 FROM edu_student selected_student
+            JOIN sys_user_organization selected_member ON selected_member.user_id=selected_student.student_user_id
+            WHERE selected_student.id = ${studentIdColumn}
+              AND selected_member.organization_id = #{selectedOrganizationId})
+        </if>
+    </sql>
     <sql id="relationshipColumns">
         id, parent_user_id, student_id, relation_role, status,
         primary_scope_key, bound_at, unbound_at
     </sql>
 
+    <!-- Dedicated MINIAPP weekly READ scope. Never used by guardian writes or Web. -->
+    <sql id="miniappReviewChildScope">
+      <bind name="selectedReviewFamily" value="@com.lingdong.learning.common.security.SelectedOrganizationContext@organizationId()"/>
+      (EXISTS (SELECT 1 FROM edu_parent_student guardian
+        WHERE guardian.student_id=student.id AND guardian.parent_user_id=#{parentUserId} AND guardian.status='ACTIVE')
+       OR EXISTS (SELECT 1 FROM sys_user_organization member
+         JOIN sys_organization family ON family.id=member.organization_id
+         JOIN sys_organization_admin admin ON admin.organization_id=family.id AND admin.user_id=#{parentUserId}
+         WHERE member.user_id=student.student_user_id AND family.id=#{selectedReviewFamily,jdbcType=BIGINT}
+           AND family.organization_type='FAMILY' AND family.status='ENABLED' AND family.effective_status='ENABLED'))
+      <include refid="selectedStudentScope"><property name="studentIdColumn" value="student.id"/></include>
+    </sql>
+    <resultMap id="miniappReviewChildMap" type="com.lingdong.learning.growthpoint.application.GrowthReviewQueryService$ChildOption">
+      <constructor><arg column="student_id" javaType="java.lang.String"/><arg column="student_name" javaType="java.lang.String"/></constructor>
+    </resultMap>
+    <select id="findMiniappReviewChildren" resultMap="miniappReviewChildMap">
+      SELECT student.id AS student_id, student.student_name FROM edu_student student
+      WHERE <include refid="miniappReviewChildScope"/> ORDER BY student.student_name,student.id
+    </select>
+    <select id="existsMiniappReviewChild" resultType="boolean">
+      SELECT EXISTS (SELECT 1 FROM edu_student student WHERE student.id=#{studentId}
+        AND <include refid="miniappReviewChildScope"/>)
+    </select>
+
     <select id="existsActiveByParentAndStudent" resultType="boolean">
         SELECT EXISTS(SELECT 1 FROM edu_parent_student
-        WHERE parent_user_id = #{parentUserId} AND student_id = #{studentId} AND status = 'ACTIVE')
+        WHERE parent_user_id = #{parentUserId} AND student_id = #{studentId} AND status = 'ACTIVE'
+        <include refid="selectedStudentScope"><property name="studentIdColumn" value="edu_parent_student.student_id"/></include>)
     </select>
 
     <select id="existsActivePrimaryByParentAndStudent" resultType="boolean">
@@ -42,17 +76,20 @@
           AND student_id = #{studentId}
           AND status = 'ACTIVE'
           AND relation_role = 'PRIMARY_GUARDIAN'
-          AND primary_scope_key = 'PRIMARY')
+          AND primary_scope_key = 'PRIMARY'
+          <include refid="selectedStudentScope"><property name="studentIdColumn" value="edu_parent_student.student_id"/></include>)
     </select>
 
     <select id="existsActiveByStudentId" resultType="boolean">
         SELECT EXISTS(SELECT 1 FROM edu_parent_student
-        WHERE student_id = #{studentId} AND status = 'ACTIVE' AND primary_scope_key = 'PRIMARY')
+        WHERE student_id = #{studentId} AND status = 'ACTIVE' AND primary_scope_key = 'PRIMARY'
+          <include refid="selectedStudentScope"><property name="studentIdColumn" value="edu_parent_student.student_id"/></include>)
     </select>
 
     <select id="countActiveStudentsByParent" resultType="long">
         SELECT COUNT(*) FROM edu_parent_student
         WHERE parent_user_id = #{parentUserId} AND status = 'ACTIVE'
+        <include refid="selectedStudentScope"><property name="studentIdColumn" value="edu_parent_student.student_id"/></include>
     </select>
 
     <select id="findActiveStudentsByParent" resultMap="parentRelationshipStudentMap">
@@ -62,6 +99,7 @@
         JOIN edu_student student ON student.id = parent_student.student_id
         WHERE parent_student.parent_user_id = #{parentUserId}
           AND parent_student.status = 'ACTIVE'
+          <include refid="selectedStudentScope"><property name="studentIdColumn" value="student.id"/></include>
         ORDER BY student.student_name, student.id
     </select>
 
@@ -202,3 +240,4 @@
         WHERE id = #{relationshipId} AND status = 'UNBOUND'
     </update>
 </mapper>
+

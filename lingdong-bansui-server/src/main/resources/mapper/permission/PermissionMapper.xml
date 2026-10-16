@@ -105,4 +105,6 @@
     <update id="updateCode">
         UPDATE sys_permission SET permission_code = #{code} WHERE id = #{id}
     </update>
+  <delete id="delete">DELETE FROM sys_permission WHERE id=#{id}</delete>
+
 </mapper>

@@ -16,7 +16,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Objects;
 
-/** 考勤台账导出沿用四身份范围（docs/design/09 第 2.6 节）：教师/机构冻结班级集合，家长/学生校验亲子或本人关系；审核员兼任拒绝。 */
+/** 考勤台账导出沿用四身份范围（docs/design/09 第 2.6 节）：教师/机构冻结班级集合，家长/学生校验亲子或本人关系；由真实持久化身份选择模式。 */
 @Service
 public class AttendanceLedgerExportAccessService {
     private static final int MAX_CLASSES = 50_000;
@@ -27,38 +27,30 @@ public class AttendanceLedgerExportAccessService {
     private final FeatureAccessService features;
     private final OrganizationDataScopeService organizations;
     private final AttendanceLedgerExportMapper mapper;
+    private final ExportActorIdentityService actors;
 
     public AttendanceLedgerExportAccessService(UserMapper users, UserRoleMapper roles,
             PermissionDecisionService permissions, FeatureAccessService features,
-            OrganizationDataScopeService organizations, AttendanceLedgerExportMapper mapper) {
+            OrganizationDataScopeService organizations, AttendanceLedgerExportMapper mapper, ExportActorIdentityService actors) {
         this.users = users;
         this.roles = roles;
         this.permissions = permissions;
         this.features = features;
         this.organizations = organizations;
-        this.mapper = mapper;
+        this.mapper = mapper;this.actors=actors;
     }
 
-    /** 角色优先级沿用考勤台账：机构管理员优先于教师；空组织路径失败关闭。 */
+    /** 真实机构scope优先于教师班级；家庭/学生不会因组织授权冒充机构。 */
     public AttendanceScope require(long userId) {
         var user = users.findById(userId);
         if (user == null || user.status() != UserStatus.ENABLED) throw denied();
         features.requireEnabled("ATTENDANCE_MANAGEMENT", null);
-        var roleCodes = roles.findEnabledRoleCodesByUserId(userId);
-        // 审核员仅处理系统审批，兼任其他角色也不能导出考勤台账。
-        // Dynamic permissions below apply to every enabled role.
         for (String permission : List.of("ATTENDANCE_LEDGER_EXPORT", "ATTENDANCE_READ")) {
             if (!permissions.isAllowed(userId, PermissionClient.WEB, permission)) throw denied();
         }
-        if (roleCodes.contains("ORG_ADMIN") || roleCodes.stream().noneMatch(role -> List.of("TEACHER", "PARENT", "STUDENT").contains(role))) {
-            var scope = organizations.resolve(userId);
-            if (!scope.allOrganizations() && scope.rootPaths().isEmpty()) throw denied();
-            return new AttendanceScope(userId, "ORGANIZATION", scope.allOrganizations(), scope.rootPaths());
-        }
-        if (roleCodes.contains("TEACHER")) return new AttendanceScope(userId, "TEACHER", false, List.of());
-        if (roleCodes.contains("PARENT")) return new AttendanceScope(userId, "PARENT", false, List.of());
-        if (roleCodes.contains("STUDENT")) return new AttendanceScope(userId, "STUDENT", false, List.of());
-        throw denied();
+        var identity=actors.require(userId);
+        String mode="ORG_ADMIN".equals(identity.mode())?"ORGANIZATION":identity.mode();
+        return new AttendanceScope(userId,mode,identity.allOrganizations(),identity.rootPaths());
     }
 
     public List<ExceptionReportClassOption> classes(long userId) {
@@ -98,12 +90,12 @@ public class AttendanceLedgerExportAccessService {
     public void requireFrozen(long userId, ExportScopeSnapshot frozen) {
         var scope = require(userId);
         var ids = frozen.attClassIds();
-        if (ids == null || ids.isEmpty() || ids.size() > MAX_CLASSES || frozen.upperBound() < 0
+        if (!scope.mode().equals(frozen.attRole()) || ids == null || ids.isEmpty() || ids.size() > MAX_CLASSES || frozen.upperBound() < 0
                 || ids.stream().anyMatch(id -> id == null || id <= 0)
                 || ids.stream().distinct().count() != ids.size()) {
             throw denied();
         }
-        // 班级授权、组织范围或角色撤销都会使当前可见集合收窄，拒绝旧文件而非交付部分过滤后的假快照。
+        // 班级授权、组织范围或身份撤销都会使当前可见集合收窄，拒绝旧文件而非交付部分过滤后的假快照。
         var authorized = mapper.findVisibleClassIds(scope, MAX_CLASSES + 1);
         if (authorized.size() > MAX_CLASSES || !authorized.containsAll(ids)) throw denied();
     }

@@ -1,3 +1,4 @@
+import { Button as PlainButton } from 'antd';
 import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { useEffect, useState } from 'react';
 import { Alert, Spin } from 'antd';
@@ -43,7 +44,7 @@ export function OrganizationActivityTrend({ userId }: { userId: string }) {
     <h2>学员活跃度趋势</h2>
     {busy && <Spin />}
     {error && <Alert type="error" showIcon message={error}
-      action={<Button actionKey="dashboard.organization-activity-trend.1" aria-label="重试" onClick={() => setReload(value => value + 1)}>重试</Button>} />}
+      action={<PlainButton  aria-label="重试" onClick={() => setReload(value => value + 1)}>重试</PlainButton>} />}
     {!busy && !error && !allowed
       && <p>当前无机构管理员看板权限或学习任务功能未开启。</p>}
     {!busy && !error && allowed && items.length === 0

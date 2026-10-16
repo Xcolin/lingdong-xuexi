@@ -42,7 +42,7 @@ describe('家长积分台账页面', () => {
         correctionLedgerId: null, correctionDeadline: '2026-08-06T09:30:00',
         correctable: true
       }],
-      page: 1, pageSize: 20, total: 1
+      page: 1, pageSize: 10, total: 1
     });
     growthPointApi.correct.mockResolvedValue({
       studentId: '1874244142494647101', assignmentId: '1874244142494647201',
@@ -69,7 +69,7 @@ describe('家长积分台账页面', () => {
     expect(screen.getByText('连续第 1 天，基础 20 分，衰减 0%')).toBeInTheDocument();
     await waitFor(() => {
       expect(growthPointApi.account).toHaveBeenCalledWith('1874244142494647101');
-      expect(growthPointApi.ledgers).toHaveBeenCalledWith('1874244142494647101', 1, 20);
+      expect(growthPointApi.ledgers).toHaveBeenCalledWith('1874244142494647101', 1, 10);
     });
   });
 
@@ -106,7 +106,7 @@ describe('家长积分台账页面', () => {
         remark: '奖励兑换：周末观影', correctionOfId: null,
         correctionLedgerId: null, correctionDeadline: null, correctable: false
       }],
-      page: 1, pageSize: 20, total: 1
+      page: 1, pageSize: 10, total: 1
     });
 
     render(<AntdApp><GrowthPointPage /></AntdApp>);

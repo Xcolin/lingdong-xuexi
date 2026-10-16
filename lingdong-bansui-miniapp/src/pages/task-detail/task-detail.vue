@@ -1,5 +1,6 @@
 <template>
-  <view class="page-shell">
+  <view class="prototype-workspace page-shell">
+    <PixelPageHeader title="任务详情" back fallback="/pages/task-list/task-list" />
     <view v-if="loading" class="state-view"><text>正在加载任务</text></view>
     <view v-else-if="!learningTaskEnabled" class="state-view unavailable">
       <text>学习任务暂不可用</text>
@@ -9,25 +10,11 @@
       <button class="retry-button" @tap="reload">重试</button>
     </view>
     <template v-else-if="task">
-      <view class="title-band">
-        <view class="title-meta">
-          <text class="source-label" :class="`source-${task.sourceType.toLowerCase()}`">
-            {{ sourceLabel(task.sourceType) }}
-          </text>
-          <text class="status-label" :class="`status-${task.effectiveStatus.toLowerCase()}`">
-            {{ statusLabel(task.effectiveStatus) }}
-          </text>
-          <text v-if="task.overnightMigrated" class="migration-label">隔夜迁移</text>
-        </view>
-        <text class="task-title">{{ task.title }}</text>
-        <text v-if="task.sourceOrganizationName" class="source-name">
-          {{ task.sourceOrganizationName }}
-        </text>
-      </view>
+      <view class="title-band"><view class="detail-symbol"><PrototypeIcon name="book" :size="42"/></view><view class="title-copy"><text class="task-title">{{task.title}}</text><view class="title-meta"><text class="source-label" :class="`source-${task.sourceType.toLowerCase()}`">{{sourceLabel(task.sourceType)}}</text><text class="status-label" :class="`status-${task.effectiveStatus.toLowerCase()}`">{{statusLabel(task.effectiveStatus)}}</text><text v-if="task.overnightMigrated" class="migration-label">隔夜迁移</text></view><text v-if="task.sourceOrganizationName" class="source-name">{{task.sourceOrganizationName}}</text></view></view>
 
       <view v-if="errorMessage" class="error-band"><text>{{ errorMessage }}</text></view>
 
-      <view class="detail-band">
+      <view class="detail-band metadata-band">
         <view class="detail-row"><text class="detail-label">计划日期</text><text>{{ task.scheduledDate }}</text></view>
         <view class="detail-row"><text class="detail-label">截止时间</text><text>{{ formatTime(task.dueAt) }}</text></view>
         <view class="detail-row"><text class="detail-label">任务难度</text><text>{{ task.difficultyLevel }} 级</text></view>
@@ -73,7 +60,7 @@
         </text>
       </view>
 
-      <view class="action-band">
+      <view class="action-band" :class="{'awaiting-claim':task.effectiveStatus==='PENDING_CLAIM'}"><text v-if="task.effectiveStatus!=='PENDING_CLAIM'" class="section-title">我的任务行动</text>
         <button
           v-if="task.effectiveStatus === 'PENDING_CLAIM'"
           class="primary-action"
@@ -83,6 +70,7 @@
         >认领任务</button>
 
         <template v-else-if="task.effectiveStatus === 'IN_PROGRESS'">
+          <text class="form-heading">文字记录</text>
           <textarea
             v-model="checkInContent"
             class="checkin-input"
@@ -90,7 +78,7 @@
             placeholder="记录本次完成情况"
             :disabled="working"
           />
-          <view v-if="attachmentServiceEnabled" class="upload-section">
+          <view v-if="attachmentServiceEnabled" class="upload-section"><text class="form-heading">上传图片</text>
             <view class="pending-image-grid">
               <view v-for="item in pendingImages" :key="item.localId" class="pending-image-item">
                 <image :src="item.filePath" mode="aspectFill" @tap="previewPendingImage(item.filePath)" />
@@ -112,7 +100,7 @@
                 class="add-image"
                 :disabled="working"
                 @tap="chooseImages"
-              >添加图片</button>
+              ><PrototypeIcon name="plus" :size="24" /><text>添加图片</text></button>
             </view>
             <text class="upload-hint">支持 JPG、PNG，最多 9 张，单张不超过 10MB</text>
           </view>
@@ -159,8 +147,10 @@
 </template>
 
 <script setup lang="ts">
+import PixelPageHeader from '@/components/pixel/PixelPageHeader.vue';
+import PrototypeIcon from '@/components/PrototypeIcon.vue';
 import { computed, ref } from 'vue';
-import { onLoad, onShow } from '@dcloudio/uni-app';
+import { onLoad, onShow, onHide, onUnload } from '@dcloudio/uni-app';
 import { getMiniappCapabilities } from '@/api/capability';
 import {
   abandonStudentTask,
@@ -211,34 +201,49 @@ const uploadedFileIds = computed(() => pendingImages.value
   .map((item) => item.fileId as string));
 const hasUploading = computed(() => pendingImages.value.some((item) => item.status === 'UPLOADING'));
 
+let epoch = 0;
+let nativePickerOpen = false;
+let pickerReturnPending = false;
+let pickerToken = '';
+const current = (n: number, token: string) => n === epoch && getStudentSession()?.accessToken === token;
+function invalidate() { epoch++; task.value = null; pendingImages.value = []; historyPreviewPaths.value = {}; checkInContent.value = ''; working.value = false; learningTaskEnabled.value = false; errorMessage.value = ''; }
+onHide(() => { if (nativePickerOpen) pickerReturnPending = true; else invalidate(); });
+onUnload(invalidate);
+
 onLoad((options) => {
   assignmentId.value = typeof options?.id === 'string' ? options.id : '';
 });
 
 onShow(() => {
+  if (pickerReturnPending && getStudentSession()?.accessToken === pickerToken) { pickerReturnPending = false; return; }
+  pickerReturnPending = false;
+  if (nativePickerOpen && getStudentSession()?.accessToken === pickerToken) return;
   if (assignmentId.value) void initialize();
 });
 
 async function initialize(): Promise<void> {
+  invalidate();
+  const n = epoch, token = getStudentSession()?.accessToken;
   loading.value = true;
   errorMessage.value = '';
-  if (!getStudentSession()) {
+  if (!token) {
     await uni.reLaunch({ url: '/pages/index/index' });
     return;
   }
   try {
     const capabilities = await getMiniappCapabilities();
+    if (!current(n, token)) return;
     learningTaskEnabled.value = capabilities.learningTaskManagementEnabled;
     attachmentServiceEnabled.value = capabilities.attachmentServiceEnabled !== false;
     if (!attachmentServiceEnabled.value) pendingImages.value = [];
-    task.value = learningTaskEnabled.value
-      ? await getStudentTaskAssignment(assignmentId.value)
-      : null;
+    const result = learningTaskEnabled.value ? await getStudentTaskAssignment(assignmentId.value) : null;
+    if (!current(n, token)) return;
+    task.value = result;
     await prepareHistoryPreviews();
   } catch (error) {
-    errorMessage.value = toMessage(error);
+    if (token && current(n, token)) errorMessage.value = toMessage(error);
   } finally {
-    loading.value = false;
+    if (token && current(n, token)) loading.value = false;
   }
 }
 
@@ -270,11 +275,17 @@ function submitCheckIn(): void {
 
 function chooseImages(): void {
   if (!attachmentServiceEnabled.value || working.value || pendingImages.value.length >= 9) return;
+  const n = epoch, token = getStudentSession()?.accessToken;
+  if (!token) return;
+  nativePickerOpen = true;
+  pickerToken = token;
   uni.chooseImage({
     count: 9 - pendingImages.value.length,
     sizeType: ['compressed'],
     sourceType: ['album', 'camera'],
+    complete: () => { nativePickerOpen = false; },
     success: (result) => {
+      if (!current(n, token)) return;
       const paths = Array.isArray(result.tempFilePaths)
         ? result.tempFilePaths
         : [result.tempFilePaths];
@@ -294,17 +305,21 @@ function chooseImages(): void {
 }
 
 async function uploadImage(item: PendingImage): Promise<void> {
+  const n = epoch, token = getStudentSession()?.accessToken;
+  if (!token) return;
   item.status = 'UPLOADING';
   item.progress = 0;
   try {
     const uploaded = await uploadTaskAttachment(
       item.filePath,
-      (progress) => { item.progress = progress; }
+      (progress) => { if (current(n, token)) item.progress = progress; }
     );
+    if (!current(n, token)) return;
     item.fileId = uploaded.id;
     item.progress = 100;
     item.status = 'UPLOADED';
   } catch (error) {
+    if (!current(n, token)) return;
     item.status = 'FAILED';
     errorMessage.value = toMessage(error);
   }
@@ -317,11 +332,14 @@ function retryUpload(item: PendingImage): void {
 
 async function removeImage(item: PendingImage): Promise<void> {
   if (working.value || item.status === 'UPLOADING') return;
+  const n = epoch, token = getStudentSession()?.accessToken;
+  if (!token) return;
   try {
     if (item.fileId) await deleteTaskAttachment(item.fileId);
+    if (!current(n, token)) return;
     pendingImages.value = pendingImages.value.filter((candidate) => candidate.localId !== item.localId);
   } catch (error) {
-    errorMessage.value = toMessage(error);
+    if (current(n, token)) errorMessage.value = toMessage(error);
   }
 }
 
@@ -341,6 +359,8 @@ function previewHistoryImage(index: number): void {
 }
 
 async function prepareHistoryPreviews(): Promise<void> {
+  const n = epoch, token = getStudentSession()?.accessToken;
+  if (!token) return;
   if (!attachmentServiceEnabled.value) {
     historyPreviewPaths.value = {};
     return;
@@ -350,7 +370,7 @@ async function prepareHistoryPreviews(): Promise<void> {
   await Promise.all(attachments.map(async (attachment) => {
     try {
       const path = await downloadTaskAttachment(attachment.contentUrl);
-      historyPreviewPaths.value = { ...historyPreviewPaths.value, [attachment.id]: path };
+      if (current(n, token)) historyPreviewPaths.value = { ...historyPreviewPaths.value, [attachment.id]: path };
     } catch {
       // 图片读取失败不影响任务文字和审核状态展示。
     }
@@ -359,13 +379,15 @@ async function prepareHistoryPreviews(): Promise<void> {
 
 function confirmAbandon(): void {
   if (working.value) return;
+  const n = epoch, token = getStudentSession()?.accessToken;
+  if (!token) return;
   uni.showModal({
     title: '确认放弃任务',
     content: '任务将转为待优化，不会扣分。',
     confirmText: '确认放弃',
     confirmColor: '#b54732',
     success: (result) => {
-      if (result.confirm) {
+      if (result.confirm && current(n, token)) {
         void execute(() => abandonStudentTask(assignmentId.value, '学生主动放弃'));
       }
     }
@@ -377,19 +399,23 @@ async function execute(
   clearCheckIn = false
 ): Promise<void> {
   if (working.value || !learningTaskEnabled.value || !getStudentSession()) return;
+  const n = epoch, token = getStudentSession()?.accessToken;
+  if (!token) return;
   working.value = true;
   errorMessage.value = '';
   try {
-    task.value = await action();
+    const result = await action();
+    if (!current(n, token)) return;
+    task.value = result;
     if (clearCheckIn) {
       checkInContent.value = '';
       pendingImages.value = [];
     }
     await prepareHistoryPreviews();
   } catch (error) {
-    errorMessage.value = toMessage(error);
+    if (current(n, token)) errorMessage.value = toMessage(error);
   } finally {
-    working.value = false;
+    if (current(n, token)) working.value = false;
   }
 }
 
@@ -439,9 +465,10 @@ function toMessage(error: unknown): string {
   return error instanceof Error ? error.message : '请求未能完成';
 }
 </script>
-
 <style lang="scss" scoped>
-.page-shell { min-height: 100vh; padding-bottom: 48rpx; background: #f4f7f5; }
+@import "@/styles/workspace-prototype.scss";
+
+.page-shell { padding-bottom: 48rpx; background: #f4f7f5; }
 /* #ifdef H5 */
 .page-shell { min-height: calc(100vh - 44px); }
 /* #endif */
@@ -457,8 +484,8 @@ function toMessage(error: unknown): string {
 .status-pending_claim { background: #fff5de; color: #8b6417; }
 .status-paused, .status-exempt { background: #eef1f2; color: #52615c; }
 .status-needs_improvement { background: #fff0e8; color: #9a4b38; }
-.task-title { display: block; margin-top: 24rpx; color: #1c2b28; font-size: 40rpx; font-weight: 700; line-height: 1.45; }
-.source-name { display: block; margin-top: 14rpx; color: #708078; font-size: 24rpx; }
+.task-title { margin-top: 24rpx; color: #1c2b28; font-size: 40rpx; }
+.source-name { margin-top: 14rpx; color: #708078; }
 .error-band { padding: 20rpx 36rpx; background: #fff1ed; color: #9a4b38; font-size: 24rpx; }
 .detail-band { margin-top: 20rpx; padding: 12rpx 36rpx; background: #ffffff; border-top: 2rpx solid #e1e9e5; border-bottom: 2rpx solid #e1e9e5; }
 .detail-row { min-height: 86rpx; display: flex; align-items: center; justify-content: space-between; gap: 32rpx; border-bottom: 2rpx solid #edf1ef; color: #1c2b28; font-size: 28rpx; }
@@ -476,20 +503,20 @@ function toMessage(error: unknown): string {
 .history-image-item { display: flex; align-items: center; justify-content: center; color: #64746d; font-size: 22rpx; text-align: center; }
 .history-image-item image, .pending-image-item image { width: 100%; height: 100%; }
 .review-comment { display: block; margin: 0 -36rpx; padding: 20rpx 36rpx; background: #fff4ef; color: #944633; font-size: 26rpx; line-height: 1.6; }
-.action-band { margin-top: 20rpx; padding: 32rpx 36rpx; background: #ffffff; border-top: 2rpx solid #e1e9e5; border-bottom: 2rpx solid #e1e9e5; }
+.action-band { padding: 32rpx 36rpx; background: #ffffff; border-top: 2rpx solid #e1e9e5; border-bottom: 2rpx solid #e1e9e5; }
 .primary-action, .secondary-actions button, .danger-action, .retry-button { border-radius: 8rpx; font-size: 28rpx; }
 .primary-action { width: 100%; height: 84rpx; margin: 0; background: #167c5a; color: #ffffff; }
 .primary-action::after { border: 0; }
-.checkin-input { width: 100%; height: 220rpx; padding: 24rpx; box-sizing: border-box; border: 2rpx solid #cad7d2; border-radius: 8rpx; background: #fbfdfc; color: #1c2b28; font-size: 28rpx; line-height: 1.6; }
+.checkin-input { width: 100%; padding: 24rpx; border: 2rpx solid #cad7d2; border-radius: 8rpx; background: #fbfdfc; color: #1c2b28; font-size: 28rpx; line-height: 1.6; }
 .upload-section { margin-top: 18rpx; }
 .upload-mask { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(28, 43, 40, 0.68); color: #ffffff; font-size: 24rpx; }
 .upload-mask.failed button { min-width: 112rpx; height: 56rpx; padding: 0 18rpx; border-radius: 8rpx; background: #ffffff; color: #9a4b38; font-size: 22rpx; line-height: 56rpx; }
 .remove-image { position: absolute; top: 8rpx; right: 8rpx; width: 48rpx; height: 48rpx; margin: 0; padding: 0; border-radius: 50%; background: rgba(28, 43, 40, 0.76); color: #ffffff; font-size: 34rpx; line-height: 44rpx; }
 .remove-image::after, .add-image::after { border: 0; }
-.add-image { display: flex; align-items: center; justify-content: center; margin: 0; color: #167c5a; font-size: 24rpx; }
+.add-image { margin: 0; color: #167c5a; font-size: 24rpx; }
 .upload-hint { display: block; color: #7b8983; font-size: 22rpx; }
 .input-counter { margin: 12rpx 0 20rpx; text-align: right; color: #7b8983; font-size: 22rpx; }
-.duration-picker { min-height: 76rpx; display: flex; align-items: center; justify-content: space-between; margin-top: 28rpx; padding: 0 24rpx; border: 2rpx solid #d7e0dc; border-radius: 8rpx; color: #536760; font-size: 26rpx; }
+.duration-picker { min-height: 76rpx; display: flex; align-items: center; justify-content: space-between; border: 2rpx solid #d7e0dc; color: #536760; font-size: 26rpx; }
 .secondary-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 20rpx; margin-top: 18rpx; }
 .secondary-actions button { width: 100%; height: 76rpx; margin: 0; background: #edf3f0; color: #315f50; }
 .secondary-actions button::after { border-color: #c0d2ca; }
@@ -502,4 +529,23 @@ function toMessage(error: unknown): string {
 .error-view { padding: 0 48rpx; text-align: center; }
 .retry-button { width: 180rpx; height: 64rpx; margin: 0; background: #ffffff; color: #167c5a; }
 .retry-button::after { border-color: #a9cbbf; }
+
+
+
+.prototype-workspace{background:#f4f8f3;}
+.profile-hero{display:flex;align-items:center;gap:24rpx;padding:44rpx 18rpx;}
+.task-card{position:relative;padding:24rpx 24rpx 24rpx 108rpx!important;border:0!important;border-radius:24rpx!important;background:#fff!important;margin-bottom:16rpx!important;box-shadow:none!important;}
+.task-symbol{position:absolute;left:22rpx;top:30rpx;width:66rpx;height:66rpx;display:flex;align-items:center;justify-content:center;background:#edf6ed;border-radius:16rpx;color:#126044;}
+.task-title{font-weight:650;}
+.source-button{border-radius:40rpx!important;}
+.balance-band,.account-band,.summary-band{background:linear-gradient(125deg,#d9ebd5,#f2f7e9)!important;border-radius:28rpx!important;border:0!important;padding:32rpx!important;}
+.balance-band{position:relative;}
+.balance-value{font-size:56rpx!important;color:#12533d!important;}
+.reward-item,.ledger-card,.detail-band{border:0!important;border-radius:24rpx!important;background:#fff!important;margin-bottom:18rpx!important;box-shadow:none!important;}
+.title-band{background:#fff!important;border-radius:26rpx!important;padding:28rpx!important;}
+.detail-symbol{width:76rpx;height:76rpx;background:#e5f3ed;border-radius:20rpx;display:flex;align-items:center;justify-content:center;color:#0e6547;margin-bottom:18rpx;}
+
+.page-shell{padding-bottom:160rpx!important;}.action-band{background:white!important;border-radius:26rpx;padding:28rpx!important;margin-top:24rpx;}.form-heading{display:block;font-size:27rpx;font-weight:650;margin:24rpx 0 14rpx;color:#203e32;}.checkin-input{background:#fcfdfb!important;border:1rpx solid #d9e3dc!important;border-radius:18rpx!important;padding:22rpx!important;box-sizing:border-box;}.primary-action{position:fixed!important;bottom:calc(24rpx + env(safe-area-inset-bottom));left:32rpx;right:32rpx;z-index:20;color:white!important;box-shadow:0 8rpx 24rpx #184c3420;}.secondary-actions{margin-top:24rpx!important;gap:18rpx!important;}.secondary-actions button{background:#edf6ee!important;color:#185b41!important;border-radius:18rpx!important;}.duration-picker{background:#f4f7f2;padding:22rpx;border-radius:16rpx;margin-top:24rpx;}.terminal-state,.pause-summary{padding:26rpx!important;background:#eef6ed;border-radius:22rpx!important;}.add-image{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10rpx;}
+.title-band{display:flex;align-items:flex-start;gap:22rpx;}.detail-symbol{flex-shrink:0;margin:0!important;}.title-copy{flex:1;min-width:0;}.task-title{display:block;line-height:1.5;}.title-meta{margin-top:12rpx;}.source-name{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:23rpx;}.metadata-band{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28rpx 30rpx;padding:28rpx!important;}.metadata-band .detail-row{display:flex;flex-direction:column;align-items:flex-start;gap:8rpx;padding:0;border:0;font-size:26rpx;}.metadata-band .detail-label{font-size:22rpx;color:#8a9981;}.primary-action{width:auto!important;margin:0!important;box-sizing:border-box;background:linear-gradient(120deg,#184f40,#256b50)!important;}.awaiting-claim{background:transparent!important;border:0!important;padding:0!important;margin:0!important;}
+.prototype-workspace{background:#f7faf6!important;color:#172b25}.task-symbol{border-radius:50%!important;background:#e7f6ed!important}.task-card,.task-list-card{border:0!important;border-radius:22rpx!important;box-shadow:none!important}.task-title{font-size:30rpx!important}.primary-action{border-radius:44rpx!important}.prototype-header{background:#fff!important;color:#172b25!important;justify-content:center;border-radius:0!important;padding:28rpx!important}.prototype-header-title{font-size:34rpx}.publish-actions{position:fixed!important;bottom:0;left:0;right:0;padding:20rpx 24rpx calc(20rpx + env(safe-area-inset-bottom));box-sizing:border-box}.page>.task-editor{padding-bottom:180rpx!important}.task-list-card>.heading{display:block;margin-bottom:12rpx}.task-list-card>text:not(.heading){font-size:24rpx;color:#7c8981}.task-list-card button{display:inline-flex;margin:18rpx 12rpx 0 0;line-height:58rpx;padding:0 22rpx}.page-shell{padding:24rpx 28rpx 170rpx!important;box-sizing:border-box}.metadata-band .detail-row{min-height:0}.detail-symbol{background:#fff0d7!important;color:#eea12a!important}.action-band{border:0!important}.checkin-input{height:180rpx}.ld-heading{text-align:center;background:white;margin:0 -32rpx;padding:28rpx}.source-filter-inner{display:flex;width:100%;gap:0;background:#eff3ee;border-radius:24rpx}.source-button{flex:1;min-width:0;padding:0;box-shadow:none;background:transparent}.source-button.active{background:transparent!important;color:#075e43!important;border-bottom:4rpx solid #075e43}.task-row-top{justify-content:space-between}.task-meta{font-size:23rpx}.task-list-card{min-height:148rpx}
 </style>

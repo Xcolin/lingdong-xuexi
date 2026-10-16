@@ -5,7 +5,6 @@ import { Navigate, useLocation, useNavigate, type RoutesProps } from 'react-rout
 export interface WorkspacePage { path: string; label: string }
 interface OpenPage { path: string; url: string }
 type CloseAction = 'current' | 'others' | 'left' | 'right' | 'all';
-const HOME = '/dashboard';
 
 /** Cached pages are scoped to the authenticated App instance, never persisted across users. */
 export function WorkspaceTabs({ pages, children }: { pages: WorkspacePage[]; children: ReactElement<RoutesProps> }) {
@@ -14,6 +13,7 @@ export function WorkspaceTabs({ pages, children }: { pages: WorkspacePage[]; chi
   const active = location.pathname;
   const url = active + location.search + location.hash;
   const allowed = new Set(pages.map(page => page.path));
+  const HOME = allowed.has('/dashboard') ? '/dashboard' : pages[0]?.path ?? '/my-organizations';
   const allowedKey = pages.map(page => page.path).join('|');
   const [opened, setOpened] = useState<OpenPage[]>(() => [{ path: HOME, url: HOME }, ...(active !== HOME && allowed.has(active) ? [{ path: active, url }] : [])]);
   const visible = opened.filter(page => allowed.has(page.path));

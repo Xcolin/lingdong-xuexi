@@ -1,3 +1,4 @@
+import { Button as PlainButton } from 'antd';
 import { ConfiguredModal as Modal } from '../../components/ConfiguredModal';
 import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { ViewportTable as Table } from '../../components/ViewportTable';
@@ -10,8 +11,8 @@ import { studentImportApi, type StudentImportRecord, type StudentImportRowPage, 
 import { classApi, type ClassOrganization } from '../../api/classes';
 import { formatDateTime as formatTime } from '../../utils/datetime';
 
-const emptyErrorPage: ImportJobErrorPage = { items: [], page: 1, pageSize: 20, total: 0 };
-const emptyStudentRows: StudentImportRowPage = { items: [], page: 1, pageSize: 20, total: 0 };
+const emptyErrorPage: ImportJobErrorPage = { items: [], page: 1, pageSize: 10, total: 0 };
+const emptyStudentRows: StudentImportRowPage = { items: [], page: 1, pageSize: 10, total: 0 };
 
 interface ImportJobManagementPageProps {
   canCreate: boolean;
@@ -27,7 +28,7 @@ export function ImportJobManagementPage({
   canDownloadStudentCredentials = false
 }: ImportJobManagementPageProps) {
   const [options, setOptions] = useState<ImportJobOptions>({ templates: [], organizations: [] });
-  const [page, setPage] = useState({ items: [] as ImportJobRecord[], page: 1, pageSize: 20, total: 0 });
+  const [page, setPage] = useState({ items: [] as ImportJobRecord[], page: 1, pageSize: 10, total: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>();
   const [createOpen, setCreateOpen] = useState(false);
@@ -49,13 +50,13 @@ export function ImportJobManagementPage({
   async function loadInitial() {
     setLoading(true); setError(undefined);
     try {
-      const [loadedOptions, loadedPage] = await Promise.all([importJobApi.options(), importJobApi.list({})]);
+      const [loadedOptions, loadedPage] = await Promise.all([importJobApi.options(), importJobApi.list({ page: 1, pageSize: 10 })]);
       setOptions(loadedOptions); setPage(loadedPage);
     } catch (cause) { setError(toMessage(cause)); } finally { setLoading(false); }
   }
 
   async function search(values: ImportJobQuery) {
-    await loadPage({ ...values, page: 1, pageSize: 20 });
+    await loadPage({ ...values, page: 1, pageSize: page.pageSize });
   }
 
   async function loadPage(query: ImportJobQuery) {
@@ -78,14 +79,14 @@ export function ImportJobManagementPage({
   async function openDetail(id: string) {
     try {
       const [loadedDetail, loadedErrors, executions] = await Promise.all([
-        importJobApi.detail(id), importJobApi.errors(id, 1, 20),
+        importJobApi.detail(id), importJobApi.errors(id, 1, 10),
         canReadStudentImport ? studentImportApi.list({ page: 1, pageSize: 100 }) : Promise.resolve(undefined)
       ]);
       setDetail(loadedDetail);
       setDetailErrors(loadedErrors);
       const execution = executions?.items.find(item => item.validationJobId === id);
       setStudentExecution(execution);
-      if (execution) setStudentRows(await studentImportApi.rows(execution.id, undefined, 1, 20));
+      if (execution) setStudentRows(await studentImportApi.rows(execution.id, undefined, 1, 10));
     } catch (cause) { message.error(toMessage(cause)); }
   }
 
@@ -103,7 +104,7 @@ export function ImportJobManagementPage({
   }
 
   async function openStudentExecution() {
-    try { setClasses((await classApi.listClasses()).filter(item => item.status === 'ENABLED' && item.effectiveStatus === 'ENABLED')); setExecuteOpen(true); }
+    try { setClasses((await classApi.lookup('STUDENT_IMPORT_EXECUTE','CLASS')).filter(item => item.status === 'ENABLED' && item.effectiveStatus === 'ENABLED')); setExecuteOpen(true); }
     catch (cause) { message.error(toMessage(cause)); }
   }
 
@@ -131,7 +132,7 @@ export function ImportJobManagementPage({
 
   function confirmCredentialDownload() {
     if (!studentExecution) return;
-    Modal.confirm({ actionPrefix: 'import-jobs.import-job-management-page.confirm.1', title: '确认下载初始凭证', content: '凭证只能下载一次，下载开始后不能再次获取。请确认当前设备和网络安全。', okText: '确认下载', cancelText: '取消',
+    Modal.confirm({ actionPrefix: 'STUDENT_IMPORT_CREDENTIAL_DOWNLOAD', title: '确认下载初始凭证', content: '凭证只能下载一次，下载开始后不能再次获取。请确认当前设备和网络安全。', okText: '确认下载', cancelText: '取消',
       onOk: async () => {
         try {
           const blob = await studentImportApi.downloadCredentials(studentExecution.id);
@@ -158,26 +159,26 @@ export function ImportJobManagementPage({
     { title: '有效/无效', width: 110, render: (_: unknown, job) => `${job.validRows}/${job.invalidRows}` },
     { title: '排队时间', dataIndex: 'queuedAt', width: 170, render: formatTime },
     { title: '操作', fixed: 'right', width: 90, render: (_: unknown, job) => <Space size={2}>
-      <Tooltip title="查看详情"><Button actionKey="import-jobs.import-job-management-page.1" type="text" aria-label={`详情-${job.jobCode}`} icon={<Eye size={16} />} onClick={() => void openDetail(job.id)} /></Tooltip>
-      <Tooltip title="下载错误文件"><Button actionKey="import-jobs.import-job-management-page.2" type="text" aria-label={`下载错误-${job.jobCode}`} icon={<Download size={16} />} disabled={!job.errorFileId} onClick={() => void downloadError(job)} /></Tooltip>
+      <Tooltip title="查看详情"><Button actionKey="IMPORT_JOB_READ" type="text" aria-label={`详情-${job.jobCode}`} icon={<Eye size={16} />} onClick={() => void openDetail(job.id)} /></Tooltip>
+      <Tooltip title="下载错误文件"><Button actionKey="IMPORT_JOB_READ" type="text" aria-label={`下载错误-${job.jobCode}`} icon={<Download size={16} />} disabled={!job.errorFileId} onClick={() => void downloadError(job)} /></Tooltip>
     </Space> }
   ];
 
   return <div className="page-stack import-job-page">
     <div className="page-heading"><h1>导入校验作业</h1>{canCreate ? <Button actionKey="IMPORT_JOB_CREATE" type="primary" icon={<FilePlus2 size={16} />} onClick={() => setCreateOpen(true)}>新建校验作业</Button> : null}</div>
-    {error ? <Alert type="error" showIcon message={error} action={<Button actionKey="import-jobs.import-job-management-page.4" size="small" onClick={() => void loadInitial()}>重试</Button>} /> : null}
+    {error ? <Alert type="error" showIcon message={error} action={<PlainButton  size="small" onClick={() => void loadInitial()}>重试</PlainButton>} /> : null}
     <section className="template-filter-panel" aria-label="作业筛选"><Form form={filterForm} layout="inline" className="directory-filters" onFinish={search}>
       <Form.Item label="作业编码" name="jobCode"><Input allowClear /></Form.Item>
       <Form.Item label="模板" name="templateId"><Select allowClear className="filter-select" options={options.templates.map(option)} /></Form.Item>
       <Form.Item label="状态" name="status"><Select allowClear className="filter-select" options={['QUEUED','VALIDATING','VALIDATED','VALIDATION_FAILED','SYSTEM_FAILED'].map(value => ({ value, label: statusText(value as ImportJobStatus) }))} /></Form.Item>
-      <Form.Item><Space><Button actionKey="import-jobs.import-job-management-page.5" htmlType="submit" icon={<Search size={16} />}>查询</Button><Button actionKey="import-jobs.import-job-management-page.6" icon={<RotateCcw size={16} />} onClick={() => { filterForm.resetFields(); void search({}); }}>重置</Button></Space></Form.Item>
+      <Form.Item><Space><Button actionKey="IMPORT_JOB_READ" htmlType="submit" icon={<Search size={16} />}>查询</Button><PlainButton  icon={<RotateCcw size={16} />} onClick={() => { filterForm.resetFields(); void search({}); }}>重置</PlainButton></Space></Form.Item>
     </Form></section>
-    <section className="template-table-panel" aria-label="导入校验作业台账"><Table rowKey="id" size="small" loading={loading} dataSource={page.items} columns={columns} scroll={{ x: 1040 }} pagination={{ current: page.page, pageSize: page.pageSize, total: page.total, showSizeChanger: true }} onChange={(pagination) => void loadPage({ ...filterForm.getFieldsValue(), page: pagination.current ?? 1, pageSize: pagination.pageSize ?? 20 })} /></section>
-    <Modal actionPrefix="import-jobs.import-job-management-page.modal.1" open={createOpen} title="新建校验作业" className="import-job-create-modal" okText="提交校验" confirmLoading={creating} width="min(640px, 92vw)" onOk={() => createForm.submit()} onCancel={() => { setCreateOpen(false); setFile(undefined); createForm.resetFields(); }} destroyOnHidden>
+    <section className="template-table-panel" aria-label="导入校验作业台账"><Table rowKey="id" size="small" loading={loading} dataSource={page.items} columns={columns} scroll={{ x: 1040 }} pagination={{ current: page.page, pageSize: page.pageSize, total: page.total, showSizeChanger: true }} onChange={(pagination) => void loadPage({ ...filterForm.getFieldsValue(), page: pagination.current ?? 1, pageSize: pagination.pageSize ?? 10 })} /></section>
+    <Modal actionPrefix="IMPORT_JOB_CREATE" open={createOpen} title="新建校验作业" className="import-job-create-modal" okText="提交校验" confirmLoading={creating} width="min(640px, 92vw)" onOk={() => createForm.submit()} onCancel={() => { setCreateOpen(false); setFile(undefined); createForm.resetFields(); }} destroyOnHidden>
       <Form form={createForm} layout="vertical" onFinish={create} preserve={false}>
         <Form.Item label="导入模板" name="templateId" rules={[{ required: true, message: '请选择导入模板' }]}><Select options={options.templates.map(option)} /></Form.Item>
         <Form.Item label="组织范围" name="organizationId"><Select allowClear options={options.organizations.map(option)} /></Form.Item>
-        <Form.Item label="XLSX 文件" required><Upload maxCount={1} accept=".xlsx" beforeUpload={selected => { setFile(selected); return false; }} onRemove={() => { setFile(undefined); return true; }}><Button actionKey="import-jobs.import-job-management-page.7" icon={<UploadIcon size={16} />}>选择文件</Button></Upload></Form.Item>
+        <Form.Item label="XLSX 文件" required><Upload maxCount={1} accept=".xlsx" beforeUpload={selected => { setFile(selected); return false; }} onRemove={() => { setFile(undefined); return true; }}><PlainButton  icon={<UploadIcon size={16} />}>选择文件</PlainButton></Upload></Form.Item>
       </Form>
     </Modal>
     <Drawer open={Boolean(detail)} title="作业详情" width="min(1100px, 92vw)" onClose={closeDetail} destroyOnHidden>
@@ -191,7 +192,7 @@ export function ImportJobManagementPage({
         { title: '行号', dataIndex: 'rowNumber', width: 90, render: (value: number) => `第 ${value} 行` },
         { title: '错误摘要', dataIndex: 'errorSummary' },
         { title: '记录时间', dataIndex: 'createdAt', width: 170, render: formatTime }
-      ]} pagination={{ current: detailErrors.page, pageSize: detailErrors.pageSize, total: detailErrors.total, hideOnSinglePage: true }} onChange={(pagination) => void loadDetailErrors(pagination.current ?? 1, pagination.pageSize ?? 20)} /></section>
+      ]} pagination={{ current: detailErrors.page, pageSize: detailErrors.pageSize, total: detailErrors.total, hideOnSinglePage: true }} onChange={(pagination) => void loadDetailErrors(pagination.current ?? 1, pagination.pageSize ?? 10)} /></section>
       <section aria-label="学员导入执行"><div className="page-heading"><h2>学员导入执行</h2>{!studentExecution && detail.job.status === 'VALIDATED' && detail.job.organizationId && canExecuteStudentImport
         ? <Button actionKey="STUDENT_IMPORT_EXECUTE" type="primary" icon={<Play size={16} />} onClick={() => void openStudentExecution()}>执行学员导入</Button> : null}</div>
         {studentExecution ? <><Descriptions size="small" column={{ xs: 1, sm: 2 }} bordered items={[
@@ -200,16 +201,16 @@ export function ImportJobManagementPage({
           { key: 'executionCount', label: '处理结果', children: `总计 ${studentExecution.totalRows}，成功 ${studentExecution.succeededRows}，失败 ${studentExecution.failedRows}` },
           { key: 'credentialStatus', label: '凭证状态', children: credentialStatusText(studentExecution.credentialStatus) }
         ]} /><Space className="student-import-actions">
-          {studentExecution.failedRows > 0 && canExecuteStudentImport ? <Button actionKey="import-jobs.import-job-management-page.9" onClick={() => void retryStudentFailures()}>重试失败行</Button> : null}
-          {studentExecution.credentialStatus === 'AVAILABLE' && canDownloadStudentCredentials ? <Button actionKey="import-jobs.import-job-management-page.10" icon={<KeyRound size={16} />} onClick={confirmCredentialDownload}>下载初始凭证</Button> : null}
+          {studentExecution.failedRows > 0 && canExecuteStudentImport ? <Button actionKey="STUDENT_IMPORT_EXECUTE" onClick={() => void retryStudentFailures()}>重试失败行</Button> : null}
+          {studentExecution.credentialStatus === 'AVAILABLE' && canDownloadStudentCredentials ? <Button actionKey="STUDENT_IMPORT_CREDENTIAL_DOWNLOAD" icon={<KeyRound size={16} />} onClick={confirmCredentialDownload}>下载初始凭证</Button> : null}
         </Space><Table size="small" rowKey="id" dataSource={studentRows.items} scroll={{ x: 560 }} columns={[
           { title: '源行', dataIndex: 'rowNumber', width: 80 }, { title: '状态', dataIndex: 'status', width: 100, render: (value: StudentImportRowStatus) => studentRowStatusText(value) },
           { title: '学员账号', dataIndex: 'studentAccount', width: 120, render: (value: string | null) => value ?? '-' }, { title: '失败摘要', dataIndex: 'failureMessage', render: (value: string | null) => value ?? '-' }
-        ]} pagination={{ current: studentRows.page, pageSize: studentRows.pageSize, total: studentRows.total, hideOnSinglePage: true }} onChange={(pagination) => void loadStudentRows(pagination.current ?? 1, pagination.pageSize ?? 20)} /></> : <div className="empty-inline">暂无业务执行</div>}
+        ]} pagination={{ current: studentRows.page, pageSize: studentRows.pageSize, total: studentRows.total, hideOnSinglePage: true }} onChange={(pagination) => void loadStudentRows(pagination.current ?? 1, pagination.pageSize ?? 10)} /></> : <div className="empty-inline">暂无业务执行</div>}
       </section>
       </div> : null}
     </Drawer>
-    <Modal actionPrefix="import-jobs.import-job-management-page.modal.2" open={executeOpen} title="执行学员导入" okText="确认执行" confirmLoading={executing} width="min(520px, 92vw)" onOk={() => executeForm.submit()} onCancel={() => { setExecuteOpen(false); executeForm.resetFields(); }} destroyOnHidden>
+    <Modal actionPrefix="STUDENT_IMPORT_EXECUTE" open={executeOpen} title="执行学员导入" okText="确认执行" confirmLoading={executing} width="min(520px, 92vw)" onOk={() => executeForm.submit()} onCancel={() => { setExecuteOpen(false); executeForm.resetFields(); }} destroyOnHidden>
       <Form form={executeForm} layout="vertical" onFinish={executeStudentImport} preserve={false}>
         <Form.Item label="目标班级（可选）" name="classOrganizationId"><Select allowClear showSearch optionFilterProp="label" options={classes.map(item => ({ value: item.id, label: item.name }))} /></Form.Item>
       </Form>

@@ -35,6 +35,23 @@ class OrganizationDataScopeServiceTest {
     @Autowired private JdbcTemplate jdbcTemplate;
 
     @Test
+    void selectedContextNarrowsAllScopeAndDoesNotExpandForeignScope() {
+        User administrator = createUserWithRole("selected_scope_admin", "系统管理员", "SYS_ADMIN");
+        Organization first = createClass("SELECTED_FIRST");
+        Organization second = createClass("SELECTED_SECOND");
+        var request = new org.springframework.mock.web.MockHttpServletRequest();
+        request.setAttribute(com.lingdong.learning.common.security.SelectedOrganizationContext.ATTRIBUTE, first);
+        org.springframework.web.context.request.RequestContextHolder.setRequestAttributes(new org.springframework.web.context.request.ServletRequestAttributes(request));
+        try {
+            var scope = organizationDataScopeService.resolve(administrator.id());
+            assertThat(scope.allOrganizations()).isFalse();
+            assertThat(scope.rootPaths()).containsExactly(first.path());
+            assertThat(scope.allows(second)).isFalse();
+            User unprivileged = userAccessApplicationService.createUser(new CreateUserCommand("selected_scope_none", "无权限", null, UserType.ORGANIZATION));
+            assertThat(organizationDataScopeService.resolve(unprivileged.id()).rootPaths()).isEmpty();
+        } finally { org.springframework.web.context.request.RequestContextHolder.resetRequestAttributes(); }
+    }
+    @Test
     void letsAllScopeSystemAdministratorAccessAnyOrganization() {
         User administrator = createUserWithRole("scope_sys_admin", "系统管理员", "SYS_ADMIN");
         Organization target = createClass("ALL_SCOPE");
@@ -106,14 +123,14 @@ class OrganizationDataScopeServiceTest {
                 .containsExactly(first.region().path());
         assertThat(organizationDataScopeService.findAccessibleOrganizations(regionUser.id()))
                 .extracting(Organization::id)
-                .containsExactly(first.region().id(), first.school().id(), first.schoolClass().id());
+                .containsExactly(first.region().id(), first.school().id(), first.grade().id(), first.schoolClass().id());
         assertThat(organizationDataScopeService.canAccess(regionUser.id(), second.schoolClass().id())).isFalse();
 
         assertThat(organizationDataScopeService.resolve(schoolUser.id()).rootPaths())
                 .containsExactly(first.school().path());
         assertThat(organizationDataScopeService.findAccessibleOrganizations(schoolUser.id()))
                 .extracting(Organization::id)
-                .containsExactly(first.school().id(), first.schoolClass().id());
+                .containsExactly(first.school().id(), first.grade().id(), first.schoolClass().id());
 
         assertThat(organizationDataScopeService.resolve(classUser.id()).rootPaths())
                 .containsExactly(first.schoolClass().path());
@@ -158,8 +175,9 @@ class OrganizationDataScopeServiceTest {
     private OrganizationTree createTree(String prefix) {
         Organization region = organizationApplicationService.createOrganization(new CreateOrganizationCommand(prefix + "_REGION", prefix + "区域", "REGION", null, 10));
         Organization school = organizationApplicationService.createOrganization(new CreateOrganizationCommand(prefix + "_SCHOOL", prefix + "学校", "SCHOOL", region.id(), 10));
-        Organization schoolClass = organizationApplicationService.createOrganization(new CreateOrganizationCommand(prefix + "_CLASS", prefix + "班级", "CLASS", school.id(), 10));
-        return new OrganizationTree(region, school, schoolClass);
+        Organization grade = organizationApplicationService.createOrganization(new CreateOrganizationCommand(prefix + "_GRADE", prefix + "年级", "GRADE", school.id(), 10));
+        Organization schoolClass = organizationApplicationService.createOrganization(new CreateOrganizationCommand(prefix + "_CLASS", prefix + "班级", "CLASS", grade.id(), 10));
+        return new OrganizationTree(region, school, grade, schoolClass);
     }
 
     private User createScopedUser(
@@ -186,6 +204,8 @@ class OrganizationDataScopeServiceTest {
         return user;
     }
 
-    private record OrganizationTree(Organization region, Organization school, Organization schoolClass) {
+    private record OrganizationTree(Organization region, Organization school, Organization grade, Organization schoolClass) {
     }
 }
+
+

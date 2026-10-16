@@ -14,6 +14,8 @@ import com.lingdong.learning.permission.domain.PermissionClient;
 import com.lingdong.learning.permission.domain.PermissionResourceType;
 import com.lingdong.learning.permission.domain.PermissionStatus;
 import com.lingdong.learning.permission.infrastructure.persistence.PermissionMapper;
+import com.lingdong.learning.permission.infrastructure.persistence.RolePermissionMapper;
+import com.lingdong.learning.permission.infrastructure.persistence.UserPermissionMapper;
 import com.lingdong.learning.user.infrastructure.persistence.UserMapper;
 import com.lingdong.learning.user.infrastructure.persistence.UserRoleMapper;
 import com.lingdong.learning.user.domain.UserStatus;
@@ -31,21 +33,33 @@ public class MenuApplicationService {
     private static final String CORE_PAGE_ROUTE="/dashboard";
     private static final String MENU_MANAGE_ROUTE="/menu-management";
     private static final int BATCH_LIMIT=100;
-    private static final Set<String> PAGE_ROUTES=Set.of("/dashboard","/system-tasks","/feature-management","/attendance-records","/learning-tasks","/exception-reports","/growth-points","/rewards","/growth-reviews","/anonymous-ranks","/rank-preferences","/student-login","/parent-relationships","/teachers","/users","/iam","/dictionaries","/cache-management","/interface-services","/attachment-management","/import-export-templates","/import-jobs","/export-jobs","/organizations","/menu-management");
+    private static final Set<String> PAGE_ROUTES=Set.of("/dashboard","/system-tasks","/feature-management","/attendance-records","/learning-tasks","/exception-reports","/growth-points","/rewards","/growth-reviews","/anonymous-ranks","/rank-preferences","/student-login","/parent-relationships","/teachers","/users","/iam","/dictionaries","/cache-management","/interface-services","/attachment-management","/import-export-templates","/import-jobs","/export-jobs","/organizations","/menu-management","/my-organizations");
     private final MenuMapper mapper;
     private final IdGenerator ids;
     private final PermissionDecisionService decisions;
     private final PermissionMapper permissions;
     private final UserMapper users;
     private final UserRoleMapper roles;
+    private final RolePermissionMapper rolePermissions;
+    private final UserPermissionMapper userPermissions;
     private final IamChangeAuditService audit;
-    public MenuApplicationService(MenuMapper mapper,IdGenerator ids,PermissionDecisionService decisions,PermissionMapper permissions,UserMapper users,UserRoleMapper roles,IamChangeAuditService audit) {
-        this.mapper=mapper; this.ids=ids; this.decisions=decisions; this.permissions=permissions; this.users=users; this.roles=roles; this.audit=audit;
+    public MenuApplicationService(MenuMapper mapper,IdGenerator ids,PermissionDecisionService decisions,PermissionMapper permissions,UserMapper users,UserRoleMapper roles,RolePermissionMapper rolePermissions,UserPermissionMapper userPermissions,IamChangeAuditService audit) {
+        this.mapper=mapper; this.ids=ids; this.decisions=decisions; this.permissions=permissions; this.users=users; this.roles=roles; this.rolePermissions=rolePermissions; this.userPermissions=userPermissions; this.audit=audit;
     }
     public List<MenuNode> list(AuthenticatedUser user) { requireManager(user,false); return mapper.findAll(); }
     public List<MenuNode> current(AuthenticatedUser user) {
         requireWeb(user);
-        return filterVisible(mapper.findAll(),new HashSet<>(decisions.findAllowedCodes(user.userId(),PermissionClient.WEB)));
+        // Personal onboarding is an internal flow, not a business navigation entry.
+        // Keep persisted nodes enabled so their permission dependencies remain valid.
+        List<MenuNode> all=mapper.findAll();
+        Set<Long> internal=new HashSet<>();
+        var grantedCodes=new HashSet<>(permissions.findAllowedCodes(user.userId(),PermissionClient.WEB));
+        grantedCodes.addAll(com.lingdong.learning.permission.application.PermissionMenuPolicy.necessaryPages(grantedCodes,all));
+        boolean explicitlyGranted=grantedCodes.contains("ORGANIZATION_ONBOARDING_READ");
+        for(MenuNode node:all)if(!explicitlyGranted && "ORGANIZATION_ONBOARDING_READ".equals(node.code()))internal.add(node.id());
+        boolean changed;
+        do { changed=false;for(MenuNode node:all)if(internal.contains(node.parentId()))changed|=internal.add(node.id()); }while(changed);
+        return filterVisible(all.stream().filter(node->!internal.contains(node.id())).toList(),new HashSet<>(decisions.findAllowedCodes(user.userId(),PermissionClient.WEB)));
     }
     @Transactional
     public MenuNode create(AuthenticatedUser user,MenuWriteCommand c) {
@@ -70,6 +84,27 @@ public class MenuApplicationService {
         syncPermission(node,before);
         audit.record(IamChangeAuditEventType.MENU_UPDATE,user.userId(),IamChangeTargetType.MENU,node.id(),node.parentId(),null,"v"+before.version(),"v"+(node.version()+1));
         return new MenuNode(node.id(),node.code(),node.name(),node.type(),node.parentId(),node.route(),node.icon(),node.permissionCode(),node.grantable(),node.sortOrder(),node.status(),node.version()+1);
+    }
+    /** 删除菜单节点：核心入口及其祖先、菜单管理页配置按钮不可删；存在下级不可删；同步清理权限行与全部授权。 */
+    @Transactional
+    public void delete(AuthenticatedUser user,Long id) {
+        requireManager(user,true);
+        List<MenuNode> all=mapper.lockAll();
+        MenuNode node=all.stream().filter(n->n.id().equals(id)).findFirst().orElseThrow(()->new ResourceNotFoundException("菜单不存在"));
+        Map<Long,MenuNode> map=new HashMap<>(); all.forEach(n->map.put(n.id(),n));
+        Set<Long> protectedIds=new HashSet<>();
+        for(MenuNode core:all) {
+            if(Objects.equals(core.route(),CORE_PAGE_ROUTE) || Objects.equals(core.route(),MENU_MANAGE_ROUTE)) {
+                Long cursor=core.id();
+                while(cursor!=null && protectedIds.add(cursor)) { MenuNode parent=map.get(cursor); cursor=parent==null?null:parent.parentId(); }
+            }
+        }
+        for(MenuNode n:all) if(n.type()==MenuType.BUTTON && Objects.equals(routeOf(map,n.parentId()),MENU_MANAGE_ROUTE)) protectedIds.add(n.id());
+        if(protectedIds.contains(id)) throw new IllegalArgumentException("核心入口及其上级目录不能删除");
+        if(all.stream().anyMatch(n->Objects.equals(n.parentId(),id))) throw new IllegalArgumentException("菜单存在下级，请先删除或移动其下级");
+        if(mapper.deleteById(id,node.version())!=1) throw new IllegalStateException("菜单已变更，请刷新");
+        if(node.permissionCode()!=null) removePermission(node.permissionCode());
+        audit.record(IamChangeAuditEventType.MENU_DELETE,user.userId(),IamChangeTargetType.MENU,node.id(),node.parentId(),null,node.type()+":"+node.status()+":v"+node.version(),null);
     }
     @Transactional
     public List<MenuNode> order(AuthenticatedUser user,MenuOrderCommand c) {
@@ -258,7 +293,7 @@ public class MenuApplicationService {
             return;
         }
         Permission existing=permissions.findByCode(target);
-        if(existing!=null && existing.client()==PermissionClient.MINIAPP) throw new IllegalArgumentException("菜单编码不能占用小程序专属权限");
+        if(existing!=null && existing.client()==PermissionClient.MINIAPP && (before==null || !Objects.equals(before.permissionCode(),target))) throw new IllegalArgumentException("菜单编码不能占用小程序专属权限");
         PermissionStatus status=node.status()==MenuStatus.ENABLED?PermissionStatus.ENABLED:PermissionStatus.DISABLED;
         PermissionResourceType type=node.type()==MenuType.PAGE?PermissionResourceType.PAGE:PermissionResourceType.BUTTON;
         MenuNode parent=node.parentId()==null?null:mapper.findAll().stream().filter(n->n.id().equals(node.parentId())).findFirst().orElse(null);
@@ -273,6 +308,14 @@ public class MenuApplicationService {
     private void disablePermission(String code) {
         Permission p=permissions.findByCode(code);
         if(p!=null && p.status()!=PermissionStatus.DISABLED) permissions.updateNameAndStatus(p.id(),p.name(),PermissionStatus.DISABLED);
+    }
+    /** 删除菜单节点时同步移除权限行与其全部授权（顺序与 V102 清理一致）。 */
+    private void removePermission(String code) {
+        Permission permission=permissions.findByCode(code);
+        if(permission==null) return;
+        rolePermissions.deleteByPermissionId(permission.id());
+        userPermissions.deleteByPermissionId(permission.id());
+        permissions.delete(permission.id());
     }
     private String text(String value,int max,boolean required) {
         String s=value==null?null:value.trim(); if(s!=null && s.isEmpty()) s=null;

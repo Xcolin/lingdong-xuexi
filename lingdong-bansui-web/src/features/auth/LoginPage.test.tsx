@@ -18,6 +18,12 @@ const authMocks = vi.hoisted(() => ({
 vi.mock('../../api/auth', () => ({ authApi: authMocks }));
 
 describe('Web 家长登录页', () => {
+  it('登录页始终提供独立注册入口', async () => {
+    authMocks.parentAuthContext.mockResolvedValue({enabled:false,agreementVersion:'1',codeExpiresInSeconds:300,retryAfterSeconds:60});
+    authMocks.hasLocalSession.mockReturnValue(false);
+    render(<MemoryRouter><LoginPage /></MemoryRouter>);
+    expect(await screen.findByRole('link',{name:'注册账号'})).toHaveAttribute('href','/register');
+  });
   beforeEach(() => {
     vi.clearAllMocks();
     authMocks.hasLocalSession.mockReturnValue(false);
@@ -39,13 +45,13 @@ describe('Web 家长登录页', () => {
 
     expect(await screen.findByText('验证码登录')).toBeInTheDocument();
     expect(screen.getByText('密码登录')).toBeInTheDocument();
-    await user.type(screen.getByLabelText('手机号'), '13800138000');
+    await user.type(screen.getByLabelText('已注册账号手机号'), '13800138000');
     await user.click(screen.getByRole('button', { name: '获取验证码' }));
 
     await waitFor(() => expect(authMocks.issueParentSmsCode).toHaveBeenCalledWith({
       mobile: '13800138000', purpose: 'REGISTER_OR_LOGIN', clientType: 'WEB'
     }));
-    expect(screen.getByText(/我已阅读并同意/)).toBeInTheDocument();
+    expect(screen.queryByText(/我已阅读并同意/)).not.toBeInTheDocument();
   });
 
   it('功能停用后隐藏验证码模式并保留密码登录', async () => {
@@ -67,7 +73,7 @@ describe('Web 家长登录页', () => {
       enabled: false, agreementVersion: '1', codeExpiresInSeconds: 300, retryAfterSeconds: 60
     });
     authMocks.login.mockResolvedValue({ accessToken: 'access' });
-    authMocks.currentUser.mockResolvedValue({ roleCodes: ['PARENT'] });
+    authMocks.currentUser.mockResolvedValue({ roleCodes: ['CUSTOM_PARENT'], parentProfile: true });
     authMocks.parentState.mockResolvedValue({
       onboardingRequired: true, agreementAcceptanceRequired: false, currentAgreementVersion: '1'
     });
@@ -85,7 +91,7 @@ describe('Web 家长登录页', () => {
     const user = userEvent.setup();
     const { container } = render(<MemoryRouter><LoginPage /></MemoryRouter>);
 
-    await user.type(await screen.findByLabelText('手机号'), '13800138000');
+    await user.type(await screen.findByLabelText('已注册账号手机号'), '13800138000');
     await user.click(screen.getByRole('button', { name: '获取验证码' }));
 
     expect(await screen.findByText('请求过于频繁，请稍后重试')).toBeInTheDocument();

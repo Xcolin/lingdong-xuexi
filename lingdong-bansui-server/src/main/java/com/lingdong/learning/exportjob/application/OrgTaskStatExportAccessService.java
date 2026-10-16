@@ -25,29 +25,28 @@ public class OrgTaskStatExportAccessService {
     private final FeatureAccessService features;
     private final OrganizationDataScopeService organizations;
     private final OrgTaskStatExportMapper mapper;
+    private final ExportActorIdentityService actors;
 
     public OrgTaskStatExportAccessService(UserMapper users, UserRoleMapper roles,
         PermissionDecisionService permissions, FeatureAccessService features,
-        OrganizationDataScopeService organizations, OrgTaskStatExportMapper mapper) {
+        OrganizationDataScopeService organizations, OrgTaskStatExportMapper mapper, ExportActorIdentityService actors) {
         this.users = users;
         this.roles = roles;
         this.permissions = permissions;
         this.features = features;
         this.organizations = organizations;
-        this.mapper = mapper;
+        this.mapper = mapper;this.actors=actors;
     }
 
     public StudentTaskVisibility require(long userId) {
         var user = users.findById(userId);
         if (user == null || user.status() != UserStatus.ENABLED) throw denied();
         for (String feature : List.of("DATA_EXPORT", "IMPORT_EXPORT_TEMPLATE_MANAGEMENT", "ATTACHMENT_SERVICE", "LEARNING_TASK_MANAGEMENT")) features.requireEnabled(feature, null);
-        var roleCodes = roles.findEnabledRoleCodesByUserId(userId);
-        // 审核员仅处理系统审批，兼任机构管理员也不能导出机构统计。
-        // Operation permissions below authorize organization statistics; no built-in role is required.
         for (String permission : List.of("ORGANIZATION_TASK_STATISTICS_EXPORT", "LEARNING_TASK_PROGRESS_READ")) {
             if (!permissions.isAllowed(userId, PermissionClient.WEB, permission)) throw denied();
         }
-        var scope = organizations.resolve(userId);
+        var scope=actors.require(userId);
+        if(!"ORG_ADMIN".equals(scope.mode()))throw denied();
         if (!scope.allOrganizations() && scope.rootPaths().isEmpty()) throw denied();
         return new StudentTaskVisibility(userId, "ORG_ADMIN", scope.allOrganizations(), scope.rootPaths());
     }
@@ -77,7 +76,7 @@ public class OrgTaskStatExportAccessService {
                 || ids.stream().distinct().count() != ids.size()) {
             throw denied();
         }
-        // 任何授权组织迁出、停用或角色撤销都会使当前可见集合收窄，拒绝旧文件而非交付部分过滤后的假快照。
+        // 任何授权组织迁出、停用或身份或范围撤销都会使当前可见集合收窄，拒绝旧文件而非交付部分过滤后的假快照。
         var authorized = mapper.findVisibleOrgIds(current, null, null, MAX_SOURCE_ORGS + 1);
         if (authorized.size() > MAX_SOURCE_ORGS || !authorized.containsAll(ids)) throw denied();
     }

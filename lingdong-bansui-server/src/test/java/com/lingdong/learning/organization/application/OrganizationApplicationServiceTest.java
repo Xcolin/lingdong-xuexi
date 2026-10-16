@@ -181,7 +181,7 @@ class OrganizationApplicationServiceTest {
                 new CreateOrganizationCommand("SCHOOL_ENABLE_B", "自身停用学校", "SCHOOL", region.id(), 10)
         );
         Organization clazz = organizationApplicationService.createOrganization(
-                new CreateOrganizationCommand("CLASS_ENABLE_B", "自身停用学校下班级", "CLASS", school.id(), 10)
+                new CreateOrganizationCommand("CLASS_ENABLE_B", "自身停用学校下班级", "CLASS", gradeId(school.id()), 10)
         );
         jdbcTemplate.update("""
                 UPDATE sys_organization
@@ -218,5 +218,11 @@ class OrganizationApplicationServiceTest {
         assertThatThrownBy(() -> organizationApplicationService.requireOperational(region.id()))
                 .isInstanceOf(OrganizationNotOperationalException.class)
                 .hasMessageContaining("不可开展新业务");
+    }
+
+    private final java.util.Map<Long,Long> fixtureGrades=new java.util.HashMap<>();
+    private Long gradeId(Long schoolId) {
+        return fixtureGrades.computeIfAbsent(schoolId,id -> organizationApplicationService.createOrganization(
+                new CreateOrganizationCommand("GRD_"+java.util.UUID.randomUUID().toString().replace("-", "").toUpperCase(),"测试年级","GRADE",id,0)).id());
     }
 }

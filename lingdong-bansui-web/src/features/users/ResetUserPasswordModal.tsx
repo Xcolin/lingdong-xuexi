@@ -1,16 +1,18 @@
+import { Button as PlainButton } from 'antd';
 import {useEffect,useRef,useState} from 'react';
 import {Alert,Form,Input,Modal,message} from 'antd';
 import {ConfiguredButton as Button} from '../../components/ConfiguredButton';
+import {randomPassword} from './randomPassword';
 import {usersApi,type ManagedUser} from '../../api/users';
 interface PasswordForm {password:string;confirmPassword:string;}
 export function ResetUserPasswordModal({user,onClose}:{user:ManagedUser;onClose:()=>void}) {
  const [form]=Form.useForm<PasswordForm>();const [busy,setBusy]=useState(false);const [error,setError]=useState<string>();const saving=useRef(false);
- useEffect(()=>{form.resetFields();setError(undefined);},[user.id,form]);
+ useEffect(()=>{form.resetFields();const password=randomPassword();form.setFieldsValue({password,confirmPassword:password});setError(undefined);},[user.id,form]);
  function close(){if(saving.current)return;form.resetFields();onClose();}
  async function save(values:PasswordForm){if(saving.current)return;saving.current=true;setBusy(true);setError(undefined);try{await usersApi.setPassword(user.id,values.password);message.success('密码已重置');form.resetFields();onClose();}catch(e){setError(e instanceof Error?e.message:'密码重置失败');}finally{saving.current=false;setBusy(false);}}
  return <Modal title={`重置密码：${user.displayName}`} open onCancel={close} closable={!busy} maskClosable={!busy} keyboard={!busy} footer={<>
- <Button actionKey="users.reset-password.cancel" disabled={busy} onClick={close}>取消</Button>
- <Button actionKey="users.reset-password.save" type="primary" loading={busy} disabled={busy} onClick={()=>{if(!saving.current)form.submit();}}>重置密码</Button>
+ <PlainButton  disabled={busy} onClick={close}>取消</PlainButton>
+ <Button actionKey="IAM_USER_PASSWORD_SET" type="primary" loading={busy} disabled={busy} onClick={()=>{if(!saving.current)form.submit();}}>重置密码</Button>
  </>}>
  {error&&<Alert type="error" showIcon message={error}/>}
  <Form name="reset-user-password" form={form} layout="vertical" disabled={busy} onFinish={values=>void save(values)}>

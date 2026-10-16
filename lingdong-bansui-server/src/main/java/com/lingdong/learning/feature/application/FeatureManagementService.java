@@ -36,16 +36,21 @@ public class FeatureManagementService {
         access(user,"FEATURE_TOGGLE_READ");
         return mapper.findToggles();
     }
+    public List<ToggleView> toggleOptions(AuthenticatedUser user,String permission){
+        if(!java.util.Set.of("FEATURE_TOGGLE_READ","FEATURE_TOGGLE_MANAGE","FEATURE_TOGGLE_REVIEW").contains(permission))throw denied();
+        access(user,permission);
+        return mapper.findToggles();
+    }
     @Transactional(readOnly=true)
     public Page listChanges(AuthenticatedUser user,SystemTaskStatus status,int page,int pageSize,boolean queue) {
-        boolean auditor=access(user,"FEATURE_TOGGLE_READ");
-        if(queue) { access(user,"FEATURE_TOGGLE_REVIEW"); auditor=true; status=SystemTaskStatus.PENDING_REVIEW; }
+        boolean auditor=access(user,queue?"FEATURE_TOGGLE_REVIEW":"FEATURE_TOGGLE_READ");
+        if(queue) { auditor=true; status=SystemTaskStatus.PENDING_REVIEW; }
         if(page<1||page>1_000_000||pageSize<1||pageSize>100)throw new IllegalArgumentException("分页参数不合法");
         return new Page(mapper.findPage(user.userId(),auditor,status,pageSize,(page-1)*pageSize),page,pageSize,mapper.count(user.userId(),auditor,status));
     }
     @Transactional
     public ChangeView submit(AuthenticatedUser user,String code,FeatureStatus target,Long expectedVersion,String title,String description,boolean confirmed) {
-        access(user,"FEATURE_TOGGLE_READ"); access(user,"FEATURE_TOGGLE_MANAGE");
+        access(user,"FEATURE_TOGGLE_MANAGE");
         if(!confirmed||target==null||expectedVersion==null||expectedVersion<0)throw new IllegalArgumentException("请确认变更及当前版本");
         var toggle=toggles.findGlobalForUpdate(code);
         if(toggle==null)throw new IllegalArgumentException("全局开关不存在");
@@ -57,7 +62,6 @@ public class FeatureManagementService {
     }
     @Transactional
     public ChangeView review(AuthenticatedUser user,Long taskId,String comment,boolean approve) {
-        access(user,"FEATURE_TOGGLE_READ");
         access(user,"FEATURE_TOGGLE_REVIEW");
         details(taskId); // 先限定领域，不能审核其他类型系统任务。
         if(comment!=null&&comment.trim().length()>500)throw new IllegalArgumentException("审批意见最长500字");

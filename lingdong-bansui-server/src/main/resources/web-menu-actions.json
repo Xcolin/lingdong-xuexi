@@ -1,2132 +1,1160 @@
 [
   {
-    "code": "rank-preferences.anonymous-rank-withdrawal-page.2",
-    "name": "撤回授权",
-    "route": "/rank-preferences",
-    "source": "anonymous-ranks/AnonymousRankWithdrawalPage.tsx"
-  },
-  {
-    "code": "attachment-management.attachment-management-page.1",
-    "name": "查询规则",
-    "route": "/attachment-management",
-    "source": "attachments/AttachmentManagementPage.tsx"
-  },
-  {
-    "code": "attachment-management.attachment-management-page.2",
-    "name": "编辑",
-    "route": "/attachment-management",
-    "source": "attachments/AttachmentManagementPage.tsx"
-  },
-  {
-    "code": "attachment-management.attachment-management-page.3",
-    "name": "停用 / 启用",
-    "route": "/attachment-management",
-    "source": "attachments/AttachmentManagementPage.tsx"
-  },
-  {
-    "code": "attachment-management.attachment-management-page.4",
-    "name": "查询文件",
-    "route": "/attachment-management",
-    "source": "attachments/AttachmentManagementPage.tsx"
-  },
-  {
-    "code": "attachment-management.attachment-management-page.5",
-    "name": "查看关系",
-    "route": "/attachment-management",
-    "source": "attachments/AttachmentManagementPage.tsx"
-  },
-  {
-    "code": "ATTACHMENT_RULE_MANAGE",
-    "name": "新增附件规则",
-    "route": "/attachment-management",
-    "source": "attachments/AttachmentManagementPage.tsx"
-  },
-  {
-    "code": "attachment-management.attachment-management-page.7",
-    "name": "重试",
-    "route": "/attachment-management",
-    "source": "attachments/AttachmentManagementPage.tsx"
-  },
-  {
-    "code": "attachment-management.attachment-management-page.8",
-    "name": "取消",
-    "route": "/attachment-management",
-    "source": "attachments/AttachmentManagementPage.tsx"
-  },
-  {
-    "code": "attachment-management.attachment-management-page.9",
-    "name": "保存规则",
-    "route": "/attachment-management",
-    "source": "attachments/AttachmentManagementPage.tsx"
-  },
-  {
-    "code": "attendance-records.attendance-detail-drawer.1",
-    "name": "重试",
-    "route": "/attendance-records",
-    "source": "attendance/AttendanceDetailDrawer.tsx"
-  },
-  {
-    "code": "attendance-records.attendance-page.1",
-    "name": "重试",
-    "route": "/attendance-records",
-    "source": "attendance/AttendancePage.tsx"
-  },
-  {
-    "code": "ATTENDANCE_RECORD",
-    "name": "班级点名",
-    "route": "/attendance-records",
-    "source": "attendance/AttendancePage.tsx"
-  },
-  {
-    "code": "attendance-records.attendance-page.4",
-    "name": "重试",
-    "route": "/attendance-records",
-    "source": "attendance/AttendancePage.tsx"
-  },
-  {
-    "code": "attendance-records.attendance-page.5",
-    "name": "查询",
-    "route": "/attendance-records",
-    "source": "attendance/AttendancePage.tsx"
-  },
-  {
-    "code": "attendance-records.attendance-page.6",
-    "name": "重置",
-    "route": "/attendance-records",
-    "source": "attendance/AttendancePage.tsx"
-  },
-  {
-    "code": "attendance-records.attendance-page.7",
-    "name": "详情",
-    "route": "/attendance-records",
-    "source": "attendance/AttendancePage.tsx"
-  },
-  {
-    "code": "attendance-records.attendance-record-drawer.1",
-    "name": "取消",
-    "route": "/attendance-records",
-    "source": "attendance/AttendanceRecordDrawer.tsx"
-  },
-  {
-    "code": "attendance-records.attendance-record-drawer.2",
-    "name": "提交考勤",
-    "route": "/attendance-records",
-    "source": "attendance/AttendanceRecordDrawer.tsx"
-  },
-  {
-    "code": "attendance-records.attendance-record-drawer.3",
-    "name": "重新加载名单",
-    "route": "/attendance-records",
-    "source": "attendance/AttendanceRecordDrawer.tsx"
-  },
-  {
-    "code": "CACHE_REVIEW",
-    "name": "批准",
-    "route": "/cache-management",
-    "source": "cache/CacheManagementPage.tsx"
-  },
-  {
-    "code": "cache-management.cache-management-page.2",
-    "name": "驳回",
-    "route": "/cache-management",
-    "source": "cache/CacheManagementPage.tsx"
-  },
-  {
-    "code": "CACHE_MANAGE",
-    "name": "执行缓存操作",
-    "route": "/cache-management",
-    "source": "cache/CacheManagementPage.tsx"
-  },
-  {
-    "code": "cache-management.cache-management-page.4",
-    "name": "提交高风险操作",
-    "route": "/cache-management",
-    "source": "cache/CacheManagementPage.tsx"
-  },
-  {
-    "code": "cache-management.cache-management-page.5",
-    "name": "重试",
-    "route": "/cache-management",
-    "source": "cache/CacheManagementPage.tsx"
-  },
-  {
-    "code": "cache-management.cache-management-page.6",
-    "name": "取消",
-    "route": "/cache-management",
-    "source": "cache/CacheManagementPage.tsx"
-  },
-  {
-    "code": "cache-management.cache-management-page.7",
-    "name": "提交保存",
-    "route": "/cache-management",
-    "source": "cache/CacheManagementPage.tsx"
-  },
-  {
-    "code": "dashboard.dashboard-page.1",
-    "name": "考勤台账",
+    "code": "PARENT_ACCOUNT_LIFECYCLE_MANAGE",
+    "name": "家长账号维护 · 更换手机号",
     "route": "/dashboard",
-    "source": "dashboard/DashboardPage.tsx"
+    "source": "dashboard/ParentAccountLifecyclePanel.tsx",
+    "label": "更换手机号",
+    "pagePermissionCode": "DASHBOARD_READ",
+    "features": []
   },
   {
-    "code": "dashboard.dashboard-page.3",
-    "name": "退出当前会话",
-    "route": "/dashboard",
-    "source": "dashboard/DashboardPage.tsx"
-  },
-  {
-    "code": "dashboard.dashboard-page.4",
-    "name": "标记已读",
-    "route": "/dashboard",
-    "source": "dashboard/DashboardPage.tsx"
-  },
-  {
-    "code": "dashboard.dashboard-page.5",
-    "name": "全部标记已读",
-    "route": "/dashboard",
-    "source": "dashboard/DashboardPage.tsx"
-  },
-  {
-    "code": "dashboard.dashboard-page.6",
-    "name": "下线",
-    "route": "/dashboard",
-    "source": "dashboard/DashboardPage.tsx"
-  },
-  {
-    "code": "dashboard.dashboard-page.7",
-    "name": "下线全部设备",
-    "route": "/dashboard",
-    "source": "dashboard/DashboardPage.tsx"
-  },
-  {
-    "code": "dashboard.dashboard-task-reviews.1",
-    "name": "重试",
-    "route": "/dashboard",
-    "source": "dashboard/DashboardTaskReviews.tsx"
-  },
-  {
-    "code": "dashboard.organization-activity-trend.1",
-    "name": "重试",
-    "route": "/dashboard",
-    "source": "dashboard/OrganizationActivityTrend.tsx"
-  },
-  {
-    "code": "dashboard.parent-account-lifecycle-panel.1",
-    "name": "更换手机号",
-    "route": "/dashboard",
-    "source": "dashboard/ParentAccountLifecyclePanel.tsx"
-  },
-  {
-    "code": "dashboard.parent-account-lifecycle-panel.2",
-    "name": "申请注销",
-    "route": "/dashboard",
-    "source": "dashboard/ParentAccountLifecyclePanel.tsx"
-  },
-  {
-    "code": "dashboard.parent-account-lifecycle-panel.3",
-    "name": "撤销注销申请",
-    "route": "/dashboard",
-    "source": "dashboard/ParentAccountLifecyclePanel.tsx"
-  },
-  {
-    "code": "dashboard.parent-account-lifecycle-panel.4",
-    "name": "发送当前手机号验证码",
-    "route": "/dashboard",
-    "source": "dashboard/ParentAccountLifecyclePanel.tsx"
-  },
-  {
-    "code": "dashboard.parent-account-lifecycle-panel.5",
-    "name": "验证当前手机号",
-    "route": "/dashboard",
-    "source": "dashboard/ParentAccountLifecyclePanel.tsx"
-  },
-  {
-    "code": "dashboard.parent-account-lifecycle-panel.6",
-    "name": "发送新手机号验证码",
-    "route": "/dashboard",
-    "source": "dashboard/ParentAccountLifecyclePanel.tsx"
-  },
-  {
-    "code": "dashboard.parent-account-lifecycle-panel.7",
-    "name": "确认更换手机号",
-    "route": "/dashboard",
-    "source": "dashboard/ParentAccountLifecyclePanel.tsx"
-  },
-  {
-    "code": "dashboard.parent-account-lifecycle-panel.8",
-    "name": "发送注销验证码",
-    "route": "/dashboard",
-    "source": "dashboard/ParentAccountLifecyclePanel.tsx"
-  },
-  {
-    "code": "dashboard.parent-account-lifecycle-panel.9",
-    "name": "提交注销申请",
-    "route": "/dashboard",
-    "source": "dashboard/ParentAccountLifecyclePanel.tsx"
-  },
-  {
-    "code": "DICTIONARY_MANAGE",
-    "name": "新增类型",
-    "route": "/dictionaries",
-    "source": "dictionaries/DictionaryManagementPage.tsx"
-  },
-  {
-    "code": "dictionaries.dictionary-management-page.2",
-    "name": "新增字典项",
-    "route": "/dictionaries",
-    "source": "dictionaries/DictionaryManagementPage.tsx"
-  },
-  {
-    "code": "dictionaries.dictionary-management-page.3",
-    "name": "重试",
-    "route": "/dictionaries",
-    "source": "dictionaries/DictionaryManagementPage.tsx"
-  },
-  {
-    "code": "dictionaries.dictionary-management-page.4",
-    "name": "编辑字典类型",
-    "route": "/dictionaries",
-    "source": "dictionaries/DictionaryManagementPage.tsx"
-  },
-  {
-    "code": "dictionaries.dictionary-management-page.5",
-    "name": "编辑字典项",
-    "route": "/dictionaries",
-    "source": "dictionaries/DictionaryManagementPage.tsx"
-  },
-  {
-    "code": "dictionaries.dictionary-management-page.6",
-    "name": "取消",
-    "route": "/dictionaries",
-    "source": "dictionaries/DictionaryManagementPage.tsx"
-  },
-  {
-    "code": "dictionaries.dictionary-management-page.7",
-    "name": "保存",
-    "route": "/dictionaries",
-    "source": "dictionaries/DictionaryManagementPage.tsx"
-  },
-  {
-    "code": "EXCEPTION_REPORT_CREATE",
-    "name": "新增报备",
-    "route": "/exception-reports",
-    "source": "exception-reports/ExceptionReportPage.tsx"
-  },
-  {
-    "code": "exception-reports.exception-report-page.2",
-    "name": "重试",
-    "route": "/exception-reports",
-    "source": "exception-reports/ExceptionReportPage.tsx"
-  },
-  {
-    "code": "exception-reports.exception-report-page.3",
-    "name": "查询",
-    "route": "/exception-reports",
-    "source": "exception-reports/ExceptionReportPage.tsx"
-  },
-  {
-    "code": "exception-reports.exception-report-page.4",
-    "name": "重置",
-    "route": "/exception-reports",
-    "source": "exception-reports/ExceptionReportPage.tsx"
-  },
-  {
-    "code": "exception-reports.exception-report-page.5",
-    "name": "详情",
-    "route": "/exception-reports",
-    "source": "exception-reports/ExceptionReportPage.tsx"
-  },
-  {
-    "code": "exception-reports.exception-report-page.6",
-    "name": "取消",
-    "route": "/exception-reports",
-    "source": "exception-reports/ExceptionReportPage.tsx"
-  },
-  {
-    "code": "EXCEPTION_REPORT_HANDLE",
-    "name": "确认处理",
-    "route": "/exception-reports",
-    "source": "exception-reports/ExceptionReportPage.tsx"
-  },
-  {
-    "code": "exception-reports.exception-report-page.8",
-    "name": "关闭",
-    "route": "/exception-reports",
-    "source": "exception-reports/ExceptionReportPage.tsx"
-  },
-  {
-    "code": "EXPORT_JOB_CREATE",
-    "name": "新建导出",
-    "route": "/export-jobs",
-    "source": "export-jobs/ExportJobManagementPage.tsx"
-  },
-  {
-    "code": "export-jobs.export-job-management-page.2",
-    "name": "详情",
-    "route": "/export-jobs",
-    "source": "export-jobs/ExportJobManagementPage.tsx"
-  },
-  {
-    "code": "export-jobs.export-job-management-page.3",
-    "name": "下载",
-    "route": "/export-jobs",
-    "source": "export-jobs/ExportJobManagementPage.tsx"
-  },
-  {
-    "code": "export-jobs.export-job-management-page.4",
-    "name": "查询",
-    "route": "/export-jobs",
-    "source": "export-jobs/ExportJobManagementPage.tsx"
-  },
-  {
-    "code": "export-jobs.export-job-management-page.5",
-    "name": "重置",
-    "route": "/export-jobs",
-    "source": "export-jobs/ExportJobManagementPage.tsx"
-  },
-  {
-    "code": "export-jobs.export-job-review-panel.2",
-    "name": "批准",
-    "route": "/export-jobs",
-    "source": "export-jobs/ExportJobReviewPanel.tsx"
-  },
-  {
-    "code": "export-jobs.export-job-review-panel.3",
-    "name": "驳回",
-    "route": "/export-jobs",
-    "source": "export-jobs/ExportJobReviewPanel.tsx"
-  },
-  {
-    "code": "feature-management.feature-management-page.1",
-    "name": "查看记录",
-    "route": "/feature-management",
-    "source": "feature-management/FeatureManagementPage.tsx"
-  },
-  {
-    "code": "feature-management.feature-management-page.2",
-    "name": "重试",
-    "route": "/feature-management",
-    "source": "feature-management/FeatureManagementPage.tsx"
+    "code": "ORGANIZATION_ONBOARDING_REVIEW",
+    "name": "机构入驻 · 审核申请",
+    "label": "审核申请",
+    "route": "/system-tasks",
+    "permissionCode": "ORGANIZATION_ONBOARDING_REVIEW"
   },
   {
     "code": "FEATURE_TOGGLE_MANAGE",
-    "name": "申请停用 / 申请启用",
+    "name": "功能开关 · 申请变更",
     "route": "/feature-management",
-    "source": "feature-management/FeatureManagementPage.tsx"
+    "source": "feature-management/FeatureManagementPage.tsx",
+    "label": "申请变更",
+    "pagePermissionCode": "FEATURE_TOGGLE_READ",
+    "features": []
   },
   {
     "code": "FEATURE_TOGGLE_REVIEW",
-    "name": "批准",
+    "name": "功能开关 · 审核变更",
     "route": "/feature-management",
-    "source": "feature-management/FeatureManagementPage.tsx"
+    "source": "feature-management/FeatureManagementPage.tsx",
+    "label": "审核变更",
+    "pagePermissionCode": "FEATURE_TOGGLE_READ",
+    "features": []
   },
   {
-    "code": "feature-management.feature-management-page.6",
-    "name": "驳回",
-    "route": "/feature-management",
-    "source": "feature-management/FeatureManagementPage.tsx"
+    "code": "ATTENDANCE_RECORD",
+    "name": "考勤记录 · 班级点名",
+    "route": "/attendance-records",
+    "source": "attendance/AttendancePage.tsx",
+    "label": "班级点名",
+    "pagePermissionCode": "ATTENDANCE_READ",
+    "features": []
   },
   {
-    "code": "feature-management.feature-management-page.7",
-    "name": "确认提交 / 下一步",
-    "route": "/feature-management",
-    "source": "feature-management/FeatureManagementPage.tsx"
-  },
-  {
-    "code": "feature-management.feature-management-page.8",
-    "name": "确认批准 / 确认驳回",
-    "route": "/feature-management",
-    "source": "feature-management/FeatureManagementPage.tsx"
-  },
-  {
-    "code": "feature-management.feature-management-page.9",
-    "name": "关闭",
-    "route": "/feature-management",
-    "source": "feature-management/FeatureManagementPage.tsx"
-  },
-  {
-    "code": "growth-points.growth-point-page.1",
-    "name": "导出",
-    "route": "/growth-points",
-    "source": "growth-points/GrowthPointPage.tsx"
-  },
-  {
-    "code": "growth-points.growth-point-page.3",
-    "name": "重试",
-    "route": "/growth-points",
-    "source": "growth-points/GrowthPointPage.tsx"
-  },
-  {
-    "code": "growth-points.growth-point-page.4",
-    "name": "纠错",
-    "route": "/growth-points",
-    "source": "growth-points/GrowthPointPage.tsx"
-  },
-  {
-    "code": "growth-points.growth-point-page.5",
-    "name": "取消",
-    "route": "/growth-points",
-    "source": "growth-points/GrowthPointPage.tsx"
-  },
-  {
-    "code": "growth-points.growth-point-page.6",
-    "name": "确认纠错",
-    "route": "/growth-points",
-    "source": "growth-points/GrowthPointPage.tsx"
-  },
-  {
-    "code": "growth-reviews.create-growth-review-export.1",
-    "name": "导出 PDF",
-    "route": "/growth-reviews",
-    "source": "growth-reviews/CreateGrowthReviewExport.tsx"
-  },
-  {
-    "code": "growth-reviews.create-growth-review-export.2",
-    "name": "重试模板",
-    "route": "/growth-reviews",
-    "source": "growth-reviews/CreateGrowthReviewExport.tsx"
-  },
-  {
-    "code": "growth-reviews.create-growth-review-export.3",
-    "name": "取消",
-    "route": "/growth-reviews",
-    "source": "growth-reviews/CreateGrowthReviewExport.tsx"
-  },
-  {
-    "code": "GROWTH_REVIEW_PDF_EXPORT",
-    "name": "提交导出",
-    "route": "/growth-reviews",
-    "source": "growth-reviews/CreateGrowthReviewExport.tsx"
-  },
-  {
-    "code": "growth-reviews.growth-review-export-history.1",
-    "name": "导出历史",
-    "route": "/growth-reviews",
-    "source": "growth-reviews/GrowthReviewExportHistory.tsx"
-  },
-  {
-    "code": "growth-reviews.growth-review-export-history.3",
-    "name": "详情",
-    "route": "/growth-reviews",
-    "source": "growth-reviews/GrowthReviewExportHistory.tsx"
-  },
-  {
-    "code": "growth-reviews.growth-review-export-history.4",
-    "name": "下载",
-    "route": "/growth-reviews",
-    "source": "growth-reviews/GrowthReviewExportHistory.tsx"
-  },
-  {
-    "code": "growth-reviews.growth-review-page.2",
-    "name": "补录复盘",
-    "route": "/growth-reviews",
-    "source": "growth-reviews/GrowthReviewPage.tsx"
-  },
-  {
-    "code": "growth-reviews.growth-review-page.3",
-    "name": "取消",
-    "route": "/growth-reviews",
-    "source": "growth-reviews/GrowthReviewPage.tsx"
-  },
-  {
-    "code": "growth-reviews.growth-review-page.4",
-    "name": "确认追加",
-    "route": "/growth-reviews",
-    "source": "growth-reviews/GrowthReviewPage.tsx"
-  },
-  {
-    "code": "IAM_AUDIT_READ",
-    "name": "查询审计日志",
-    "route": "/iam",
-    "source": "iam/IamAuditPanel.tsx"
-  },
-  {
-    "code": "iam.iam-audit-panel.2",
-    "name": "重置",
-    "route": "/iam",
-    "source": "iam/IamAuditPanel.tsx"
-  },
-  {
-    "code": "IAM_ROLE_CREATE",
-    "name": "新增角色",
-    "route": "/iam",
-    "source": "iam/IamManagementPage.tsx"
-  },
-  {
-    "code": "IAM_ROLE_PERMISSION_GRANT",
-    "name": "配置角色权限",
-    "route": "/iam",
-    "source": "iam/IamManagementPage.tsx"
-  },
-  {
-    "code": "IAM_USER_PERMISSION_CONFIGURE",
-    "name": "配置用户权限",
-    "route": "/iam",
-    "source": "iam/IamManagementPage.tsx"
-  },
-  {
-    "code": "iam.iam-management-page.5",
-    "name": "重试",
-    "route": "/iam",
-    "source": "iam/IamManagementPage.tsx"
-  },
-  {
-    "code": "iam.iam-management-page.6",
-    "name": "取消",
-    "route": "/iam",
-    "source": "iam/IamManagementPage.tsx"
-  },
-  {
-    "code": "iam.iam-management-page.7",
-    "name": "创建角色",
-    "route": "/iam",
-    "source": "iam/IamManagementPage.tsx"
-  },
-  {
-    "code": "iam.iam-management-page.10",
-    "name": "提交保存",
-    "route": "/iam",
-    "source": "iam/IamManagementPage.tsx"
-  },
-  {
-    "code": "iam.iam-management-page.11",
-    "name": "撤销",
-    "route": "/iam",
-    "source": "iam/IamManagementPage.tsx"
-  },
-  {
-    "code": "import-export-templates.import-export-template-management-page.1",
-    "name": "下载",
-    "route": "/import-export-templates",
-    "source": "import-export-templates/ImportExportTemplateManagementPage.tsx"
-  },
-  {
-    "code": "import-export-templates.import-export-template-management-page.2",
-    "name": "字段映射",
-    "route": "/import-export-templates",
-    "source": "import-export-templates/ImportExportTemplateManagementPage.tsx"
-  },
-  {
-    "code": "import-export-templates.import-export-template-management-page.3",
-    "name": "设为默认",
-    "route": "/import-export-templates",
-    "source": "import-export-templates/ImportExportTemplateManagementPage.tsx"
-  },
-  {
-    "code": "import-export-templates.import-export-template-management-page.4",
-    "name": "停用 / 启用",
-    "route": "/import-export-templates",
-    "source": "import-export-templates/ImportExportTemplateManagementPage.tsx"
-  },
-  {
-    "code": "IMPORT_EXPORT_TEMPLATE_MANAGE",
-    "name": "新增模板版本",
-    "route": "/import-export-templates",
-    "source": "import-export-templates/ImportExportTemplateManagementPage.tsx"
-  },
-  {
-    "code": "import-export-templates.import-export-template-management-page.6",
-    "name": "重试",
-    "route": "/import-export-templates",
-    "source": "import-export-templates/ImportExportTemplateManagementPage.tsx"
-  },
-  {
-    "code": "import-export-templates.import-export-template-management-page.7",
-    "name": "查询",
-    "route": "/import-export-templates",
-    "source": "import-export-templates/ImportExportTemplateManagementPage.tsx"
-  },
-  {
-    "code": "import-export-templates.import-export-template-management-page.8",
-    "name": "重置",
-    "route": "/import-export-templates",
-    "source": "import-export-templates/ImportExportTemplateManagementPage.tsx"
-  },
-  {
-    "code": "import-export-templates.import-export-template-management-page.9",
-    "name": "选择模板文件",
-    "route": "/import-export-templates",
-    "source": "import-export-templates/ImportExportTemplateManagementPage.tsx"
-  },
-  {
-    "code": "import-export-templates.import-export-template-management-page.10",
-    "name": "保存字段映射",
-    "route": "/import-export-templates",
-    "source": "import-export-templates/ImportExportTemplateManagementPage.tsx"
-  },
-  {
-    "code": "import-export-templates.import-export-template-management-page.11",
-    "name": "上移字段",
-    "route": "/import-export-templates",
-    "source": "import-export-templates/ImportExportTemplateManagementPage.tsx"
-  },
-  {
-    "code": "import-export-templates.import-export-template-management-page.12",
-    "name": "下移字段",
-    "route": "/import-export-templates",
-    "source": "import-export-templates/ImportExportTemplateManagementPage.tsx"
-  },
-  {
-    "code": "import-export-templates.import-export-template-management-page.13",
-    "name": "删除字段",
-    "route": "/import-export-templates",
-    "source": "import-export-templates/ImportExportTemplateManagementPage.tsx"
-  },
-  {
-    "code": "import-export-templates.import-export-template-management-page.14",
-    "name": "新增字段",
-    "route": "/import-export-templates",
-    "source": "import-export-templates/ImportExportTemplateManagementPage.tsx"
-  },
-  {
-    "code": "import-jobs.import-job-management-page.1",
-    "name": "详情",
-    "route": "/import-jobs",
-    "source": "import-jobs/ImportJobManagementPage.tsx"
-  },
-  {
-    "code": "import-jobs.import-job-management-page.2",
-    "name": "下载错误",
-    "route": "/import-jobs",
-    "source": "import-jobs/ImportJobManagementPage.tsx"
-  },
-  {
-    "code": "IMPORT_JOB_CREATE",
-    "name": "新建校验作业",
-    "route": "/import-jobs",
-    "source": "import-jobs/ImportJobManagementPage.tsx"
-  },
-  {
-    "code": "import-jobs.import-job-management-page.4",
-    "name": "重试",
-    "route": "/import-jobs",
-    "source": "import-jobs/ImportJobManagementPage.tsx"
-  },
-  {
-    "code": "import-jobs.import-job-management-page.5",
-    "name": "查询",
-    "route": "/import-jobs",
-    "source": "import-jobs/ImportJobManagementPage.tsx"
-  },
-  {
-    "code": "import-jobs.import-job-management-page.6",
-    "name": "重置",
-    "route": "/import-jobs",
-    "source": "import-jobs/ImportJobManagementPage.tsx"
-  },
-  {
-    "code": "import-jobs.import-job-management-page.7",
-    "name": "选择文件",
-    "route": "/import-jobs",
-    "source": "import-jobs/ImportJobManagementPage.tsx"
-  },
-  {
-    "code": "STUDENT_IMPORT_EXECUTE",
-    "name": "执行学员导入",
-    "route": "/import-jobs",
-    "source": "import-jobs/ImportJobManagementPage.tsx"
-  },
-  {
-    "code": "import-jobs.import-job-management-page.9",
-    "name": "重试失败行",
-    "route": "/import-jobs",
-    "source": "import-jobs/ImportJobManagementPage.tsx"
-  },
-  {
-    "code": "import-jobs.import-job-management-page.10",
-    "name": "下载初始凭证",
-    "route": "/import-jobs",
-    "source": "import-jobs/ImportJobManagementPage.tsx"
-  },
-  {
-    "code": "interface-services.interface-service-management-page.1",
-    "name": "查询",
-    "route": "/interface-services",
-    "source": "interface-services/InterfaceServiceManagementPage.tsx"
-  },
-  {
-    "code": "interface-services.interface-service-management-page.2",
-    "name": "调整授权",
-    "route": "/interface-services",
-    "source": "interface-services/InterfaceServiceManagementPage.tsx"
-  },
-  {
-    "code": "interface-services.interface-service-management-page.3",
-    "name": "停用 / 启用",
-    "route": "/interface-services",
-    "source": "interface-services/InterfaceServiceManagementPage.tsx"
-  },
-  {
-    "code": "INTERFACE_SERVICE_REVIEW",
-    "name": "批准",
-    "route": "/interface-services",
-    "source": "interface-services/InterfaceServiceManagementPage.tsx"
-  },
-  {
-    "code": "interface-services.interface-service-management-page.5",
-    "name": "驳回",
-    "route": "/interface-services",
-    "source": "interface-services/InterfaceServiceManagementPage.tsx"
-  },
-  {
-    "code": "INTERFACE_SERVICE_MANAGE",
-    "name": "登记接口服务",
-    "route": "/interface-services",
-    "source": "interface-services/InterfaceServiceManagementPage.tsx"
-  },
-  {
-    "code": "interface-services.interface-service-management-page.7",
-    "name": "重试",
-    "route": "/interface-services",
-    "source": "interface-services/InterfaceServiceManagementPage.tsx"
-  },
-  {
-    "code": "interface-services.interface-service-management-page.8",
-    "name": "取消",
-    "route": "/interface-services",
-    "source": "interface-services/InterfaceServiceManagementPage.tsx"
-  },
-  {
-    "code": "interface-services.interface-service-management-page.9",
-    "name": "提交保存",
-    "route": "/interface-services",
-    "source": "interface-services/InterfaceServiceManagementPage.tsx"
-  },
-  {
-    "code": "learning-tasks.learning-task-editor-drawer.1",
-    "name": "保存为个人模板",
+    "code": "TASK_ASSIGNMENT_EXEMPT",
+    "name": "任务实例 · 任务实例免执行",
+    "label": "任务实例免执行",
     "route": "/learning-tasks",
-    "source": "learning-tasks/LearningTaskEditorDrawer.tsx"
-  },
-  {
-    "code": "learning-tasks.learning-task-editor-drawer.2",
-    "name": "保存草稿",
-    "route": "/learning-tasks",
-    "source": "learning-tasks/LearningTaskEditorDrawer.tsx"
-  },
-  {
-    "code": "learning-tasks.learning-task-editor-drawer.3",
-    "name": "添加目标",
-    "route": "/learning-tasks",
-    "source": "learning-tasks/LearningTaskEditorDrawer.tsx"
-  },
-  {
-    "code": "learning-tasks.learning-task-editor-drawer.4",
-    "name": "删除目标",
-    "route": "/learning-tasks",
-    "source": "learning-tasks/LearningTaskEditorDrawer.tsx"
-  },
-  {
-    "code": "learning-tasks.learning-task-management-page.1",
-    "name": "复制昨日任务",
-    "route": "/learning-tasks",
-    "source": "learning-tasks/LearningTaskManagementPage.tsx"
-  },
-  {
-    "code": "learning-tasks.learning-task-management-page.2",
-    "name": "任务模板",
-    "route": "/learning-tasks",
-    "source": "learning-tasks/LearningTaskManagementPage.tsx"
-  },
-  {
-    "code": "learning-tasks.learning-task-management-page.3",
-    "name": "批量发布",
-    "route": "/learning-tasks",
-    "source": "learning-tasks/LearningTaskManagementPage.tsx"
-  },
-  {
-    "code": "LEARNING_TASK_CREATE",
-    "name": "新建任务",
-    "route": "/learning-tasks",
-    "source": "learning-tasks/LearningTaskManagementPage.tsx"
-  },
-  {
-    "code": "learning-tasks.learning-task-management-page.5",
-    "name": "重试",
-    "route": "/learning-tasks",
-    "source": "learning-tasks/LearningTaskManagementPage.tsx"
-  },
-  {
-    "code": "learning-tasks.learning-task-management-page.6",
-    "name": "查询",
-    "route": "/learning-tasks",
-    "source": "learning-tasks/LearningTaskManagementPage.tsx"
-  },
-  {
-    "code": "learning-tasks.draft.edit",
-    "name": "编辑草稿",
-    "route": "/learning-tasks",
-    "source": "learning-tasks/LearningTaskManagementPage.tsx"
-  },
-  {
-    "code": "LEARNING_TASK_PUBLISH",
-    "name": "发布任务",
-    "route": "/learning-tasks",
-    "source": "learning-tasks/LearningTaskManagementPage.tsx"
-  },
-  {
-    "code": "learning-tasks.progress",
-    "name": "学生进度",
-    "route": "/learning-tasks",
-    "source": "learning-tasks/LearningTaskManagementPage.tsx"
-  },
-  {
-    "code": "learning-tasks.recurrence.stop",
-    "name": "停止每日固定任务",
-    "route": "/learning-tasks",
-    "source": "learning-tasks/LearningTaskManagementPage.tsx"
-  },
-  {
-    "code": "learning-tasks.previous-day-task-copy-modal.1",
-    "name": "关闭",
-    "route": "/learning-tasks",
-    "source": "learning-tasks/PreviousDayTaskCopyModal.tsx"
-  },
-  {
-    "code": "LEARNING_TASK_COPY_PREVIOUS_DAY",
-    "name": "确认复制",
-    "route": "/learning-tasks",
-    "source": "learning-tasks/PreviousDayTaskCopyModal.tsx"
-  },
-  {
-    "code": "learning-tasks.previous-day-task-copy-modal.3",
-    "name": "重试",
-    "route": "/learning-tasks",
-    "source": "learning-tasks/PreviousDayTaskCopyModal.tsx"
-  },
-  {
-    "code": "learning-tasks.task-defer-queue.1",
-    "name": "重试",
-    "route": "/learning-tasks",
-    "source": "learning-tasks/TaskDeferQueue.tsx"
-  },
-  {
-    "code": "TASK_ASSIGNMENT_DEFER",
-    "name": "顺延",
-    "route": "/learning-tasks",
-    "source": "learning-tasks/TaskDeferQueue.tsx"
-  },
-  {
-    "code": "learning-tasks.task-review-drawer.1",
-    "name": "刷新详情",
-    "route": "/learning-tasks",
-    "source": "learning-tasks/TaskReviewDrawer.tsx"
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/learningtask/web/ManagedTaskAssignmentController.java",
+    "apiOnly": true,
+    "pagePermissionCode": "LEARNING_TASK_READ_MANAGED"
   },
   {
     "code": "TASK_ASSIGNMENT_REVIEW",
-    "name": "审核通过并发放积分",
+    "name": "任务打卡审核 · 审核通过并发放积分",
     "route": "/learning-tasks",
-    "source": "learning-tasks/TaskReviewDrawer.tsx"
+    "source": "learning-tasks/TaskReviewDrawer.tsx",
+    "label": "审核通过并发放积分",
+    "pagePermissionCode": "LEARNING_TASK_READ_MANAGED",
+    "features": []
   },
   {
-    "code": "learning-tasks.task-review-drawer.3",
-    "name": "驳回打卡",
+    "code": "LEARNING_TASK_CREATE",
+    "name": "任务编辑 · 保存草稿",
     "route": "/learning-tasks",
-    "source": "learning-tasks/TaskReviewDrawer.tsx"
-  },
-  {
-    "code": "learning-tasks.task-review-drawer.4",
-    "name": "确认转交",
-    "route": "/learning-tasks",
-    "source": "learning-tasks/TaskReviewDrawer.tsx"
-  },
-  {
-    "code": "learning-tasks.task-review-queue.1",
-    "name": "重试",
-    "route": "/learning-tasks",
-    "source": "learning-tasks/TaskReviewQueue.tsx"
-  },
-  {
-    "code": "learning-tasks.task-review-queue.2",
-    "name": "查看审核",
-    "route": "/learning-tasks",
-    "source": "learning-tasks/TaskReviewQueue.tsx"
-  },
-  {
-    "code": "learning-tasks.task-template-editor-modal.1",
-    "name": "取消",
-    "route": "/learning-tasks",
-    "source": "learning-tasks/TaskTemplateEditorModal.tsx"
+    "source": "learning-tasks/LearningTaskEditorDrawer.tsx",
+    "label": "保存草稿",
+    "pagePermissionCode": "LEARNING_TASK_READ_MANAGED",
+    "features": []
   },
   {
     "code": "LEARNING_TASK_TEMPLATE_MANAGE_PERSONAL",
-    "name": "保存",
+    "name": "任务编辑 · 保存为个人模板",
     "route": "/learning-tasks",
-    "source": "learning-tasks/TaskTemplateEditorModal.tsx"
+    "source": "learning-tasks/LearningTaskEditorDrawer.tsx",
+    "label": "保存为个人模板",
+    "pagePermissionCode": "LEARNING_TASK_READ_MANAGED",
+    "features": []
   },
   {
-    "code": "learning-tasks.template.select",
-    "name": "选用模板",
+    "code": "TASK_ASSIGNMENT_DEFER",
+    "name": "任务顺延 · 顺延",
     "route": "/learning-tasks",
-    "source": "learning-tasks/TaskTemplateLibraryModal.tsx"
+    "source": "learning-tasks/TaskDeferQueue.tsx",
+    "label": "顺延",
+    "pagePermissionCode": "LEARNING_TASK_READ_MANAGED",
+    "features": []
   },
   {
-    "code": "learning-tasks.template.edit",
-    "name": "编辑个人模板",
+    "code": "LEARNING_TASK_COPY_PREVIOUS_DAY",
+    "name": "学习任务 · 复制昨日任务",
     "route": "/learning-tasks",
-    "source": "learning-tasks/TaskTemplateLibraryModal.tsx"
+    "source": "learning-tasks/LearningTaskManagementPage.tsx",
+    "label": "复制昨日任务",
+    "pagePermissionCode": "LEARNING_TASK_READ_MANAGED",
+    "features": []
   },
   {
-    "code": "learning-tasks.template.up",
-    "name": "上移",
+    "code": "LEARNING_TASK_PUBLISH",
+    "name": "学习任务 · 批量发布",
     "route": "/learning-tasks",
-    "source": "learning-tasks/TaskTemplateLibraryModal.tsx"
+    "source": "learning-tasks/LearningTaskManagementPage.tsx",
+    "label": "批量发布",
+    "pagePermissionCode": "LEARNING_TASK_READ_MANAGED",
+    "features": []
   },
   {
-    "code": "learning-tasks.template.down",
-    "name": "下移",
+    "code": "LEARNING_TASK_PROGRESS_READ",
+    "name": "学习任务 · 学生进度",
     "route": "/learning-tasks",
-    "source": "learning-tasks/TaskTemplateLibraryModal.tsx"
+    "source": "learning-tasks/LearningTaskManagementPage.tsx",
+    "label": "学生进度",
+    "pagePermissionCode": "LEARNING_TASK_READ_MANAGED",
+    "features": []
   },
   {
-    "code": "learning-tasks.template.delete",
-    "name": "删除个人模板",
+    "code": "LEARNING_TASK_TEMPLATE_READ",
+    "name": "学习任务 · 任务模板",
     "route": "/learning-tasks",
-    "source": "learning-tasks/TaskTemplateLibraryModal.tsx"
+    "source": "learning-tasks/LearningTaskManagementPage.tsx",
+    "label": "任务模板",
+    "pagePermissionCode": "LEARNING_TASK_READ_MANAGED",
+    "features": []
   },
   {
-    "code": "learning-tasks.task-template-library-modal.1",
-    "name": "关闭",
+    "code": "ATTACHMENT_READ",
+    "name": "打卡附件 · 受控打卡附件查看/下载",
+    "label": "受控打卡附件查看/下载",
     "route": "/learning-tasks",
-    "source": "learning-tasks/TaskTemplateLibraryModal.tsx"
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/attachment/web/TaskAttachmentController.java",
+    "apiOnly": true,
+    "pagePermissionCode": "LEARNING_TASK_READ_MANAGED"
   },
   {
-    "code": "learning-tasks.task-template-library-modal.2",
-    "name": "新建个人模板",
-    "route": "/learning-tasks",
-    "source": "learning-tasks/TaskTemplateLibraryModal.tsx"
+    "code": "EXCEPTION_REPORT_CREATE",
+    "name": "异常报备 · 新增报备",
+    "route": "/exception-reports",
+    "source": "exception-reports/ExceptionReportPage.tsx",
+    "label": "新增报备",
+    "pagePermissionCode": "EXCEPTION_REPORT_READ",
+    "features": []
   },
   {
-    "code": "menu-management.menu-management-page.1",
-    "name": "重试",
-    "route": "/menu-management",
-    "source": "menus/MenuManagementPage.tsx"
+    "code": "EXCEPTION_REPORT_HANDLE",
+    "name": "异常报备 · 确认处理",
+    "route": "/exception-reports",
+    "source": "exception-reports/ExceptionReportPage.tsx",
+    "label": "确认处理",
+    "pagePermissionCode": "EXCEPTION_REPORT_READ",
+    "features": []
   },
   {
-    "code": "MENU_MANAGE",
-    "name": "新增菜单",
-    "route": "/menu-management",
-    "source": "menus/MenuManagementPage.tsx"
-  },
-  {
-    "code": "menu-management.menu-management-page.3",
-    "name": "查询",
-    "route": "/menu-management",
-    "source": "menus/MenuManagementPage.tsx"
-  },
-  {
-    "code": "menu-management.menu-management-page.4",
-    "name": "重置",
-    "route": "/menu-management",
-    "source": "menus/MenuManagementPage.tsx"
-  },
-  {
-    "code": "menu-management.menu-management-page.5",
-    "name": "编辑",
-    "route": "/menu-management",
-    "source": "menus/MenuManagementPage.tsx"
-  },
-  {
-    "code": "menu-management.menu-management-page.6",
-    "name": "上移",
-    "route": "/menu-management",
-    "source": "menus/MenuManagementPage.tsx"
-  },
-  {
-    "code": "menu-management.menu-management-page.7",
-    "name": "下移",
-    "route": "/menu-management",
-    "source": "menus/MenuManagementPage.tsx"
-  },
-  {
-    "code": "menu-management.menu-management-page.8",
-    "name": "停用 / 启用",
-    "route": "/menu-management",
-    "source": "menus/MenuManagementPage.tsx"
-  },
-  {
-    "code": "menu-management.menu-management-page.9",
-    "name": "保存",
-    "route": "/menu-management",
-    "source": "menus/MenuManagementPage.tsx"
-  },
-  {
-    "code": "organizations.class-management-panel.1",
-    "name": "编辑",
-    "route": "/organizations",
-    "source": "organizations/ClassManagementPanel.tsx"
-  },
-  {
-    "code": "organizations.class-management-panel.2",
-    "name": "停用 / 启用",
-    "route": "/organizations",
-    "source": "organizations/ClassManagementPanel.tsx"
-  },
-  {
-    "code": "CLASS_CREATE",
-    "name": "新增班级",
-    "route": "/organizations",
-    "source": "organizations/ClassManagementPanel.tsx"
-  },
-  {
-    "code": "organizations.class-management-panel.5",
-    "name": "重试",
-    "route": "/organizations",
-    "source": "organizations/ClassManagementPanel.tsx"
-  },
-  {
-    "code": "organizations.class-management-panel.6",
-    "name": "取消",
-    "route": "/organizations",
-    "source": "organizations/ClassManagementPanel.tsx"
-  },
-  {
-    "code": "organizations.class-management-panel.7",
-    "name": "保存修改 / 创建班级",
-    "route": "/organizations",
-    "source": "organizations/ClassManagementPanel.tsx"
-  },
-  {
-    "code": "ORG_NODE_CHANGE_REVIEW",
-    "name": "批准",
-    "route": "/organizations",
-    "source": "organizations/OrganizationChangeReviewPanel.tsx"
-  },
-  {
-    "code": "organizations.organization-change-review-panel.2",
-    "name": "驳回",
-    "route": "/organizations",
-    "source": "organizations/OrganizationChangeReviewPanel.tsx"
-  },
-  {
-    "code": "organizations.organization-change-review-panel.4",
-    "name": "取消",
-    "route": "/organizations",
-    "source": "organizations/OrganizationChangeReviewPanel.tsx"
-  },
-  {
-    "code": "organizations.organization-change-review-panel.5",
-    "name": "确认批准 / 确认驳回",
-    "route": "/organizations",
-    "source": "organizations/OrganizationChangeReviewPanel.tsx"
-  },
-  {
-    "code": "organizations.organization-management-page.1",
-    "name": "新增组织类型",
-    "route": "/organizations",
-    "source": "organizations/OrganizationManagementPage.tsx"
-  },
-  {
-    "code": "organizations.organization-management-page.2",
-    "name": "新增组织节点",
-    "route": "/organizations",
-    "source": "organizations/OrganizationManagementPage.tsx"
-  },
-  {
-    "code": "organizations.organization-management-page.3",
-    "name": "重试",
-    "route": "/organizations",
-    "source": "organizations/OrganizationManagementPage.tsx"
-  },
-  {
-    "code": "organizations.organization-management-page.4",
-    "name": "编辑",
-    "route": "/organizations",
-    "source": "organizations/OrganizationManagementPage.tsx"
-  },
-  {
-    "code": "organizations.organization-management-page.5",
-    "name": "重新启用",
-    "route": "/organizations",
-    "source": "organizations/OrganizationManagementPage.tsx"
-  },
-  {
-    "code": "organizations.organization-management-page.6",
-    "name": "申请停用",
-    "route": "/organizations",
-    "source": "organizations/OrganizationManagementPage.tsx"
-  },
-  {
-    "code": "organizations.organization-management-page.7",
-    "name": "申请移动",
-    "route": "/organizations",
-    "source": "organizations/OrganizationManagementPage.tsx"
-  },
-  {
-    "code": "organizations.organization-management-page.8",
-    "name": "申请删除",
-    "route": "/organizations",
-    "source": "organizations/OrganizationManagementPage.tsx"
-  },
-  {
-    "code": "organizations.organization-management-page.9",
-    "name": "取消",
-    "route": "/organizations",
-    "source": "organizations/OrganizationManagementPage.tsx"
-  },
-  {
-    "code": "organizations.organization-management-page.10",
-    "name": "提交审核",
-    "route": "/organizations",
-    "source": "organizations/OrganizationManagementPage.tsx"
-  },
-  {
-    "code": "organizations.organization-management-page.11",
-    "name": "学员关系",
-    "route": "/organizations",
-    "source": "organizations/OrganizationManagementPage.tsx"
-  },
-  {
-    "code": "organizations.organization-management-page.12",
-    "name": "家长换号核验",
-    "route": "/organizations",
-    "source": "organizations/OrganizationManagementPage.tsx"
-  },
-  {
-    "code": "organizations.organization-management-page.13",
-    "name": "学生账号注销",
-    "route": "/organizations",
-    "source": "organizations/OrganizationManagementPage.tsx"
-  },
-  {
-    "code": "organizations.organization-management-page.14",
-    "name": "配置教师班级",
-    "route": "/organizations",
-    "source": "organizations/OrganizationManagementPage.tsx"
-  },
-  {
-    "code": "organizations.organization-management-page.15",
-    "name": "取消",
-    "route": "/organizations",
-    "source": "organizations/OrganizationManagementPage.tsx"
-  },
-  {
-    "code": "organizations.organization-management-page.16",
-    "name": "创建类型",
-    "route": "/organizations",
-    "source": "organizations/OrganizationManagementPage.tsx"
-  },
-  {
-    "code": "organizations.organization-management-page.17",
-    "name": "取消",
-    "route": "/organizations",
-    "source": "organizations/OrganizationManagementPage.tsx"
-  },
-  {
-    "code": "organizations.organization-management-page.18",
-    "name": "创建节点",
-    "route": "/organizations",
-    "source": "organizations/OrganizationManagementPage.tsx"
-  },
-  {
-    "code": "organizations.organization-node-editor-drawer.1",
-    "name": "取消",
-    "route": "/organizations",
-    "source": "organizations/OrganizationNodeEditorDrawer.tsx"
-  },
-  {
-    "code": "ORG_NODE_UPDATE",
-    "name": "保存",
-    "route": "/organizations",
-    "source": "organizations/OrganizationNodeEditorDrawer.tsx"
-  },
-  {
-    "code": "organizations.parent-mobile-manual-recovery-drawer.1",
-    "name": "发送验证码",
-    "route": "/organizations",
-    "source": "organizations/ParentMobileManualRecoveryDrawer.tsx"
-  },
-  {
-    "code": "organizations.parent-mobile-manual-recovery-drawer.2",
-    "name": "取消",
-    "route": "/organizations",
-    "source": "organizations/ParentMobileManualRecoveryDrawer.tsx"
-  },
-  {
-    "code": "PARENT_ACCOUNT_LIFECYCLE_MANAGE",
-    "name": "确认换绑",
-    "route": "/organizations",
-    "source": "organizations/ParentMobileManualRecoveryDrawer.tsx"
-  },
-  {
-    "code": "organizations.student-account-cancellation-drawer.1",
-    "name": "取消",
-    "route": "/organizations",
-    "source": "organizations/StudentAccountCancellationDrawer.tsx"
-  },
-  {
-    "code": "organizations.student-account-cancellation-drawer.2",
-    "name": "注销学生账号",
-    "route": "/organizations",
-    "source": "organizations/StudentAccountCancellationDrawer.tsx"
-  },
-  {
-    "code": "organizations.student-class-assignment-drawer.1",
-    "name": "取消",
-    "route": "/organizations",
-    "source": "organizations/StudentClassAssignmentDrawer.tsx"
-  },
-  {
-    "code": "STUDENT_CLASS_ASSIGN",
-    "name": "确认配置",
-    "route": "/organizations",
-    "source": "organizations/StudentClassAssignmentDrawer.tsx"
-  },
-  {
-    "code": "organizations.student-organization-lifecycle-drawer.1",
-    "name": "取消",
-    "route": "/organizations",
-    "source": "organizations/StudentOrganizationLifecycleDrawer.tsx"
-  },
-  {
-    "code": "organizations.student-organization-lifecycle-drawer.2",
-    "name": "确认转班 / 确认转出",
-    "route": "/organizations",
-    "source": "organizations/StudentOrganizationLifecycleDrawer.tsx"
-  },
-  {
-    "code": "organizations.teacher-class-assignment-drawer.1",
-    "name": "取消",
-    "route": "/organizations",
-    "source": "organizations/TeacherClassAssignmentDrawer.tsx"
-  },
-  {
-    "code": "organizations.teacher-class-assignment-drawer.2",
-    "name": "解除绑定",
-    "route": "/organizations",
-    "source": "organizations/TeacherClassAssignmentDrawer.tsx"
-  },
-  {
-    "code": "organizations.teacher-class-assignment-drawer.3",
-    "name": "确认绑定",
-    "route": "/organizations",
-    "source": "organizations/TeacherClassAssignmentDrawer.tsx"
-  },
-  {
-    "code": "SECONDARY_PARENT_INVITE_CREATE",
-    "name": "邀请副家长",
-    "route": "/parent-relationships",
-    "source": "parent-relationships/ParentRelationshipPage.tsx"
-  },
-  {
-    "code": "PRIMARY_PARENT_TRANSFER_CREATE",
-    "name": "转移监护权",
-    "route": "/parent-relationships",
-    "source": "parent-relationships/ParentRelationshipPage.tsx"
-  },
-  {
-    "code": "PRIMARY_PARENT_SELF_UNBIND",
-    "name": "解除我的主家长关系",
-    "route": "/parent-relationships",
-    "source": "parent-relationships/ParentRelationshipPage.tsx"
-  },
-  {
-    "code": "SECONDARY_PARENT_UNBIND",
-    "name": "解除副家长",
-    "route": "/parent-relationships",
-    "source": "parent-relationships/ParentRelationshipPage.tsx"
-  },
-  {
-    "code": "rewards.reward-management-page.2",
-    "name": "新建奖励",
-    "route": "/rewards",
-    "source": "rewards/RewardManagementPage.tsx"
-  },
-  {
-    "code": "rewards.reward-management-page.3",
-    "name": "重试",
-    "route": "/rewards",
-    "source": "rewards/RewardManagementPage.tsx"
-  },
-  {
-    "code": "rewards.reward-management-page.4",
-    "name": "编辑奖励",
-    "route": "/rewards",
-    "source": "rewards/RewardManagementPage.tsx"
-  },
-  {
-    "code": "rewards.reward-management-page.5",
-    "name": "下架 / 上架",
-    "route": "/rewards",
-    "source": "rewards/RewardManagementPage.tsx"
-  },
-  {
-    "code": "rewards.reward-management-page.6",
-    "name": "删除奖励",
-    "route": "/rewards",
-    "source": "rewards/RewardManagementPage.tsx"
+    "code": "GROWTH_POINT_CORRECT_CHILD",
+    "name": "成长积分 · 纠错",
+    "route": "/growth-points",
+    "source": "growth-points/GrowthPointPage.tsx",
+    "label": "纠错",
+    "features": [
+      "GROWTH_POINT_CORRECTION"
+    ],
+    "client": "WEB",
+    "allowedUserTypes": [
+      "FAMILY"
+    ],
+    "scopeKinds": [
+      "CHILD"
+    ],
+    "actorPrerequisites": [
+      "enabledAccount",
+      "activeRole",
+      "parentProfile",
+      "activePrimaryGuardian"
+    ],
+    "pagePermissionCode": "GROWTH_POINT_READ_CHILD"
   },
   {
     "code": "REWARD_EXCHANGE_REVIEW",
-    "name": "同意",
+    "name": "奖励兑换 · 审核兑换申请",
     "route": "/rewards",
-    "source": "rewards/RewardManagementPage.tsx"
+    "source": "rewards/RewardManagementPage.tsx",
+    "label": "审核兑换申请",
+    "features": [
+      "REWARD_EXCHANGE"
+    ],
+    "client": "WEB",
+    "allowedUserTypes": [
+      "FAMILY"
+    ],
+    "scopeKinds": [
+      "CHILD"
+    ],
+    "actorPrerequisites": [
+      "enabledAccount",
+      "activeRole",
+      "parentProfile",
+      "activePrimaryGuardian"
+    ],
+    "pagePermissionCode": "REWARD_READ"
   },
   {
-    "code": "rewards.reward-management-page.8",
-    "name": "驳回",
+    "code": "REWARD_EXCHANGE_READ",
+    "name": "奖励兑换 · 查询兑换申请",
     "route": "/rewards",
-    "source": "rewards/RewardManagementPage.tsx"
+    "source": "API controller",
+    "label": "查询兑换申请",
+    "features": [
+      "REWARD_EXCHANGE"
+    ],
+    "client": "WEB",
+    "allowedUserTypes": [
+      "FAMILY"
+    ],
+    "scopeKinds": [
+      "CHILD"
+    ],
+    "actorPrerequisites": [
+      "enabledAccount",
+      "activeRole",
+      "parentProfile",
+      "activeGuardian"
+    ],
+    "pagePermissionCode": "REWARD_READ"
   },
   {
-    "code": "rewards.reward-management-page.9",
-    "name": "确认核销",
+    "code": "REWARD_CREATE",
+    "name": "奖励管理 · 新建奖励",
     "route": "/rewards",
-    "source": "rewards/RewardManagementPage.tsx"
+    "source": "rewards/RewardManagementPage.tsx",
+    "label": "新建奖励",
+    "features": [
+      "REWARD_EXCHANGE"
+    ],
+    "client": "WEB",
+    "allowedUserTypes": [
+      "FAMILY"
+    ],
+    "scopeKinds": [
+      "CHILD"
+    ],
+    "actorPrerequisites": [
+      "enabledAccount",
+      "activeRole",
+      "parentProfile",
+      "activePrimaryGuardian"
+    ],
+    "pagePermissionCode": "REWARD_READ"
   },
   {
-    "code": "rewards.reward-management-page.10",
-    "name": "取消",
+    "code": "REWARD_UPDATE",
+    "name": "奖励管理 · 编辑奖励",
     "route": "/rewards",
-    "source": "rewards/RewardManagementPage.tsx"
+    "source": "rewards/RewardManagementPage.tsx",
+    "label": "编辑奖励",
+    "features": [
+      "REWARD_EXCHANGE"
+    ],
+    "client": "WEB",
+    "allowedUserTypes": [
+      "FAMILY"
+    ],
+    "scopeKinds": [
+      "CHILD"
+    ],
+    "actorPrerequisites": [
+      "enabledAccount",
+      "activeRole",
+      "parentProfile",
+      "activePrimaryGuardian"
+    ],
+    "pagePermissionCode": "REWARD_READ"
   },
   {
-    "code": "rewards.reward-management-page.11",
-    "name": "保存奖励",
+    "code": "REWARD_DELETE",
+    "name": "奖励管理 · 删除奖励",
     "route": "/rewards",
-    "source": "rewards/RewardManagementPage.tsx"
+    "source": "rewards/RewardManagementPage.tsx",
+    "label": "删除奖励",
+    "features": [
+      "REWARD_EXCHANGE"
+    ],
+    "client": "WEB",
+    "allowedUserTypes": [
+      "FAMILY"
+    ],
+    "scopeKinds": [
+      "CHILD"
+    ],
+    "actorPrerequisites": [
+      "enabledAccount",
+      "activeRole",
+      "parentProfile",
+      "activePrimaryGuardian"
+    ],
+    "pagePermissionCode": "REWARD_READ"
   },
   {
-    "code": "rewards.reward-management-page.12",
-    "name": "取消",
-    "route": "/rewards",
-    "source": "rewards/RewardManagementPage.tsx"
+    "code": "GROWTH_REVIEW_SUBSCRIBE_CHILD",
+    "name": "成长复盘 · 启用周订阅",
+    "label": "启用周订阅",
+    "route": "/growth-reviews",
+    "source": "growth-reviews/GrowthReviewSubscriptionPanel.tsx",
+    "pagePermissionCode": "GROWTH_REVIEW_READ_CHILD"
   },
   {
-    "code": "rewards.reward-management-page.13",
-    "name": "确认驳回",
-    "route": "/rewards",
-    "source": "rewards/RewardManagementPage.tsx"
+    "code": "GROWTH_REVIEW_SUPPLEMENT_CHILD",
+    "name": "成长复盘 · 补录复盘",
+    "route": "/growth-reviews",
+    "source": "growth-reviews/GrowthReviewPage.tsx",
+    "label": "补录复盘",
+    "features": [
+      "DAY:DAILY_GROWTH_REVIEW",
+      "OTHER:PERIODIC_GROWTH_REPORT"
+    ],
+    "client": "WEB",
+    "allowedUserTypes": [
+      "FAMILY"
+    ],
+    "scopeKinds": [
+      "CHILD"
+    ],
+    "actorPrerequisites": [
+      "enabledAccount",
+      "activeRole",
+      "parentProfile",
+      "activePrimaryGuardian"
+    ],
+    "pagePermissionCode": "GROWTH_REVIEW_READ_CHILD"
   },
   {
-    "code": "student-login.student-login-management-page.1",
-    "name": "重试",
+    "code": "STUDENT_CREATE",
+    "name": "学生档案 · 独立创建学生档案",
+    "label": "独立创建学生档案",
     "route": "/student-login",
-    "source": "student-login/StudentLoginManagementPage.tsx"
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/student/web/StudentManagementController.java",
+    "apiOnly": true,
+    "pagePermissionCode": "STUDENT_READ"
   },
   {
-    "code": "student-login.student-login-management-page.2",
-    "name": "查询",
+    "code": "STUDENT_CREDENTIAL_INITIALIZE",
+    "name": "学生档案 · 历史学生登录凭据初始化",
+    "label": "历史学生登录凭据初始化",
     "route": "/student-login",
-    "source": "student-login/StudentLoginManagementPage.tsx"
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/student/web/StudentManagementController.java",
+    "apiOnly": true,
+    "pagePermissionCode": "STUDENT_READ"
+  },
+  {
+    "code": "STUDENT_LOGIN_CODE_RESET",
+    "name": "学生档案 · 重置学生登录码并撤销会话",
+    "label": "重置学生登录码并撤销会话",
+    "route": "/student-login",
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/student/web/StudentManagementController.java",
+    "apiOnly": true,
+    "pagePermissionCode": "STUDENT_READ"
   },
   {
     "code": "STUDENT_LOGIN_QR_CREATE",
-    "name": "生成",
+    "name": "学生登录凭证 · 生成",
     "route": "/student-login",
-    "source": "student-login/StudentLoginManagementPage.tsx"
+    "source": "student-login/StudentLoginManagementPage.tsx",
+    "label": "生成",
+    "pagePermissionCode": "STUDENT_READ",
+    "features": []
   },
   {
     "code": "STUDENT_WECHAT_UNBIND",
-    "name": "解绑",
+    "name": "学生登录凭证 · 解绑",
     "route": "/student-login",
-    "source": "student-login/StudentLoginManagementPage.tsx"
+    "source": "student-login/StudentLoginManagementPage.tsx",
+    "label": "解绑",
+    "pagePermissionCode": "STUDENT_READ",
+    "features": []
   },
   {
-    "code": "student-login.student-login-management-page.5",
-    "name": "关闭",
-    "route": "/student-login",
-    "source": "student-login/StudentLoginManagementPage.tsx"
+    "code": "PRIMARY_PARENT_TRANSFER_CREATE",
+    "name": "家长关系 · 转移监护权",
+    "route": "/parent-relationships",
+    "source": "parent-relationships/ParentRelationshipPage.tsx",
+    "label": "转移监护权",
+    "features": [
+      "PARENT_RELATIONSHIP_MANAGEMENT"
+    ],
+    "client": "WEB",
+    "allowedUserTypes": [
+      "FAMILY"
+    ],
+    "scopeKinds": [
+      "CHILD"
+    ],
+    "actorPrerequisites": [
+      "enabledAccount",
+      "activeRole",
+      "parentProfile",
+      "activePrimaryGuardian"
+    ],
+    "pagePermissionCode": "PARENT_RELATIONSHIP_READ"
   },
   {
-    "code": "student-login.student-login-management-page.6",
-    "name": "刷新二维码",
-    "route": "/student-login",
-    "source": "student-login/StudentLoginManagementPage.tsx"
+    "code": "SECONDARY_PARENT_INVITE_CREATE",
+    "name": "家长关系 · 邀请副家长",
+    "route": "/parent-relationships",
+    "source": "parent-relationships/ParentRelationshipPage.tsx",
+    "label": "邀请副家长",
+    "features": [
+      "PARENT_RELATIONSHIP_MANAGEMENT"
+    ],
+    "client": "WEB",
+    "allowedUserTypes": [
+      "FAMILY"
+    ],
+    "scopeKinds": [
+      "CHILD"
+    ],
+    "actorPrerequisites": [
+      "enabledAccount",
+      "activeRole",
+      "parentProfile",
+      "activePrimaryGuardian"
+    ],
+    "pagePermissionCode": "PARENT_RELATIONSHIP_READ"
   },
   {
-    "code": "system-tasks.system-task-workbench.2",
-    "name": "重试",
-    "route": "/system-tasks",
-    "source": "system-tasks/SystemTaskWorkbench.tsx"
+    "code": "PRIMARY_PARENT_SELF_UNBIND",
+    "name": "家长关系 · 解除我的主家长关系",
+    "route": "/parent-relationships",
+    "source": "parent-relationships/ParentRelationshipPage.tsx",
+    "label": "解除我的主家长关系",
+    "features": [
+      "PARENT_RELATIONSHIP_MANAGEMENT"
+    ],
+    "client": "WEB",
+    "allowedUserTypes": [
+      "FAMILY"
+    ],
+    "scopeKinds": [
+      "CHILD"
+    ],
+    "actorPrerequisites": [
+      "enabledAccount",
+      "activeRole",
+      "parentProfile",
+      "activePrimaryGuardian"
+    ],
+    "pagePermissionCode": "PARENT_RELATIONSHIP_READ"
   },
   {
-    "code": "system-tasks.system-task-workbench.3",
-    "name": "查看详情",
-    "route": "/system-tasks",
-    "source": "system-tasks/SystemTaskWorkbench.tsx"
+    "code": "SECONDARY_PARENT_UNBIND",
+    "name": "家长关系 · 解除副家长",
+    "route": "/parent-relationships",
+    "source": "parent-relationships/ParentRelationshipPage.tsx",
+    "label": "解除副家长",
+    "features": [
+      "PARENT_RELATIONSHIP_MANAGEMENT"
+    ],
+    "client": "WEB",
+    "allowedUserTypes": [
+      "FAMILY"
+    ],
+    "scopeKinds": [
+      "CHILD"
+    ],
+    "actorPrerequisites": [
+      "enabledAccount",
+      "activeRole",
+      "parentProfile",
+      "activePrimaryGuardian"
+    ],
+    "pagePermissionCode": "PARENT_RELATIONSHIP_READ"
   },
   {
-    "code": "system-tasks.system-task-workbench.4",
-    "name": "关闭",
-    "route": "/system-tasks",
-    "source": "system-tasks/SystemTaskWorkbench.tsx"
+    "code": "STUDENT_PARENT_INVITE_CREATE",
+    "name": "家长绑定 · 机构创建家长绑定邀请",
+    "label": "机构创建家长绑定邀请",
+    "route": "/parent-relationships",
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/student/web/StudentManagementController.java",
+    "apiOnly": true,
+    "pagePermissionCode": "PARENT_RELATIONSHIP_READ"
   },
   {
-    "code": "system-tasks.system-task-workbench.5",
-    "name": "前往领域处理页",
-    "route": "/system-tasks",
-    "source": "system-tasks/SystemTaskWorkbench.tsx"
-  },
-  {
-    "code": "TEACHER_BATCH_MANAGE",
-    "name": "批量操作",
-    "route": "/teachers",
-    "source": "teachers/TeacherManagementPage.tsx"
+    "code": "STUDENT_PARENT_INVITE_RESPOND",
+    "name": "家长绑定 · 接受/拒绝机构家长绑定邀请",
+    "label": "接受/拒绝机构家长绑定邀请",
+    "route": "/parent-relationships",
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/student/web/ParentBindingInvitationController.java",
+    "apiOnly": true,
+    "pagePermissionCode": "PARENT_RELATIONSHIP_READ"
   },
   {
     "code": "TEACHER_CREATE",
-    "name": "新增教师",
+    "name": "教师管理 · 新增教师",
     "route": "/teachers",
-    "source": "teachers/TeacherManagementPage.tsx"
+    "source": "teachers/TeacherManagementPage.tsx",
+    "label": "新增教师",
+    "pagePermissionCode": "TEACHER_READ",
+    "features": []
   },
   {
-    "code": "teachers.teacher-management-page.3",
-    "name": "重试",
+    "code": "TEACHER_BATCH_MANAGE",
+    "name": "教师管理 · 批量操作",
     "route": "/teachers",
-    "source": "teachers/TeacherManagementPage.tsx"
-  },
-  {
-    "code": "teachers.teacher-management-page.4",
-    "name": "查询",
-    "route": "/teachers",
-    "source": "teachers/TeacherManagementPage.tsx"
+    "source": "teachers/TeacherManagementPage.tsx",
+    "label": "批量操作",
+    "pagePermissionCode": "TEACHER_READ",
+    "features": []
   },
   {
     "code": "TEACHER_UPDATE",
-    "name": "编辑资料",
+    "name": "教师管理 · 编辑资料",
     "route": "/teachers",
-    "source": "teachers/TeacherManagementPage.tsx"
+    "source": "teachers/TeacherManagementPage.tsx",
+    "label": "编辑资料",
+    "pagePermissionCode": "TEACHER_READ",
+    "features": []
   },
   {
     "code": "TEACHER_PASSWORD_RESET",
-    "name": "重置密码",
+    "name": "教师管理 · 重置密码",
     "route": "/teachers",
-    "source": "teachers/TeacherManagementPage.tsx"
+    "source": "teachers/TeacherManagementPage.tsx",
+    "label": "重置密码",
+    "pagePermissionCode": "TEACHER_READ",
+    "features": []
   },
   {
-    "code": "TEACHER_CLASS_ASSIGN",
-    "name": "班级范围",
+    "code": "TEACHER_STATUS_CHANGE",
+    "name": "教师账号状态 · 启用账号",
     "route": "/teachers",
-    "source": "teachers/TeacherManagementPage.tsx"
-  },
-  {
-    "code": "teachers.teacher-management-page.5",
-    "name": "保存",
-    "route": "/teachers",
-    "source": "teachers/TeacherManagementPage.tsx"
-  },
-  {
-    "code": "teachers.teacher-management-page.8",
-    "name": "取消",
-    "route": "/teachers",
-    "source": "teachers/TeacherManagementPage.tsx"
-  },
-  {
-    "code": "teachers.teacher-management-page.9",
-    "name": "提交保存",
-    "route": "/teachers",
-    "source": "teachers/TeacherManagementPage.tsx"
+    "source": "teachers/*",
+    "label": "启用账号",
+    "pagePermissionCode": "TEACHER_READ",
+    "features": []
   },
   {
     "code": "IAM_USER_CREATE",
-    "name": "新增用户",
+    "name": "用户管理 · 新增用户",
     "route": "/users",
-    "source": "users/UserManagementPage.tsx"
+    "source": "users/UserManagementPage.tsx",
+    "label": "新增用户",
+    "pagePermissionCode": "IAM_USER_LIST",
+    "features": []
   },
   {
-    "code": "users.user-management-page.2",
-    "name": "重试",
+    "code": "IAM_USER_UPDATE",
+    "name": "用户管理 · 编辑",
     "route": "/users",
-    "source": "users/UserManagementPage.tsx"
-  },
-  {
-    "code": "users.user-management-page.3",
-    "name": "查询",
-    "route": "/users",
-    "source": "users/UserManagementPage.tsx"
-  },
-  {
-    "code": "users.user-management-page.4",
-    "name": "取消",
-    "route": "/users",
-    "source": "users/UserManagementPage.tsx"
-  },
-  {
-    "code": "users.user-management-page.5",
-    "name": "创建用户",
-    "route": "/users",
-    "source": "users/UserManagementPage.tsx"
-  },
-  {
-    "code": "users.status.enabled",
-    "name": "启用账号",
-    "route": "/users",
-    "source": "users/*"
-  },
-  {
-    "code": "users.status.disabled",
-    "name": "停用账号",
-    "route": "/users",
-    "source": "users/*"
-  },
-  {
-    "code": "users.status.locked",
-    "name": "锁定账号",
-    "route": "/users",
-    "source": "users/*"
-  },
-  {
-    "code": "teachers.status.enabled",
-    "name": "启用账号",
-    "route": "/teachers",
-    "source": "teachers/*"
-  },
-  {
-    "code": "teachers.status.disabled",
-    "name": "停用账号",
-    "route": "/teachers",
-    "source": "teachers/*"
-  },
-  {
-    "code": "teachers.status.locked",
-    "name": "锁定账号",
-    "route": "/teachers",
-    "source": "teachers/*"
-  },
-  {
-    "code": "exception-reports.exception-report-page.modal.1.ok",
-    "name": "确定",
-    "route": "/exception-reports",
-    "source": "exception-reports/ExceptionReportPage.tsx"
-  },
-  {
-    "code": "exception-reports.exception-report-page.modal.1.cancel",
-    "name": "取消",
-    "route": "/exception-reports",
-    "source": "exception-reports/ExceptionReportPage.tsx"
-  },
-  {
-    "code": "export-jobs.create-export-job-modal.modal.1.ok",
-    "name": "提交导出",
-    "route": "/export-jobs",
-    "source": "export-jobs/CreateExportJobModal.tsx"
-  },
-  {
-    "code": "export-jobs.create-export-job-modal.modal.1.cancel",
-    "name": "取消",
-    "route": "/export-jobs",
-    "source": "export-jobs/CreateExportJobModal.tsx"
-  },
-  {
-    "code": "export-jobs.export-job-review-panel.modal.1.ok",
-    "name": "确定",
-    "route": "/export-jobs",
-    "source": "export-jobs/ExportJobReviewPanel.tsx"
-  },
-  {
-    "code": "export-jobs.export-job-review-panel.modal.1.cancel",
-    "name": "取消",
-    "route": "/export-jobs",
-    "source": "export-jobs/ExportJobReviewPanel.tsx"
-  },
-  {
-    "code": "learning-tasks.batch-publish-result-modal.modal.1.ok",
-    "name": "关闭",
-    "route": "/learning-tasks",
-    "source": "learning-tasks/BatchPublishResultModal.tsx"
-  },
-  {
-    "code": "learning-tasks.batch-publish-result-modal.modal.1.cancel",
-    "name": "取消",
-    "route": "/learning-tasks",
-    "source": "learning-tasks/BatchPublishResultModal.tsx"
-  },
-  {
-    "code": "learning-tasks.learning-task-management-page.confirm.1.ok",
-    "name": "确认发布",
-    "route": "/learning-tasks",
-    "source": "learning-tasks/LearningTaskManagementPage.tsx"
-  },
-  {
-    "code": "learning-tasks.learning-task-management-page.confirm.1.cancel",
-    "name": "取消",
-    "route": "/learning-tasks",
-    "source": "learning-tasks/LearningTaskManagementPage.tsx"
-  },
-  {
-    "code": "learning-tasks.learning-task-management-page.confirm.2.ok",
-    "name": "确认发布",
-    "route": "/learning-tasks",
-    "source": "learning-tasks/LearningTaskManagementPage.tsx"
-  },
-  {
-    "code": "learning-tasks.learning-task-management-page.confirm.2.cancel",
-    "name": "取消",
-    "route": "/learning-tasks",
-    "source": "learning-tasks/LearningTaskManagementPage.tsx"
-  },
-  {
-    "code": "learning-tasks.learning-task-management-page.confirm.3.ok",
-    "name": "确认停止",
-    "route": "/learning-tasks",
-    "source": "learning-tasks/LearningTaskManagementPage.tsx"
-  },
-  {
-    "code": "learning-tasks.learning-task-management-page.confirm.3.cancel",
-    "name": "取消",
-    "route": "/learning-tasks",
-    "source": "learning-tasks/LearningTaskManagementPage.tsx"
-  },
-  {
-    "code": "learning-tasks.task-defer-queue.modal.1.ok",
-    "name": "确认顺延",
-    "route": "/learning-tasks",
-    "source": "learning-tasks/TaskDeferQueue.tsx"
-  },
-  {
-    "code": "learning-tasks.task-defer-queue.modal.1.cancel",
-    "name": "取消",
-    "route": "/learning-tasks",
-    "source": "learning-tasks/TaskDeferQueue.tsx"
-  },
-  {
-    "code": "learning-tasks.task-review-drawer.confirm.1.ok",
-    "name": "确认驳回",
-    "route": "/learning-tasks",
-    "source": "learning-tasks/TaskReviewDrawer.tsx"
-  },
-  {
-    "code": "learning-tasks.task-review-drawer.confirm.1.cancel",
-    "name": "取消",
-    "route": "/learning-tasks",
-    "source": "learning-tasks/TaskReviewDrawer.tsx"
-  },
-  {
-    "code": "learning-tasks.task-review-drawer.confirm.2.ok",
-    "name": "确认通过",
-    "route": "/learning-tasks",
-    "source": "learning-tasks/TaskReviewDrawer.tsx"
-  },
-  {
-    "code": "learning-tasks.task-review-drawer.confirm.2.cancel",
-    "name": "取消",
-    "route": "/learning-tasks",
-    "source": "learning-tasks/TaskReviewDrawer.tsx"
-  },
-  {
-    "code": "learning-tasks.task-template-library-modal.confirm.1.ok",
-    "name": "确认删除",
-    "route": "/learning-tasks",
-    "source": "learning-tasks/TaskTemplateLibraryModal.tsx"
-  },
-  {
-    "code": "learning-tasks.task-template-library-modal.confirm.1.cancel",
-    "name": "取消",
-    "route": "/learning-tasks",
-    "source": "learning-tasks/TaskTemplateLibraryModal.tsx"
-  },
-  {
-    "code": "organizations.class-management-panel.confirm.1.ok",
-    "name": "确定",
-    "route": "/organizations",
-    "source": "organizations/ClassManagementPanel.tsx"
-  },
-  {
-    "code": "organizations.class-management-panel.confirm.1.cancel",
-    "name": "取消",
-    "route": "/organizations",
-    "source": "organizations/ClassManagementPanel.tsx"
-  },
-  {
-    "code": "organizations.organization-management-page.confirm.1.ok",
-    "name": "确认启用",
-    "route": "/organizations",
-    "source": "organizations/OrganizationManagementPage.tsx"
-  },
-  {
-    "code": "organizations.organization-management-page.confirm.1.cancel",
-    "name": "取消",
-    "route": "/organizations",
-    "source": "organizations/OrganizationManagementPage.tsx"
-  },
-  {
-    "code": "organizations.student-account-cancellation-drawer.confirm.1.ok",
-    "name": "确认注销",
-    "route": "/organizations",
-    "source": "organizations/StudentAccountCancellationDrawer.tsx"
-  },
-  {
-    "code": "organizations.student-account-cancellation-drawer.confirm.1.cancel",
-    "name": "取消",
-    "route": "/organizations",
-    "source": "organizations/StudentAccountCancellationDrawer.tsx"
-  },
-  {
-    "code": "organizations.student-organization-lifecycle-drawer.confirm.1.ok",
-    "name": "确认转出",
-    "route": "/organizations",
-    "source": "organizations/StudentOrganizationLifecycleDrawer.tsx"
-  },
-  {
-    "code": "organizations.student-organization-lifecycle-drawer.confirm.1.cancel",
-    "name": "取消",
-    "route": "/organizations",
-    "source": "organizations/StudentOrganizationLifecycleDrawer.tsx"
-  },
-  {
-    "code": "parent-relationships.parent-relationship-page.confirm.1.ok",
-    "name": "确认解除",
-    "route": "/parent-relationships",
-    "source": "parent-relationships/ParentRelationshipPage.tsx"
-  },
-  {
-    "code": "parent-relationships.parent-relationship-page.confirm.1.cancel",
-    "name": "取消",
-    "route": "/parent-relationships",
-    "source": "parent-relationships/ParentRelationshipPage.tsx"
-  },
-  {
-    "code": "parent-relationships.parent-relationship-page.confirm.2.ok",
-    "name": "确认解除",
-    "route": "/parent-relationships",
-    "source": "parent-relationships/ParentRelationshipPage.tsx"
-  },
-  {
-    "code": "parent-relationships.parent-relationship-page.confirm.2.cancel",
-    "name": "取消",
-    "route": "/parent-relationships",
-    "source": "parent-relationships/ParentRelationshipPage.tsx"
-  },
-  {
-    "code": "parent-relationships.parent-relationship-page.modal.1.ok",
-    "name": "发送邀请",
-    "route": "/parent-relationships",
-    "source": "parent-relationships/ParentRelationshipPage.tsx"
-  },
-  {
-    "code": "parent-relationships.parent-relationship-page.modal.1.cancel",
-    "name": "取消",
-    "route": "/parent-relationships",
-    "source": "parent-relationships/ParentRelationshipPage.tsx"
-  },
-  {
-    "code": "student-login.student-login-management-page.confirm.1.ok",
-    "name": "确认解绑",
-    "route": "/student-login",
-    "source": "student-login/StudentLoginManagementPage.tsx"
-  },
-  {
-    "code": "student-login.student-login-management-page.confirm.1.cancel",
-    "name": "取消",
-    "route": "/student-login",
-    "source": "student-login/StudentLoginManagementPage.tsx"
-  },
-  {
-    "code": "import-export-templates.import-export-template-management-page.modal.1.ok",
-    "name": "保存模板",
-    "route": "/import-export-templates",
-    "source": "import-export-templates/ImportExportTemplateManagementPage.tsx"
-  },
-  {
-    "code": "import-export-templates.import-export-template-management-page.modal.1.cancel",
-    "name": "取消",
-    "route": "/import-export-templates",
-    "source": "import-export-templates/ImportExportTemplateManagementPage.tsx"
-  },
-  {
-    "code": "import-jobs.import-job-management-page.confirm.1.ok",
-    "name": "确认下载",
-    "route": "/import-jobs",
-    "source": "import-jobs/ImportJobManagementPage.tsx"
-  },
-  {
-    "code": "import-jobs.import-job-management-page.confirm.1.cancel",
-    "name": "取消",
-    "route": "/import-jobs",
-    "source": "import-jobs/ImportJobManagementPage.tsx"
-  },
-  {
-    "code": "import-jobs.import-job-management-page.modal.1.ok",
-    "name": "提交校验",
-    "route": "/import-jobs",
-    "source": "import-jobs/ImportJobManagementPage.tsx"
-  },
-  {
-    "code": "import-jobs.import-job-management-page.modal.1.cancel",
-    "name": "取消",
-    "route": "/import-jobs",
-    "source": "import-jobs/ImportJobManagementPage.tsx"
-  },
-  {
-    "code": "import-jobs.import-job-management-page.modal.2.ok",
-    "name": "确认执行",
-    "route": "/import-jobs",
-    "source": "import-jobs/ImportJobManagementPage.tsx"
-  },
-  {
-    "code": "import-jobs.import-job-management-page.modal.2.cancel",
-    "name": "取消",
-    "route": "/import-jobs",
-    "source": "import-jobs/ImportJobManagementPage.tsx"
-  },
-  {
-    "code": "menu-management.batch-buttons.open",
-    "name": "批量新增按钮",
-    "route": "/menu-management",
-    "source": "menus/BatchMenuButtons.tsx"
-  },
-  {
-    "code": "menu-management.batch-buttons.save",
-    "name": "批量保存",
-    "route": "/menu-management",
-    "source": "menus/BatchMenuButtons.tsx"
-  },
-  {
-    "code": "menu-management.batch-buttons.add",
-    "name": "添加一行",
-    "route": "/menu-management",
-    "source": "menus/BatchMenuButtons.tsx"
-  },
-  {
-    "code": "menu-management.batch-buttons.remove",
-    "name": "删除",
-    "route": "/menu-management",
-    "source": "menus/BatchMenuButtons.tsx"
-  },
-  {
-    "code": "iam.role-permission-tree.save",
-    "name": "保存角色权限",
-    "route": "/iam",
-    "source": "iam/RolePermissionTreeModal.tsx"
-  },
-  {
-    "code": "iam.role-permission-tree.retry",
-    "name": "重新加载",
-    "route": "/iam",
-    "source": "iam/RolePermissionTreeModal.tsx"
-  },
-  {
-    "code": "iam.role-permission-tree.cancel",
-    "name": "取消",
-    "route": "/iam",
-    "source": "iam/RolePermissionTreeModal.tsx"
-  },
-  {
-    "code": "iam.role-row.authorize",
-    "name": "授权",
-    "route": "/iam",
-    "source": "iam/IamManagementPage.tsx"
-  },
-  {
-    "code": "iam.role-row.users",
-    "name": "关联用户",
-    "route": "/iam",
-    "source": "iam/IamManagementPage.tsx"
-  },
-  {
-    "code": "iam.role-users.retry",
-    "name": "重试",
-    "route": "/iam",
-    "source": "iam/RoleUsersModal.tsx"
-  },
-  {
-    "code": "iam.role-users.query",
-    "name": "查询",
-    "route": "/iam",
-    "source": "iam/RoleUsersModal.tsx"
-  },
-  {
-    "code": "iam.role-users.save",
-    "name": "保存关联",
-    "route": "/iam",
-    "source": "iam/RoleUsersModal.tsx"
-  },
-  {
-    "code": "iam.role-users.cancel",
-    "name": "取消",
-    "route": "/iam",
-    "source": "iam/RoleUsersModal.tsx"
-  },
-  {
-    "code": "users.row.authorize",
-    "name": "授权",
-    "route": "/users",
-    "source": "users/UserManagementPage.tsx"
-  },
-  {
-    "code": "users.permission-tree.save",
-    "name": "保存用户权限",
-    "route": "/users",
-    "source": "iam/UserPermissionTreeModal.tsx"
-  },
-  {
-    "code": "users.permission-tree.retry",
-    "name": "重新加载",
-    "route": "/users",
-    "source": "iam/UserPermissionTreeModal.tsx"
-  },
-  {
-    "code": "users.permission-tree.cancel",
-    "name": "取消",
-    "route": "/users",
-    "source": "iam/UserPermissionTreeModal.tsx"
-  },
-  {
-    "code": "iam.user-permission-tree.save",
-    "name": "保存用户权限",
-    "route": "/iam",
-    "source": "iam/UserPermissionTreeModal.tsx"
-  },
-  {
-    "code": "iam.user-permission-tree.retry",
-    "name": "重新加载",
-    "route": "/iam",
-    "source": "iam/UserPermissionTreeModal.tsx"
-  },
-  {
-    "code": "iam.user-permission-tree.cancel",
-    "name": "取消",
-    "route": "/iam",
-    "source": "iam/UserPermissionTreeModal.tsx"
-  },
-  {
-    "code": "users.create-user.save",
-    "name": "创建用户",
-    "route": "/users",
-    "source": "users/CreateUserDrawer.tsx"
-  },
-  {
-    "code": "users.create-user.retry",
-    "name": "重试",
-    "route": "/users",
-    "source": "users/CreateUserDrawer.tsx"
-  },
-  {
-    "code": "organizations.create-user.save",
-    "name": "创建用户",
-    "route": "/organizations",
-    "source": "users/CreateUserDrawer.tsx"
-  },
-  {
-    "code": "organizations.create-user.retry",
-    "name": "重试",
-    "route": "/organizations",
-    "source": "users/CreateUserDrawer.tsx"
-  },
-  {
-    "code": "organizations.members.retry",
-    "name": "重试",
-    "route": "/organizations",
-    "source": "organizations/OrganizationMembersDrawer.tsx"
-  },
-  {
-    "code": "organizations.members.query",
-    "name": "查询",
-    "route": "/organizations",
-    "source": "organizations/OrganizationMembersDrawer.tsx"
-  },
-  {
-    "code": "organizations.members.reset",
-    "name": "重置",
-    "route": "/organizations",
-    "source": "organizations/OrganizationMembersDrawer.tsx"
-  },
-  {
-    "code": "organizations.members.add",
-    "name": "关联已有用户",
-    "route": "/organizations",
-    "source": "organizations/OrganizationMembersDrawer.tsx"
-  },
-  {
-    "code": "organizations.members.add-admin",
-    "name": "添加组织管理员",
-    "route": "/organizations",
-    "source": "organizations/OrganizationMembersDrawer.tsx"
-  },
-  {
-    "code": "organizations.members.create",
-    "name": "新增用户",
-    "route": "/organizations",
-    "source": "organizations/OrganizationMembersDrawer.tsx"
-  },
-  {
-    "code": "organizations.members.promote",
-    "name": "设为管理员",
-    "route": "/organizations",
-    "source": "organizations/OrganizationMembersDrawer.tsx"
-  },
-  {
-    "code": "organizations.member-picker.save",
-    "name": "保存关联",
-    "route": "/organizations",
-    "source": "users/UserPickerModal.tsx"
-  },
-  {
-    "code": "organizations.member-picker.query",
-    "name": "查询",
-    "route": "/organizations",
-    "source": "users/UserPickerModal.tsx"
-  },
-  {
-    "code": "organizations.member-picker.cancel",
-    "name": "取消",
-    "route": "/organizations",
-    "source": "users/UserPickerModal.tsx"
-  },
-  {
-    "code": "organizations.admin-picker.save",
-    "name": "保存关联",
-    "route": "/organizations",
-    "source": "users/UserPickerModal.tsx"
-  },
-  {
-    "code": "organizations.admin-picker.query",
-    "name": "查询",
-    "route": "/organizations",
-    "source": "users/UserPickerModal.tsx"
-  },
-  {
-    "code": "organizations.admin-picker.cancel",
-    "name": "取消",
-    "route": "/organizations",
-    "source": "users/UserPickerModal.tsx"
-  },
-  {
-    "code": "users.directory.reset",
-    "name": "重置",
-    "route": "/users",
-    "source": "users/UserManagementPage.tsx"
-  },
-  {
-    "code": "iam.directory.query",
-    "name": "查询",
-    "route": "/iam",
-    "source": "iam/IamManagementPage.tsx"
-  },
-  {
-    "code": "iam.directory.reset",
-    "name": "重置",
-    "route": "/iam",
-    "source": "iam/IamManagementPage.tsx"
-  },
-  {
-    "code": "organizations.node.add-child",
-    "name": "新增下级",
-    "route": "/organizations",
-    "source": "organizations/OrganizationManagementPage.tsx"
-  },
-  {
-    "code": "menu-management.node.add-child",
-    "name": "新增下级",
-    "route": "/menu-management",
-    "source": "menus/MenuManagementPage.tsx"
+    "source": "users/UserManagementPage.tsx",
+    "label": "编辑",
+    "pagePermissionCode": "IAM_USER_LIST",
+    "features": []
   },
   {
     "source": "users/UserManagementPage.tsx",
     "code": "IAM_USER_PASSWORD_SET",
-    "name": "重置密码",
-    "route": "/users"
+    "name": "用户管理 · 重置密码",
+    "route": "/users",
+    "label": "重置密码",
+    "pagePermissionCode": "IAM_USER_LIST",
+    "features": []
   },
   {
-    "source": "users/ResetUserPasswordModal.tsx",
-    "code": "users.reset-password.save",
-    "name": "保存密码",
-    "route": "/users"
+    "code": "IAM_USER_STATUS_CHANGE",
+    "name": "用户管理 · 用户启停与锁定",
+    "route": "/users",
+    "source": "users/UserManagementPage.tsx",
+    "label": "用户启停与锁定",
+    "pagePermissionCode": "IAM_USER_LIST",
+    "features": []
   },
   {
-    "source": "users/ResetUserPasswordModal.tsx",
-    "code": "users.reset-password.cancel",
-    "name": "取消",
-    "route": "/users"
+    "code": "IAM_USER_READ",
+    "name": "用户资料 · 用户详情读取",
+    "label": "用户详情读取",
+    "route": "/users",
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/iam/web/UserManagementController.java",
+    "apiOnly": true,
+    "pagePermissionCode": "IAM_USER_LIST"
+  },
+  {
+    "code": "IAM_AUDIT_READ",
+    "name": "权限审计 · 查询审计日志",
+    "route": "/iam",
+    "source": "iam/IamAuditPanel.tsx",
+    "label": "查询审计日志",
+    "pagePermissionCode": "IAM_ROLE_READ",
+    "features": []
+  },
+  {
+    "code": "IAM_PERMISSION_READ",
+    "name": "规范权限目录 · 权限目录查询",
+    "label": "权限目录查询",
+    "route": "/iam",
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/iam/web/PermissionManagementController.java",
+    "apiOnly": true,
+    "pagePermissionCode": "IAM_ROLE_READ"
+  },
+  {
+    "code": "IAM_DATA_SCOPE_CONFIGURE",
+    "name": "角色数据范围 · 角色自定义数据范围配置",
+    "label": "角色自定义数据范围配置",
+    "route": "/iam",
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/iam/web/DataScopeManagementController.java",
+    "apiOnly": true,
+    "pagePermissionCode": "IAM_ROLE_READ"
+  },
+  {
+    "code": "IAM_ROLE_CREATE",
+    "name": "角色管理 · 新增角色",
+    "route": "/iam",
+    "source": "iam/IamManagementPage.tsx",
+    "label": "新增角色",
+    "pagePermissionCode": "IAM_ROLE_READ",
+    "features": []
+  },
+  {
+    "code": "IAM_ROLE_UPDATE",
+    "name": "角色管理 · 编辑角色",
+    "route": "/iam",
+    "source": "iam/IamManagementPage.tsx",
+    "label": "编辑角色",
+    "pagePermissionCode": "IAM_ROLE_READ",
+    "features": []
+  },
+  {
+    "code": "IAM_ROLE_PERMISSION_GRANT",
+    "name": "角色管理 · 配置角色权限",
+    "route": "/iam",
+    "source": "iam/IamManagementPage.tsx",
+    "label": "配置角色权限",
+    "pagePermissionCode": "IAM_ROLE_READ",
+    "features": []
+  },
+  {
+    "code": "IAM_USER_PERMISSION_CONFIGURE",
+    "name": "角色管理 · 配置用户权限",
+    "route": "/iam",
+    "source": "iam/IamManagementPage.tsx",
+    "label": "配置用户权限",
+    "pagePermissionCode": "IAM_ROLE_READ",
+    "features": []
+  },
+  {
+    "code": "IAM_USER_ROLE_ASSIGN",
+    "name": "角色管理 · 关联用户",
+    "route": "/iam",
+    "source": "iam/IamManagementPage.tsx",
+    "label": "关联用户",
+    "pagePermissionCode": "IAM_ROLE_READ",
+    "features": []
+  },
+  {
+    "code": "IAM_ROLE_STATUS_CHANGE",
+    "name": "角色管理 · 角色启停",
+    "route": "/iam",
+    "source": "iam/IamManagementPage.tsx",
+    "label": "角色启停",
+    "pagePermissionCode": "IAM_ROLE_READ",
+    "features": []
+  },
+  {
+    "code": "IAM_ROLE_DELETE",
+    "name": "角色管理 · 删除角色",
+    "route": "/iam",
+    "source": "iam/IamManagementPage.tsx",
+    "label": "删除角色",
+    "pagePermissionCode": "IAM_ROLE_READ",
+    "features": []
+  },
+  {
+    "code": "DICTIONARY_MANAGE",
+    "name": "数据字典 · 新增类型",
+    "route": "/dictionaries",
+    "source": "dictionaries/DictionaryManagementPage.tsx",
+    "label": "新增类型",
+    "pagePermissionCode": "DICTIONARY_READ",
+    "features": []
+  },
+  {
+    "code": "CACHE_MANAGE",
+    "name": "缓存操作 · 执行缓存操作",
+    "route": "/cache-management",
+    "source": "cache/CacheManagementPage.tsx",
+    "label": "执行缓存操作",
+    "pagePermissionCode": "CACHE_READ",
+    "features": []
+  },
+  {
+    "code": "CACHE_REVIEW",
+    "name": "缓存操作 · 批准",
+    "route": "/cache-management",
+    "source": "cache/CacheManagementPage.tsx",
+    "label": "批准",
+    "pagePermissionCode": "CACHE_READ",
+    "features": []
+  },
+  {
+    "code": "INTERFACE_SERVICE_MANAGE",
+    "name": "接口服务 · 调整授权",
+    "route": "/interface-services",
+    "source": "interface-services/InterfaceServiceManagementPage.tsx",
+    "label": "调整授权",
+    "pagePermissionCode": "INTERFACE_SERVICE_READ",
+    "features": []
+  },
+  {
+    "code": "INTERFACE_SERVICE_REVIEW",
+    "name": "接口服务 · 批准",
+    "route": "/interface-services",
+    "source": "interface-services/InterfaceServiceManagementPage.tsx",
+    "label": "批准",
+    "pagePermissionCode": "INTERFACE_SERVICE_READ",
+    "features": []
+  },
+  {
+    "code": "ATTACHMENT_RULE_MANAGE",
+    "name": "附件管理 · 编辑",
+    "route": "/attachment-management",
+    "source": "attachments/AttachmentManagementPage.tsx",
+    "label": "编辑",
+    "pagePermissionCode": "ATTACHMENT_RULE_READ",
+    "features": []
+  },
+  {
+    "code": "ATTACHMENT_FILE_LEDGER_READ",
+    "name": "附件管理 · 查询文件",
+    "route": "/attachment-management",
+    "source": "attachments/AttachmentManagementPage.tsx",
+    "label": "查询文件",
+    "pagePermissionCode": "ATTACHMENT_RULE_READ",
+    "features": []
+  },
+  {
+    "code": "IMPORT_EXPORT_TEMPLATE_MANAGE",
+    "name": "导入导出模板 · 设为默认",
+    "route": "/import-export-templates",
+    "source": "import-export-templates/ImportExportTemplateManagementPage.tsx",
+    "label": "设为默认",
+    "pagePermissionCode": "IMPORT_EXPORT_TEMPLATE_READ",
+    "features": []
+  },
+  {
+    "code": "STUDENT_IMPORT_RESULT_READ",
+    "name": "学员导入 · 批量学员导入执行/行级结果查询",
+    "label": "批量学员导入执行/行级结果查询",
+    "route": "/import-jobs",
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/studentimport/web/StudentImportController.java",
+    "apiOnly": true,
+    "pagePermissionCode": "IMPORT_JOB_READ"
+  },
+  {
+    "code": "IMPORT_JOB_CREATE",
+    "name": "导入校验 · 新建校验作业",
+    "route": "/import-jobs",
+    "source": "import-jobs/ImportJobManagementPage.tsx",
+    "label": "新建校验作业",
+    "pagePermissionCode": "IMPORT_JOB_READ",
+    "features": []
+  },
+  {
+    "code": "STUDENT_IMPORT_CREDENTIAL_DOWNLOAD",
+    "name": "导入校验 · 下载初始凭证",
+    "route": "/import-jobs",
+    "source": "import-jobs/ImportJobManagementPage.tsx",
+    "label": "下载初始凭证",
+    "pagePermissionCode": "IMPORT_JOB_READ",
+    "features": []
+  },
+  {
+    "code": "STUDENT_IMPORT_EXECUTE",
+    "name": "导入校验 · 执行学员导入",
+    "route": "/import-jobs",
+    "source": "import-jobs/ImportJobManagementPage.tsx",
+    "label": "执行学员导入",
+    "pagePermissionCode": "IMPORT_JOB_READ",
+    "features": []
+  },
+  {
+    "code": "EXPORT_SENSITIVE_SUBMIT",
+    "name": "业务数据导出 · 申请敏感数据导出",
+    "label": "申请敏感数据导出",
+    "route": "/export-jobs",
+    "source": "exportjob/application",
+    "apiOnly": true,
+    "pagePermissionCode": "EXPORT_JOB_READ"
+  },
+  {
+    "code": "ATTACHMENT_FILE_LEDGER_EXPORT",
+    "name": "业务数据导出 · 文件台账导出",
+    "label": "文件台账导出",
+    "route": "/export-jobs",
+    "source": "exportjob/application",
+    "apiOnly": true,
+    "pagePermissionCode": "EXPORT_JOB_READ"
+  },
+  {
+    "code": "ATTENDANCE_LEDGER_EXPORT",
+    "name": "业务数据导出 · 考勤台账导出",
+    "label": "考勤台账导出",
+    "route": "/export-jobs",
+    "source": "exportjob/application",
+    "apiOnly": true,
+    "pagePermissionCode": "EXPORT_JOB_READ"
+  },
+  {
+    "code": "CACHE_EXPORT",
+    "name": "业务数据导出 · 缓存日志导出",
+    "label": "缓存日志导出",
+    "route": "/export-jobs",
+    "source": "exportjob/application",
+    "apiOnly": true,
+    "pagePermissionCode": "EXPORT_JOB_READ"
+  },
+  {
+    "code": "DICTIONARY_EXPORT",
+    "name": "业务数据导出 · 数据字典导出",
+    "label": "数据字典导出",
+    "route": "/export-jobs",
+    "source": "exportjob/application",
+    "apiOnly": true,
+    "pagePermissionCode": "EXPORT_JOB_READ"
+  },
+  {
+    "code": "EXCEPTION_REPORT_EXPORT",
+    "name": "业务数据导出 · 异常报备台账导出",
+    "label": "异常报备台账导出",
+    "route": "/export-jobs",
+    "source": "exportjob/application",
+    "apiOnly": true,
+    "pagePermissionCode": "EXPORT_JOB_READ"
+  },
+  {
+    "code": "IMPORT_EXPORT_TEMPLATE_EXPORT",
+    "name": "业务数据导出 · 导入导出模板导出",
+    "label": "导入导出模板导出",
+    "route": "/export-jobs",
+    "source": "exportjob/application",
+    "apiOnly": true,
+    "pagePermissionCode": "EXPORT_JOB_READ"
+  },
+  {
+    "code": "INTERFACE_SERVICE_EXPORT",
+    "name": "业务数据导出 · 接口服务台账导出",
+    "label": "接口服务台账导出",
+    "route": "/export-jobs",
+    "source": "exportjob/application",
+    "apiOnly": true,
+    "pagePermissionCode": "EXPORT_JOB_READ"
+  },
+  {
+    "code": "ORGANIZATION_TASK_STATISTICS_EXPORT",
+    "name": "业务数据导出 · 机构任务统计导出",
+    "label": "机构任务统计导出",
+    "route": "/export-jobs",
+    "source": "exportjob/application",
+    "apiOnly": true,
+    "pagePermissionCode": "EXPORT_JOB_READ"
+  },
+  {
+    "code": "REWARD_EXCHANGE_EXPORT",
+    "name": "业务数据导出 · 奖励兑换台账导出",
+    "label": "奖励兑换台账导出",
+    "route": "/export-jobs",
+    "source": "exportjob/application",
+    "apiOnly": true,
+    "pagePermissionCode": "EXPORT_JOB_READ"
+  },
+  {
+    "code": "STUDENT_TASK_REPORT_EXPORT",
+    "name": "业务数据导出 · 学生任务报表导出",
+    "label": "学生任务报表导出",
+    "route": "/export-jobs",
+    "source": "exportjob/application",
+    "apiOnly": true,
+    "pagePermissionCode": "EXPORT_JOB_READ"
+  },
+  {
+    "code": "SYSTEM_TASK_EXPORT",
+    "name": "业务数据导出 · 系统任务台账导出",
+    "label": "系统任务台账导出",
+    "route": "/export-jobs",
+    "source": "exportjob/application",
+    "apiOnly": true,
+    "pagePermissionCode": "EXPORT_JOB_READ"
+  },
+  {
+    "code": "EXPORT_SENSITIVE_REVIEW",
+    "name": "导出审核 · 批准",
+    "route": "/export-jobs",
+    "source": "export-jobs/ExportJobReviewPanel.tsx",
+    "label": "批准",
+    "pagePermissionCode": "EXPORT_JOB_READ",
+    "features": []
+  },
+  {
+    "code": "EXPORT_JOB_CREATE",
+    "name": "数据导出 · 新建导出",
+    "route": "/export-jobs",
+    "source": "export-jobs/ExportJobManagementPage.tsx",
+    "label": "新建导出",
+    "pagePermissionCode": "EXPORT_JOB_READ",
+    "features": []
+  },
+  {
+    "code": "STUDENT_ENROLLMENT_REVIEW",
+    "name": "入学申请审核 · 入学申请审核",
+    "source": "organizations/InstitutionEnrollmentReviewDrawer.tsx",
+    "route": "/organizations",
+    "label": "入学申请审核",
+    "pagePermissionCode": "ORG_NODE_READ",
+    "features": []
+  },
+  {
+    "code": "STUDENT_CLASS_ASSIGN",
+    "name": "学生入班 · 确认配置",
+    "route": "/organizations",
+    "source": "organizations/StudentClassAssignmentDrawer.tsx",
+    "label": "确认配置",
+    "pagePermissionCode": "ORG_NODE_READ",
+    "features": []
+  },
+  {
+    "code": "CLASS_CREATE",
+    "name": "班级管理 · 新增班级",
+    "route": "/organizations",
+    "source": "organizations/ClassManagementPanel.tsx",
+    "label": "新增班级",
+    "pagePermissionCode": "ORG_NODE_READ",
+    "features": []
+  },
+  {
+    "code": "CLASS_UPDATE",
+    "name": "班级管理 · 编辑",
+    "route": "/organizations",
+    "source": "organizations/ClassManagementPanel.tsx",
+    "label": "编辑",
+    "pagePermissionCode": "ORG_NODE_READ",
+    "features": []
+  },
+  {
+    "code": "CLASS_STATUS_CHANGE",
+    "name": "班级管理 · 停用 / 启用",
+    "route": "/organizations",
+    "source": "organizations/ClassManagementPanel.tsx",
+    "label": "停用 / 启用",
+    "pagePermissionCode": "ORG_NODE_READ",
+    "features": []
+  },
+  {
+    "code": "CLASS_READ",
+    "name": "班级管理 · 查询班级",
+    "route": "/organizations",
+    "source": "API controller",
+    "label": "查询班级",
+    "pagePermissionCode": "ORG_NODE_READ",
+    "features": []
+  },
+  {
+    "code": "STUDENT_ENROLLMENT_INVITE_CREATE",
+    "name": "班级邀请码 · 班级邀请码",
+    "source": "organizations/InstitutionEnrollmentReviewDrawer.tsx",
+    "route": "/organizations",
+    "label": "班级邀请码",
+    "pagePermissionCode": "ORG_NODE_READ",
+    "features": []
+  },
+  {
+    "code": "STUDENT_ENROLLMENT_REQUEST_CREATE",
+    "name": "申请关联学校或培训机构 · 关联机构申请",
+    "source": "organizations/InstitutionEnrollmentModal.tsx",
+    "route": "/organizations",
+    "label": "关联机构申请",
+    "pagePermissionCode": "ORG_NODE_READ",
+    "features": []
+  },
+  {
+    "code": "ORG_NODE_CHANGE_REVIEW",
+    "name": "组织变更审核 · 批准",
+    "route": "/organizations",
+    "source": "organizations/OrganizationChangeReviewPanel.tsx",
+    "label": "批准",
+    "pagePermissionCode": "ORG_NODE_READ",
+    "features": []
+  },
+  {
+    "code": "ORG_NODE_CHANGE_SUBMIT",
+    "name": "组织架构 · 申请停用",
+    "route": "/organizations",
+    "source": "organizations/OrganizationManagementPage.tsx",
+    "label": "申请停用",
+    "pagePermissionCode": "ORG_NODE_READ",
+    "features": []
+  },
+  {
+    "code": "ORG_NODE_CREATE",
+    "name": "组织架构 · 新增组织节点",
+    "route": "/organizations",
+    "source": "organizations/OrganizationManagementPage.tsx",
+    "label": "新增组织节点",
+    "pagePermissionCode": "ORG_NODE_READ",
+    "features": []
+  },
+  {
+    "code": "ORG_NODE_UPDATE",
+    "name": "组织架构 · 编辑",
+    "route": "/organizations",
+    "source": "organizations/OrganizationManagementPage.tsx",
+    "label": "编辑",
+    "pagePermissionCode": "ORG_NODE_READ",
+    "features": []
+  },
+  {
+    "code": "PARENT_MOBILE_MANUAL_RECOVERY_MANAGE",
+    "name": "组织架构 · 家长换号核验",
+    "route": "/organizations",
+    "source": "organizations/OrganizationManagementPage.tsx",
+    "label": "家长换号核验",
+    "pagePermissionCode": "ORG_NODE_READ",
+    "features": []
+  },
+  {
+    "code": "STUDENT_ACCOUNT_CANCELLATION_MANAGE",
+    "name": "组织架构 · 学生账号注销",
+    "route": "/organizations",
+    "source": "organizations/OrganizationManagementPage.tsx",
+    "label": "学生账号注销",
+    "pagePermissionCode": "ORG_NODE_READ",
+    "features": []
+  },
+  {
+    "code": "STUDENT_ORGANIZATION_MANAGE",
+    "name": "组织架构 · 学员关系",
+    "route": "/organizations",
+    "source": "organizations/OrganizationManagementPage.tsx",
+    "label": "学员关系",
+    "pagePermissionCode": "ORG_NODE_READ",
+    "features": []
+  },
+  {
+    "code": "TEACHER_CLASS_ASSIGN",
+    "name": "组织架构 · 配置教师班级",
+    "route": "/organizations",
+    "source": "organizations/OrganizationManagementPage.tsx",
+    "label": "配置教师班级",
+    "pagePermissionCode": "ORG_NODE_READ",
+    "features": []
+  },
+  {
+    "code": "ORG_ADMIN_ASSIGN",
+    "name": "组织用户 · 添加组织管理员",
+    "route": "/organizations",
+    "source": "organizations/OrganizationMembersDrawer.tsx",
+    "label": "添加组织管理员",
+    "pagePermissionCode": "ORG_NODE_READ",
+    "features": []
+  },
+  {
+    "code": "ORG_MEMBER_ASSOCIATE",
+    "name": "组织用户 · 关联已有用户",
+    "route": "/organizations",
+    "source": "organizations/OrganizationMembersDrawer.tsx",
+    "label": "关联已有用户",
+    "pagePermissionCode": "ORG_NODE_READ",
+    "features": []
+  },
+  {
+    "code": "ORG_ADMIN_REVOKE",
+    "name": "组织用户 · 取消管理员",
+    "route": "/organizations",
+    "source": "organizations/OrganizationMembersDrawer.tsx",
+    "label": "取消管理员",
+    "pagePermissionCode": "ORG_NODE_READ",
+    "features": []
+  },
+  {
+    "code": "ORG_MEMBER_REMOVE",
+    "name": "组织用户 · 取消关联",
+    "route": "/organizations",
+    "source": "organizations/OrganizationMembersDrawer.tsx",
+    "label": "取消关联",
+    "pagePermissionCode": "ORG_NODE_READ",
+    "features": []
+  },
+  {
+    "code": "ORG_MEMBER_READ",
+    "name": "组织用户 · 查询",
+    "route": "/organizations",
+    "source": "organizations/OrganizationMembersDrawer.tsx",
+    "label": "查询",
+    "pagePermissionCode": "ORG_NODE_READ",
+    "features": []
+  },
+  {
+    "code": "ORG_TYPE_CREATE",
+    "name": "组织类型 · 新增组织类型",
+    "route": "/organizations",
+    "source": "organizations/OrganizationManagementPage.tsx",
+    "label": "新增组织类型",
+    "pagePermissionCode": "ORG_NODE_READ",
+    "features": []
+  },
+  {
+    "code": "ORG_TYPE_UPDATE",
+    "name": "组织类型 · 编辑组织类型",
+    "route": "/organizations",
+    "source": "organizations/OrganizationManagementPage.tsx",
+    "label": "编辑组织类型",
+    "pagePermissionCode": "ORG_NODE_READ",
+    "features": []
+  },
+  {
+    "code": "ORG_TYPE_STATUS_CHANGE",
+    "name": "组织类型 · 组织类型启停",
+    "route": "/organizations",
+    "source": "organizations/OrganizationManagementPage.tsx",
+    "label": "组织类型启停",
+    "pagePermissionCode": "ORG_NODE_READ",
+    "features": []
+  },
+  {
+    "code": "ORG_TYPE_DELETE",
+    "name": "组织类型 · 删除组织类型",
+    "route": "/organizations",
+    "source": "organizations/OrganizationManagementPage.tsx",
+    "label": "删除组织类型",
+    "pagePermissionCode": "ORG_NODE_READ",
+    "features": []
+  },
+  {
+    "code": "ORG_TYPE_READ",
+    "name": "组织类型 · 查询组织类型",
+    "route": "/organizations",
+    "source": "API controller",
+    "label": "查询组织类型",
+    "pagePermissionCode": "ORG_NODE_READ",
+    "features": []
+  },
+  {
+    "code": "MENU_MANAGE",
+    "name": "菜单配置 · 新增菜单",
+    "route": "/menu-management",
+    "source": "menus/MenuManagementPage.tsx",
+    "label": "新增菜单",
+    "pagePermissionCode": "MENU_READ",
+    "features": []
+  },
+  {
+    "code": "ORGANIZATION_ONBOARDING_SUBMIT",
+    "name": "组织入驻 · 创建家庭或申请机构",
+    "label": "创建家庭或申请机构",
+    "route": "/my-organizations",
+    "permissionCode": "ORGANIZATION_ONBOARDING_SUBMIT"
+  },
+  {
+    "code": "ORGANIZATION_OWNER_TRANSFER",
+    "name": "组织负责人 · 转交负责人",
+    "label": "转交负责人",
+    "route": "/my-organizations",
+    "permissionCode": "ORGANIZATION_OWNER_TRANSFER"
   }
 ]

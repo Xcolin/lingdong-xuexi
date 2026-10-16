@@ -8,7 +8,7 @@ import java.util.List;
 public record UserDirectoryPageResponse(List<UserResponse> items, int page, int pageSize, long total) {
     static UserDirectoryPageResponse from(UserDirectoryPage page) {
         return new UserDirectoryPageResponse(page.items().stream().map(user -> UserResponse.from(user,
-                page.organizationNames().getOrDefault(user.id(), List.of()))).toList(),
+                page.organizationNames().getOrDefault(user.id(), List.of()),page.roleIdentities().getOrDefault(user.id(),List.of()))).toList(),
                 page.page(), page.pageSize(), page.total());
     }
 }

@@ -1,0 +1,3 @@
+<template><view class="prototype-page-header"><view class="header-symbol"><PrototypeIcon :name="icon" tone="white" :size="40"/></view><text>{{title}}</text></view></template>
+<script setup lang="ts">import PrototypeIcon from './PrototypeIcon.vue';withDefaults(defineProps<{title:string;icon?:string}>(),{icon:'growth'});</script>
+<style scoped>.prototype-page-header{display:flex;align-items:center;gap:18rpx;margin:-28rpx -28rpx 28rpx;padding:28rpx 30rpx 36rpx;background:linear-gradient(120deg,#184f40,#256b50);color:#fff;border-radius:0 0 26rpx 26rpx;}.header-symbol{display:flex;align-items:center;justify-content:center;width:66rpx;height:66rpx;background:#ffffff15;border-radius:18rpx;}.prototype-page-header>text{font-size:32rpx;font-weight:650;}</style>

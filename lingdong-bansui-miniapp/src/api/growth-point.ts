@@ -8,6 +8,8 @@ export interface GrowthPointAccount {
   studentId: string;
   studentName: string;
   totalPoints: number;
+  weekEarnedPoints?: number;
+  monthEarnedPoints?: number;
   availablePoints: number;
   updatedAt: string;
 }

@@ -1,3 +1,4 @@
+import { Button as PlainButton } from 'antd';
 import { ConfiguredModal as Modal } from '../../components/ConfiguredModal';
 import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { useEffect, useMemo, useState } from 'react';
@@ -45,7 +46,7 @@ export function StudentAccountCancellationDrawer({
   })), [candidates]);
 
   function submit(values: CancellationFormValues): void {
-    Modal.confirm({ actionPrefix: 'organizations.student-account-cancellation-drawer.confirm.1',
+    Modal.confirm({ actionPrefix: 'STUDENT_ACCOUNT_CANCELLATION_MANAGE',
       title: '确认永久注销该学生账号？',
       content: '账号、登录码、二维码和全部会话将立即失效，操作不可恢复。',
       okText: '确认注销',
@@ -120,8 +121,8 @@ export function StudentAccountCancellationDrawer({
           <Input autoComplete="off" />
         </Form.Item>
         <div className="form-actions">
-          <Button actionKey="organizations.student-account-cancellation-drawer.1" onClick={onClose}>取消</Button>
-          <Button actionKey="organizations.student-account-cancellation-drawer.2" danger type="primary" htmlType="submit" loading={submitting} icon={<Trash2 size={16} />}>
+          <PlainButton  onClick={onClose}>取消</PlainButton>
+          <Button actionKey="STUDENT_ACCOUNT_CANCELLATION_MANAGE" danger type="primary" htmlType="submit" loading={submitting} icon={<Trash2 size={16} />}>
             注销学生账号
           </Button>
         </div>

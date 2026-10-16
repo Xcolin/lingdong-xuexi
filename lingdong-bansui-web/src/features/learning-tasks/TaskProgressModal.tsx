@@ -23,21 +23,21 @@ const statusNames: Record<TaskAssignmentStatus, string> = {
 /** 展示学生级状态明细，复杂趋势和导出由报表专项承载。 */
 export function TaskProgressModal({ taskId, taskTitle, onClose }: TaskProgressModalProps) {
   const [data, setData] = useState<ManagedTaskProgressPage>({
-    items: [], page: 1, pageSize: 20, total: 0
+    items: [], page: 1, pageSize: 10, total: 0
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (taskId) void load(1);
+    if (taskId) void load(1, 10);
   }, [taskId]);
 
-  async function load(page: number): Promise<void> {
+  async function load(page: number, pageSize = data.pageSize): Promise<void> {
     if (!taskId) return;
     setLoading(true);
     setError(null);
     try {
-      setData(await learningTaskApi.progress(taskId, page, 20));
+      setData(await learningTaskApi.progress(taskId, page, pageSize));
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : '任务进度加载失败');
     } finally {
@@ -66,8 +66,8 @@ export function TaskProgressModal({ taskId, taskTitle, onClose }: TaskProgressMo
           current: data.page,
           pageSize: data.pageSize,
           total: data.total,
-          showSizeChanger: false,
-          onChange: (page) => void load(page)
+          showSizeChanger: true,
+          onChange: (page, pageSize) => void load(page, pageSize)
         }}
         columns={[
           { title: '学生', dataIndex: 'studentName', width: 120 },

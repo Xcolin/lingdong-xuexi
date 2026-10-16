@@ -24,8 +24,11 @@ public class GrowthReviewExportAccessService {
     private final UserRoleMapper roles;
     private final ParentStudentMapper relations;
 
+    private final com.lingdong.learning.auth.application.ParentActorAccessService parentActors;
+
     public GrowthReviewExportAccessService(FeatureAccessService features, PermissionDecisionService permissions,
-                                          UserMapper users, UserRoleMapper roles, ParentStudentMapper relations) {
+                                          UserMapper users, UserRoleMapper roles, ParentStudentMapper relations, com.lingdong.learning.auth.application.ParentActorAccessService parentActors) {
+        this.parentActors = parentActors;
         this.features = features;
         this.permissions = permissions;
         this.users = users;
@@ -71,11 +74,10 @@ public class GrowthReviewExportAccessService {
             throw denied("复盘导出身份或对象无效");
         }
         var user = users.findById(userId);
-        if (user == null || user.status() != UserStatus.ENABLED
-                || !roles.hasRoleCode(userId, "PARENT") || roles.hasRoleCode(userId, "SYS_AUDITOR")) {
+        if (user == null || user.status() != UserStatus.ENABLED) {
             throw denied("当前账号不具备家长复盘导出身份");
         }
-        requirePermission(userId, "GROWTH_REVIEW_READ_CHILD");
+        parentActors.require(new AuthenticatedUser(userId,null,"","",AuthClientType.WEB,java.util.List.of()));
         if (!relations.existsActiveByParentAndStudent(userId, studentId)) {
             throw denied("当前账号与目标学生不存在有效亲子关系");
         }

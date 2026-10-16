@@ -1,3 +1,4 @@
+import { Button as PlainButton } from 'antd';
 import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { useEffect, useState } from 'react';
 import { Drawer, Form, Select, Spin, message } from 'antd';
@@ -7,6 +8,10 @@ import type { OrganizationOption, StudentOption } from '../learning-tasks/types'
 interface StudentClassAssignmentDrawerProps {
   open: boolean;
   onClose: () => void;
+  fixedClassId?: string;
+  fixedClassName?: string;
+  schoolId?: string;
+  onSaved?: () => void;
 }
 
 interface AssignmentValues {
@@ -15,7 +20,7 @@ interface AssignmentValues {
 }
 
 /** 机构管理员配置学生唯一活动班级的最小入口。 */
-export function StudentClassAssignmentDrawer({ open, onClose }: StudentClassAssignmentDrawerProps) {
+export function StudentClassAssignmentDrawer({ open, onClose, fixedClassId, fixedClassName, schoolId, onSaved }: StudentClassAssignmentDrawerProps) {
   const [form] = Form.useForm<AssignmentValues>();
   const [students, setStudents] = useState<StudentOption[]>([]);
   const [classes, setClasses] = useState<OrganizationOption[]>([]);
@@ -26,15 +31,17 @@ export function StudentClassAssignmentDrawer({ open, onClose }: StudentClassAssi
     if (!open) {
       return;
     }
+    form.resetFields();
+    form.setFieldValue('classOrganizationId', fixedClassId);
     setLoading(true);
-    void Promise.all([classAssignmentApi.listStudents(), classAssignmentApi.listClasses()])
+    void Promise.all([classAssignmentApi.listStudents(fixedClassId), fixedClassId ? Promise.resolve([{ id: fixedClassId, name: fixedClassName ?? '当前班级', organizationType: 'CLASS', parentId: null, organizationPath: '' }]) : classAssignmentApi.listClasses(schoolId)])
       .then(([loadedStudents, loadedClasses]) => {
         setStudents(loadedStudents);
         setClasses(loadedClasses);
       })
       .catch((error: unknown) => message.error(toMessage(error)))
       .finally(() => setLoading(false));
-  }, [open]);
+  }, [open, fixedClassId, fixedClassName, schoolId]);
 
   async function submit(values: AssignmentValues): Promise<void> {
     setSubmitting(true);
@@ -42,6 +49,7 @@ export function StudentClassAssignmentDrawer({ open, onClose }: StudentClassAssi
       await classAssignmentApi.assignStudent(values.studentId, values.classOrganizationId);
       message.success('学生当前班级已更新');
       form.resetFields();
+      onSaved?.();
       onClose();
     } catch (error) {
       message.error(toMessage(error));
@@ -66,13 +74,14 @@ export function StudentClassAssignmentDrawer({ open, onClose }: StudentClassAssi
           </Form.Item>
           <Form.Item label="班级" name="classOrganizationId" rules={[{ required: true, message: '请选择班级' }]}>
             <Select
+              disabled={!!fixedClassId}
               showSearch
               optionFilterProp="label"
               options={classes.map((item) => ({ value: item.id, label: item.name }))}
             />
           </Form.Item>
           <div className="form-actions">
-            <Button actionKey="organizations.student-class-assignment-drawer.1" onClick={onClose}>取消</Button>
+            <PlainButton  onClick={onClose}>取消</PlainButton>
             <Button actionKey="STUDENT_CLASS_ASSIGN" type="primary" htmlType="submit" loading={submitting}>确认配置</Button>
           </div>
         </Form>

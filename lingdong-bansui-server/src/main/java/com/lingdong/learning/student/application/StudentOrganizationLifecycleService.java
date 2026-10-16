@@ -26,6 +26,7 @@ import java.util.Objects;
 /** 在组织数据范围内维护学生机构关系生命周期。 */
 @Service
 public class StudentOrganizationLifecycleService {
+    @org.springframework.beans.factory.annotation.Autowired private com.lingdong.learning.user.infrastructure.persistence.UserOrganizationMapper memberships;
     private static final String FEATURE_CODE = "STUDENT_ORGANIZATION_RELATIONSHIP";
     private static final String CLASS_TYPE = "CLASS";
 
@@ -62,25 +63,34 @@ public class StudentOrganizationLifecycleService {
     public List<StudentOrganizationRelationshipSummary> list(AuthenticatedUser currentUser) {
         requireUser(currentUser);
         featureAccessService.requireEnabled(FEATURE_CODE, null);
-        return relationshipMapper.findActiveSummariesByOrganizationAdministratorScope(dataScopeService.resolve(currentUser.userId()))
-                .stream()
-                .map(this::summary)
-                .toList();
-    }
+        var rows=relationshipMapper.findActiveSummariesByOrganizationAdministratorScope(dataScopeService.resolve(currentUser.userId()));
+        java.util.Map<String,java.util.List<StudentOrganizationSummaryRow>> grouped=new java.util.LinkedHashMap<>();
+        rows.forEach(row->grouped.computeIfAbsent(row.studentId()+":"+row.enrollmentOrganizationId(),key->new java.util.ArrayList<>()).add(row));
+        return grouped.values().stream().map(group -> {
+            var first=group.get(0);var institution=organizationMapper.findById(first.enrollmentOrganizationId());
+            var classIds=group.stream().map(StudentOrganizationSummaryRow::currentClassOrganizationId).filter(Objects::nonNull).distinct().toList();
+            var names=group.stream().filter(row->row.currentClassOrganizationId()!=null).map(StudentOrganizationSummaryRow::currentClassOrganizationName).filter(Objects::nonNull).toList();
+            return new StudentOrganizationRelationshipSummary(first.studentId(),first.studentName(),first.gradeCode(),first.enrollmentOrganizationId(),first.enrollmentOrganizationName(),classIds.size()==1?classIds.get(0):null,names.size()==1?names.get(0):null,institution==null?null:institution.typeCode(),classIds,names,first.studentStatus(),first.studentNumber());
+        }).toList();    }
 
     @Transactional(readOnly = true)
-    public List<StudentOrganizationClassOption> listClassOptions(AuthenticatedUser currentUser) {
+    public List<StudentOrganizationClassOption> listClassOptions(AuthenticatedUser currentUser) {return listClassOptions(currentUser,null);}
+    @Transactional(readOnly=true)
+    public List<StudentOrganizationClassOption> listClassOptions(AuthenticatedUser currentUser,Long schoolId) {
         requireUser(currentUser);
         featureAccessService.requireEnabled(FEATURE_CODE, null);
-        return relationshipMapper.findEnabledClassOptionsByOrganizationAdministratorScope(
-                        dataScopeService.resolve(currentUser.userId()))
-                .stream()
-                .map(row -> new StudentOrganizationClassOption(row.id(), row.name()))
-                .toList();
+        var all=organizationMapper.findAll(); var byId=new java.util.HashMap<Long,Organization>(); all.forEach(o -> byId.put(o.id(),o));
+        var order=com.lingdong.learning.organization.application.OrganizationTreeOrder.comparator(all);
+        var paths=new com.lingdong.learning.organization.application.OrganizationNamePathService(organizationMapper).namePathsById();
+        return relationshipMapper.findEnabledClassOptionsByOrganizationAdministratorScope(dataScopeService.resolve(currentUser.userId())).stream()
+          .sorted((a,b) -> byId.get(a.id())==null || byId.get(b.id())==null ? a.id().compareTo(b.id()) : order.compare(byId.get(a.id()),byId.get(b.id())))
+          .map(row -> {Organization school=com.lingdong.learning.organization.application.OrganizationHierarchy.schoolOf(byId.get(row.id()),organizationMapper);return new StudentOrganizationClassOption(row.id(),paths.getOrDefault(row.id(),row.name()),school==null?null:school.id());})
+          .filter(option->schoolId==null||schoolId.equals(option.schoolOrganizationId())).toList();
     }
 
     @Transactional(readOnly = true)
-    public StudentOrganizationRelationshipView find(AuthenticatedUser currentUser, Long studentId) {
+    public StudentOrganizationRelationshipView find(AuthenticatedUser currentUser, Long studentId) { return find(currentUser,studentId,null); }
+    public StudentOrganizationRelationshipView find(AuthenticatedUser currentUser, Long studentId, Long institutionId) {
         requireUser(currentUser);
         Long normalizedStudentId = requiredId(studentId, "学生标识");
         featureAccessService.requireEnabled(FEATURE_CODE, null);
@@ -88,8 +98,8 @@ public class StudentOrganizationLifecycleService {
         if (student == null || student.status() != StudentStatus.ENABLED) {
             throw notFound();
         }
-        Long enrollmentId = accessibleEnrollment(currentUser, normalizedStudentId);
-        return view(normalizedStudentId, enrollmentId, "ACTIVE");
+        Long enrollmentId = accessibleEnrollment(currentUser, normalizedStudentId, institutionId);
+        return view(currentUser,normalizedStudentId, enrollmentId, "ACTIVE");
     }
 
     @Transactional
@@ -126,19 +136,27 @@ public class StudentOrganizationLifecycleService {
             throw new IllegalArgumentException("跨机构转学不能直接迁移原学生账号");
         }
         Long enrollmentId = enrollmentIds.get(0);
-        if (!dataScopeService.canAccess(currentUser.userId(), enrollmentId)) {
+        if (!relationshipMapper.existsActiveEnrollmentInScope(normalizedStudentId, enrollmentId, dataScopeService.resolve(currentUser.userId()))) {
             throw notFound();
         }
 
-        List<Long> activeClassIds = relationshipMapper.findActiveClassOrganizationIds(normalizedStudentId);
+        List<Long> activeClassIds = relationshipMapper.findActiveClassOrganizationIdsInEnrollment(normalizedStudentId, enrollmentId);
+        if(command.requireUnassigned() && !activeClassIds.isEmpty()
+                && !(activeClassIds.size()==1 && activeClassIds.contains(classOrganizationId)))
+            throw new IllegalStateException("成长小主人已分班，请刷新后使用转班功能");
         if (activeClassIds.contains(classOrganizationId)) {
-            return view(normalizedStudentId, enrollmentId, "ACTIVE");
+            return view(currentUser,normalizedStudentId, enrollmentId, "ACTIVE");
         }
 
         Long previousClassId = activeClassIds.isEmpty() ? null : activeClassIds.get(0);
-        relationshipMapper.deactivateActiveClasses(normalizedStudentId);
+        Organization institution = organizationMapper.findById(enrollmentId);
+        if (institution != null && "SCHOOL".equals(institution.typeCode())) relationshipMapper.deactivateActiveClassesInEnrollment(normalizedStudentId, enrollmentId);
         if (relationshipMapper.activateExistingClass(normalizedStudentId, classOrganizationId) == 0) {
             relationshipMapper.insertClass(idGenerator.nextId(), normalizedStudentId, classOrganizationId);
+        }
+        if (memberships != null) {
+            if (institution != null && "SCHOOL".equals(institution.typeCode())) activeClassIds.forEach(id -> memberships.delete(student.studentUserId(),id));
+            if (!memberships.exists(student.studentUserId(),classOrganizationId)) memberships.insert(idGenerator.nextId(),student.studentUserId(),classOrganizationId);
         }
         LocalDateTime now = LocalDateTime.now(clock);
         StudentOrganizationChangeType changeType = previousClassId == null
@@ -146,7 +164,7 @@ public class StudentOrganizationLifecycleService {
                 : StudentOrganizationChangeType.CLASS_TRANSFER;
         changeMapper.insert(idGenerator.nextId(), normalizedStudentId, changeType.name(),
                 previousClassId, classOrganizationId, reason, currentUser.userId(), now);
-        return view(normalizedStudentId, enrollmentId, "ACTIVE");
+        return view(currentUser,normalizedStudentId, enrollmentId, "ACTIVE");
     }
 
     @Transactional
@@ -164,13 +182,15 @@ public class StudentOrganizationLifecycleService {
 
         Student student = studentMapper.findByIdForUpdate(normalizedStudentId);
         if (student == null || student.status() != StudentStatus.ENABLED
-                || !dataScopeService.canAccess(currentUser.userId(), enrollmentId)
+                || !relationshipMapper.existsActiveEnrollmentInScope(normalizedStudentId, enrollmentId, dataScopeService.resolve(currentUser.userId()))
                 || !relationshipMapper.findActiveEnrollmentOrganizationIds(normalizedStudentId)
                         .contains(enrollmentId)) {
             throw notFound();
         }
 
+        List<Long> exitingClasses=relationshipMapper.findActiveClassOrganizationIdsInEnrollment(normalizedStudentId,enrollmentId);
         relationshipMapper.deactivateActiveClassesInEnrollment(normalizedStudentId, enrollmentId);
+        relationshipMapper.removeInstitutionMemberships(student.studentUserId(),enrollmentId);
         if (relationshipMapper.deactivateActiveEnrollment(normalizedStudentId, enrollmentId) != 1) {
             throw notFound();
         }
@@ -178,16 +198,34 @@ public class StudentOrganizationLifecycleService {
         changeMapper.insert(idGenerator.nextId(), normalizedStudentId,
                 StudentOrganizationChangeType.ENROLLMENT_DEACTIVATE.name(),
                 enrollmentId, null, reason, currentUser.userId(), now);
-        return view(normalizedStudentId, enrollmentId, "INACTIVE");
+        return view(currentUser,normalizedStudentId, enrollmentId, "INACTIVE");
     }
 
-    private StudentOrganizationRelationshipView view(Long studentId, Long enrollmentId, String status) {
-        Long currentClassId = relationshipMapper.findActiveClassOrganizationIdsInEnrollment(
-                studentId, enrollmentId).stream().findFirst().orElse(null);
-        return new StudentOrganizationRelationshipView(studentId, enrollmentId, currentClassId,
-                status, changeMapper.findByStudentId(studentId));
+    @Transactional
+    public StudentOrganizationRelationshipView deactivateClass(AuthenticatedUser actor,Long studentId,Long classId,String reason) {
+        requireUser(actor);requiredId(classId,"班级标识");requiredReason(reason);featureAccessService.requireEnabled(FEATURE_CODE,null);
+        Student student=studentMapper.findByIdForUpdate(studentId);
+        Organization classroom=organizationMapper.findById(classId);
+        if(student==null||student.status()!=StudentStatus.ENABLED||classroom==null||!"CLASS".equals(classroom.typeCode())
+            ||!dataScopeService.canAccess(actor.userId(),classId)||!relationshipMapper.existsActiveClass(studentId,classId))throw notFound();
+        Organization institution=com.lingdong.learning.organization.application.OrganizationHierarchy.schoolOf(classroom,organizationMapper);
+        if(institution==null)throw notFound();
+        relationshipMapper.deactivateClass(studentId,classId);
+        if(memberships!=null)memberships.delete(student.studentUserId(),classId);
+        changeMapper.insert(idGenerator.nextId(),studentId,"CLASS_DEACTIVATE",classId,null,reason,actor.userId(),LocalDateTime.now(clock));
+        return view(actor,studentId,institution.id(),"ACTIVE");
     }
-
+    private StudentOrganizationRelationshipView view(AuthenticatedUser actor,Long studentId, Long enrollmentId, String status) {
+        List<Long> classIds=relationshipMapper.findActiveClassOrganizationIdsInEnrollment(studentId,enrollmentId).stream().filter(id->dataScopeService.canAccess(actor.userId(),id)).toList();
+        Long currentClassId=classIds.size()==1?classIds.get(0):null;
+        Organization institution=organizationMapper.findById(enrollmentId);
+        var history=changeMapper.findByStudentId(studentId).stream().filter(change -> {
+            Organization from=change.fromOrganizationId()==null?null:organizationMapper.findById(change.fromOrganizationId());
+            Organization to=change.toOrganizationId()==null?null:organizationMapper.findById(change.toOrganizationId());
+            return institution!=null&&((from!=null&&from.path().startsWith(institution.path()))||(to!=null&&to.path().startsWith(institution.path())))&&(from==null||dataScopeService.canAccess(actor.userId(),from.id()))&&(to==null||dataScopeService.canAccess(actor.userId(),to.id()));
+        }).toList();
+        return new StudentOrganizationRelationshipView(studentId,enrollmentId,currentClassId,status,history,classIds);
+    }
     private StudentOrganizationRelationshipSummary summary(StudentOrganizationSummaryRow row) {
         return new StudentOrganizationRelationshipSummary(
                 row.studentId(), row.studentName(), row.gradeCode(),
@@ -195,13 +233,14 @@ public class StudentOrganizationLifecycleService {
                 row.currentClassOrganizationId(), row.currentClassOrganizationName());
     }
 
-    private Long accessibleEnrollment(AuthenticatedUser currentUser, Long studentId) {
-        return relationshipMapper.findActiveEnrollmentOrganizationIds(studentId).stream()
-                .filter(id -> dataScopeService.canAccess(currentUser.userId(), id))
-                .findFirst()
-                .orElseThrow(this::notFound);
+    private Long accessibleEnrollment(AuthenticatedUser currentUser, Long studentId,Long institutionId) {
+        var accessible=relationshipMapper.findActiveEnrollmentOrganizationIds(studentId).stream()
+            .filter(id -> institutionId==null||institutionId.equals(id))
+            .filter(id -> relationshipMapper.existsActiveEnrollmentInScope(studentId,id,dataScopeService.resolve(currentUser.userId()))).toList();
+        if(accessible.isEmpty())throw notFound();
+        if(accessible.size()>1)throw new IllegalArgumentException("学生已关联多个教育机构，请指定institutionOrganizationId");
+        return accessible.get(0);
     }
-
     private void requireUser(AuthenticatedUser currentUser) {
         Objects.requireNonNull(currentUser, "当前登录用户不能为空");
     }
@@ -228,3 +267,8 @@ public class StudentOrganizationLifecycleService {
         return new ResourceNotFoundException("学生或机构关系不存在或不可访问");
     }
 }
+
+
+
+
+

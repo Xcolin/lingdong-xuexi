@@ -24,8 +24,13 @@ class CustomExportScopeTest {
  private final PermissionDecisionService permissions=mock(PermissionDecisionService.class);
  private final OrganizationDataScopeService scopes=mock(OrganizationDataScopeService.class);
  private final StudentTaskExportMapper mapper=mock(StudentTaskExportMapper.class);
+ private final com.lingdong.learning.auth.infrastructure.persistence.ParentAuthenticationMapper profiles=mock(com.lingdong.learning.auth.infrastructure.persistence.ParentAuthenticationMapper.class);
+ private final ExportActorIdentityService actors=new ExportActorIdentityService(users,
+  new com.lingdong.learning.auth.application.ParentActorAccessService(users,profiles,roles),
+  mock(com.lingdong.learning.teacher.application.TeacherIdentityService.class),mock(com.lingdong.learning.student.infrastructure.persistence.StudentMapper.class),
+  mock(com.lingdong.learning.learningtask.infrastructure.persistence.TeacherClassMapper.class),mock(com.lingdong.learning.organization.infrastructure.persistence.OrganizationMapper.class),scopes);
  private final StudentTaskExportAccessService service=new StudentTaskExportAccessService(users,roles,permissions,
-  mock(FeatureAccessService.class),scopes,mapper,new ExportJobProperties());
+  mock(FeatureAccessService.class),scopes,mapper,new ExportJobProperties(),actors);
  @BeforeEach void setup(){
   when(users.findById(11L)).thenReturn(User.create(11L,"custom","custom",null,UserType.ORGANIZATION));
   when(roles.findEnabledRoleCodesByUserId(11L)).thenReturn(List.of("ALL_ROLE_TEST"));
@@ -54,7 +59,9 @@ class CustomExportScopeTest {
   assertThatThrownBy(()->service.requireFrozen(11L,frozen)).isInstanceOf(SystemOperationAccessDeniedException.class);
  }
  @Test void parentExportRemainsBoundToParentStudentRelationships(){
-  when(roles.findEnabledRoleCodesByUserId(11L)).thenReturn(List.of("PARENT"));
+  when(users.findById(11L)).thenReturn(User.create(11L,"custom_family","family",null,UserType.FAMILY));
+  when(profiles.findProfileByUserId(11L)).thenReturn(mock(com.lingdong.learning.auth.application.ParentProfile.class));
+  when(roles.hasAnyEnabledRole(11L)).thenReturn(true);
   var visibility=service.require(11L);
   assertThat(visibility.role()).isEqualTo("PARENT");
   assertThat(visibility.allOrganizations()).isFalse();

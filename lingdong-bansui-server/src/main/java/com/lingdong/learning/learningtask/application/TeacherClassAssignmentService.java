@@ -26,12 +26,29 @@ import java.util.Objects;
 /** 维护机构授权范围内的教师班级关系。 */
 @Service
 public class TeacherClassAssignmentService {
+    /** 一次提交增删差量，任一关系校验失败时整批回滚；旧单条接口保留。 */
+    @Transactional
+    public void changeClasses(AuthenticatedUser actor, Long teacherUserId,
+                              List<Long> additions, List<Long> removals) {
+        if (additions == null || removals == null || additions.size() + removals.size() > 100
+                || additions.stream().anyMatch(Objects::isNull) || removals.stream().anyMatch(Objects::isNull)
+                || additions.stream().anyMatch(removals::contains)) {
+            throw new IllegalArgumentException("班级变更参数不合法");
+        }
+        if (additions.isEmpty() && removals.isEmpty()) return;
+        for (Long id : additions.stream().distinct().toList()) assign(actor, teacherUserId, id);
+        for (Long id : removals.stream().distinct().toList()) remove(actor, teacherUserId, id);
+    }
+    @org.springframework.beans.factory.annotation.Autowired private com.lingdong.learning.permission.application.PermissionDecisionService actionPermissions;
+    @org.springframework.beans.factory.annotation.Autowired private com.lingdong.learning.teacher.application.TeacherIdentityService teacherIdentity;
     private static final String LEARNING_TASK_FEATURE = "LEARNING_TASK_MANAGEMENT";
     private static final String TEACHER_MANAGEMENT_FEATURE = "TEACHER_MANAGEMENT";
     private static final String CLASS_MANAGEMENT_FEATURE = "CLASS_MANAGEMENT";
     private static final String TEACHER_ROLE = "TEACHER";
     private static final String ORGANIZATION_ADMIN_ROLE = "ORG_ADMIN";
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.lingdong.learning.user.infrastructure.persistence.UserOrganizationMapper userOrganizationMapper;
     private final TeacherClassMapper teacherClassMapper;
     private final UserMapper userMapper;
     private final UserRoleMapper userRoleMapper;
@@ -67,18 +84,27 @@ public class TeacherClassAssignmentService {
     /** 建立或恢复教师班级关系；锁定教师用户行，避免并发首次绑定。 */
     @Transactional
     public TeacherClassRelation assign(AuthenticatedUser currentUser, Long teacherUserId, Long classId) {
+        return assignInternal(currentUser,teacherUserId,classId,"TEACHER_CLASS_ASSIGN");
+    }
+    /** Initial placement is an atomic user-creation side effect; direct assignment remains protected separately. */
+    @Transactional
+    public TeacherClassRelation assignCreatedTeacher(AuthenticatedUser currentUser, Long teacherUserId, Long classId) {
+        if(currentUser==null||currentUser.clientType()!=com.lingdong.learning.auth.domain.AuthClientType.WEB)throw new SystemOperationAccessDeniedException("用户创建需要Web会话");
+        return assignInternal(currentUser,teacherUserId,classId,"IAM_USER_CREATE");
+    }
+    private TeacherClassRelation assignInternal(AuthenticatedUser currentUser, Long teacherUserId, Long classId,String permission) {
         Objects.requireNonNull(currentUser, "当前登录用户不能为空");
         Long normalizedTeacherId = requiredId(teacherUserId, "教师用户标识");
         Long normalizedClassId = requiredId(classId, "班级组织标识");
-        requireManagementFeatures();
-        Organization classOrganization = requireManageableClass(currentUser, normalizedClassId);
+        if(!"IAM_USER_CREATE".equals(permission))requireManagementFeatures();
+        Organization classOrganization = requireManageableClass(currentUser, normalizedClassId,permission);
 
         User teacher = userMapper.findByIdForUpdate(normalizedTeacherId);
         if (teacher == null) {
             throw notFound();
         }
         if (teacher.status() != UserStatus.ENABLED
-                || !userRoleMapper.hasRoleCode(normalizedTeacherId, TEACHER_ROLE)) {
+                || !teacherIdentity.isTeacher(normalizedTeacherId)) {
             throw new IllegalArgumentException("目标用户不是启用教师");
         }
         if (!teacherClassMapper.existsTeacherOrganizationInClassAncestors(
@@ -86,6 +112,7 @@ public class TeacherClassAssignmentService {
             throw notFound();
         }
 
+        requireTeacherSourceScope(currentUser, normalizedTeacherId);
         TeacherClassRelation existing = teacherClassMapper.findByTeacherAndClass(
                 normalizedTeacherId, normalizedClassId);
         boolean changed = false;
@@ -112,11 +139,12 @@ public class TeacherClassAssignmentService {
         Organization classOrganization = requireManageableClass(currentUser, normalizedClassId);
         User teacher = userMapper.findByIdForUpdate(normalizedTeacherId);
         if (teacher == null
-                || !userRoleMapper.hasRoleCode(normalizedTeacherId, TEACHER_ROLE)
+                || !teacherIdentity.hasProfile(normalizedTeacherId)
                 || !teacherClassMapper.existsTeacherOrganizationInClassAncestors(
                 normalizedTeacherId, classOrganization.id())) {
             throw notFound();
         }
+        requireTeacherSourceScope(currentUser, normalizedTeacherId);
         TeacherClassRelation existing = teacherClassMapper.findByTeacherAndClass(
                 normalizedTeacherId, normalizedClassId);
         if (existing == null) {
@@ -133,23 +161,22 @@ public class TeacherClassAssignmentService {
     }
 
     /** 教师读取本人班级，机构管理员读取其授权范围内的目标教师班级。 */
-    public List<TeacherClassRelation> list(AuthenticatedUser currentUser, Long teacherUserId) {
-        permissionScope.requireWebPermission(currentUser, "LEARNING_TASK_CREATE");
+    public List<TeacherClassRelation> list(AuthenticatedUser currentUser, Long teacherUserId) {return list(currentUser,teacherUserId,"LEARNING_TASK_CREATE");}
+    public List<TeacherClassRelation> list(AuthenticatedUser currentUser, Long teacherUserId,String permission) {
+        if(!java.util.Set.of("LEARNING_TASK_CREATE","TEACHER_CLASS_ASSIGN").contains(permission))throw new SystemOperationAccessDeniedException("不支持该教师班级选择动作");
+        requireActionPermission(currentUser,permission);
         Objects.requireNonNull(currentUser, "当前登录用户不能为空");
         Long normalizedTeacherId = requiredId(teacherUserId, "教师用户标识");
-        featureAccessService.requireEnabled(LEARNING_TASK_FEATURE, null);
+        if("LEARNING_TASK_CREATE".equals(permission))featureAccessService.requireEnabled(LEARNING_TASK_FEATURE, null);
+        else requireManagementFeatures();
         User teacher = userMapper.findById(normalizedTeacherId);
-        if (teacher == null || !userRoleMapper.hasRoleCode(normalizedTeacherId, TEACHER_ROLE)) {
+        if (teacher == null || !teacherIdentity.isTeacher(normalizedTeacherId)) {
             throw notFound();
         }
         List<TeacherClassRelation> relations = teacherClassMapper.findActiveByTeacher(normalizedTeacherId);
         if (currentUser.userId().equals(normalizedTeacherId)
-                && currentUser.roleCodes().contains(TEACHER_ROLE)) {
+                && teacherIdentity.isTeacher(currentUser.userId())) {
             return relations;
-        }
-        if (!permissionScope.hasOrganizationPermission(currentUser, "LEARNING_TASK_CREATE")
-                && !currentUser.roleCodes().contains(ORGANIZATION_ADMIN_ROLE)) {
-            throw new SystemOperationAccessDeniedException("仅教师本人或机构管理员可查询教师班级");
         }
         return relations.stream()
                 .filter(relation -> organizationDataScopeService.canAccess(
@@ -157,12 +184,9 @@ public class TeacherClassAssignmentService {
                 .toList();
     }
 
-    private Organization requireManageableClass(AuthenticatedUser currentUser, Long classId) {
-        permissionScope.requireWebPermission(currentUser, "TEACHER_CLASS_ASSIGN");
-        if (!permissionScope.hasOrganizationPermission(currentUser, "TEACHER_CLASS_ASSIGN")
-                && !currentUser.roleCodes().contains(ORGANIZATION_ADMIN_ROLE)) {
-            throw new SystemOperationAccessDeniedException("仅机构管理员可维护教师班级");
-        }
+    private Organization requireManageableClass(AuthenticatedUser currentUser, Long classId) {return requireManageableClass(currentUser,classId,"TEACHER_CLASS_ASSIGN");}
+    private Organization requireManageableClass(AuthenticatedUser currentUser, Long classId,String permission) {
+        requireActionPermission(currentUser,permission);
         Organization organization = organizationMapper.findById(classId);
         if (organization == null || !organizationDataScopeService.canAccess(currentUser.userId(), classId)) {
             throw notFound();
@@ -174,6 +198,19 @@ public class TeacherClassAssignmentService {
             throw new IllegalStateException("目标班级已停用");
         }
         return organization;
+    }
+
+    private void requireActionPermission(AuthenticatedUser user,String permission){
+        if(user==null||user.clientType()==null||!actionPermissions.isAllowed(user.userId(),com.lingdong.learning.permission.domain.PermissionClient.valueOf(user.clientType().name()),permission))
+            throw new SystemOperationAccessDeniedException("缺少对应教师班级操作权限");
+    }
+
+    private void requireTeacherSourceScope(AuthenticatedUser currentUser, Long teacherId) {
+        var scope = organizationDataScopeService.resolve(currentUser.userId());
+        boolean visible = userOrganizationMapper.findOrganizationIds(teacherId).stream()
+                .map(organizationMapper::findById).filter(Objects::nonNull)
+                .filter(OrganizationOperationalStatusService::isOperational).anyMatch(scope::allows);
+        if (!visible) throw notFound();
     }
 
     private void requireManagementFeatures() {

@@ -5,6 +5,7 @@ public enum IamChangeTargetType {
     MENU,
     USER,
     ROLE,
+    ORGANIZATION_TYPE,
     PERMISSION,
     ROLE_PERMISSION,
     USER_PERMISSION,

@@ -62,4 +62,11 @@
         FROM sys_organization_type
         ORDER BY sort_order ASC, type_code ASC
     </select>
+    <select id="lockById" resultMap="OrganizationTypeResultMap">SELECT * FROM sys_organization_type WHERE id=#{id} FOR UPDATE</select>
+    <select id="findById" resultMap="OrganizationTypeResultMap">SELECT * FROM sys_organization_type WHERE id=#{id}</select>
+    <select id="existsByNameExceptId" resultType="boolean">SELECT EXISTS(SELECT 1 FROM sys_organization_type WHERE type_name=#{name} AND id != #{id})</select>
+    <select id="hasOrganizations" resultType="boolean">SELECT EXISTS(SELECT 1 FROM sys_organization WHERE organization_type=#{code})</select>
+    <update id="updateDetails">UPDATE sys_organization_type SET type_name=#{name},sort_order=#{sortOrder},updated_at=CURRENT_TIMESTAMP WHERE id=#{id}</update>
+    <update id="updateStatus">UPDATE sys_organization_type SET status=#{status},updated_at=CURRENT_TIMESTAMP WHERE id=#{id}</update>
+    <delete id="deleteById">DELETE FROM sys_organization_type WHERE id=#{id}</delete>
 </mapper>

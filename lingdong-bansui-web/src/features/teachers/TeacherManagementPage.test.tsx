@@ -1,6 +1,7 @@
+vi.mock('../../api/classes',()=>({classApi:{lookup:vi.fn(async(_permission:string,kind:string)=>{const flatten=(nodes:any[],schoolId?:string):any[]=>nodes.flatMap(n=>[{...n,schoolOrganizationId:schoolId},...flatten(n.children??[],['SCHOOL','TRAINING_INSTITUTION'].includes(n.typeCode)?n.id:schoolId)]);const nodes=flatten(await organizationApi.listTree());return nodes.filter(n=>kind==='SCHOOL'?['SCHOOL','TRAINING_INSTITUTION'].includes(n.typeCode):n.typeCode===kind);})}}));
 import { ConfigProvider } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
-import { render, screen } from '@testing-library/react';
+import { act,render,screen,waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import { teachersApi } from '../../api/teachers';
@@ -35,7 +36,7 @@ describe('教师管理页面', () => {
         schoolName: '第一学校', classOrganizationIds: ['1874244142494647201'],
         createdAt: '2026-09-06T09:00:00', updatedAt: '2026-09-06T09:00:00'
       }],
-      page: 1, pageSize: 20, total: 1
+      page: 1, pageSize: 10, total: 1
     });
     vi.mocked(organizationApi.listTree).mockResolvedValue([{
       id: '1874244142494647101', parentId: null, code: 'SCHOOL_1', name: '第一学校',
@@ -47,6 +48,18 @@ describe('教师管理页面', () => {
         status: 'ENABLED', effectiveStatus: 'ENABLED', versionNo: 1, adminDivisionCode: null, children: []
       }]
     }]);
+  });
+
+  it('培训机构作为教师所属根组织参与筛选并沿用schoolId请求', async () => {
+    const user = userEvent.setup();
+    const nodes = await organizationApi.listTree();
+    vi.mocked(organizationApi.listTree).mockResolvedValue(nodes.map(node => ({ ...node, typeCode: 'TRAINING_INSTITUTION', name: '培训中心' })));
+    renderPage();
+    await screen.findByText('张老师');
+    await user.click(screen.getByLabelText('学校'));
+    await user.click(screen.getByTitle('培训中心'));
+    await user.click(screen.getByRole('button', { name: '查询' }));
+    await waitFor(() => expect(teachersApi.list).toHaveBeenLastCalledWith(expect.objectContaining({ schoolId: nodes[0].id, page: 1, pageSize: 10 })));
   });
 
   it('加载教师目录并显示脱敏手机号与学校', async () => {
@@ -90,4 +103,11 @@ describe('教师管理页面', () => {
     expect(screen.queryByRole('checkbox', { name: 'Select all' })).not.toBeInTheDocument();
     expect(screen.queryByText('批量操作')).not.toBeInTheDocument();
   });
+});
+
+it('用户入口创建教师后已打开教师目录刷新一次',async()=>{
+ vi.mocked(teachersApi.list).mockClear();vi.mocked(teachersApi.list).mockResolvedValue({items:[],page:1,pageSize:10,total:0});vi.mocked(organizationApi.listTree).mockResolvedValue([]);
+ renderPage();await waitFor(()=>expect(teachersApi.list).toHaveBeenCalledTimes(1));
+ const {notifyTeacherProfileChanged}=await import('../users/teacherProfileChanged');act(()=>notifyTeacherProfileChanged());
+ await waitFor(()=>expect(teachersApi.list).toHaveBeenCalledTimes(2));
 });

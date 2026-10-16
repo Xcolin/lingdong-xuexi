@@ -17,24 +17,25 @@
             <arg column="version_no" javaType="java.lang.Integer"/>
             <arg column="created_at" javaType="java.time.LocalDateTime"/>
             <arg column="updated_at" javaType="java.time.LocalDateTime"/>
+            <arg column="recurrence_weekdays" javaType="java.util.List" typeHandler="com.lingdong.learning.learningtask.infrastructure.persistence.TaskWeekdaysTypeHandler"/>
         </constructor>
     </resultMap>
 
     <sql id="columns">
         id, task_id, frequency_type, start_date, end_date, next_generation_date,
-        status, stopped_by_user_id, stopped_at, version_no, created_at, updated_at
+        status, stopped_by_user_id, stopped_at, version_no, created_at, updated_at, recurrence_weekdays
     </sql>
 
     <insert id="insert">
         INSERT INTO learn_task_recurrence (
             id, task_id, frequency_type, start_date, end_date, next_generation_date,
-            status, stopped_by_user_id, stopped_at, version_no
+            status, stopped_by_user_id, stopped_at, version_no, recurrence_weekdays
         ) VALUES (
             #{recurrence.id}, #{recurrence.taskId}, #{recurrence.frequencyType},
             #{recurrence.startDate}, #{recurrence.endDate, jdbcType=DATE},
             #{recurrence.nextGenerationDate}, #{recurrence.status},
             #{recurrence.stoppedByUserId, jdbcType=BIGINT},
-            #{recurrence.stoppedAt, jdbcType=TIMESTAMP}, #{recurrence.versionNo}
+            #{recurrence.stoppedAt, jdbcType=TIMESTAMP}, #{recurrence.versionNo}, #{recurrence.recurrenceWeekdays, jdbcType=VARCHAR, typeHandler=com.lingdong.learning.learningtask.infrastructure.persistence.TaskWeekdaysTypeHandler}
         )
     </insert>
 

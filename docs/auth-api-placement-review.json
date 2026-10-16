@@ -1,0 +1,511 @@
+{
+  "auditDate": "2026-10-10",
+  "source": "docs/auth-api-actions-without-web-placement.json",
+  "summary": {
+    "total": 20,
+    "WEB": 10,
+    "BOTH": 1,
+    "MINIAPP": 9,
+    "webActionsMustRetain": 11
+  },
+  "policy": "No Web menu placement does not mean obsolete action. Preserve declared clients unless endpoint/client contract is explicitly changed. API-only Web leaves are valid. This is read-only audit; no API, migration or database changed.",
+  "actions": [
+    {
+      "code": "ATTACHMENT_UPLOAD",
+      "apiRoutes": [
+        "POST /api/v1/attachments/uploads",
+        "DELETE /api/v1/attachments/{id}"
+      ],
+      "controllerEvidence": [
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/attachment/web/TaskAttachmentController.java:35",
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/attachment/web/TaskAttachmentController.java:105"
+      ],
+      "historicalDeclaredClient": "MINIAPP",
+      "recommendedClient": "MINIAPP",
+      "suggestedWebPage": null,
+      "name": "打卡附件上传及删除未关联附件",
+      "features": [
+        "ATTACHMENT_SERVICE",
+        "LEARNING_TASK_MANAGEMENT"
+      ],
+      "identity": "启用学生本人（前端）；服务仅要求有效登录用户，没有独立端侧硬限制",
+      "scope": "图片格式/模块规则；删除只限上传者且尚未关联打卡",
+      "frontendEvidence": "lingdong-bansui-miniapp/src/api/attachment.ts",
+      "notes": "历史声明MINIAPP；没有找到Web上传消费者。不要因为service没有client限制自动扩为BOTH；如以后启用Web上传，应产品明确决定。",
+      "keepApiAction": true,
+      "webPlacementRequired": false
+    },
+    {
+      "code": "ATTACHMENT_READ",
+      "apiRoutes": [
+        "GET /api/v1/attachments/{id}",
+        "GET /api/v1/attachments/{id}/content",
+        "GET /api/v1/attachments/{id}/download"
+      ],
+      "controllerEvidence": [
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/attachment/web/TaskAttachmentController.java:53",
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/attachment/web/TaskAttachmentController.java:61",
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/attachment/web/TaskAttachmentController.java:83"
+      ],
+      "historicalDeclaredClient": "BOTH",
+      "recommendedClient": "BOTH",
+      "suggestedWebPage": "/learning-tasks",
+      "name": "受控打卡附件查看/下载",
+      "features": [
+        "ATTACHMENT_SERVICE",
+        "LEARNING_TASK_MANAGEMENT"
+      ],
+      "identity": "上传者或当前任务审核人",
+      "scope": "AVAILABLE文件；上传者本人或真实currentReviewer relation",
+      "frontendEvidence": "lingdong-bansui-miniapp/src/api/attachment.ts; lingdong-bansui-web/src/features/learning-tasks/TaskReviewDrawer.tsx:229 (taskReviewApi.readAttachment); LearningTaskManagementPage.test.tsx:362 confirms blob call",
+      "notes": "保留BOTH。Web审核打卡需要附件内容；不是纯小程序动作，也不是全局文件台账权限。",
+      "keepApiAction": true,
+      "webPlacementRequired": true
+    },
+    {
+      "code": "GROWTH_POINT_READ_SELF",
+      "apiRoutes": [
+        "GET /api/v1/growth-points/me/account",
+        "GET /api/v1/growth-points/me/ledgers"
+      ],
+      "controllerEvidence": [
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/growthpoint/web/GrowthPointQueryController.java:25",
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/growthpoint/web/GrowthPointQueryController.java:33"
+      ],
+      "historicalDeclaredClient": "MINIAPP",
+      "recommendedClient": "MINIAPP",
+      "suggestedWebPage": null,
+      "name": "学生本人成长积分",
+      "features": [
+        "GROWTH_POINT_QUERY"
+      ],
+      "identity": "MINIAPP + 当前可用学生档案",
+      "scope": "self student account/ledger",
+      "frontendEvidence": "lingdong-bansui-miniapp/src/api/growth-point.ts",
+      "notes": "GrowthPointQueryService.requireMiniappStudent明确排除WEB。",
+      "keepApiAction": true,
+      "webPlacementRequired": false
+    },
+    {
+      "code": "GROWTH_REVIEW_READ_SELF",
+      "apiRoutes": [
+        "GET /api/v1/growth-reviews/me",
+        "GET /api/v1/growth-reviews/me/{reviewId}"
+      ],
+      "controllerEvidence": [
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/growthpoint/web/GrowthReviewController.java:52",
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/growthpoint/web/GrowthReviewController.java:64"
+      ],
+      "historicalDeclaredClient": "MINIAPP",
+      "recommendedClient": "MINIAPP",
+      "suggestedWebPage": null,
+      "name": "学生本人成长复盘",
+      "features": [
+        "DAY:DAILY_GROWTH_REVIEW",
+        "OTHER:PERIODIC_GROWTH_REPORT"
+      ],
+      "identity": "MINIAPP + 当前学生档案",
+      "scope": "本人学生/报告快照",
+      "frontendEvidence": "lingdong-bansui-miniapp/src/api/growth-review.ts",
+      "notes": "GrowthReviewQueryService.requireMiniappStudent明确排除WEB。",
+      "keepApiAction": true,
+      "webPlacementRequired": false
+    },
+    {
+      "code": "GROWTH_REVIEW_SUPPLEMENT_SELF",
+      "apiRoutes": [
+        "POST /api/v1/growth-reviews/me/{reviewId}/supplements"
+      ],
+      "controllerEvidence": [
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/growthpoint/web/GrowthReviewController.java:74"
+      ],
+      "historicalDeclaredClient": "MINIAPP",
+      "recommendedClient": "MINIAPP",
+      "suggestedWebPage": null,
+      "name": "学生本人每日复盘补录",
+      "features": [
+        "DAILY_GROWTH_REVIEW"
+      ],
+      "identity": "MINIAPP + 当前学生档案",
+      "scope": "本人日报、允许补录时间窗",
+      "frontendEvidence": "lingdong-bansui-miniapp/src/api/growth-review.ts",
+      "notes": "只允许DAY；不是Web家长补录CHILD动作。",
+      "keepApiAction": true,
+      "webPlacementRequired": false
+    },
+    {
+      "code": "REWARD_EXCHANGE_SELF",
+      "apiRoutes": [
+        "GET /api/v1/rewards/me",
+        "GET /api/v1/rewards/me/summary",
+        "POST /api/v1/reward-exchanges",
+        "GET /api/v1/reward-exchanges/me"
+      ],
+      "controllerEvidence": [
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/growthpoint/web/GrowthRewardController.java:77",
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/growthpoint/web/GrowthRewardController.java:87",
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/growthpoint/web/GrowthRewardExchangeController.java:30",
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/growthpoint/web/GrowthRewardExchangeController.java:41"
+      ],
+      "historicalDeclaredClient": "MINIAPP",
+      "recommendedClient": "MINIAPP",
+      "suggestedWebPage": null,
+      "name": "学生本人奖励兑换及余额/订单查看",
+      "features": [
+        "REWARD_EXCHANGE"
+      ],
+      "identity": "MINIAPP + 当前学生档案",
+      "scope": "本人学生奖品与订单，积分/状态/到期事务约束",
+      "frontendEvidence": "lingdong-bansui-miniapp/src/api/reward.ts",
+      "notes": "GrowthRewardService/ExchangeService.requireMiniappStudent明确排除WEB。",
+      "keepApiAction": true,
+      "webPlacementRequired": false
+    },
+    {
+      "code": "MINIAPP_REWARD_MANAGE_CHILD",
+      "apiRoutes": [
+        "GET /api/v1/parent-rewards/students",
+        "GET /api/v1/parent-rewards/students/{studentId}",
+        "POST /api/v1/parent-rewards/students/{studentId}",
+        "PUT /api/v1/parent-rewards/{rewardId}",
+        "DELETE /api/v1/parent-rewards/{rewardId}"
+      ],
+      "controllerEvidence": [
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/growthpoint/web/ParentRewardController.java:22",
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/growthpoint/web/ParentRewardController.java:30",
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/growthpoint/web/ParentRewardController.java:39",
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/growthpoint/web/ParentRewardController.java:48",
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/growthpoint/web/ParentRewardController.java:56"
+      ],
+      "historicalDeclaredClient": "MINIAPP",
+      "recommendedClient": "MINIAPP",
+      "suggestedWebPage": null,
+      "name": "小程序家长奖励配置",
+      "features": [
+        "REWARD_EXCHANGE"
+      ],
+      "identity": "MINIAPP + 实际FAMILY家长档案；controller仍有PARENT/SYS_AUDITOR旧门槛",
+      "scope": "读活动监护关系；写主家长",
+      "frontendEvidence": "lingdong-bansui-miniapp/src/api/parent-reward.ts",
+      "notes": "ParentRewardController明确MINIAPP；不得替代新Web六动作。",
+      "keepApiAction": true,
+      "webPlacementRequired": false
+    },
+    {
+      "code": "MINIAPP_REWARD_EXCHANGE_REVIEW_CHILD",
+      "apiRoutes": [
+        "GET /api/v1/parent-rewards/students",
+        "GET /api/v1/parent-reward-exchanges/students/{studentId}",
+        "POST /api/v1/parent-reward-exchanges/{exchangeId}/approve",
+        "POST /api/v1/parent-reward-exchanges/{exchangeId}/reject",
+        "POST /api/v1/parent-reward-exchanges/{exchangeId}/verify"
+      ],
+      "controllerEvidence": [
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/growthpoint/web/ParentRewardController.java:22",
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/growthpoint/web/ParentRewardExchangeController.java:17",
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/growthpoint/web/ParentRewardExchangeController.java:26",
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/growthpoint/web/ParentRewardExchangeController.java:34",
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/growthpoint/web/ParentRewardExchangeController.java:42"
+      ],
+      "historicalDeclaredClient": "MINIAPP",
+      "recommendedClient": "MINIAPP",
+      "suggestedWebPage": null,
+      "name": "小程序家长兑换审批/核销",
+      "features": [
+        "REWARD_EXCHANGE"
+      ],
+      "identity": "MINIAPP + 实际FAMILY家长档案；controller仍有PARENT/SYS_AUDITOR旧门槛",
+      "scope": "订单对应学生活动主家长；状态机",
+      "frontendEvidence": "lingdong-bansui-miniapp/src/api/parent-reward.ts",
+      "notes": "ParentRewardExchangeController明确MINIAPP。",
+      "keepApiAction": true,
+      "webPlacementRequired": false
+    },
+    {
+      "code": "IAM_DATA_SCOPE_CONFIGURE",
+      "apiRoutes": [
+        "POST /api/v1/organization-admins",
+        "POST /api/v1/roles/{roleId}/data-scopes"
+      ],
+      "controllerEvidence": [
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/iam/web/DataScopeManagementController.java:26",
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/iam/web/RoleManagementController.java:93"
+      ],
+      "historicalDeclaredClient": "WEB",
+      "recommendedClient": "WEB",
+      "suggestedWebPage": "/iam",
+      "name": "角色自定义数据范围配置",
+      "features": [],
+      "identity": "有效Web操作账号+动作权限",
+      "scope": "真实组织范围、目标角色自定义scope配置",
+      "frontendEvidence": "lingdong-bansui-web/src/api/iam.ts（角色配置API族）",
+      "notes": "保留独立Web动作。/organization-admins legacy endpoint控制器检查本码，但转交memberships.addMembers(administrator=true)又要求ORG_ADMIN_ASSIGN；这是尚存双动作门槛，不能把本码转MINIAPP。",
+      "keepApiAction": true,
+      "webPlacementRequired": true
+    },
+    {
+      "code": "IAM_PERMISSION_READ",
+      "apiRoutes": [
+        "GET /api/v1/permissions"
+      ],
+      "controllerEvidence": [
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/iam/web/PermissionManagementController.java:53"
+      ],
+      "historicalDeclaredClient": "WEB",
+      "recommendedClient": "WEB",
+      "suggestedWebPage": "/iam",
+      "name": "权限目录查询",
+      "features": [],
+      "identity": "Web账号+动作",
+      "scope": "IAM目录，非对象所有权",
+      "frontendEvidence": "lingdong-bansui-web/src/api/iam.ts: permissions()",
+      "notes": "有效WebAPI，即使当前角色授权树改用沿写动作permission-catalog，该独立GET /permissions仍存在，需API-only placement或明确废弃端点后清理。",
+      "keepApiAction": true,
+      "webPlacementRequired": true
+    },
+    {
+      "code": "IAM_USER_READ",
+      "apiRoutes": [
+        "GET /api/v1/users/{id}"
+      ],
+      "controllerEvidence": [
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/iam/web/UserManagementController.java:63"
+      ],
+      "historicalDeclaredClient": "WEB",
+      "recommendedClient": "WEB",
+      "suggestedWebPage": "/users",
+      "name": "用户详情读取",
+      "features": [],
+      "identity": "Web账号+动作",
+      "scope": "UserAccess用户可见范围",
+      "frontendEvidence": "GET /users/{id}控制器仍存在；Web用户管理API族",
+      "notes": "不能因改用列表/编辑上下文而删除现存详情API动作，建议API-only叶子归用户页。",
+      "keepApiAction": true,
+      "webPlacementRequired": true
+    },
+    {
+      "code": "TASK_ASSIGNMENT_EXEMPT",
+      "apiRoutes": [
+        "POST /api/v1/managed-task-assignments/{id}/exempt"
+      ],
+      "controllerEvidence": [
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/learningtask/web/ManagedTaskAssignmentController.java:32"
+      ],
+      "historicalDeclaredClient": "WEB",
+      "recommendedClient": "WEB",
+      "suggestedWebPage": "/learning-tasks",
+      "name": "任务实例免执行",
+      "features": [
+        "LEARNING_TASK_MANAGEMENT"
+      ],
+      "identity": "实际家长/教师/组织账号+动作；无固定角色名字限制",
+      "scope": "家庭主家长；教师creator+实际活动class；组织subtree；仅PENDING_CLAIM/IN_PROGRESS",
+      "frontendEvidence": "ManagedTaskAssignmentController；未找到miniapp调用managed-task-assignments/exempt",
+      "notes": "保留Web动作。服务当前没有客户端硬拒绝MINIAPP，但历史权限WEB且无mini消费者，不能自动改MINIAPP或BOTH。",
+      "keepApiAction": true,
+      "webPlacementRequired": true
+    },
+    {
+      "code": "TASK_ASSIGNMENT_READ_SELF",
+      "apiRoutes": [
+        "GET /api/v1/task-assignments",
+        "GET /api/v1/task-assignments/{id}"
+      ],
+      "controllerEvidence": [
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/learningtask/web/StudentTaskAssignmentController.java:35",
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/learningtask/web/StudentTaskAssignmentController.java:48"
+      ],
+      "historicalDeclaredClient": "MINIAPP",
+      "recommendedClient": "MINIAPP",
+      "suggestedWebPage": null,
+      "name": "学生本人任务列表/详情",
+      "features": [
+        "LEARNING_TASK_MANAGEMENT"
+      ],
+      "identity": "真实学生档案；服务无client硬限制，认证WEB拒绝STUDENT账号",
+      "scope": "本人studentId查询",
+      "frontendEvidence": "lingdong-bansui-miniapp/src/api/learning-task.ts",
+      "notes": "实际MINIAPP：历史权限MINIAPP+Web登录不支持STUDENT；不要仅据controller包名web认定Web。",
+      "keepApiAction": true,
+      "webPlacementRequired": false
+    },
+    {
+      "code": "TASK_ASSIGNMENT_EXECUTE_SELF",
+      "apiRoutes": [
+        "POST /api/v1/task-assignments/{id}/claim",
+        "POST /api/v1/task-assignments/{id}/pause",
+        "POST /api/v1/task-assignments/{id}/resume",
+        "POST /api/v1/task-assignments/{id}/abandon",
+        "POST /api/v1/task-assignments/{id}/check-ins"
+      ],
+      "controllerEvidence": [
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/learningtask/web/StudentTaskAssignmentController.java:56",
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/learningtask/web/StudentTaskAssignmentController.java:64",
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/learningtask/web/StudentTaskAssignmentController.java:75",
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/learningtask/web/StudentTaskAssignmentController.java:83",
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/learningtask/web/StudentTaskAssignmentController.java:95"
+      ],
+      "historicalDeclaredClient": "MINIAPP",
+      "recommendedClient": "MINIAPP",
+      "suggestedWebPage": null,
+      "name": "学生领取暂停恢复放弃打卡",
+      "features": [
+        "LEARNING_TASK_MANAGEMENT"
+      ],
+      "identity": "真实学生档案；当前Web认证拒绝学生",
+      "scope": "本人任务assignment+状态机+打卡附件本人",
+      "frontendEvidence": "lingdong-bansui-miniapp/src/api/learning-task.ts",
+      "notes": "实际MINIAPP；学生本人执行与Web审核/免执行独立。",
+      "keepApiAction": true,
+      "webPlacementRequired": false
+    },
+    {
+      "code": "STUDENT_PARENT_INVITE_RESPOND",
+      "apiRoutes": [
+        "POST /api/v1/parent-invitations/{id}/accept",
+        "POST /api/v1/parent-invitations/{id}/reject"
+      ],
+      "controllerEvidence": [
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/student/web/ParentBindingInvitationController.java:29",
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/student/web/ParentBindingInvitationController.java:42"
+      ],
+      "historicalDeclaredClient": "WEB",
+      "recommendedClient": "WEB",
+      "suggestedWebPage": "/parent-relationships",
+      "name": "接受/拒绝机构家长绑定邀请",
+      "features": [
+        "PARENT_RELATIONSHIP_MANAGEMENT"
+      ],
+      "identity": "FAMILY+真实parentProfile+活动角色",
+      "scope": "有效一次性invitation token、未过期pending；接受要求无活动主家长",
+      "frontendEvidence": "ParentBindingInvitationController；miniapp/api无parent-invitations调用",
+      "notes": "服务没有硬client限制，但历史WEB且没有mini调用；保留Web/API-only，不能与手机验证式ParentRelationship公开邀请响应混同。",
+      "keepApiAction": true,
+      "webPlacementRequired": true
+    },
+    {
+      "code": "STUDENT_CREATE",
+      "apiRoutes": [
+        "POST /api/v1/students"
+      ],
+      "controllerEvidence": [
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/student/web/StudentManagementController.java:77"
+      ],
+      "historicalDeclaredClient": "WEB",
+      "recommendedClient": "WEB",
+      "suggestedWebPage": "/student-login",
+      "name": "独立创建学生档案",
+      "features": [],
+      "identity": "家长家庭创建；Web机构范围创建；旧家庭分支仍PARENT role门槛",
+      "scope": "新学生建立真实主家长或入学关系；班级目标仍需STUDENT_CLASS_ASSIGN",
+      "frontendEvidence": "StudentManagementController POST /students；miniapp未找到直接创建调用",
+      "notes": "和IAM_USER_CREATE内部学生身份创建是独立现存WebAPI，不能删除。legacy服务家庭分支固定角色及选CLASS额外动作需记录。服务无显式feature检查。",
+      "keepApiAction": true,
+      "webPlacementRequired": true
+    },
+    {
+      "code": "STUDENT_CREDENTIAL_INITIALIZE",
+      "apiRoutes": [
+        "POST /api/v1/students/{studentId}/credentials/initialize"
+      ],
+      "controllerEvidence": [
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/student/web/StudentManagementController.java:167"
+      ],
+      "historicalDeclaredClient": "WEB",
+      "recommendedClient": "WEB",
+      "suggestedWebPage": "/student-login",
+      "name": "历史学生登录凭据初始化",
+      "features": [],
+      "identity": "Web动作+scope；家长primary分支旧PARENT；机构范围分支",
+      "scope": "enabled student且尚无studentUserId；primary guardian或现真实机构范围",
+      "frontendEvidence": "StudentManagementController credentials/initialize；miniapp无调用",
+      "notes": "保留Web现存端点与独立动作。服务无显式feature检查，角色门槛可能未清理。",
+      "keepApiAction": true,
+      "webPlacementRequired": true
+    },
+    {
+      "code": "STUDENT_LOGIN_CODE_RESET",
+      "apiRoutes": [
+        "POST /api/v1/students/{studentId}/login-code-resets"
+      ],
+      "controllerEvidence": [
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/student/web/StudentManagementController.java:177"
+      ],
+      "historicalDeclaredClient": "WEB",
+      "recommendedClient": "WEB",
+      "suggestedWebPage": "/student-login",
+      "name": "重置学生登录码并撤销会话",
+      "features": [],
+      "identity": "Web动作+scope；primary/机构范围",
+      "scope": "enabled学生账号；主监护或真实组织scope；撤销旧session",
+      "frontendEvidence": "StudentManagementController login-code-resets；miniapp无调用",
+      "notes": "保留Web。服务无显式feature检查。",
+      "keepApiAction": true,
+      "webPlacementRequired": true
+    },
+    {
+      "code": "STUDENT_PARENT_INVITE_CREATE",
+      "apiRoutes": [
+        "POST /api/v1/students/{studentId}/parent-invitations"
+      ],
+      "controllerEvidence": [
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/student/web/StudentManagementController.java:197"
+      ],
+      "historicalDeclaredClient": "WEB",
+      "recommendedClient": "WEB",
+      "suggestedWebPage": "/parent-relationships",
+      "name": "机构创建家长绑定邀请",
+      "features": [
+        "PARENT_RELATIONSHIP_MANAGEMENT"
+      ],
+      "identity": "Web操作动作+真实组织管理范围；非Web残留ORG_ADMIN门槛",
+      "scope": "学生活动入学组织在范围内；无主家长、无pending邀请、组织启用",
+      "frontendEvidence": "StudentManagementController parent-invitations；miniapp无调用",
+      "notes": "保留Web；区别SECONDARY_PARENT_INVITE_CREATE/PRIMARY_PARENT_TRANSFER_CREATE。",
+      "keepApiAction": true,
+      "webPlacementRequired": true
+    },
+    {
+      "code": "STUDENT_IMPORT_RESULT_READ",
+      "apiRoutes": [
+        "GET /api/v1/student-import-executions",
+        "GET /api/v1/student-import-executions/{id}",
+        "GET /api/v1/student-import-executions/{id}/rows"
+      ],
+      "controllerEvidence": [
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/studentimport/web/StudentImportController.java:59",
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/studentimport/web/StudentImportController.java:71",
+        "lingdong-bansui-server/src/main/java/com/lingdong/learning/studentimport/web/StudentImportController.java:80"
+      ],
+      "historicalDeclaredClient": "WEB",
+      "recommendedClient": "WEB",
+      "suggestedWebPage": "/import-jobs",
+      "name": "批量学员导入执行/行级结果查询",
+      "features": [
+        "STUDENT_BATCH_IMPORT",
+        "DATA_IMPORT_VALIDATION",
+        "ATTACHMENT_SERVICE",
+        "IMPORT_EXPORT_TEMPLATE_MANAGEMENT"
+      ],
+      "identity": "Web动作持久化权限检查",
+      "scope": "本人requester + 当前组织scope；执行记录/行结果",
+      "frontendEvidence": "lingdong-bansui-web/src/api/student-imports.ts; app/App.tsx:281-284 (ImportJobManagementPage embedded student import panel)",
+      "notes": "StudentImportAccessService固定PermissionClient.WEB，真实Web消费者存在；不可转MINIAPP。",
+      "keepApiAction": true,
+      "webPlacementRequired": true
+    }
+  ],
+  "criticalFindings": [
+    "ATTACHMENT_READ is BOTH and Web task reviewers need controlled files.",
+    "ATTACHMENT_UPLOAD is historically MINIAPP; service lack of client restriction alone does not prove active Web consumer.",
+    "IAM_DATA_SCOPE_CONFIGURE legacy organization-admins delegates to a second ORG_ADMIN_ASSIGN action; role-data-scope API still consumes original Web action.",
+    "ParentRewardController still role-name-gates MINIAPP parent rewards despite service actual family checks.",
+    "StudentApplicationService family create and StudentCredentialManagementService primary/nonWEB paths retain role-name gates; endpoints remain real Web actions.",
+    "Student task self services lack hard MINIAPP checks but Web authentication does not admit STUDENT; preserve their existing MINIAPP declaration."
+  ],
+  "postAuditFixes": [
+    "2026-10-10: /organization-admins now consumes ORG_ADMIN_ASSIGN; /roles/{roleId}/data-scopes keeps IAM_DATA_SCOPE_CONFIGURE.",
+    "2026-10-10: Miniapp parent reward controller keeps MINIAPP client boundary and requires actual ParentActorAccessService, without PARENT/SYS_AUDITOR names.",
+    "2026-10-10: Student create/credential scope uses persisted family parent profile or enabled institutional account plus actual guardian/school scope. Exact student action codes preserved."
+  ]
+}

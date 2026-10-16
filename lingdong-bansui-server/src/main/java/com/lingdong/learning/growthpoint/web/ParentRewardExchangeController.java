@@ -11,15 +11,22 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/parent-reward-exchanges")
 public class ParentRewardExchangeController {
+    private final com.lingdong.learning.auth.application.ParentActorAccessService parentActors;
     private final GrowthRewardExchangeService service;
-    public ParentRewardExchangeController(GrowthRewardExchangeService service) { this.service = service; }
+    public ParentRewardExchangeController(GrowthRewardExchangeService service, com.lingdong.learning.auth.application.ParentActorAccessService parentActors) { this.service = service; this.parentActors=parentActors; }
 
+    @RequirePermission("MINIAPP_REWARD_EXCHANGE_REVIEW_CHILD")
+    @GetMapping("/summary")
+    public GrowthRewardExchangeService.PendingSummary summary(@AuthenticationPrincipal AuthenticatedUser user) {
+        ParentRewardController.requireMiniappParent(user,parentActors);
+        return service.pendingSummary(user);
+    }
     @RequirePermission("MINIAPP_REWARD_EXCHANGE_REVIEW_CHILD")
     @GetMapping("/students/{studentId}")
     public GrowthRewardExchangePageResponse list(@AuthenticationPrincipal AuthenticatedUser user,
             @PathVariable Long studentId, @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int pageSize) {
-        ParentRewardController.requireMiniappParent(user);
+        ParentRewardController.requireMiniappParent(user,parentActors);
         return GrowthRewardExchangePageResponse.from(service.findManaged(user, studentId, page, pageSize));
     }
 
@@ -27,7 +34,7 @@ public class ParentRewardExchangeController {
     @PostMapping("/{exchangeId}/approve")
     public GrowthRewardExchangeResponse approve(@AuthenticationPrincipal AuthenticatedUser user,
             @PathVariable Long exchangeId) {
-        ParentRewardController.requireMiniappParent(user);
+        ParentRewardController.requireMiniappParent(user,parentActors);
         return GrowthRewardExchangeResponse.from(service.approve(user, exchangeId));
     }
 
@@ -35,7 +42,7 @@ public class ParentRewardExchangeController {
     @PostMapping("/{exchangeId}/reject")
     public GrowthRewardExchangeResponse reject(@AuthenticationPrincipal AuthenticatedUser user,
             @PathVariable Long exchangeId, @Valid @RequestBody RejectRewardExchangeRequest request) {
-        ParentRewardController.requireMiniappParent(user);
+        ParentRewardController.requireMiniappParent(user,parentActors);
         return GrowthRewardExchangeResponse.from(service.reject(user, exchangeId, request.rejectReason()));
     }
 
@@ -43,7 +50,7 @@ public class ParentRewardExchangeController {
     @PostMapping("/{exchangeId}/verify")
     public GrowthRewardExchangeResponse verify(@AuthenticationPrincipal AuthenticatedUser user,
             @PathVariable Long exchangeId) {
-        ParentRewardController.requireMiniappParent(user);
+        ParentRewardController.requireMiniappParent(user,parentActors);
         return GrowthRewardExchangeResponse.from(service.verify(user, exchangeId));
     }
 }

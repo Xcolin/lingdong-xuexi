@@ -130,10 +130,10 @@ public class LearningTaskManagementService {
         int validatedPageSize = requireRange(pageSize, "每页数量", 1, 100);
         String normalizedKeyword = optionalText(keyword, 50);
         LearningTaskQuery query = new LearningTaskQuery(
-                currentUser.userId(), currentUser.roleCodes().contains("PARENT"),
+                currentUser.userId(), scopeService.isParent(currentUser),
                 scopeService.hasOrganizationPermission(currentUser, "LEARNING_TASK_READ_MANAGED")
-                        || currentUser.roleCodes().contains("ORG_ADMIN"),
-                currentUser.roleCodes().contains("TEACHER"), sourceType, status,
+                        || scopeService.isOrganizationOperator(currentUser),
+                scopeService.isTeacher(currentUser), sourceType, status,
                 scheduledDate, normalizedKeyword,
                 Math.multiplyExact(validatedPage - 1, validatedPageSize), validatedPageSize,
                 scopeService.organizationScope(currentUser).allOrganizations(), scopeService.organizationScope(currentUser).rootPaths());
@@ -172,14 +172,10 @@ public class LearningTaskManagementService {
     }
 
     private void requireManagementRole(AuthenticatedUser currentUser) {
-        if (scopeService.hasOrganizationPermission(currentUser, "LEARNING_TASK_READ_MANAGED")) return;
-        if (currentUser != null && currentUser.clientType() == com.lingdong.learning.auth.domain.AuthClientType.WEB)
-            throw new SystemOperationAccessDeniedException("当前账号无学习任务读取权限");
-        if (currentUser == null || currentUser.roleCodes().contains("SYS_AUDITOR")
-                || currentUser.roleCodes().stream().noneMatch(
-                role -> role.equals("PARENT") || role.equals("ORG_ADMIN") || role.equals("TEACHER"))) {
-            throw new SystemOperationAccessDeniedException("当前角色不能管理学习任务");
-        }
+        scopeService.requireWebPermission(currentUser,"LEARNING_TASK_READ_MANAGED");
+        if (!scopeService.isParent(currentUser) && !scopeService.isTeacher(currentUser)
+                && !scopeService.isOrganizationOperator(currentUser))
+            throw new SystemOperationAccessDeniedException("当前账号没有学习任务业务身份");
     }
 
     private int requireRange(int value, String fieldName, int minimum, int maximum) {

@@ -50,6 +50,7 @@ public class AuthenticationApplicationService {
     private final ParentAuthenticationMapper parentAuthenticationMapper;
     private final OrganizationAdminMapper organizationAdminMapper;
     private final TeacherClassMapper teacherClassMapper;
+    @org.springframework.beans.factory.annotation.Autowired private InitialPasswordStateService initialPasswords;
     private final PasswordPolicy passwordPolicy;
     private final PasswordEncoder passwordEncoder;
     private final String dummyPasswordHash;
@@ -111,6 +112,7 @@ public class AuthenticationApplicationService {
         if (userMapper.updatePasswordHash(user.id(), passwordEncoder.encode(command.password())) != 1) {
             throw new IllegalStateException("账号密码保存失败");
         }
+        if(initialPasswords!=null)initialPasswords.require(user.id());
         LocalDateTime now = LocalDateTime.now();
         List<DeviceSessionRecord> previousSessions = sessionMapper.findActiveByUserId(user.id(), now);
         sessionMapper.revokeAllActiveByUserId(user.id(), now);
@@ -137,7 +139,7 @@ public class AuthenticationApplicationService {
         }
         DeviceSessionRecord session = requireOwnedSession(currentUserId, currentSessionId);
         LocalDateTime now = LocalDateTime.now();
-        if (session.clientType() != AuthClientType.WEB || session.status() != DeviceSessionStatus.ACTIVE
+        if ((session.clientType() != AuthClientType.WEB && session.clientType() != AuthClientType.MINIAPP) || session.status() != DeviceSessionStatus.ACTIVE
                 || !session.accessExpiresAt().isAfter(now) || user.status() != UserStatus.ENABLED) {
             throw new PasswordChangeRejectedException("当前账号或会话不可修改密码");
         }
@@ -156,6 +158,7 @@ public class AuthenticationApplicationService {
                 passwordEncoder.encode(newPassword)) != 1) {
             throw new PasswordChangeRejectedException("账号状态或密码已变化，请重新登录后再试");
         }
+        if(initialPasswords!=null)initialPasswords.clear(user.id());
         sessionMapper.revokeAllActiveByUserId(user.id(), now);
         securityEventService.recordAllSessionsRevoked(user.id(), session, now);
     }
@@ -174,6 +177,26 @@ public class AuthenticationApplicationService {
         return createSession(user.id(), AuthClientType.WEB, deviceId, deviceName);
     }
 
+    /** Called only after consuming an ACCOUNT_LOGIN proof; never registers or changes identity. */
+    @Transactional
+    public AuthenticatedSession loginExistingAccountByMobile(String mobile,AuthClientType clientType,String deviceId,String deviceName) {
+        if(clientType!=AuthClientType.WEB&&clientType!=AuthClientType.MINIAPP)throw authenticationFailed();
+        User user=userMapper.findByMobileForUpdate(requiredText(mobile,"手机号",32));
+        if(user==null||user.type()==UserType.STUDENT||!isUsableForGenericAccount(user,clientType))throw authenticationFailed();
+        return createSession(user.id(),clientType,requiredText(deviceId,"设备标识",128),requiredText(deviceName,"设备名称",100));
+    }
+
+    public void verifyAccountPassword(Long id,String password) {
+        User user=userMapper.findByIdForUpdate(id);
+        if(user==null || user.type()==UserType.STUDENT || user.status()!=UserStatus.ENABLED || !matchesPassword(user,password)) throw authenticationFailed();
+    }
+    @Transactional
+    public AuthenticatedSession loginExistingVerifiedAccount(Long userId, AuthClientType clientType, String deviceId, String deviceName) {
+        if(clientType != AuthClientType.WEB && clientType != AuthClientType.MINIAPP) throw authenticationFailed();
+        User user=userMapper.findByIdForUpdate(userId);
+        if(user==null || user.type()==UserType.STUDENT || !isUsableForGenericAccount(user,clientType)) throw authenticationFailed();
+        return createSession(user.id(),clientType,requiredText(deviceId,"设备标识",128),requiredText(deviceName,"设备名称",100));
+    }
     /** 使用有效机构管理员账号密码建立独立的小程序设备会话。 */
     @Transactional
     public AuthenticatedSession loginOrganizationByPassword(OrganizationPasswordLoginCommand command) {
@@ -270,6 +293,14 @@ public class AuthenticationApplicationService {
     }
 
     AuthenticatedSession createSession(Long userId, AuthClientType clientType, String deviceId, String deviceName) {
+        // A Web-created parent account carries the parent identity, even before its first mobile visit.
+        // Initialize only its profile; this never adds organizations, roles or accepted agreements.
+        User account = userMapper.findByIdForUpdate(userId);
+        if(account != null && account.type() == UserType.FAMILY && parentAuthenticationMapper.findProfileByUserId(userId) == null) {
+            if(parentAuthenticationMapper.insertProfile(new ParentProfile(idGenerator.nextId(),userId,
+                    ParentOnboardingStatus.PENDING,LocalDateTime.now(),null)) != 1)
+                throw new IllegalStateException("家长身份资料初始化失败");
+        }
         LocalDateTime now = LocalDateTime.now();
         boolean knownDevice = sessionMapper.existsByUserClientAndDevice(userId, clientType, deviceId);
         String accessToken = tokenService.newToken();
@@ -332,16 +363,51 @@ public class AuthenticationApplicationService {
             throw authenticationFailed();
         }
         User user = userMapper.findById(session.userId());
-        if (!isUsableForClient(user, session.clientType())) {
+        if (!(user!=null && user.type()==UserType.STUDENT ? isUsableForClient(user,session.clientType()) : isUsableForGenericAccount(user,session.clientType()))) {
             sessionRevocationService.revokeIfActive(session.id(), now);
             throw authenticationFailed();
         }
         return user;
     }
 
+    @Transactional
+    public AuthenticatedSession loginRegistrationByPassword(String username, String password,
+            AuthClientType clientType, String deviceId, String deviceName) {
+        if (clientType != AuthClientType.WEB && clientType != AuthClientType.MINIAPP) throw authenticationFailed();
+        User user = userMapper.findByUsernameForUpdate(requiredText(username, "用户账号", 64));
+        boolean matches = matchesPassword(user, password);
+        if (!matches || user == null || user.type() == UserType.STUDENT || !isUsableForGenericAccount(user, clientType)) {
+            throw authenticationFailed();
+        }
+        return createSession(user.id(), clientType, requiredText(deviceId, "设备标识", 128),
+                requiredText(deviceName, "设备名称", 100));
+    }
+
+    /** Basic account access never confers parent, teacher or organization management authority. */
+    boolean isUsableForGenericAccount(User user, AuthClientType clientType) {
+        if(user==null || user.status()!=UserStatus.ENABLED || user.type()==UserType.STUDENT) return false;
+        if(clientType==AuthClientType.WEB) return true;
+        if(clientType!=AuthClientType.MINIAPP) return false;
+        if(user.type()==UserType.PLATFORM) return isUsableForClient(user,clientType);
+        if(user.type()==UserType.ORGANIZATION) return featureAccessService.isEnabled(ORGANIZATION_MINIAPP_AUTH_FEATURE,null);
+        return user.type()==UserType.FAMILY || user.type()==UserType.PERSONAL;
+    }
     private boolean isUsableForClient(User user, AuthClientType clientType) {
         if (user == null || user.status() != UserStatus.ENABLED) {
             return false;
+        }
+        if (user.type() == UserType.PERSONAL) {
+            if (clientType != AuthClientType.WEB && clientType != AuthClientType.MINIAPP) return false;
+            boolean parentProfile = parentAuthenticationMapper.findProfileByUserId(user.id()) != null;
+            boolean organizationRole = userRoleMapper.hasRoleCode(user.id(), ORGANIZATION_ADMIN_ROLE)
+                    || userRoleMapper.hasRoleCode(user.id(), TEACHER_ROLE);
+            if (!parentProfile && !organizationRole) return true;
+            if (isEnabledParent(user)) return true;
+            if (clientType == AuthClientType.WEB) return organizationRole;
+            return featureAccessService.isEnabled(ORGANIZATION_MINIAPP_AUTH_FEATURE, null)
+                    && (isEnabledOrganizationAdministrator(user)
+                    || userRoleMapper.hasRoleCode(user.id(), TEACHER_ROLE)
+                    && teacherClassMapper.existsActiveOperationalClassByTeacher(user.id()));
         }
         if (clientType == AuthClientType.WEB) {
             return user.type() == UserType.PLATFORM
@@ -349,6 +415,8 @@ public class AuthenticationApplicationService {
                     || isEnabledParent(user);
         }
         if (clientType == AuthClientType.MINIAPP) {
+            if(isEnabledParent(user)) return true;
+            if(featureAccessService.isEnabled(ORGANIZATION_MINIAPP_AUTH_FEATURE,null)&&isEnabledOrganizationAdministrator(user))return true;
             if (user.type() == UserType.ORGANIZATION) {
                 return featureAccessService.isEnabled(ORGANIZATION_MINIAPP_AUTH_FEATURE, null)
                         && isEnabledOrganizationMiniappOperator(user);
@@ -373,7 +441,8 @@ public class AuthenticationApplicationService {
         if (user == null || user.status() != UserStatus.ENABLED) {
             return false;
         }
-        boolean allowedType = user.type() == UserType.PLATFORM
+        boolean allowedType = user.type() == UserType.PERSONAL && isUsableForClient(user, AuthClientType.WEB)
+                || user.type() == UserType.PLATFORM
                 || user.type() == UserType.ORGANIZATION
                 || isEnabledParent(user);
         return allowedType && passwordMatches;
@@ -382,7 +451,7 @@ public class AuthenticationApplicationService {
     private boolean isEnabledOrganizationAdministrator(User user) {
         return user != null
                 && user.status() == UserStatus.ENABLED
-                && user.type() == UserType.ORGANIZATION
+                && user.type() != UserType.STUDENT
                 && userRoleMapper.hasRoleCode(user.id(), ORGANIZATION_ADMIN_ROLE)
                 && organizationAdminMapper.existsEnabledManagedOrganization(user.id());
     }
@@ -411,8 +480,8 @@ public class AuthenticationApplicationService {
     }
 
     private boolean isEnabledParent(User user) {
-        return user.type() == UserType.FAMILY
-                && userRoleMapper.hasRoleCode(user.id(), "PARENT")
+        return user.type() != UserType.STUDENT
+                && userRoleMapper.hasAnyEnabledRole(user.id())
                 && parentAuthenticationMapper.findProfileByUserId(user.id()) != null;
     }
 
@@ -472,3 +541,9 @@ public class AuthenticationApplicationService {
                 session.accessExpiresAt(), session.refreshExpiresAt(), session.lastActiveAt());
     }
 }
+
+
+
+
+
+

@@ -1,12 +1,9 @@
 <template>
-  <view class="page-shell">
-    <view class="page-heading">
-      <text class="heading-title">家长关系邀请</text>
-      <view class="heading-rule" />
-    </view>
+  <view class="prototype-workspace page-shell">
+    <PrototypePageHeader title="陪伴关系邀请" icon="people"/>
     <view v-if="loading" class="state-view">正在加载</view>
     <view v-else-if="!enabled" class="state-view disabled-state">家长关系功能未启用</view>
-    <view v-else class="invitation-form">
+    <view v-else class="invitation-form"><text class="invitation-intro">验证受邀手机号，确认陪伴关系</text>
       <view class="field-group">
         <text class="field-label">手机号</text>
         <input v-model="mobile" class="field-input" type="number" maxlength="11"
@@ -30,6 +27,8 @@
 </template>
 
 <script setup lang="ts">
+import {validInvitationId} from '@/models/parent-invitation-qr';
+import PrototypePageHeader from '@/components/PrototypePageHeader.vue';
 import { ref } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { getParentAuthContext } from '@/api/auth';
@@ -60,7 +59,7 @@ onLoad(async (options) => {
     const [capabilities, context] = await Promise.all([
       getMiniappCapabilities(), getParentAuthContext()
     ]);
-    enabled.value = capabilities.parentRelationshipManagementEnabled && Boolean(invitationId.value);
+    enabled.value = capabilities.parentRelationshipManagementEnabled && validInvitationId(invitationId.value);
     agreementVersion.value = context.agreementVersion;
   } catch (error) {
     errorMessage.value = toMessage(error);
@@ -162,3 +161,7 @@ function toMessage(error: unknown): string {
 .accept-button { background: #167c5a; color: #ffffff; }
 .reject-button::after, .accept-button::after { border: 0; }
 </style>
+
+<style lang="scss" scoped>@import "@/styles/workspace-prototype.scss";</style>
+
+<style scoped>.prototype-workspace{background:#f6f8f5;padding:28rpx;min-height:calc(100vh - var(--window-top,0px));box-sizing:border-box;}.student-row,.invitation-form{background:#fffefa;border:1rpx solid #e3eadf;border-radius:24rpx;padding:26rpx;}.title-rule,.heading-rule{display:none;}.field-input{box-sizing:border-box;height:88rpx;border:1rpx solid #d9e4d4;background:#fcfdfb;border-radius:14rpx;font-size:26rpx;}</style>

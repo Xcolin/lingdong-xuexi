@@ -1,5 +1,6 @@
 <template>
-  <view class="ld-page">
+  <view class="prototype-workspace ld-page">
+    <PrototypePageHeader title="成长积分" icon="chart"/>
     <view class="ld-heading">
       <text class="ld-heading-title">我的积分</text>
       <view class="ld-heading-rule" />
@@ -11,15 +12,15 @@
           <text class="student-name">{{ account?.studentName || '我的积分' }}</text>
           <text class="updated-at">{{ account ? `更新于 ${formatDateTime(account.updatedAt)}` : '' }}</text>
         </view>
-        <view class="balance-row">
+        <view class="balance-row"><button class="redeem-link" @tap="openRewards">去兑换</button>
           <view class="balance-item">
             <text class="balance-label">累计积分</text>
-            <text class="balance-value">{{ account?.totalPoints ?? 0 }}</text>
+            <text class="balance-value">{{ account?.totalPoints ?? '—' }}</text>
           </view>
-          <view class="balance-divider" />
+          <view class="balance-divider" /><view class="balance-item"><text class="balance-label">本周获得</text><text class="balance-value">{{ account?.weekEarnedPoints ?? '—' }}</text></view><view class="balance-item"><text class="balance-label">本月获得</text><text class="balance-value">{{ account?.monthEarnedPoints ?? '—' }}</text></view>
           <view class="balance-item">
             <text class="balance-label">可用积分</text>
-            <text class="balance-value">{{ account?.availablePoints ?? 0 }}</text>
+            <text class="balance-value">{{ account?.availablePoints ?? '—' }}</text>
           </view>
         </view>
       </view>
@@ -34,7 +35,7 @@
       </view>
       <view class="ledger-list">
         <view v-for="ledger in ledgers" :key="ledger.id" class="ledger-card">
-          <view class="ledger-main">
+          <view class="visual-tile"><PrototypeIcon name="chart" :size="30" tone="amber" /></view><view class="ledger-main">
             <view class="ledger-title-row">
               <text class="ledger-title">{{ ledgerTitle(ledger) }}</text>
               <text class="ledger-amount" :class="{ negative: ledger.amount < 0 }">
@@ -73,6 +74,8 @@
 </template>
 
 <script setup lang="ts">
+import PrototypePageHeader from "@/components/PrototypePageHeader.vue";
+import PrototypeIcon from '@/components/PrototypeIcon.vue';
 import { computed, ref } from 'vue';
 import { onPullDownRefresh, onReachBottom, onShow } from '@dcloudio/uni-app';
 import { getMiniappCapabilities } from '@/api/capability';
@@ -86,6 +89,7 @@ import {
 } from '@/api/growth-point';
 import { getStudentSession } from '@/session/student-session';
 
+function openRewards(): void { uni.navigateTo({url:'/pages/rewards/rewards'}); }
 const PAGE_SIZE = 20;
 const capabilityLoading = ref(true);
 const growthPointEnabled = ref(false);
@@ -123,7 +127,7 @@ async function initialize(): Promise<void> {
     const capabilities = await getMiniappCapabilities();
     growthPointEnabled.value = capabilities.growthPointQueryEnabled;
     if (!growthPointEnabled.value) {
-      await uni.reLaunch({ url: '/pages/student-home/student-home' });
+      await uni.reLaunch({ url: '/pages/student-dashboard/student-dashboard' });
       return;
     }
     await Promise.all([loadAccount(), loadLedgers(true)]);
@@ -193,7 +197,18 @@ function toMessage(error: unknown): string {
 }
 </script>
 
+
+
+
+
+
+
+
+
+
+
 <style lang="scss" scoped>
+
 .account-band {
   display: flex;
   align-items: center;
@@ -240,4 +255,24 @@ function toMessage(error: unknown): string {
 .reviewer-name { display: block; margin-top: 12rpx; color: $ld-text-secondary; font-size: $ld-font-caption; }
 .correction-reason { display: block; margin-top: 10rpx; color: $ld-accent; font-size: $ld-font-caption; }
 .list-footer { padding: 32rpx 0; color: $ld-text-muted; font-size: $ld-font-caption; text-align: center; }
+
+@import "@/styles/workspace-prototype.scss";
+
+.prototype-workspace{background:#f4f8f3;color:#163d30;}
+.profile-hero{display:flex;align-items:center;gap:24rpx;padding:44rpx 18rpx;}
+.task-card{position:relative;padding:24rpx 24rpx 24rpx 108rpx!important;border:0!important;border-radius:24rpx!important;background:#fff!important;margin-bottom:16rpx!important;box-shadow:none!important;}
+.task-symbol{position:absolute;left:22rpx;top:30rpx;width:66rpx;height:66rpx;display:flex;align-items:center;justify-content:center;background:#edf6ed;border-radius:16rpx;color:#126044;}
+.task-title{font-size:30rpx!important;font-weight:650;}
+.source-button{border-radius:40rpx!important;}
+.source-button.active{background:#125e43!important;color:white!important;}
+.balance-band,.account-band,.summary-band{background:linear-gradient(125deg,#d9ebd5,#f2f7e9)!important;border-radius:28rpx!important;border:0!important;padding:32rpx!important;}
+.balance-band{position:relative;}
+.balance-value{font-size:56rpx!important;color:#12533d!important;}
+.reward-item,.ledger-card,.detail-band{border:0!important;border-radius:24rpx!important;background:#fff!important;margin-bottom:18rpx!important;box-shadow:none!important;}
+.title-band{background:#fff!important;border-radius:26rpx!important;padding:28rpx!important;}
+.detail-symbol{width:76rpx;height:76rpx;background:#e5f3ed;border-radius:20rpx;display:flex;align-items:center;justify-content:center;color:#0e6547;margin-bottom:18rpx;}
+
+.reward-item,.ledger-card{position:relative;padding-left:116rpx!important;min-height:100rpx;}.visual-tile{position:absolute;left:22rpx;top:26rpx;width:74rpx;height:74rpx;border-radius:18rpx;background:#fff2d6;display:flex;align-items:center;justify-content:center;}.exchange-button{background:linear-gradient(110deg,#ffb43e,#ed920c)!important;color:white!important;border-radius:32rpx!important;}.points-badge{color:#ec9315!important;background:#fff6e8!important;}
+.prototype-workspace{background:#F6F8F5!important;padding:28rpx 28rpx calc(160rpx + env(safe-area-inset-bottom))!important;box-sizing:border-box;}.ld-heading{display:none;}.summary-band,.section-band,.balance-band,.reward-item,.exchange-item{border:1rpx solid #e1e9e2!important;border-radius:24rpx!important;background:#fffefa!important;box-sizing:border-box;}.metric-grid{min-width:0;}.category-row{gap:14rpx;}.category-row>text:first-child{max-width:180rpx;overflow-wrap:anywhere;}.category-track{min-width:0;}.date-option{flex-shrink:0;}.tab-button{min-width:0;padding-left:8rpx;padding-right:8rpx;}.item-title{overflow-wrap:anywhere;}.supplement-form textarea{box-sizing:border-box;width:100%;}.state-view{background:#fffefa;border-radius:24rpx;color:#809486;}
+.account-band{background:linear-gradient(110deg,#12664f,#3b8b6b)!important;color:white;border-radius:24rpx!important;padding:30rpx!important;}.student-name,.balance-label,.balance-value,.updated-at{color:inherit!important;}.balance-value{font-size:54rpx!important;}.balance-row{position:relative;}.redeem-link{position:absolute;right:0;top:-66rpx;background:#ffc940;color:#123c2a;font-size:24rpx;border-radius:40rpx;padding:0 24rpx;line-height:58rpx;}.ledger-card{background:white!important;border:0!important;border-bottom:1rpx solid #edf0e8!important;border-radius:0!important;padding:22rpx 22rpx 22rpx 110rpx!important;margin:0!important;}.visual-tile{background:#e1f3e8!important;width:64rpx;height:64rpx;border-radius:50%;}.ledger-amount{color:#f49a00!important;font-size:30rpx;}.ledger-amount.negative{color:#af5d4d!important;}.ledger-title{font-size:27rpx;}.ld-heading{display:flex!important;margin:28rpx 0 18rpx;}.ld-heading:first-of-type{display:none!important;}
 </style>

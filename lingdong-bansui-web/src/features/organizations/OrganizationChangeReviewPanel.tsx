@@ -1,3 +1,4 @@
+import { Button as PlainButton } from 'antd';
 import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { ViewportTable as Table } from '../../components/ViewportTable';
 import { useEffect, useState } from 'react';
@@ -94,7 +95,7 @@ export function OrganizationChangeReviewPanel({ canReview, refreshKey = 0 }: Org
       render: (_: unknown, item: OrganizationChange) => item.taskStatus === 'PENDING_REVIEW' ? (
         <Space size={4}>
           <Button actionKey="ORG_NODE_CHANGE_REVIEW" size="small" type="primary" icon={<Check size={14} />} onClick={() => openReview(item, 'APPROVE')}>批准</Button>
-          <Button actionKey="organizations.organization-change-review-panel.2" size="small" danger icon={<X size={14} />} onClick={() => openReview(item, 'REJECT')}>驳回</Button>
+          <Button actionKey="ORG_NODE_CHANGE_REVIEW" size="small" danger icon={<X size={14} />} onClick={() => openReview(item, 'REJECT')}>驳回</Button>
         </Space>
       ) : null
     }] : [])
@@ -108,7 +109,7 @@ export function OrganizationChangeReviewPanel({ canReview, refreshKey = 0 }: Org
       {errorMessage && <Alert type="error" showIcon message={errorMessage} />}
       <Table<OrganizationChange>
         rowKey="changeId" columns={columns} dataSource={items} loading={loading}
-        pagination={{ pageSize: 10, hideOnSinglePage: true }} scroll={{ x: 760 }}
+        pagination={{}} scroll={{ x: 760 }}
         locale={{ emptyText: canReview ? '暂无组织变更待办' : '暂无组织变更申请' }}
       />
 
@@ -126,8 +127,8 @@ export function OrganizationChangeReviewPanel({ canReview, refreshKey = 0 }: Org
             <Input.TextArea rows={4} maxLength={500} showCount />
           </Form.Item>
           <div className="form-actions">
-            <Button actionKey="organizations.organization-change-review-panel.4" onClick={() => setReviewing(null)}>取消</Button>
-            <Button actionKey="organizations.organization-change-review-panel.5" type="primary" danger={reviewing?.action === 'REJECT'} htmlType="submit" loading={submitting}>
+            <PlainButton  onClick={() => setReviewing(null)}>取消</PlainButton>
+            <Button actionKey="ORG_NODE_CHANGE_REVIEW" type="primary" danger={reviewing?.action === 'REJECT'} htmlType="submit" loading={submitting}>
               {reviewing?.action === 'APPROVE' ? '确认批准' : '确认驳回'}
             </Button>
           </div>

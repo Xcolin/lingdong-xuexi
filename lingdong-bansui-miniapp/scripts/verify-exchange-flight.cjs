@@ -1,0 +1,10 @@
+const assert=require('node:assert/strict');const fs=require('node:fs');const ts=require('typescript');
+const moduleCopy={exports:{}};new Function('exports','module',ts.transpileModule(fs.readFileSync(require('node:path').join(__dirname,'../src/pages/rewards/exchange-flight.ts'),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText)(moduleCopy.exports,moduleCopy);
+(async()=>{let token='first',requests=0,applied=0,finish;const run=moduleCopy.exports.createExchangeFlight(()=>token);
+assert.equal(await run(false,async()=>{requests++;},()=>{applied++;}),false);assert.equal(requests,0);
+const first=run(true,()=>{requests++;return new Promise(resolve=>finish=resolve)},()=>applied++);
+assert.equal(await run(true,async()=>{requests++;},()=>applied++),false);assert.equal(requests,1);
+token='second';finish({id:'old'});assert.equal(await first,false);assert.equal(applied,0);
+assert.equal(await run(true,async()=>{requests++;return {id:'new'}},()=>applied++),true);assert.equal(applied,1);
+await assert.rejects(()=>run(true,async()=>{throw Error('failed')},()=>applied++));assert.equal(await run(true,async()=>1,()=>applied++),true);
+console.log('cancel, duplicate submit, changed session and failed request recovery passed');})().catch(e=>{console.error(e);process.exitCode=1});

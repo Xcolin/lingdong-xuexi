@@ -1,13 +1,15 @@
+import { Button as PlainButton } from 'antd';
+import {subscribeStudentProfileChanged} from '../users/studentProfileChanged';
 import { ConfiguredModal as Modal } from '../../components/ConfiguredModal';
 import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { ViewportTable as Table } from '../../components/ViewportTable';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Input, QRCode, Space, Tag, Tooltip, message } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
 import { QrCode, RefreshCw, Search, Unlink } from 'lucide-react';
 import { studentLoginApi, type StudentDirectoryItem, type StudentDirectoryPage, type StudentLoginQrTicket, type StudentWechatBindingSummary } from './api';
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 
 /** 主家长和直接机构管理员生成其数据范围内学生的一次性登录二维码。 */
 interface StudentLoginManagementPageProps {
@@ -22,6 +24,7 @@ export function StudentLoginManagementPage({
   canManageStudentWechat = false
 }: StudentLoginManagementPageProps) {
   const [directory, setDirectory] = useState<StudentDirectoryPage>({ items: [], page: 1, pageSize: PAGE_SIZE, total: 0 });
+  const pageSizeRef = useRef(PAGE_SIZE);
   const [keyword, setKeyword] = useState('');
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -31,16 +34,17 @@ export function StudentLoginManagementPage({
   const [remainingSeconds, setRemainingSeconds] = useState(0);
   const [wechatBindings, setWechatBindings] = useState<Record<string, StudentWechatBindingSummary>>({});
 
-  const loadStudents = useCallback(async (nextKeyword: string, page: number) => {
+  const loadStudents = useCallback(async (nextKeyword: string, page: number, pageSize = pageSizeRef.current) => {
     setLoading(true);
     setErrorMessage(null);
     try {
       const [students, bindings] = await Promise.all([
-        studentLoginApi.list(nextKeyword || undefined, page, PAGE_SIZE),
+        studentLoginApi.list(nextKeyword || undefined, page, pageSize),
         studentWechatAuthEnabled && canManageStudentWechat
           ? studentLoginApi.listWechatBindings()
           : Promise.resolve([])
       ]);
+      pageSizeRef.current = pageSize;
       setDirectory(students);
       setWechatBindings(Object.fromEntries(bindings.map((binding) => [binding.studentId, binding])));
     } catch (error) {
@@ -51,7 +55,7 @@ export function StudentLoginManagementPage({
   }, [canManageStudentWechat, studentWechatAuthEnabled]);
 
   function confirmWechatUnbinding(student: StudentDirectoryItem): void {
-    Modal.confirm({ actionPrefix: 'student-login.student-login-management-page.confirm.1',
+    Modal.confirm({ actionPrefix: 'STUDENT_WECHAT_UNBIND',
       title: `解绑${student.studentName}的微信？`,
       content: '解绑后该学生不能继续使用微信快捷登录，账号登录和已有学习数据不受影响。',
       okText: '确认解绑',
@@ -68,6 +72,8 @@ export function StudentLoginManagementPage({
   useEffect(() => {
     void loadStudents('', 1);
   }, [loadStudents]);
+
+  useEffect(()=>subscribeStudentProfileChanged(()=>{void loadStudents(keyword.trim(),directory.page);}),[keyword,directory.page,loadStudents]);
 
   const issueTicket = useCallback(async (student: StudentDirectoryItem) => {
     setTicketLoading(true);
@@ -110,7 +116,7 @@ export function StudentLoginManagementPage({
   return (
     <div className="page-stack">
       <div className="page-heading"><h1>学生登录</h1></div>
-      {errorMessage && <Alert type="error" showIcon message={errorMessage} action={<Button actionKey="student-login.student-login-management-page.1" size="small" onClick={() => void loadStudents(keyword, directory.page)}>重试</Button>} />}
+      {errorMessage && <Alert type="error" showIcon message={errorMessage} action={<PlainButton  size="small" onClick={() => void loadStudents(keyword, directory.page)}>重试</PlainButton>} />}
       <ProCard className="content-panel" bordered={false}>
         <Space className="student-login-toolbar">
           <Input
@@ -120,7 +126,7 @@ export function StudentLoginManagementPage({
             onChange={(event) => setKeyword(event.target.value)}
             onPressEnter={() => void loadStudents(keyword.trim(), 1)}
           />
-          <Button actionKey="student-login.student-login-management-page.2" type="primary" icon={<Search size={16} />} onClick={() => void loadStudents(keyword.trim(), 1)}>查询</Button>
+          <Button actionKey="STUDENT_READ" type="primary" icon={<Search size={16} />} onClick={() => void loadStudents(keyword.trim(), 1)}>查询</Button>
         </Space>
         <Table<StudentDirectoryItem>
           rowKey="id"
@@ -131,8 +137,8 @@ export function StudentLoginManagementPage({
             current: directory.page,
             pageSize: directory.pageSize,
             total: directory.total,
-            showSizeChanger: false,
-            onChange: (page) => void loadStudents(keyword.trim(), page)
+            showSizeChanger: true,
+            onChange: (page, pageSize) => void loadStudents(keyword.trim(), page, pageSize)
           }}
           columns={[
             { title: '学生姓名', dataIndex: 'studentName', key: 'studentName' },
@@ -180,7 +186,7 @@ export function StudentLoginManagementPage({
         title={selectedStudent ? `${selectedStudent.studentName}的登录二维码` : '学生登录二维码'}
         open={Boolean(selectedStudent)}
         onCancel={closeQr}
-        footer={<Button actionKey="student-login.student-login-management-page.5" onClick={closeQr}>关闭</Button>}
+        footer={<PlainButton  onClick={closeQr}>关闭</PlainButton>}
         width="min(520px, 92vw)"
         destroyOnHidden
       >
@@ -189,7 +195,7 @@ export function StudentLoginManagementPage({
           <div className="student-login-qr-status">
             {ticket ? `二维码将在 ${remainingSeconds} 秒后自动刷新` : '正在生成二维码'}
           </div>
-          <Button actionKey="student-login.student-login-management-page.6"
+          <Button actionKey="STUDENT_LOGIN_QR_CREATE"
             icon={<RefreshCw size={16} />}
             loading={ticketLoading}
             disabled={!selectedStudent}

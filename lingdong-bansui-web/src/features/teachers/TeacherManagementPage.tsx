@@ -1,3 +1,6 @@
+import {classApi} from '../../api/classes';
+import { Button as PlainButton } from 'antd';
+import {subscribeTeacherProfileChanged} from '../users/teacherProfileChanged';
 import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { ViewportTable as Table } from '../../components/ViewportTable';
 import { ProCard } from '@ant-design/pro-components';
@@ -14,7 +17,7 @@ import {
   type TeacherPage, type TeacherQuery, type TeacherStatus, type UpdateTeacherProfileInput
 } from '../../api/teachers';
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 const EMPTY_PAGE: TeacherPage = { items: [], page: 1, pageSize: PAGE_SIZE, total: 0 };
 
 interface TeacherManagementPageProps {
@@ -90,7 +93,7 @@ export function TeacherManagementPage({ permissionCodes }: TeacherManagementPage
   const [batchForm] = Form.useForm<BatchFormValues>();
 
   const flatNodes = useMemo(() => flattenNodes(nodes), [nodes]);
-  const schools = flatNodes.filter((node) => node.typeCode === 'SCHOOL' && node.effectiveStatus === 'ENABLED');
+  const schools = flatNodes.filter((node) => ['SCHOOL', 'TRAINING_INSTITUTION'].includes(node.typeCode) && node.effectiveStatus === 'ENABLED');
   const classes = flatNodes.filter((node) => node.typeCode === 'CLASS' && node.effectiveStatus === 'ENABLED');
   const filterClasses = filters.schoolId
     ? classes.filter((node) => belongsToSchool(node, filters.schoolId!, schools)) : classes;
@@ -100,16 +103,18 @@ export function TeacherManagementPage({ permissionCodes }: TeacherManagementPage
     ? classes.filter((node) => belongsToSchool(node, classTeacher.schoolId, schools)) : [];
 
   useEffect(() => {
-    void Promise.all([loadTeachers({}, 1), organizationApi.listTree()
-      .then(setNodes)
+    void Promise.all([loadTeachers({}, 1), Promise.all([classApi.lookup('TEACHER_READ','SCHOOL'),classApi.lookup('TEACHER_READ','CLASS')])
+      .then(([schools,classes])=>setNodes([...schools,...classes].map(node=>({...node,path:node.typeCode==='CLASS'?`${node.schoolOrganizationId}/${node.id}/`:`${node.id}/`,children:[]} as unknown as OrganizationNode))))
       .catch((error: unknown) => setErrorMessage(toMessage(error)))]);
   }, []);
 
-  async function loadTeachers(nextFilters: FilterValues, page: number): Promise<void> {
+  useEffect(()=>subscribeTeacherProfileChanged(()=>{void loadTeachers(filters,directory.page);}),[filters,directory.page,directory.pageSize]);
+
+  async function loadTeachers(nextFilters: FilterValues, page: number, pageSize = directory.pageSize): Promise<void> {
     setLoading(true);
     setErrorMessage(undefined);
     try {
-      const query: TeacherQuery = { ...nextFilters, page, pageSize: PAGE_SIZE };
+      const query: TeacherQuery = { ...nextFilters, page, pageSize };
       setDirectory(await teachersApi.list(query));
       setSelectedIds([]);
     } catch (error) {
@@ -243,7 +248,7 @@ export function TeacherManagementPage({ permissionCodes }: TeacherManagementPage
           {canCreate && <Button actionKey="TEACHER_CREATE" type="primary" icon={<UserPlus size={16} />} onClick={() => setCreateOpen(true)}>新增教师</Button>}
         </Space>
       </div>
-      {errorMessage && <Alert type="error" showIcon message={errorMessage} action={<Button actionKey="teachers.teacher-management-page.3" size="small" onClick={() => void loadTeachers(filters, directory.page)}>重试</Button>} />}
+      {errorMessage && <Alert type="error" showIcon message={errorMessage} action={<PlainButton  size="small" onClick={() => void loadTeachers(filters, directory.page)}>重试</PlainButton>} />}
       <ProCard className="content-panel" bordered={false}>
         <Form form={filterForm} layout="inline" className="directory-filters" onFinish={search}>
           <Form.Item label="账号或姓名" name="keyword"><Input allowClear /></Form.Item>
@@ -255,13 +260,13 @@ export function TeacherManagementPage({ permissionCodes }: TeacherManagementPage
           </Form.Item>
           <Form.Item label="班级" name="classOrganizationId"><Select allowClear className="filter-select" options={filterClasses.map(toOption)} /></Form.Item>
           <Form.Item label="状态" name="status"><Select allowClear className="filter-select" options={statusOptions} /></Form.Item>
-          <Form.Item><Button actionKey="teachers.teacher-management-page.4" type="primary" htmlType="submit" icon={<Search size={16} />}>查询</Button></Form.Item>
+          <Form.Item><Button actionKey="TEACHER_READ" type="primary" htmlType="submit" icon={<Search size={16} />}>查询</Button></Form.Item>
         </Form>
         <Table<Teacher>
           rowKey="id" loading={loading} dataSource={directory.items} scroll={{ x: 1060 }}
           locale={{ emptyText: '暂无匹配教师' }}
           rowSelection={canUseBatch ? { selectedRowKeys: selectedIds, onChange: (keys) => setSelectedIds(keys.map(String)), preserveSelectedRowKeys: true } : undefined}
-          pagination={{ current: directory.page, pageSize: directory.pageSize, total: directory.total, showSizeChanger: false, onChange: (page) => void loadTeachers(filters, page) }}
+          pagination={{ current: directory.page, pageSize: directory.pageSize, total: directory.total, showSizeChanger: true, onChange: (page, pageSize) => void loadTeachers(filters, page, pageSize) }}
           columns={[
             { title: '账号', dataIndex: 'username', key: 'username', width: 150 },
             { title: '姓名', dataIndex: 'displayName', key: 'displayName', width: 120 },
@@ -291,7 +296,7 @@ export function TeacherManagementPage({ permissionCodes }: TeacherManagementPage
           <Form.Item label="初始密码" name="initialPassword" rules={[{ required: true }, { pattern: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,20}$/, message: '请输入 8 至 20 位字母和数字组合' }]}><Input.Password autoComplete="new-password" /></Form.Item>
           <Form.Item label="所属学校" name="schoolId" rules={[{ required: true }]}><Select options={schools.map(toOption)} onChange={(value) => { setCreateSchoolId(value); createForm.setFieldValue('classOrganizationIds', []); }} /></Form.Item>
           {canManageClass && <Form.Item label="初始班级" name="classOrganizationIds"><Select mode="multiple" options={createClasses.map(toOption)} disabled={!createSchoolId} /></Form.Item>}
-          <FormActions submitting={submitting} onCancel={() => setCreateOpen(false)} submitText="创建教师" />
+          <FormActions actionKey="TEACHER_CREATE" submitting={submitting} onCancel={() => setCreateOpen(false)} submitText="创建教师" />
         </Form>
       </Modal>
 
@@ -300,18 +305,18 @@ export function TeacherManagementPage({ permissionCodes }: TeacherManagementPage
           <Form.Item label="教师姓名" name="displayName" rules={[{ required: true }, { max: 20 }]}><Input /></Form.Item>
           <Form.Item label="新手机号" name="mobile" extra="留空保持现有手机号不变"><Input disabled={Form.useWatch('clearMobile', profileForm) === true} /></Form.Item>
           <Form.Item name="clearMobile" valuePropName="checked"><Checkbox>清空现有手机号</Checkbox></Form.Item>
-          <FormActions submitting={submitting} onCancel={() => setEditingTeacher(undefined)} />
+          <FormActions actionKey="TEACHER_UPDATE" submitting={submitting} onCancel={() => setEditingTeacher(undefined)} />
         </Form>
       </Modal>
 
       <Modal title="重置教师密码" open={Boolean(passwordTeacher)} footer={null} onCancel={() => setPasswordTeacher(undefined)} destroyOnHidden width="min(520px, 92vw)">
         <Form form={passwordForm} layout="vertical" onFinish={resetPassword}>
           <Form.Item label="新密码" name="newPassword" rules={[{ required: true }, { pattern: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,20}$/, message: '请输入 8 至 20 位字母和数字组合' }]}><Input.Password autoComplete="new-password" /></Form.Item>
-          <FormActions submitting={submitting} onCancel={() => setPasswordTeacher(undefined)} submitText="重置密码" />
+          <FormActions actionKey="TEACHER_PASSWORD_RESET" submitting={submitting} onCancel={() => setPasswordTeacher(undefined)} submitText="重置密码" />
         </Form>
       </Modal>
 
-      <Drawer title={classTeacher ? `${classTeacher.displayName}的班级范围` : '教师班级范围'} open={Boolean(classTeacher)} width="min(420px, 92vw)" onClose={() => setClassTeacher(undefined)} extra={<Button actionKey="teachers.teacher-management-page.5" type="primary" loading={submitting} onClick={() => void saveClasses()}>保存</Button>}>
+      <Drawer title={classTeacher ? `${classTeacher.displayName}的班级范围` : '教师班级范围'} open={Boolean(classTeacher)} width="min(420px, 92vw)" onClose={() => setClassTeacher(undefined)} extra={<Button actionKey="TEACHER_CLASS_ASSIGN" type="primary" loading={submitting} onClick={() => void saveClasses()}>保存</Button>}>
         <Checkbox.Group className="teacher-class-checkboxes" value={selectedClassIds} onChange={(values) => setSelectedClassIds(values.map(String))} options={classDrawerOptions.map(toOption)} />
         {classDrawerOptions.length === 0 && <Alert type="info" showIcon message="该学校暂无可用班级" />}
       </Drawer>
@@ -321,7 +326,7 @@ export function TeacherManagementPage({ permissionCodes }: TeacherManagementPage
           <Alert type="info" showIcon message={`已选择 ${selectedIds.length} 位教师`} />
           <Form.Item label="操作类型" name="operation" rules={[{ required: true }]}><Select options={availableBatchOptions} onChange={setBatchOperation} /></Form.Item>
           {(batchOperation === 'BIND_CLASS' || batchOperation === 'UNBIND_CLASS') && <Form.Item label="班级" name="classOrganizationId" rules={[{ required: true }]}><Select showSearch optionFilterProp="label" options={classes.map(toOption)} /></Form.Item>}
-          <FormActions submitting={submitting} onCancel={() => setBatchOpen(false)} submitText="执行批量操作" />
+          <FormActions actionKey="TEACHER_BATCH_MANAGE" submitting={submitting} onCancel={() => setBatchOpen(false)} submitText="执行批量操作" />
         </Form>
       </Modal>
     </div>
@@ -338,15 +343,15 @@ function StatusActions({ teacher, onChange }: { teacher: Teacher; onChange: (tea
 
 function ConfirmStatus({ teacher, status, icon, onChange }: { teacher: Teacher; status: TeacherStatus; icon: ReactNode; onChange: (teacher: Teacher, status: TeacherStatus) => Promise<void> }) {
   const label = statusLabel(status);
-  return <Tooltip title={label}><Popconfirm title={`确认${label}该教师？`} onConfirm={() => void onChange(teacher, status)}><Button actionKey={`teachers.status.${status.toLowerCase()}`} type="text" icon={icon} aria-label={`${label}-${teacher.displayName}`} /></Popconfirm></Tooltip>;
+  return <Tooltip title={label}><Popconfirm title={`确认${label}该教师？`} onConfirm={() => void onChange(teacher, status)}><Button actionKey="TEACHER_STATUS_CHANGE" type="text" icon={icon} aria-label={`${label}-${teacher.displayName}`} /></Popconfirm></Tooltip>;
 }
 
 function ActionButton({ actionKey, title, label, icon, onClick }: { actionKey: string; title: string; label: string; icon: ReactNode; onClick: () => void }) {
   return <Tooltip title={title}><Button actionKey={actionKey} type="text" icon={icon} aria-label={label} onClick={onClick} /></Tooltip>;
 }
 
-function FormActions({ submitting, onCancel, submitText = '保存' }: { submitting: boolean; onCancel: () => void; submitText?: string }) {
-  return <div className="form-actions"><Button actionKey="teachers.teacher-management-page.8" onClick={onCancel}>取消</Button><Button actionKey="teachers.teacher-management-page.9" type="primary" htmlType="submit" loading={submitting}>{submitText}</Button></div>;
+function FormActions({ actionKey, submitting, onCancel, submitText = '保存' }: { actionKey: string; submitting: boolean; onCancel: () => void; submitText?: string }) {
+  return <div className="form-actions"><PlainButton  onClick={onCancel}>取消</PlainButton><Button actionKey={actionKey} type="primary" htmlType="submit" loading={submitting}>{submitText}</Button></div>;
 }
 
 function StatusTag({ status }: { status: TeacherStatus }) {

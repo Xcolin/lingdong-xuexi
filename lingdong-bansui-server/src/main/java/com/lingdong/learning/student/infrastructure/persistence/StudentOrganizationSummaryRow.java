@@ -8,6 +8,23 @@ public record StudentOrganizationSummaryRow(
         Long enrollmentOrganizationId,
         String enrollmentOrganizationName,
         Long currentClassOrganizationId,
-        String currentClassOrganizationName
-) {
+        String currentClassOrganizationName,
+        String studentStatus,
+        String studentNumber) {
+    public StudentOrganizationSummaryRow(
+        Long studentId,
+        String studentName,
+        String gradeCode,
+        Long enrollmentOrganizationId,
+        String enrollmentOrganizationName,
+        Long currentClassOrganizationId,
+        String currentClassOrganizationName,
+        String studentStatus
+){
+        this(studentId,studentName,gradeCode,enrollmentOrganizationId,enrollmentOrganizationName,currentClassOrganizationId,currentClassOrganizationName,studentStatus,null);
+    }
+
+    public StudentOrganizationSummaryRow(Long studentId,String studentName,String gradeCode,Long enrollmentOrganizationId,String enrollmentOrganizationName,Long currentClassOrganizationId,String currentClassOrganizationName) {
+        this(studentId,studentName,gradeCode,enrollmentOrganizationId,enrollmentOrganizationName,currentClassOrganizationId,currentClassOrganizationName,null);
+    }
 }

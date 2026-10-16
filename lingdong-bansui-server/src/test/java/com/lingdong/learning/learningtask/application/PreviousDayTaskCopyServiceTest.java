@@ -35,14 +35,22 @@ class PreviousDayTaskCopyServiceTest {
             mock(PreviousDayTaskCopyTransactionService.class);
     private final Clock clock = Clock.fixed(
             Instant.parse("2026-08-08T04:00:00Z"), ZoneId.of("Asia/Shanghai"));
+    private final com.lingdong.learning.user.infrastructure.persistence.UserMapper actorUsers = mock(com.lingdong.learning.user.infrastructure.persistence.UserMapper.class);
+    private final com.lingdong.learning.auth.infrastructure.persistence.ParentAuthenticationMapper actorProfiles = mock(com.lingdong.learning.auth.infrastructure.persistence.ParentAuthenticationMapper.class);
+    private final com.lingdong.learning.user.infrastructure.persistence.UserRoleMapper actorRoles = mock(com.lingdong.learning.user.infrastructure.persistence.UserRoleMapper.class);
+    private final com.lingdong.learning.auth.application.ParentActorAccessService parentActors = new com.lingdong.learning.auth.application.ParentActorAccessService(actorUsers,actorProfiles,actorRoles);
     private final PreviousDayTaskCopyService service = new PreviousDayTaskCopyService(
             featureAccessService, parentStudentMapper, studentMapper, copyMapper,
-            transactionService, clock);
+            transactionService, clock, parentActors);
     private final AuthenticatedUser parent = new AuthenticatedUser(
-            44L, 55L, "parent", "家长", AuthClientType.WEB, List.of("PARENT"));
+            44L, 55L, "parent", "家长", AuthClientType.WEB, List.of("CUSTOM_FAMILY"));
 
     @BeforeEach
     void setUp() {
+        when(actorUsers.findById(44L)).thenReturn(com.lingdong.learning.user.domain.User.create(44L,"family","family",null,com.lingdong.learning.user.domain.UserType.FAMILY));
+        when(actorProfiles.findProfileByUserId(44L)).thenReturn(mock(com.lingdong.learning.auth.application.ParentProfile.class));
+        when(actorRoles.hasAnyEnabledRole(44L)).thenReturn(true);
+        when(actorUsers.findById(77L)).thenReturn(com.lingdong.learning.user.domain.User.create(77L,"teacher","teacher",null,com.lingdong.learning.user.domain.UserType.ORGANIZATION));
         when(parentStudentMapper.existsActivePrimaryByParentAndStudent(44L, 22L)).thenReturn(true);
         when(studentMapper.findById(22L)).thenReturn(Student.create(22L, "小灵", "GRADE_3", 66L));
         when(copyMapper.findSourceTasks(44L, 22L, LocalDate.of(2026, 8, 7)))
@@ -70,10 +78,11 @@ class PreviousDayTaskCopyServiceTest {
                 77L, 88L, "teacher", "教师", AuthClientType.WEB, List.of("TEACHER"));
 
         assertThatThrownBy(() -> service.preview(teacher, 22L))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("仅活动主家长可复制昨日任务");
+                .isInstanceOf(com.lingdong.learning.common.security.SystemOperationAccessDeniedException.class)
+                .hasMessageContaining("家庭账号");
 
         verify(copyMapper, never()).findSourceTasks(77L, 22L, LocalDate.of(2026, 8, 7));
+        verify(studentMapper,never()).findById(22L);
     }
 
     @Test

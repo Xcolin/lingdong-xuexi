@@ -1,0 +1,116 @@
+
+> lingdong-bansui-web@0.1.0 test
+> vitest run src/app/App.test.tsx src/app/menuCatalog.test.ts src/components/ConfiguredButton.test.tsx src/components/ConfiguredModal.test.tsx src/features/export-jobs src/features/growth-reviews/CreateGrowthReviewExport.test.tsx
+
+
+ RUN  v3.2.7 E:/apps/lingdong-xuexi-code/lingdong-bansui-web
+
+ ✓ src/app/menuCatalog.test.ts (1 test) 250ms
+ ✓ src/components/ConfiguredButton.test.tsx (7 tests) 1154ms
+   ✓ 配置按钮 > 菜单授权名称带功能前缀但实际按钮仍使用短名称  621ms
+ ❯ src/app/App.test.tsx (28 tests | 2 failed) 386ms
+   ✓ 权限驱动 Web 页面和导出入口 > canAccessStudentQrLogin接受自定义角色并拒绝缺失权限或开关 229ms
+   ✓ 权限驱动 Web 页面和导出入口 > canAccessLearningTasks接受自定义角色并拒绝缺失权限或开关 6ms
+   ✓ 权限驱动 Web 页面和导出入口 > canAccessGrowthPoints接受自定义角色并拒绝缺失权限或开关 3ms
+   ✓ 权限驱动 Web 页面和导出入口 > canAccessRewards接受自定义角色并拒绝缺失权限或开关 7ms
+   ✓ 权限驱动 Web 页面和导出入口 > canAccessGrowthReviews接受自定义角色并拒绝缺失权限或开关 13ms
+   ✓ 权限驱动 Web 页面和导出入口 > canAccessOrganizationPage接受自定义角色并拒绝缺失权限或开关 5ms
+   ✓ 权限驱动 Web 页面和导出入口 > canAccessTeacherManagement接受自定义角色并拒绝缺失权限或开关 5ms
+   ✓ 权限驱动 Web 页面和导出入口 > canAccessExceptionReports接受自定义角色并拒绝缺失权限或开关 3ms
+   ✓ 权限驱动 Web 页面和导出入口 > canAccessDictionaryManagement接受自定义角色并拒绝缺失权限或开关 9ms
+   ✓ 权限驱动 Web 页面和导出入口 > canAccessCacheManagement接受自定义角色并拒绝缺失权限或开关 9ms
+   ✓ 权限驱动 Web 页面和导出入口 > canAccessInterfaceServiceManagement接受自定义角色并拒绝缺失权限或开关 4ms
+   ✓ 权限驱动 Web 页面和导出入口 > canAccessAttachmentManagement接受自定义角色并拒绝缺失权限或开关 4ms
+   ✓ 权限驱动 Web 页面和导出入口 > canAccessImportExportTemplates接受自定义角色并拒绝缺失权限或开关 3ms
+   ✓ 权限驱动 Web 页面和导出入口 > canAccessImportJobs接受自定义角色并拒绝缺失权限或开关 3ms
+   ✓ 权限驱动 Web 页面和导出入口 > canAccessExportJobs接受自定义角色并拒绝缺失权限或开关 3ms
+   ✓ 权限驱动 Web 页面和导出入口 > canExportInterfaceLedger接受自定义角色并拒绝缺失权限或开关 3ms
+   ✓ 权限驱动 Web 页面和导出入口 > canExportCache接受自定义角色并拒绝缺失权限或开关 2ms
+   ✓ 权限驱动 Web 页面和导出入口 > canExportSystemTasks接受自定义角色并拒绝缺失权限或开关 2ms
+   × 权限驱动 Web 页面和导出入口 > canExportRewards接受自定义角色并拒绝缺失权限或开关 39ms
+     → expected false to be true // Object.is equality
+   ✓ 权限驱动 Web 页面和导出入口 > canExportExceptions接受自定义角色并拒绝缺失权限或开关 3ms
+   ✓ 权限驱动 Web 页面和导出入口 > canExportAttachments接受自定义角色并拒绝缺失权限或开关 5ms
+   × 权限驱动 Web 页面和导出入口 > canExportStudentTasks接受自定义角色并拒绝缺失权限或开关 5ms
+     → expected false to be true // Object.is equality
+   ✓ 权限驱动 Web 页面和导出入口 > canExportOrgTaskStatistics接受自定义角色并拒绝缺失权限或开关 4ms
+   ✓ 权限驱动 Web 页面和导出入口 > canExportAttendanceLedger接受自定义角色并拒绝缺失权限或开关 4ms
+   ✓ 权限驱动 Web 页面和导出入口 > 家长关系按有效读取权限开放，自定义角色无需角色名称匹配 4ms
+   ✓ 学生微信入口要求有效学生读取权限和开关，身份适用性由服务端判定 2ms
+   ✓ 学生登录页面权限允许进入，但全局关闭仍阻止入口 2ms
+   ✓ 菜单和直达路由使用同一有效PAGE权限及功能可用性，缺配置安全拒绝 2ms
+ ✓ src/components/ConfiguredModal.test.tsx (4 tests) 1764ms
+   ✓ ConfiguredModal > keeps dynamic business labels when configuration still has the default name  834ms
+   ✓ ConfiguredModal > captures configuration for static confirms and preserves promise-based confirmation  443ms
+ ✓ src/features/growth-reviews/CreateGrowthReviewExport.test.tsx (3 tests) 4194ms
+   ✓ 单份提交使用服务端模板与模式，成功通知历史刷新  2474ms
+   ✓ 没有模板不能提交，支持重试  483ms
+   ✓ 区间拒绝倒置日期，正确请求不携带单份标识  1236ms
+ ✓ src/features/export-jobs/ExportJobManagementPage.test.tsx (38 tests) 58184ms
+   ✓ 数据导出中心 > 学生任务 PDF 下载使用正确扩展名且撤权丢弃迟到详情  2797ms
+   ✓ 数据导出中心 > 学生任务报表提交授权筛选、完整计划日期及XLSX格式  1268ms
+   ✓ 数据导出中心 > 学生任务报表提交授权筛选、完整计划日期及PDF格式  3110ms
+   ✓ 数据导出中心 > 附件台账提交文本筛选、19位上传人、创建时间及服务端默认列  2594ms
+   ✓ 数据导出中心 > 异常报备导出只使用服务端有效班级并提交类型状态和时间  2301ms
+   ✓ 数据导出中心 > 学生任务报表撤回 revision 后清除详情并丢弃迟到文件  1478ms
+   ✓ 数据导出中心 > 学生任务报表撤回 permission 后清除详情并丢弃迟到文件  1215ms
+   ✓ 数据导出中心 > 学生任务报表撤回 read 后清除详情并丢弃迟到文件  1491ms
+   ✓ 数据导出中心 > 附件台账撤回 revision 后清除详情并丢弃迟到文件  1219ms
+   ✓ 数据导出中心 > 附件台账撤回 permission 后清除详情并丢弃迟到文件  1257ms
+   ✓ 数据导出中心 > 附件台账撤回 read 后清除详情并丢弃迟到文件  1365ms
+   ✓ 数据导出中心 > 异常台账权限上下文变化后清除详情并丢弃迟到文件  1086ms
+   ✓ 数据导出中心 > 奖励兑换报表使用主家长学生选项及兑换状态和申请时间  1761ms
+   ✓ 数据导出中心 > 奖励报表撤回 canRead 后关闭详情并隐藏下载  822ms
+   ✓ 数据导出中心 > 奖励报表撤回 canExportRewards 后关闭详情并隐藏下载  916ms
+   ✓ 数据导出中心 > 奖励报表请求期间撤权不保存迟到文件  450ms
+   ✓ 数据导出中心 > 展示本人作业进度并仅在成功后允许下载  455ms
+   ✓ 数据导出中心 > 系统管理员可按字典类型和项状态提交字典台账导出  1508ms
+   ✓ 数据导出中心 > 字典导出权限或功能不可用时隐藏创建和历史作业内容入口  355ms
+   ✓ 数据导出中心 > 系统管理员按模板类型模块及状态提交模板台账导出  1943ms
+   ✓ 数据导出中心 > 模板导出功能关闭时隐藏创建及历史详情下载  321ms
+   ✓ 数据导出中心 > 系统任务台账只使用服务端可见类型并提交状态时间  1617ms
+   ✓ 数据导出中心 > 系统任务领域权限变化时清除已打开详情，即使导出权限仍存在  846ms
+   ✓ 数据导出中心 > 缓存日志按缓存域状态和申请时间提交，列来自服务端且说明不执行操作  2200ms
+   ✓ 数据导出中心 > 接口服务台账按调用方状态及字符串责任人标识提交  6219ms
+   ✓ 数据导出中心 > 缓存权限 canExportCache 撤回后关闭已打开的详情并隐藏下载入口  2413ms
+   ✓ 数据导出中心 > 缓存权限 canRead 撤回后关闭已打开的详情并隐藏下载入口  1812ms
+   ✓ 数据导出中心 > 系统任务领域变化后不保存迟到文件，即使总体导出权限仍存在  1307ms
+   ✓ 数据导出中心 > 缓存文件请求期间撤权后不保存迟到的文件  1869ms
+   ✓ 数据导出中心 > 缓存创建中撤权后迟到的选项不能恢复弹窗  1267ms
+   ✓ 数据导出中心 > 接口权限 canExportInterface 撤回后关闭已打开的详情并隐藏下载入口  1256ms
+   ✓ 数据导出中心 > 接口权限 canRead 撤回后关闭已打开的详情并隐藏下载入口  1187ms
+   ✓ 数据导出中心 > 接口文件请求期间撤权后不保存迟到的文件  827ms
+   ✓ 数据导出中心 > 接口创建中撤权后迟到的选项不能恢复弹窗  707ms
+   ✓ 数据导出中心 > 接口台账拒绝非19位责任人标识而不调用创建接口  1413ms
+   ✓ 数据导出中心 > 家长创建积分台账导出时只能使用服务端返回的学生与列  1926ms
+   ✓ 数据导出中心 > 审核员只加载敏感待审任务并可批准  1093ms
+   ✓ 数据导出中心 > 无创建权限时不显示新建命令  510ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/app/App.test.tsx > 权限驱动 Web 页面和导出入口 > canExportRewards接受自定义角色并拒绝缺失权限或开关
+ FAIL  src/app/App.test.tsx > 权限驱动 Web 页面和导出入口 > canExportStudentTasks接受自定义角色并拒绝缺失权限或开关
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/app/App.test.tsx:38:140
+     36|       const capabilities = Object.fromEntries([['client', 'WEB'], ...f…
+     37|       const user = { ...custom, permissionCodes: [...permissions] };
+     38|       for (const roleCodes of [['ALL_ROLE_TEST'], ['SYS_ADMIN'], ['SYS…
+       |                                                                                                                                            ^
+     39|       for (const permission of permissions) expect(check({ ...user, pe…
+     40|       for (const flag of flags) expect(check(user, { ...capabilities, …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+
+ Test Files  1 failed | 5 passed (6)
+      Tests  2 failed | 79 passed (81)
+   Start at  15:57:00
+   Duration  72.39s (transform 2.44s, setup 51.07s, collect 6.69s, tests 65.93s, environment 11.32s, prepare 1.44s)
+

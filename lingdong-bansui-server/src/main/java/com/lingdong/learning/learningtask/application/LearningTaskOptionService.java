@@ -30,12 +30,15 @@ import java.util.TreeSet;
 public class LearningTaskOptionService {
     private static final String FEATURE_CODE = "LEARNING_TASK_MANAGEMENT";
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.lingdong.learning.user.infrastructure.persistence.UserOrganizationMapper userOrganizationMapper;
     private final LearningTaskOptionMapper optionMapper;
     private final TeacherClassMapper teacherClassMapper;
     private final OrganizationMapper organizationMapper;
     private final OrganizationDataScopeService organizationDataScopeService;
     private final FeatureAccessService featureAccessService;
     private final LearningTaskScopeService scopes;
+    private final com.lingdong.learning.organization.application.OrganizationNamePathService organizationNamePathService;
 
     public LearningTaskOptionService(
             LearningTaskOptionMapper optionMapper,
@@ -43,7 +46,8 @@ public class LearningTaskOptionService {
             OrganizationMapper organizationMapper,
             OrganizationDataScopeService organizationDataScopeService,
             FeatureAccessService featureAccessService,
-            LearningTaskScopeService scopes
+            LearningTaskScopeService scopes,
+            com.lingdong.learning.organization.application.OrganizationNamePathService organizationNamePathService
     ) {
         this.optionMapper = optionMapper;
         this.teacherClassMapper = teacherClassMapper;
@@ -51,6 +55,7 @@ public class LearningTaskOptionService {
         this.organizationDataScopeService = organizationDataScopeService;
         this.featureAccessService = featureAccessService;
         this.scopes = scopes;
+        this.organizationNamePathService = organizationNamePathService;
     }
 
     public List<OrganizationOption> organizations(
@@ -65,16 +70,24 @@ public class LearningTaskOptionService {
         if (sourceType == LearningTaskSourceType.ORGANIZATION && isWeb(currentUser)) {
             return organizationDataScopeService.findAccessibleOrganizations(currentUser.userId()).stream()
                     .filter(OrganizationOperationalStatusService::isOperational)
-                    .filter(node -> normalizedType == null || normalizedType.equals(node.typeCode()))
-                    .map(node -> new OrganizationOption(node.id(), node.name(), node.typeCode(), node.parentId(), node.path())).toList();
+                    .filter(node -> SelectedTaskInstitutionScope.allows(organizationMapper,node))
+                    .filter(node -> normalizedType == null || normalizedType.equals(node.typeCode()) || "SCHOOL".equals(normalizedType) && com.lingdong.learning.organization.application.OrganizationHierarchy.isInstitutionRoot(node))
+                    .sorted(com.lingdong.learning.organization.application.OrganizationTreeOrder.comparator(organizationMapper.findAll()))
+                    .map(node -> {
+                java.util.Map<Long, String> namePaths = organizationNamePathService.namePathsById();
+                return new OrganizationOption(node.id(), namePaths.getOrDefault(node.id(), node.name()), node.typeCode(), node.parentId(), node.path());
+            }).toList();
         }
-        return switch (sourceType) {
+        List<OrganizationOption> options = switch (sourceType) {
             case FAMILY -> List.of();
             case ORGANIZATION -> optionMapper.findOrganizationOptionsForAdministrator(
                     currentUser.userId(), normalizedType);
             case TEACHER -> optionMapper.findOrganizationOptionsForTeacher(
                     currentUser.userId(), normalizedType);
         };
+        var all=organizationMapper.findAll(); var byId=new java.util.HashMap<Long,Organization>(); all.forEach(o -> byId.put(o.id(),o));
+        var order=com.lingdong.learning.organization.application.OrganizationTreeOrder.comparator(all);
+        return options.stream().filter(option -> SelectedTaskInstitutionScope.allows(organizationMapper,byId.get(option.id()))).sorted((a,b) -> byId.get(a.id())==null || byId.get(b.id())==null ? a.id().compareTo(b.id()) : order.compare(byId.get(a.id()),byId.get(b.id()))).toList();
     }
 
     public List<StudentOption> students(
@@ -109,13 +122,22 @@ public class LearningTaskOptionService {
                         currentUser.userId(), organizationId, normalizedKeyword);
             }
         };
-        return rows.stream().map(this::toStudentOption).toList();
+        var all=organizationMapper.findAll();
+        var byId=new java.util.HashMap<Long,Organization>(); all.forEach(o -> byId.put(o.id(),o));
+        var order=com.lingdong.learning.organization.application.OrganizationTreeOrder.comparator(all);
+        var namePaths=organizationNamePathService.namePathsById();
+        return rows.stream().sorted((a,b) -> {
+            Organization first=byId.get(a.currentClassId()),second=byId.get(b.currentClassId());
+            int c=first==null ? (second==null?0:1) : second==null?-1:order.compare(first,second);
+            if(c==0)c=a.studentName().compareTo(b.studentName());
+            return c==0?a.id().compareTo(b.id()):c;
+        }).map(row -> new StudentOption(row.id(),row.studentName(),maskStudentAccount(row.studentAccount()),row.currentClassId(),namePaths.getOrDefault(row.currentClassId(),row.currentClassName()),row.relationshipRole())).toList();
     }
 
     public List<TeacherOption> teachers(
             AuthenticatedUser currentUser, Long classId, String keyword
     ) {
-        scopes.requireWebPermission(currentUser, "TEACHER_CLASS_ASSIGN");
+        scopes.requireAnyPermission(currentUser, java.util.List.of("TEACHER_CLASS_ASSIGN","LEARNING_TASK_CREATE"));
         featureAccessService.requireEnabled(FEATURE_CODE, null);
         requireRole(currentUser, "ORG_ADMIN", "仅机构管理员可查询教师候选项");
         validateOrganizationScope(currentUser, classId, true);
@@ -134,8 +156,30 @@ public class LearningTaskOptionService {
             }
         }
         List<TeacherOption> result = new ArrayList<>(grouped.size());
-        grouped.forEach((userId, value) -> result.add(new TeacherOption(
-                userId, value.displayName(), List.copyOf(value.classIds()))));
+        var all = organizationMapper.findAll();
+        var byId = new java.util.HashMap<Long,Organization>(); all.forEach(org -> byId.put(org.id(),org));
+        var order = com.lingdong.learning.organization.application.OrganizationTreeOrder.comparator(all);
+        var scope = organizationDataScopeService.resolve(currentUser.userId());
+        var names = organizationNamePathService.namePathsById();
+        Organization targetSchool = classId == null ? null : com.lingdong.learning.organization.application.OrganizationHierarchy.schoolOf(byId.get(classId),organizationMapper);
+        Map<Long,List<Organization>> teacherOrganizations = new java.util.HashMap<>();
+        grouped.forEach((userId, value) -> {
+            List<Organization> memberships = userOrganizationMapper.findOrganizationIds(userId).stream()
+                    .map(byId::get).filter(Objects::nonNull).filter(OrganizationOperationalStatusService::isOperational)
+                    .filter(scope::allows)
+                    .filter(org -> java.util.Set.of("SCHOOL","TRAINING_INSTITUTION","CAMPUS","GRADE","CLASS").contains(org.typeCode()))
+                    .filter(org -> targetSchool == null || org.path().startsWith(targetSchool.path()))
+                    .sorted(order).toList();
+            teacherOrganizations.put(userId,memberships);
+            List<Long> classIds=value.classIds().stream().sorted((a,b) -> byId.containsKey(a)&&byId.containsKey(b)?order.compare(byId.get(a),byId.get(b)):a.compareTo(b)).toList();
+            result.add(new TeacherOption(userId,value.displayName(),classIds,memberships.stream().map(org -> names.getOrDefault(org.id(),org.name())).toList()));
+        });
+        result.sort((a,b) -> {
+            List<Organization> first=teacherOrganizations.get(a.userId()),second=teacherOrganizations.get(b.userId());
+            int c=first.isEmpty()?(second.isEmpty()?0:1):second.isEmpty()?-1:order.compare(first.get(0),second.get(0));
+            if(c==0)c=a.displayName().compareTo(b.displayName());
+            return c==0?a.userId().compareTo(b.userId()):c;
+        });
         return List.copyOf(result);
     }
 
@@ -162,7 +206,7 @@ public class LearningTaskOptionService {
             return;
         }
         Organization organization = organizationMapper.findById(organizationId);
-        if (organization == null
+        if (!SelectedTaskInstitutionScope.allows(organizationMapper,organization) || organization == null
                 || !organizationDataScopeService.canAccess(currentUser.userId(), organizationId)) {
             throw notFound();
         }
@@ -178,6 +222,7 @@ public class LearningTaskOptionService {
         if (organizationId == null) {
             return;
         }
+        if (!SelectedTaskInstitutionScope.allows(organizationMapper,organizationMapper.findById(organizationId))) throw notFound();
         TeacherClassRelation relation = teacherClassMapper.findByTeacherAndClass(
                 currentUser.userId(), organizationId);
         if (relation == null || relation.status() != TeacherClassStatus.ACTIVE) {
@@ -195,16 +240,14 @@ public class LearningTaskOptionService {
         requireRole(currentUser, roleCode, "当前角色不能使用该任务来源");
     }
 
-    private void requireRole(AuthenticatedUser currentUser, String roleCode, String message) {
-        if ("ORG_ADMIN".equals(roleCode) && isWeb(currentUser)) {
-            if (!scopes.hasOrganizationPermission(currentUser, "LEARNING_TASK_CREATE")
-                    && !scopes.hasOrganizationPermission(currentUser, "TEACHER_CLASS_ASSIGN")) throw new SystemOperationAccessDeniedException(message);
-            return;
-        }
-        if (currentUser == null || currentUser.roleCodes().contains("SYS_AUDITOR")
-                || !currentUser.roleCodes().contains(roleCode)) {
-            throw new SystemOperationAccessDeniedException(message);
-        }
+    private void requireRole(AuthenticatedUser currentUser, String identity, String message) {
+        boolean valid = switch(identity) {
+            case "PARENT" -> scopes.isParent(currentUser);
+            case "TEACHER" -> scopes.isTeacher(currentUser);
+            case "ORG_ADMIN" -> scopes.isOrganizationOperator(currentUser);
+            default -> false;
+        };
+        if (!valid) throw new SystemOperationAccessDeniedException(message);
     }
 
     private boolean isWeb(AuthenticatedUser user) { return user != null && user.clientType() == com.lingdong.learning.auth.domain.AuthClientType.WEB; }

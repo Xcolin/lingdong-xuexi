@@ -1,7 +1,8 @@
 <template>
-  <view class="ld-page">
+  <view class="ld-page access-page">
+<button @tap="openRegistration">注册 / 账号登录</button>
     <view class="ld-heading">
-      <text class="ld-heading-title">家长登录</text>
+      <text class="ld-heading-title">账号登录</text>
       <view class="ld-heading-rule" />
     </view>
 
@@ -13,9 +14,9 @@
     <form v-else @submit="submitLogin">
       <!-- #ifdef MP-WEIXIN -->
       <button v-if="context?.wechatEnabled && !wechatBinding" class="ld-btn ld-btn-primary wechat-button"
-              :loading="wechatSubmitting" :disabled="submitting || wechatSubmitting" @tap="loginByWechat">
+              :loading="wechatSubmitting" :disabled="submitting || wechatSubmitting" @tap="openRegistration">
         <text class="wechat-mark">微</text>
-        <text>微信快捷登录</text>
+        <text>微信登录已有账号</text>
       </button>
       <view v-if="context?.wechatEnabled && !wechatBinding" class="separator-row">
         <view class="separator-line" /><text class="separator-text">或使用手机号</text><view class="separator-line" />
@@ -40,7 +41,7 @@
                  placeholder="请输入手机号" :disabled="submitting" />
         </view>
 
-        <view v-if="mode === 'SMS' || wechatBinding" class="ld-field code-field">
+        <view v-if="wechatBinding || mode === 'SMS'" class="ld-field code-field">
           <text class="ld-field-label">验证码</text>
           <view class="code-row">
             <input v-model="code" class="ld-input code-input" type="number" maxlength="6"
@@ -57,7 +58,7 @@
                  placeholder="请输入密码" :disabled="submitting" />
         </view>
 
-        <checkbox-group v-if="mode === 'SMS' || wechatBinding" class="agreement-row" @change="changeAgreement">
+        <checkbox-group v-if="wechatBinding" class="agreement-row" @change="changeAgreement">
           <label class="agreement-label">
             <checkbox value="accepted" color="#167c5a" :checked="agreementAccepted" />
             <text class="agreement-text">我已阅读并同意当前用户协议</text>
@@ -74,11 +75,11 @@
 </template>
 
 <script setup lang="ts">
+function openRegistration(){uni.navigateTo({url:"/pages/unified-login/unified-login"});}
 import { onBeforeUnmount, ref } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import {
   bindParentWechat,
-  exchangeParentWechatSession,
   getParentAuthContext,
   issueParentSmsCode,
   issueParentWechatBindingSmsCode,
@@ -87,6 +88,9 @@ import {
   type ParentAuthContext,
   type ParentSessionResult
 } from '@/api/auth';
+import { request } from '@/api/http';
+import {routeRequiredPasswordChange} from '@/session/account-login-routing';
+import { saveRegistrationSession } from '@/session/registration-session';
 import {
   getOrCreateParentDeviceId,
   getParentDeviceName,
@@ -148,7 +152,7 @@ async function submitLogin(): Promise<void> {
     errorMessage.value = '请输入6位验证码';
     return;
   }
-  if ((mode.value === 'SMS' || wechatBinding.value) && !agreementAccepted.value) {
+  if (wechatBinding.value && !agreementAccepted.value) {
     errorMessage.value = '请先同意当前用户协议';
     return;
   }
@@ -172,11 +176,20 @@ async function submitLogin(): Promise<void> {
       : mode.value === 'SMS'
         ? await loginParentBySms({
           ...common,
-          code: code.value,
-          agreementAccepted: true,
-          agreementVersion: context.value.agreementVersion
+          code: code.value
         })
         : await loginParentByPassword({ ...common, password: password.value });
+    saveParentSession(result.session, mobile.value);
+    if(await routeRequiredPasswordChange(result.session.accessToken,'parent')) return;
+    if (!wechatBinding.value && mode.value === 'SMS') {
+      const user = await request<{ parentProfile?: boolean }>('/auth/me', { header: { Authorization: `Bearer ${result.session.accessToken}` } });
+      if (user.parentProfile !== true) {
+        saveRegistrationSession(result.session);
+        clearSecrets();
+        await uni.reLaunch({ url: '/pages/my-organizations/my-organizations?identity=personal' });
+        return;
+      }
+    }
     saveParentSession(result.session, mobile.value);
     wechatBinding.value = false;
     bindingTicket.value = '';
@@ -188,44 +201,6 @@ async function submitLogin(): Promise<void> {
   } finally {
     submitting.value = false;
   }
-}
-
-async function loginByWechat(): Promise<void> {
-  if (!context.value?.wechatEnabled || wechatSubmitting.value) return;
-  wechatSubmitting.value = true;
-  errorMessage.value = '';
-  try {
-    const temporaryCode = await getWechatTemporaryCode();
-    const result = await exchangeParentWechatSession({
-      temporaryCode,
-      deviceId,
-      deviceName: getParentDeviceName()
-    });
-    if (result.bindingRequired && result.bindingTicket) {
-      bindingTicket.value = result.bindingTicket;
-      wechatBinding.value = true;
-      mode.value = 'SMS';
-      clearSecrets();
-      return;
-    }
-    if (!result.session) throw new Error('微信登录结果无效，请使用手机号登录');
-    saveParentSession(result.session.session, mobile.value);
-    await routeAfterLogin(result.session);
-  } catch (error) {
-    handleRequestError(error, '微信登录未能完成，请使用手机号登录');
-  } finally {
-    wechatSubmitting.value = false;
-  }
-}
-
-function getWechatTemporaryCode(): Promise<string> {
-  return new Promise((resolve, reject) => {
-    uni.login({
-      provider: 'weixin',
-      success: (result) => result.code ? resolve(result.code) : reject(new Error('微信授权未能完成')),
-      fail: () => reject(new Error('微信授权未能完成'))
-    });
-  });
 }
 
 function cancelWechatBinding(): void {
@@ -283,6 +258,8 @@ function handleRequestError(error: unknown, fallback: string): void {
 </script>
 
 <style lang="scss" scoped>
+@import "@/styles/account-access.scss";
+.ld-card { background:#fffefa; border-radius:28rpx; border:1rpx solid #e4e5d9; } .ld-btn-primary { background:#194f3b; }
 .wechat-button { background: #07c160; box-shadow: 0 6rpx 16rpx rgba(7, 193, 96, 0.28); }
 .wechat-mark {
   display: inline-flex;

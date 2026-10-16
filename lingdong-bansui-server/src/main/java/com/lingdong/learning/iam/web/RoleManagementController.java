@@ -65,6 +65,31 @@ public class RoleManagementController {
         )));
     }
 
+    @RequirePermission("IAM_ROLE_UPDATE")
+    @org.springframework.web.bind.annotation.PatchMapping("/{roleId}")
+    public RoleResponse updateRole(@AuthenticationPrincipal AuthenticatedUser currentUser, @PathVariable Long roleId,
+                                   @Valid @RequestBody UpdateRoleRequest request) {
+        return RoleResponse.from(roleApplicationService.updateRole(currentUser.userId(), roleId, request.name(), request.description()));
+    }
+
+    @RequirePermission("IAM_ROLE_STATUS_CHANGE")
+    @org.springframework.web.bind.annotation.PatchMapping("/{roleId}/status")
+    public RoleResponse changeRoleStatus(@AuthenticationPrincipal AuthenticatedUser currentUser, @PathVariable Long roleId,
+                                         @Valid @RequestBody RoleStatusRequest request) {
+        return RoleResponse.from(roleApplicationService.changeRoleStatus(currentUser.userId(), roleId, request.status()));
+    }
+
+    @RequirePermission("IAM_ROLE_DELETE")
+    @org.springframework.web.bind.annotation.DeleteMapping("/{roleId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteRole(@AuthenticationPrincipal AuthenticatedUser currentUser, @PathVariable Long roleId) {
+        roleApplicationService.deleteRole(currentUser.userId(), roleId);
+    }
+
+    public record UpdateRoleRequest(@jakarta.validation.constraints.NotBlank @jakarta.validation.constraints.Size(max=64) String name,
+                                    @jakarta.validation.constraints.Size(max=512) String description) { }
+    public record RoleStatusRequest(@jakarta.validation.constraints.NotNull com.lingdong.learning.iam.domain.RoleStatus status) { }
+
     @RequirePermission("IAM_DATA_SCOPE_CONFIGURE")
     @PostMapping("/{roleId}/data-scopes")
     @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -90,6 +115,14 @@ public class RoleManagementController {
                 request.assignments().stream()
                         .map(item -> new BatchRoleAssignmentItem(item.userId(), item.organizationId()))
                         .toList()));
+    }
+
+    @RequirePermission("IAM_USER_ROLE_ASSIGN")
+    @PostMapping("/{roleId}/users:revoke")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void revokeRoleUsers(@AuthenticationPrincipal AuthenticatedUser current,@PathVariable Long roleId,@Valid @RequestBody BatchAssignRoleRequest request) {
+        userAccessApplicationService.batchRemoveRole(new BatchAssignRoleToRoleCommand(current.userId(),roleId,
+          request.assignments().stream().map(item->new BatchRoleAssignmentItem(item.userId(),item.organizationId())).toList()));
     }
 
     public record BatchRoleAssignmentItemRequest(Long userId, Long organizationId) { }

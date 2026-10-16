@@ -7,6 +7,11 @@ export interface CurrentUser {
   displayName: string;
   clientType: 'WEB';
   roleCodes: string[];
+  userType?: 'PERSONAL' | 'PLATFORM' | 'ORGANIZATION' | 'FAMILY' | 'STUDENT';
+  parentProfile?: boolean;
+  teacherProfile?: boolean;
+  learningTaskSourceTypes?: Array<'FAMILY' | 'ORGANIZATION' | 'TEACHER'>;
+  /** Effective operation codes after client, feature, identity and scope eligibility. */
   permissionCodes: string[];
 }
 
@@ -73,6 +78,9 @@ export interface ParentAccountCancellationResult {
 }
 
 export const authApi = {
+  accountSettings(): Promise<{passwordChangeRequired: boolean}> {
+    return apiClient.get('/auth/account-settings');
+  },
   parentAuthContext(): Promise<ParentAuthContext> {
     return apiClient.publicGet<ParentAuthContext>('/public/parent-auth-context');
   },
@@ -81,7 +89,9 @@ export const authApi = {
     purpose: 'REGISTER_OR_LOGIN' | 'RESET_PASSWORD';
     clientType: 'WEB';
   }): Promise<ParentSmsCodeResult> {
-    return apiClient.publicPost<ParentSmsCodeResult>('/auth/parent-sms-codes', input);
+    return input.purpose === 'RESET_PASSWORD'
+      ? apiClient.publicPost<ParentSmsCodeResult>('/auth/parent-sms-codes', input)
+      : apiClient.publicPost<ParentSmsCodeResult>('/auth/login-sms-codes', { mobile: input.mobile, clientType: input.clientType });
   },
   completeParentOnboarding(): Promise<void> {
     return apiClient.post<void>('/parent-onboarding/completion', {});
@@ -124,10 +134,8 @@ export const authApi = {
     clientType: 'WEB';
     deviceId: string;
     deviceName: string;
-    agreementAccepted: boolean;
-    agreementVersion: string;
   }): Promise<ParentSmsLoginResult> {
-    const result = await apiClient.publicPost<ParentSmsLoginResult>('/auth/parent-sessions/sms', input);
+    const result = await apiClient.publicPost<ParentSmsLoginResult>('/auth/sessions/sms', input);
     authSessionStore.save(result.session);
     return result;
   },

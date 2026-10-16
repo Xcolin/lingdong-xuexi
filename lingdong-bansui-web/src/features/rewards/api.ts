@@ -14,19 +14,8 @@ const BUSINESS_PAGE_SIZE = 100;
 
 /** 奖励管理接口只处理家长主关系孩子，雪花标识全程使用字符串。 */
 export const rewardApi = {
-  async listStudents(): Promise<RewardStudent[]> {
-    const students: RewardStudent[] = [];
-    let page = 1;
-    let total = 0;
-    do {
-      const result = await apiClient.get<RewardStudentPage>(
-        `/students?page=${page}&pageSize=${STUDENT_PAGE_SIZE}`
-      );
-      students.push(...result.items);
-      total = result.total;
-      page += 1;
-    } while (students.length < total);
-    return students;
+  listStudents(): Promise<RewardStudent[]> {
+    return apiClient.get<RewardStudent[]>('/parent/student-options');
   },
   async listRewards(studentId: string): Promise<GrowthReward[]> {
     return collectPages<GrowthReward>(async (page) => apiClient.get<GrowthRewardPage>(

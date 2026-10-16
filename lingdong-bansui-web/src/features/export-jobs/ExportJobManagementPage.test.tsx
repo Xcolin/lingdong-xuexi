@@ -41,7 +41,7 @@ const review = {
 describe('数据导出中心', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(exportJobApi.list).mockResolvedValue({ items: [job], page: 1, pageSize: 20, total: 1 });
+    vi.mocked(exportJobApi.list).mockResolvedValue({ items: [job], page: 1, pageSize: 10, total: 1 });
     vi.mocked(exportJobApi.options).mockResolvedValue(options);
     vi.mocked(exportJobApi.create).mockResolvedValue({ ...job, status: 'QUEUED' });
     vi.mocked(exportJobApi.detail).mockResolvedValue({
@@ -49,7 +49,7 @@ describe('数据导出中心', () => {
       scopeSummary: '小灵，全部时间', events: []
     });
     vi.mocked(exportJobApi.download).mockResolvedValue(new Blob(['xlsx']));
-    vi.mocked(exportJobApi.listReviews).mockResolvedValue({ items: [review], page: 1, pageSize: 20, total: 1 });
+    vi.mocked(exportJobApi.listReviews).mockResolvedValue({ items: [review], page: 1, pageSize: 10, total: 1 });
     vi.mocked(exportJobApi.approve).mockResolvedValue({ ...job, id: review.jobId, status: 'QUEUED' });
     vi.mocked(exportJobApi.reject).mockResolvedValue({ ...job, id: review.jobId, status: 'REJECTED' });
   });
@@ -57,7 +57,7 @@ describe('数据导出中心', () => {
 
   it('学生任务 PDF 下载使用正确扩展名且撤权丢弃迟到详情', async () => {
     const report = { ...job, exportType: 'STUDENT_TASK_REPORT' as const };
-    vi.mocked(exportJobApi.list).mockResolvedValue({ items: [report], page: 1, pageSize: 20, total: 1 });
+    vi.mocked(exportJobApi.list).mockResolvedValue({ items: [report], page: 1, pageSize: 10, total: 1 });
     vi.mocked(exportJobApi.download).mockResolvedValue(new Blob(['pdf'], { type: 'application/pdf' }));
     const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
     vi.stubGlobal('URL', class extends URL { static createObjectURL = vi.fn(() => 'blob:test'); static revokeObjectURL = vi.fn(); });
@@ -144,7 +144,7 @@ describe('数据导出中心', () => {
 
   it.each(['revision', 'permission', 'read'])('学生任务报表撤回 %s 后清除详情并丢弃迟到文件', async (change) => {
     const exceptionJob = { ...job, exportType: 'STUDENT_TASK_REPORT' as const };
-    vi.mocked(exportJobApi.list).mockResolvedValue({ items: [exceptionJob], page: 1, pageSize: 20, total: 1 });
+    vi.mocked(exportJobApi.list).mockResolvedValue({ items: [exceptionJob], page: 1, pageSize: 10, total: 1 });
     vi.mocked(exportJobApi.detail).mockResolvedValue({ job: exceptionJob, columns: [], scopeSummary: '学生任务授权范围', events: [] });
     let resolveDownload!: (value: Blob) => void;
     vi.mocked(exportJobApi.download).mockReturnValue(new Promise(resolve => { resolveDownload = resolve; }));
@@ -168,7 +168,7 @@ describe('数据导出中心', () => {
 
   it.each(['revision', 'permission', 'read'])('附件台账撤回 %s 后清除详情并丢弃迟到文件', async (change) => {
     const exceptionJob = { ...job, exportType: 'ATTACHMENT_LEDGER' as const };
-    vi.mocked(exportJobApi.list).mockResolvedValue({ items: [exceptionJob], page: 1, pageSize: 20, total: 1 });
+    vi.mocked(exportJobApi.list).mockResolvedValue({ items: [exceptionJob], page: 1, pageSize: 10, total: 1 });
     vi.mocked(exportJobApi.detail).mockResolvedValue({ job: exceptionJob, columns: [], scopeSummary: '附件安全元数据', events: [] });
     let resolveDownload!: (value: Blob) => void;
     vi.mocked(exportJobApi.download).mockReturnValue(new Promise(resolve => { resolveDownload = resolve; }));
@@ -192,7 +192,7 @@ describe('数据导出中心', () => {
 
   it('异常台账权限上下文变化后清除详情并丢弃迟到文件', async () => {
     const exceptionJob = { ...job, exportType: 'EXCEPTION_REPORT_LEDGER' as const };
-    vi.mocked(exportJobApi.list).mockResolvedValue({ items: [exceptionJob], page: 1, pageSize: 20, total: 1 });
+    vi.mocked(exportJobApi.list).mockResolvedValue({ items: [exceptionJob], page: 1, pageSize: 10, total: 1 });
     vi.mocked(exportJobApi.detail).mockResolvedValue({ job: exceptionJob, columns: [], scopeSummary: '授权班级报备', events: [] });
     let resolveDownload!: (value: Blob) => void;
     vi.mocked(exportJobApi.download).mockReturnValue(new Promise(resolve => { resolveDownload = resolve; }));
@@ -237,7 +237,7 @@ describe('数据导出中心', () => {
 
   it.each(['canRead', 'canExportRewards'] as const)('奖励报表撤回 %s 后关闭详情并隐藏下载', async (revoked) => {
     const rewardJob = { ...job, exportType: 'REWARD_EXCHANGE_LEDGER' as const };
-    vi.mocked(exportJobApi.list).mockResolvedValue({ items: [rewardJob], page: 1, pageSize: 20, total: 1 });
+    vi.mocked(exportJobApi.list).mockResolvedValue({ items: [rewardJob], page: 1, pageSize: 10, total: 1 });
     vi.mocked(exportJobApi.detail).mockResolvedValue({ job: rewardJob, columns: [], scopeSummary: '家庭兑换记录', events: [] });
     const props = { canRead: true, canCreateOrdinary: false, canSubmitSensitive: false, canReview: false, canExportRewards: true };
     const view = renderPage(<ExportJobManagementPage {...props} />);
@@ -252,7 +252,7 @@ describe('数据导出中心', () => {
   it('奖励报表请求期间撤权不保存迟到文件', async () => {
     let resolveDownload!: (value: Blob) => void;
     vi.mocked(exportJobApi.download).mockReturnValue(new Promise(resolve => { resolveDownload = resolve; }));
-    vi.mocked(exportJobApi.list).mockResolvedValue({ items: [{ ...job, exportType: 'REWARD_EXCHANGE_LEDGER' }], page: 1, pageSize: 20, total: 1 });
+    vi.mocked(exportJobApi.list).mockResolvedValue({ items: [{ ...job, exportType: 'REWARD_EXCHANGE_LEDGER' }], page: 1, pageSize: 10, total: 1 });
     const createObjectURL = vi.fn(() => 'blob:test');
     vi.stubGlobal('URL', class extends URL { static createObjectURL = createObjectURL; static revokeObjectURL = vi.fn(); });
     try {
@@ -296,7 +296,7 @@ describe('数据导出中心', () => {
   });
 
   it('字典导出权限或功能不可用时隐藏创建和历史作业内容入口', async () => {
-    vi.mocked(exportJobApi.list).mockResolvedValue({ items: [{ ...job, exportType: 'DICTIONARY_LEDGER' }], page: 1, pageSize: 20, total: 1 });
+    vi.mocked(exportJobApi.list).mockResolvedValue({ items: [{ ...job, exportType: 'DICTIONARY_LEDGER' }], page: 1, pageSize: 10, total: 1 });
     renderPage(<ExportJobManagementPage canRead canCreateOrdinary={false} canSubmitSensitive={false} canReview={false} canExportDictionary={false} />);
     await screen.findByText(job.jobCode);
     expect(screen.queryByRole('button', { name: '新建导出' })).not.toBeInTheDocument();
@@ -327,7 +327,7 @@ describe('数据导出中心', () => {
   });
 
   it('模板导出功能关闭时隐藏创建及历史详情下载', async () => {
-    vi.mocked(exportJobApi.list).mockResolvedValue({ items: [{ ...job, exportType: 'TEMPLATE_LEDGER' }], page: 1, pageSize: 20, total: 1 });
+    vi.mocked(exportJobApi.list).mockResolvedValue({ items: [{ ...job, exportType: 'TEMPLATE_LEDGER' }], page: 1, pageSize: 10, total: 1 });
     renderPage(<ExportJobManagementPage canRead canCreateOrdinary={false} canSubmitSensitive={false} canReview={false} canExportTemplate={false} />);
     await screen.findByText(job.jobCode);
     expect(screen.getByText('导入导出模板台账')).toBeInTheDocument();
@@ -360,7 +360,7 @@ describe('数据导出中心', () => {
 
   it('系统任务领域权限变化时清除已打开详情，即使导出权限仍存在', async () => {
     const taskJob = { ...job, exportType: 'SYSTEM_TASK_LEDGER' as const };
-    vi.mocked(exportJobApi.list).mockResolvedValue({ items: [taskJob], page: 1, pageSize: 20, total: 1 });
+    vi.mocked(exportJobApi.list).mockResolvedValue({ items: [taskJob], page: 1, pageSize: 10, total: 1 });
     vi.mocked(exportJobApi.detail).mockResolvedValue({ job: taskJob, columns: [], scopeSummary: '本人系统任务', events: [] });
     const props = { canRead: true, canCreateOrdinary: false, canSubmitSensitive: false, canReview: false, canExportSystemTasks: true };
     const view = renderPage(<ExportJobManagementPage {...props} accessRevision="cache-enabled" />);
@@ -420,7 +420,7 @@ describe('数据导出中心', () => {
 
   it.each(['canExportCache', 'canRead'] as const)('缓存权限 %s 撤回后关闭已打开的详情并隐藏下载入口', async (revoked) => {
     const interfaceJob = { ...job, exportType: 'CACHE_OPERATION_LOG' as const };
-    vi.mocked(exportJobApi.list).mockResolvedValue({ items: [interfaceJob], page: 1, pageSize: 20, total: 1 });
+    vi.mocked(exportJobApi.list).mockResolvedValue({ items: [interfaceJob], page: 1, pageSize: 10, total: 1 });
     vi.mocked(exportJobApi.detail).mockResolvedValue({ job: interfaceJob, columns: [], scopeSummary: '缓存服务台账', events: [] });
     const props = { canRead: true, canCreateOrdinary: false, canSubmitSensitive: false, canReview: false };
     const view = renderPage(<ExportJobManagementPage {...props} canExportCache />);
@@ -436,7 +436,7 @@ describe('数据导出中心', () => {
   it('系统任务领域变化后不保存迟到文件，即使总体导出权限仍存在', async () => {
     let resolveDownload!: (value: Blob) => void;
     vi.mocked(exportJobApi.download).mockReturnValue(new Promise(resolve => { resolveDownload = resolve; }));
-    vi.mocked(exportJobApi.list).mockResolvedValue({ items: [{ ...job, exportType: 'SYSTEM_TASK_LEDGER' }], page: 1, pageSize: 20, total: 1 });
+    vi.mocked(exportJobApi.list).mockResolvedValue({ items: [{ ...job, exportType: 'SYSTEM_TASK_LEDGER' }], page: 1, pageSize: 10, total: 1 });
     const createObjectURL = vi.fn(() => 'blob:test');
     vi.stubGlobal('URL', class extends URL { static createObjectURL = createObjectURL; static revokeObjectURL = vi.fn(); });
     const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
@@ -455,7 +455,7 @@ describe('数据导出中心', () => {
   it('缓存文件请求期间撤权后不保存迟到的文件', async () => {
     let resolveDownload!: (value: Blob) => void;
     vi.mocked(exportJobApi.download).mockReturnValue(new Promise(resolve => { resolveDownload = resolve; }));
-    vi.mocked(exportJobApi.list).mockResolvedValue({ items: [{ ...job, exportType: 'CACHE_OPERATION_LOG' }], page: 1, pageSize: 20, total: 1 });
+    vi.mocked(exportJobApi.list).mockResolvedValue({ items: [{ ...job, exportType: 'CACHE_OPERATION_LOG' }], page: 1, pageSize: 10, total: 1 });
     const createObjectURL = vi.fn(() => 'blob:test');
     vi.stubGlobal('URL', class extends URL { static createObjectURL = createObjectURL; static revokeObjectURL = vi.fn(); });
     const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
@@ -488,7 +488,7 @@ describe('数据导出中心', () => {
 
   it.each(['canExportInterface', 'canRead'] as const)('接口权限 %s 撤回后关闭已打开的详情并隐藏下载入口', async (revoked) => {
     const interfaceJob = { ...job, exportType: 'INTERFACE_SERVICE_LEDGER' as const };
-    vi.mocked(exportJobApi.list).mockResolvedValue({ items: [interfaceJob], page: 1, pageSize: 20, total: 1 });
+    vi.mocked(exportJobApi.list).mockResolvedValue({ items: [interfaceJob], page: 1, pageSize: 10, total: 1 });
     vi.mocked(exportJobApi.detail).mockResolvedValue({ job: interfaceJob, columns: [], scopeSummary: '接口服务台账', events: [] });
     const props = { canRead: true, canCreateOrdinary: false, canSubmitSensitive: false, canReview: false };
     const view = renderPage(<ExportJobManagementPage {...props} canExportInterface />);
@@ -504,7 +504,7 @@ describe('数据导出中心', () => {
   it('接口文件请求期间撤权后不保存迟到的文件', async () => {
     let resolveDownload!: (value: Blob) => void;
     vi.mocked(exportJobApi.download).mockReturnValue(new Promise(resolve => { resolveDownload = resolve; }));
-    vi.mocked(exportJobApi.list).mockResolvedValue({ items: [{ ...job, exportType: 'INTERFACE_SERVICE_LEDGER' }], page: 1, pageSize: 20, total: 1 });
+    vi.mocked(exportJobApi.list).mockResolvedValue({ items: [{ ...job, exportType: 'INTERFACE_SERVICE_LEDGER' }], page: 1, pageSize: 10, total: 1 });
     const createObjectURL = vi.fn(() => 'blob:test');
     vi.stubGlobal('URL', class extends URL { static createObjectURL = createObjectURL; static revokeObjectURL = vi.fn(); });
     const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});

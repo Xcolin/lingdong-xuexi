@@ -25,15 +25,18 @@ public class GrowthReviewExportPreparationService {
     private final PermissionDecisionService permissions;
     private final int maxReports;
 
+    private final com.lingdong.learning.auth.application.ParentActorAccessService parentActors;
+
     public GrowthReviewExportPreparationService(GrowthReviewMapper mapper, GrowthReviewQueryService queries,
             ParentStudentMapper relationships, PermissionDecisionService permissions,
-            @Value("${lingdong.growth-review-export.max-reports:100}") int maxReports) {
+            @Value("${lingdong.growth-review-export.max-reports:100}") int maxReports, com.lingdong.learning.auth.application.ParentActorAccessService parentActors) {
         if (maxReports < 1 || maxReports > 1000) throw new IllegalArgumentException("复盘导出批次保护上限必须为1至1000");
         this.mapper = mapper;
         this.queries = queries;
         this.relationships = relationships;
         this.permissions = permissions;
         this.maxReports = maxReports;
+        this.parentActors = parentActors;
     }
 
     public record Prepared(Long requesterId, Long studentId, List<GrowthReviewDetailView> reports) {
@@ -66,11 +69,10 @@ public class GrowthReviewExportPreparationService {
     }
 
     private void requireRead(AuthenticatedUser user, Long studentId) {
-        if (user == null || user.clientType() != AuthClientType.WEB || !user.roleCodes().contains("PARENT")
-                || user.roleCodes().contains("SYS_AUDITOR")
-                || !permissions.isAllowed(user.userId(), PermissionClient.WEB, "GROWTH_REVIEW_READ_CHILD")) {
+        if (user == null || user.clientType() != AuthClientType.WEB) {
             throw new SystemOperationAccessDeniedException("当前账号无权准备孩子复盘导出");
         }
+        parentActors.require(user);
         if (!relationships.existsActiveByParentAndStudent(user.userId(), studentId)) {
             throw new ResourceNotFoundException("复盘对象不存在或不可访问");
         }

@@ -29,4 +29,5 @@ public class OrganizationQueryApplicationService {
     public List<Organization> listOrganizations() {
         return organizationMapper.findAll();
     }
+    public List<Organization> listOrganizationsByIds(List<Long> ids) {return ids==null||ids.isEmpty()?List.of():organizationMapper.findByIds(ids);}
 }

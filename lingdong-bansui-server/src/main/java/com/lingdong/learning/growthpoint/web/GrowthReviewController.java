@@ -26,14 +26,12 @@ public class GrowthReviewController {
         this.queryService = queryService;
     }
 
-    @RequirePermission("MINIAPP_GROWTH_REVIEW_READ_CHILD")
     @GetMapping("/miniapp/students")
     public java.util.List<GrowthReviewQueryService.ChildOption> findMiniappChildren(
             @AuthenticationPrincipal AuthenticatedUser currentUser) {
         return queryService.findMiniappChildren(currentUser);
     }
 
-    @RequirePermission("MINIAPP_GROWTH_REVIEW_READ_CHILD")
     @GetMapping("/miniapp/students/{studentId}")
     public GrowthReviewPageResponse findMiniappChildWeeklyReviews(
             @AuthenticationPrincipal AuthenticatedUser currentUser,
@@ -43,7 +41,6 @@ public class GrowthReviewController {
         return GrowthReviewPageResponse.from(queryService.findMiniappChildWeeklyReviews(currentUser, studentId, page, pageSize));
     }
 
-    @RequirePermission("MINIAPP_GROWTH_REVIEW_READ_CHILD")
     @GetMapping("/miniapp/students/{studentId}/{reviewId}")
     public GrowthReviewDetailResponse findMiniappChildWeeklyReview(
             @AuthenticationPrincipal AuthenticatedUser currentUser,
@@ -72,6 +69,13 @@ public class GrowthReviewController {
     ) {
         return GrowthReviewDetailResponse.from(
                 queryService.findMyReview(currentUser, reviewId));
+    }
+
+    @RequirePermission("GROWTH_REVIEW_SUPPLEMENT_SELF")
+    @PostMapping("/me/{reviewId}/daily-reflection")
+    @ResponseStatus(HttpStatus.CREATED)
+    public java.util.List<GrowthReviewSupplementResponse> saveMyDailyReflection(@AuthenticationPrincipal AuthenticatedUser currentUser,@PathVariable Long reviewId,@Valid @RequestBody SaveDailyReflectionRequest request) {
+        return queryService.saveMyDailyReflection(currentUser,reviewId,request.toCommands()).stream().map(GrowthReviewSupplementResponse::from).toList();
     }
 
     @RequirePermission("GROWTH_REVIEW_SUPPLEMENT_SELF")

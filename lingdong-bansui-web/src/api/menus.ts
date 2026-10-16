@@ -15,5 +15,6 @@ export const menuApi = {
   update: (id: string, input: UpdateMenuInput) => apiClient.put<MenuNode>(`/iam/menus/${id}`, input),
   reorder: (input: MenuOrderInput) => apiClient.put<void>('/iam/menus/order', input),
   move: (id: string, input: { parentId: string | null; index: number; version: string }) => apiClient.put<MenuNode>(`/iam/menus/${id}/position`, input),
+  remove: (id: string) => apiClient.delete(`/iam/menus/${id}`),
   createButtons: (pageId: string, input: MenuButtonInput[]) => apiClient.post<MenuNode[]>(`/iam/menus/${pageId}/buttons:batch`, input)
 };

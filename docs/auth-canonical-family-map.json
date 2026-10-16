@@ -1,0 +1,629 @@
+{
+  "actions": [
+    {
+      "code": "REWARD_READ",
+      "features": [
+        "REWARD_EXCHANGE"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "activeGuardian"
+      ]
+    },
+    {
+      "code": "REWARD_EXCHANGE_READ",
+      "features": [
+        "REWARD_EXCHANGE"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "activeGuardian"
+      ]
+    },
+    {
+      "code": "REWARD_CREATE",
+      "features": [
+        "REWARD_EXCHANGE"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "activePrimaryGuardian"
+      ]
+    },
+    {
+      "code": "REWARD_UPDATE",
+      "features": [
+        "REWARD_EXCHANGE"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "activePrimaryGuardian"
+      ]
+    },
+    {
+      "code": "REWARD_DELETE",
+      "features": [
+        "REWARD_EXCHANGE"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "activePrimaryGuardian"
+      ]
+    },
+    {
+      "code": "REWARD_EXCHANGE_REVIEW",
+      "features": [
+        "REWARD_EXCHANGE"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "activePrimaryGuardian"
+      ]
+    },
+    {
+      "code": "GROWTH_POINT_READ_CHILD",
+      "features": [
+        "GROWTH_POINT_QUERY"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "activeGuardian"
+      ]
+    },
+    {
+      "code": "GROWTH_POINT_CORRECT_CHILD",
+      "features": [
+        "GROWTH_POINT_CORRECTION"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "activePrimaryGuardian"
+      ]
+    },
+    {
+      "code": "GROWTH_REVIEW_READ_CHILD",
+      "features": [
+        "DAY:DAILY_GROWTH_REVIEW",
+        "OTHER:PERIODIC_GROWTH_REPORT"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "activeGuardian"
+      ]
+    },
+    {
+      "code": "GROWTH_REVIEW_SUPPLEMENT_CHILD",
+      "features": [
+        "DAY:DAILY_GROWTH_REVIEW",
+        "OTHER:PERIODIC_GROWTH_REPORT"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "activePrimaryGuardian"
+      ]
+    },
+    {
+      "code": "PARENT_RELATIONSHIP_READ",
+      "features": [
+        "PARENT_RELATIONSHIP_MANAGEMENT"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "activeGuardian"
+      ]
+    },
+    {
+      "code": "SECONDARY_PARENT_INVITE_CREATE",
+      "features": [
+        "PARENT_RELATIONSHIP_MANAGEMENT"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "activePrimaryGuardian"
+      ]
+    },
+    {
+      "code": "SECONDARY_PARENT_UNBIND",
+      "features": [
+        "PARENT_RELATIONSHIP_MANAGEMENT"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "activePrimaryGuardian"
+      ]
+    },
+    {
+      "code": "PRIMARY_PARENT_TRANSFER_CREATE",
+      "features": [
+        "PARENT_RELATIONSHIP_MANAGEMENT"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "activePrimaryGuardian"
+      ]
+    },
+    {
+      "code": "PRIMARY_PARENT_SELF_UNBIND",
+      "features": [
+        "PARENT_RELATIONSHIP_MANAGEMENT"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "activePrimaryGuardian"
+      ]
+    },
+    {
+      "code": "GROWTH_REVIEW_SUBSCRIBE_CHILD",
+      "features": [
+        "GROWTH_REVIEW_WEEKLY_SUBSCRIPTION",
+        "PERIODIC_GROWTH_REPORT"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "CHILD"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "activeGuardian"
+      ]
+    },
+    {
+      "code": "STUDENT_PARENT_INVITE_RESPOND",
+      "features": [
+        "PARENT_RELATIONSHIP_MANAGEMENT"
+      ],
+      "client": "WEB",
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scopeKinds": [
+        "INVITATION"
+      ],
+      "actorPrerequisites": [
+        "enabledAccount",
+        "activeRole",
+        "parentProfile",
+        "validOneTimeInvitationToken",
+        "studentHasNoActivePrimaryGuardianForAccept"
+      ]
+    }
+  ],
+  "legacyToCanonical": {
+    "REWARD_MANAGE_CHILD": [
+      "REWARD_READ",
+      "REWARD_CREATE",
+      "REWARD_UPDATE",
+      "REWARD_DELETE"
+    ],
+    "REWARD_EXCHANGE_REVIEW_CHILD": [
+      "REWARD_EXCHANGE_READ",
+      "REWARD_EXCHANGE_REVIEW"
+    ],
+    "PRIMARY_PARENT_TRANSFER": "PRIMARY_PARENT_TRANSFER_CREATE",
+    "PRIMARY_PARENT_UNBIND": "PRIMARY_PARENT_SELF_UNBIND",
+    "PARENT_RELATIONSHIP_INVITE_RESPOND": null,
+    "rewards.reward-management-page.2": "REWARD_CREATE",
+    "rewards.reward-management-page.4": "REWARD_UPDATE",
+    "rewards.reward-management-page.5": "REWARD_UPDATE",
+    "rewards.reward-management-page.6": "REWARD_DELETE",
+    "rewards.reward-management-page.8": "REWARD_EXCHANGE_REVIEW",
+    "rewards.reward-management-page.9": "REWARD_EXCHANGE_REVIEW",
+    "rewards.reward-management-page.11": [
+      "REWARD_CREATE",
+      "REWARD_UPDATE"
+    ],
+    "rewards.reward-management-page.13": "REWARD_EXCHANGE_REVIEW",
+    "growth-points.growth-point-page.1": null,
+    "growth-points.growth-point-page.4": "GROWTH_POINT_CORRECT_CHILD",
+    "growth-points.growth-point-page.6": "GROWTH_POINT_CORRECT_CHILD",
+    "growth-reviews.growth-review-page.2": "GROWTH_REVIEW_SUPPLEMENT_CHILD",
+    "growth-reviews.growth-review-page.4": "GROWTH_REVIEW_SUPPLEMENT_CHILD",
+    "parent-relationships.parent-relationship-page.confirm.1.ok": "SECONDARY_PARENT_UNBIND",
+    "parent-relationships.parent-relationship-page.confirm.2.ok": "PRIMARY_PARENT_SELF_UNBIND",
+    "parent-relationships.parent-relationship-page.modal.1.ok": [
+      "SECONDARY_PARENT_INVITE_CREATE",
+      "PRIMARY_PARENT_TRANSFER_CREATE"
+    ]
+  },
+  "exceptions": [
+    "Miniapp weekly historical reviews do not depend on generation or subscription toggles; own MINIAPP_GROWTH_REVIEW_READ_CHILD action remains.",
+    "Own subscription read/cancel remains available after subscription permission or relationship revocation; returns only actor-owned preference."
+  ],
+  "unresolvedHiddenGates": [
+    "TeacherClassAssignmentService remains owned by backend worker; coordinate its remaining miniapp operator role predicates."
+  ],
+  "resolvedResidualGates": [
+    "ParentAccountFinalizationService: FAMILY, parent profile and any enabled role; cooling-off, active-relationship deferral and anonymization remain.",
+    "ParentMobileManualRecoveryService: single PARENT_MOBILE_MANUAL_RECOVERY_MANAGE action with real sys_organization_admin subtree and student enrollment; FAMILY target with profile and enabled role. Mapper fixed PARENT role join removed.",
+    "Learning task, attendance and growth-review export actor role-name gates replaced by family profile, teacher occupation profile/active operational class, enabled organization/platform account and actual data scopes.",
+    "GrowthReview PDF create/execution only checks EXPORT_JOB_CREATE; historical read only EXPORT_JOB_READ, both with actual family actor and active child relationship.",
+    "Teacher selection accepts TEACHER_CLASS_ASSIGN or LEARNING_TASK_CREATE and still filters actual teacher profile in organization/school scope.",
+    "StudentApplicationService family create and student credential primary path now use actual ParentActorAccessService; institutional path requires actual enabled ORGANIZATION/PLATFORM and school scope.",
+    "ParentRewardController and ParentRewardExchangeController now require MINIAPP plus actual parent profile instead of fixed role names.",
+    "Legacy POST organization-admins consumes exact ORG_ADMIN_ASSIGN; role data-scopes remains IAM_DATA_SCOPE_CONFIGURE.",
+    "AnonymousRankAccess uses real family identity; preferences/guardian/class rules preserved.",
+    "Generic XLSX export family identity, student Wechat school/primary scope, custom-family protocol/onboarding and exception-report occupational/class scope fixed; see lastWebRoleGateAudit."
+  ],
+  "relatedReadOnlyAudit": {
+    "systemTask": "SystemTaskApplicationService and SystemTaskQueryService use per-domain actions, no fixed SYS_ADMIN/SYS_AUDITOR gate found. Query also needs per-domain read actions and feature/global organization scope.",
+    "learningTask": "Previously reported fixed role gates now replaced in this batch; TeacherClassAssignmentService is handled by backend worker.",
+    "attendance": "Scope mode uses persisted UserType/profile/class assignment and organizationDataScope; family/student cannot write, teacher sees only active assigned classes."
+  },
+  "parentStudentOptions": {
+    "path": "GET /api/v1/parent/student-options",
+    "response": "array of {id:string,studentName,gradeCode,schoolOrganizationId:string|null,status:ENABLED,relationshipRole}",
+    "permissions": "any existing enabled growth-child action, reward action, or PDF export action",
+    "features": "along the authorized consuming action; no PARENT_RELATIONSHIP_MANAGEMENT dependency",
+    "scope": "FAMILY parent profile, active role, own active parent-student relationship only; enabled student"
+  },
+  "learningAttendanceExportMatrix": [
+    {
+      "actions": [
+        "LEARNING_TASK_CREATE",
+        "LEARNING_TASK_READ_MANAGED",
+        "LEARNING_TASK_PUBLISH",
+        "LEARNING_TASK_PROGRESS_READ"
+      ],
+      "features": [
+        "LEARNING_TASK_MANAGEMENT"
+      ],
+      "scope": "FAMILY: real parent+owner; family targets active primary relationship. TEACHER: enabled teacher profile+active operational source class+creator, organization tasks readable only assigned-class students. ORGANIZATION/PLATFORM: existing allowed organization subtree, not family impersonation."
+    },
+    {
+      "actions": [
+        "TASK_ASSIGNMENT_REVIEW"
+      ],
+      "features": [
+        "LEARNING_TASK_MANAGEMENT"
+      ],
+      "scope": "Actual family/teacher/organization identity plus current reviewer assignment; transfers primary guardian, active class or actual organization admin subtree candidates only."
+    },
+    {
+      "actions": [
+        "TASK_ASSIGNMENT_EXEMPT",
+        "TASK_ASSIGNMENT_DEFER"
+      ],
+      "features": [
+        "LEARNING_TASK_MANAGEMENT"
+      ],
+      "scope": "Family active primary guardian; teacher creator+active source class; organization scope; preserve assignment state/version/date bounds."
+    },
+    {
+      "actions": [
+        "LEARNING_TASK_TEMPLATE_READ",
+        "LEARNING_TASK_TEMPLATE_MANAGE_PERSONAL"
+      ],
+      "features": [
+        "LEARNING_TASK_MANAGEMENT",
+        "LEARNING_TASK_TEMPLATE"
+      ],
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scope": "real parent profile; personal templates owner-only; system templates read-only; versions unchanged."
+    },
+    {
+      "actions": [
+        "LEARNING_TASK_COPY_PREVIOUS_DAY"
+      ],
+      "features": [
+        "LEARNING_TASK_MANAGEMENT",
+        "COPY_PREVIOUS_DAY_TASK"
+      ],
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scope": "real parent+active primary guardian+enabled student; retry creator-owned batch only."
+    },
+    {
+      "actions": [
+        "ATTENDANCE_READ",
+        "ATTENDANCE_RECORD"
+      ],
+      "features": [
+        "ATTENDANCE_MANAGEMENT"
+      ],
+      "scope": "Family/student own real relationship only, no writes; teacher active class scope; organization/platform existing organization data scope."
+    },
+    {
+      "actions": [
+        "EXPORT_JOB_CREATE"
+      ],
+      "features": [
+        "GROWTH_REVIEW_PDF_EXPORT",
+        "DATA_EXPORT",
+        "IMPORT_EXPORT_TEMPLATE_MANAGEMENT",
+        "ATTACHMENT_SERVICE"
+      ],
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scope": "real family parent, active child relationship, selected report version; no extra GROWTH_REVIEW_READ_CHILD grant."
+    },
+    {
+      "actions": [
+        "EXPORT_JOB_READ"
+      ],
+      "features": [
+        "ATTACHMENT_SERVICE"
+      ],
+      "allowedUserTypes": [
+        "FAMILY"
+      ],
+      "scope": "history requester ownership+active child relationship; generation features may be off."
+    }
+  ],
+  "authMeIdentity": {
+    "fields": [
+      "userType",
+      "parentProfile",
+      "teacherProfile",
+      "learningTaskSourceTypes"
+    ],
+    "userType": [
+      "PLATFORM",
+      "ORGANIZATION",
+      "FAMILY",
+      "STUDENT"
+    ],
+    "sourceTypes": [
+      "FAMILY",
+      "ORGANIZATION",
+      "TEACHER"
+    ],
+    "rules": "enabled persisted UserType; FAMILY parent profile; enabled teacher occupation profile; task source eligibility shared with LearningTaskScopeService, teacher requires operational active class and organization requires real non-empty org scope; no role-name inference"
+  },
+  "lastWebRoleGateAudit": "docs/auth-web-role-gates-review.json",
+  "explicitDatasetReadDependencies": [
+    {
+      "action": "REWARD_EXCHANGE_EXPORT",
+      "reads": [
+        "REWARD_EXCHANGE_READ"
+      ],
+      "dataset": "REWARD_EXCHANGE_LEDGER",
+      "identity": "FAMILY profile and active role; target primary guardian"
+    },
+    {
+      "action": "EXPORT_JOB_CREATE",
+      "reads": [
+        "GROWTH_POINT_READ_CHILD"
+      ],
+      "dataset": "GROWTH_POINT_LEDGER",
+      "identity": "FAMILY profile; target primary guardian"
+    },
+    {
+      "action": "EXPORT_JOB_READ",
+      "reads": [
+        "GROWTH_POINT_READ_CHILD"
+      ],
+      "dataset": "GROWTH_POINT_LEDGER",
+      "identity": "requester ownership + current actual FAMILY primary guardian"
+    },
+    {
+      "action": "EXPORT_JOB_READ",
+      "reads": [
+        "REWARD_EXCHANGE_EXPORT",
+        "REWARD_EXCHANGE_READ"
+      ],
+      "dataset": "REWARD_EXCHANGE_LEDGER",
+      "note": "Existing dataset historical-read export qualification was retained, now explicit; root may choose a separate history-read policy but must not hide this dependency."
+    },
+    {
+      "action": "EXCEPTION_REPORT_EXPORT",
+      "reads": [
+        "EXCEPTION_REPORT_READ"
+      ],
+      "dataset": "EXCEPTION_REPORT_LEDGER",
+      "scope": "actual teacher/class or actual organization scope"
+    }
+  ],
+  "exportIdentityModes": {
+    "helper": "exportjob/application/ExportActorIdentityService",
+    "rules": [
+      "enabled FAMILY+parent profile+active role => PARENT, never adopts institution scope even if granted",
+      "enabled STUDENT+actual student profile => STUDENT for attendance only; task export rejects STUDENT",
+      "enabled ORGANIZATION/PLATFORM+nonempty actual org scope => institution SQL mode (ORG_ADMIN/ORGANIZATION)",
+      "otherwise enabled teacher occupation profile+active operational CLASS assignment => TEACHER",
+      "SQL modes are persisted query labels, never role grant names"
+    ],
+    "actions": [
+      {
+        "code": "STUDENT_TASK_REPORT_EXPORT",
+        "allowedUserTypes": [
+          "FAMILY",
+          "ORGANIZATION",
+          "PLATFORM"
+        ],
+        "readDependenciesByMode": {
+          "PARENT": [
+            "LEARNING_TASK_READ_MANAGED"
+          ],
+          "TEACHER": [
+            "LEARNING_TASK_PROGRESS_READ"
+          ],
+          "ORG_ADMIN": [
+            "LEARNING_TASK_PROGRESS_READ"
+          ]
+        },
+        "features": [
+          "DATA_EXPORT",
+          "IMPORT_EXPORT_TEMPLATE_MANAGEMENT",
+          "ATTACHMENT_SERVICE",
+          "LEARNING_TASK_MANAGEMENT"
+        ],
+        "frozenRule": "current actual mode matches frozen studentTaskRole; all frozen assignment IDs individually rechecked under current exact scope, no partial delivery"
+      },
+      {
+        "code": "ORGANIZATION_TASK_STATISTICS_EXPORT",
+        "allowedUserTypes": [
+          "ORGANIZATION",
+          "PLATFORM"
+        ],
+        "readDependencies": [
+          "LEARNING_TASK_PROGRESS_READ"
+        ],
+        "features": [
+          "DATA_EXPORT",
+          "IMPORT_EXPORT_TEMPLATE_MANAGEMENT",
+          "ATTACHMENT_SERVICE",
+          "LEARNING_TASK_MANAGEMENT"
+        ],
+        "frozenRule": "actual institutional mode and nonempty current scope; all frozen source organization IDs must remain authorized"
+      },
+      {
+        "code": "ATTENDANCE_LEDGER_EXPORT",
+        "readDependencies": [
+          "ATTENDANCE_READ"
+        ],
+        "features": [
+          "ATTENDANCE_MANAGEMENT"
+        ],
+        "frozenRule": "current actual mode matches frozen attRole; all frozen class IDs remain authorized; family/student target ownership separately rechecked by existing actual relationship/self SQL"
+      }
+    ],
+    "unitVerificationTargets": [
+      "StudentTaskExportScopeTest",
+      "CustomExportScopeTest"
+    ]
+  }
+}

@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 /** 本地与测试环境的无网络短信适配器，刻意不记录验证码明文。 */
 @Component
 @Profile({"local", "test"})
+@org.springframework.boot.autoconfigure.condition.ConditionalOnExpression("!'smsbao'.equalsIgnoreCase('${lingdong.auth.parent-sms.provider:aliyun}')")
 public class LocalParentSmsSender implements ParentSmsSender {
     @Override
     public void send(String mobile, ParentSmsPurpose purpose, String code) {

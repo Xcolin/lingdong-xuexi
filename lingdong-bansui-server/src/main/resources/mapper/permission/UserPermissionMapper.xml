@@ -39,4 +39,6 @@
         DELETE FROM sys_user_permission
         WHERE user_id = #{userId} AND permission_id = #{permissionId}
     </delete>
+  <delete id="deleteByPermissionId">DELETE FROM sys_user_permission WHERE permission_id=#{permissionId}</delete>
+
 </mapper>

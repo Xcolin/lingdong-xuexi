@@ -9,7 +9,7 @@ import type {
 /** 家长积分页面只调用主关系学生范围内的只读接口。 */
 export const growthPointApi = {
   listStudents(): Promise<GrowthPointStudentOption[]> {
-    return apiClient.get<GrowthPointStudentOption[]>('/growth-points/students');
+    return apiClient.get<{id:string;studentName:string}[]>('/parent/student-options').then(rows => rows.map(row => ({studentId:row.id,studentName:row.studentName})));
   },
   account(studentId: string): Promise<GrowthPointAccount> {
     return apiClient.get<GrowthPointAccount>(`/growth-points/students/${studentId}/account`);

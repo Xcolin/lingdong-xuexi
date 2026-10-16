@@ -82,7 +82,7 @@ public class StudentManagementController {
             @Valid @RequestBody CreateStudentRequest request
     ) {
         return CreatedStudentResponse.from(studentApplicationService.createStudent(currentUser,
-                new CreateStudentCommand(request.studentName(), request.gradeCode(), request.organizationId())));
+                new CreateStudentCommand(request.studentName(), request.gradeCode(), request.organizationId(), request.familyOrganizationId())));
     }
 
     @RequirePermission("STUDENT_CLASS_ASSIGN")
@@ -95,7 +95,7 @@ public class StudentManagementController {
         var relationship = studentOrganizationLifecycleService.transferClass(
                 currentUser, studentId,
                 new TransferStudentClassCommand(
-                        request.classOrganizationId(), LEGACY_CLASS_ASSIGNMENT_REASON));
+                        request.classOrganizationId(), LEGACY_CLASS_ASSIGNMENT_REASON,request.requireUnassigned()));
         return new StudentClassAssignmentResponse(
                 relationship.studentId(), relationship.currentClassOrganizationId(), relationship.status());
     }
@@ -113,9 +113,9 @@ public class StudentManagementController {
     @RequirePermission("STUDENT_ORGANIZATION_MANAGE")
     @GetMapping("/organization-relationship-classes")
     public List<StudentOrganizationClassOptionResponse> listOrganizationRelationshipClasses(
-            @AuthenticationPrincipal AuthenticatedUser currentUser
+            @AuthenticationPrincipal AuthenticatedUser currentUser, @org.springframework.web.bind.annotation.RequestParam(required=false) Long schoolOrganizationId
     ) {
-        return studentOrganizationLifecycleService.listClassOptions(currentUser).stream()
+        return studentOrganizationLifecycleService.listClassOptions(currentUser,schoolOrganizationId).stream()
                 .map(StudentOrganizationClassOptionResponse::from)
                 .toList();
     }
@@ -124,10 +124,10 @@ public class StudentManagementController {
     @GetMapping("/{studentId}/organization-relationships")
     public StudentOrganizationRelationshipResponse findOrganizationRelationship(
             @AuthenticationPrincipal AuthenticatedUser currentUser,
-            @PathVariable Long studentId
+            @PathVariable Long studentId,@RequestParam(required=false) Long institutionOrganizationId
     ) {
         return StudentOrganizationRelationshipResponse.from(
-                studentOrganizationLifecycleService.find(currentUser, studentId));
+                studentOrganizationLifecycleService.find(currentUser, studentId,institutionOrganizationId));
     }
 
     @RequirePermission("STUDENT_ORGANIZATION_MANAGE")
@@ -154,6 +154,14 @@ public class StudentManagementController {
                 studentOrganizationLifecycleService.deactivate(currentUser, studentId,
                         new DeactivateStudentOrganizationCommand(
                                 request.organizationId(), request.reason())));
+    }
+
+    public record DeactivateClassRequest(Long classOrganizationId,String reason){}
+    @RequirePermission("STUDENT_ORGANIZATION_MANAGE")
+    @PostMapping("/{studentId}/class-deactivations")
+    public StudentOrganizationRelationshipResponse deactivateClass(@AuthenticationPrincipal AuthenticatedUser actor,
+            @PathVariable Long studentId,@RequestBody DeactivateClassRequest request) {
+        return StudentOrganizationRelationshipResponse.from(studentOrganizationLifecycleService.deactivateClass(actor,studentId,request.classOrganizationId(),request.reason()));
     }
 
     @RequirePermission("STUDENT_CREDENTIAL_INITIALIZE")
@@ -199,3 +207,4 @@ public class StudentManagementController {
         ));
     }
 }
+

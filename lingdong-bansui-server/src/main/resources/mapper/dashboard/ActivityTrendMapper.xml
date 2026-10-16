@@ -12,7 +12,7 @@
    <otherwise>1=0</otherwise></choose>
  </sql>
  <select id="findDailyActive" resultType="com.lingdong.learning.dashboard.infrastructure.persistence.ActivityTrendRow">
-  SELECT activity.activity_date, CAST(COUNT(DISTINCT activity.student_id) AS BIGINT) AS active_students
+  SELECT activity.activity_date, COUNT(DISTINCT activity.student_id) AS active_students
   FROM (
    SELECT CAST(e.occurred_at AS DATE) AS activity_date, a.student_id
    FROM learn_task_assignment_event e

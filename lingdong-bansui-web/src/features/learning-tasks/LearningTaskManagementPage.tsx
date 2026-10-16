@@ -1,3 +1,4 @@
+import { Button as PlainButton } from 'antd';
 import { ConfiguredModal as Modal } from '../../components/ConfiguredModal';
 import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { ViewportTable as Table } from '../../components/ViewportTable';
@@ -26,7 +27,7 @@ import type {
   LearningTaskTemplate
 } from './types';
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 const sourceLabels: Record<LearningTaskSourceType, string> = {
   FAMILY: '家庭',
   ORGANIZATION: '机构',
@@ -77,7 +78,7 @@ export function LearningTaskManagementPage({
     void loadTasks({}, 1);
   }, []);
 
-  async function loadTasks(nextFilters: FilterValues, page: number): Promise<void> {
+  async function loadTasks(nextFilters: FilterValues, page: number, pageSize = directory.pageSize): Promise<void> {
     setLoading(true);
     setErrorMessage(null);
     const query: LearningTaskFilters = {
@@ -86,7 +87,7 @@ export function LearningTaskManagementPage({
       scheduledDate: nextFilters.scheduledDate || undefined,
       keyword: nextFilters.keyword?.trim() || undefined,
       page,
-      pageSize: PAGE_SIZE
+      pageSize
     };
     try {
       setDirectory(await learningTaskApi.list(query));
@@ -118,7 +119,7 @@ export function LearningTaskManagementPage({
   }
 
   function confirmPublish(task: LearningTaskSummary): void {
-    Modal.confirm({ actionPrefix: 'learning-tasks.learning-task-management-page.confirm.1',
+    Modal.confirm({ actionPrefix: 'LEARNING_TASK_PUBLISH',
       title: '确认发布学习任务',
       content: `${task.title}，计划日期 ${task.scheduledDate}。发布后内容不可再编辑。`,
       okText: '确认发布',
@@ -137,7 +138,7 @@ export function LearningTaskManagementPage({
   }
 
   function confirmBatchPublish(): void {
-    Modal.confirm({ actionPrefix: 'learning-tasks.learning-task-management-page.confirm.2',
+    Modal.confirm({ actionPrefix: 'LEARNING_TASK_PUBLISH',
       title: '确认批量发布',
       content: `将逐项发布已选择的 ${selectedTaskIds.length} 个草稿，单项失败不会影响其他任务。`,
       okText: '确认发布',
@@ -159,7 +160,7 @@ export function LearningTaskManagementPage({
   }
 
   function confirmStopRecurrence(task: LearningTaskSummary): void {
-    Modal.confirm({ actionPrefix: 'learning-tasks.learning-task-management-page.confirm.3',
+    Modal.confirm({ actionPrefix: 'LEARNING_TASK_PUBLISH',
       title: '确认停止每日固定任务',
       content: `${task.title}停止后不再生成后续日期任务，已经生成的学生任务不会删除。`,
       okText: '确认停止',
@@ -195,18 +196,18 @@ export function LearningTaskManagementPage({
           {viewMode === 'TASKS' && (
             <>
               {canCopyPreviousDay && (
-                <Button actionKey="learning-tasks.learning-task-management-page.1"
+                <Button actionKey="LEARNING_TASK_COPY_PREVIOUS_DAY"
                   icon={<CopyPlus size={16} />}
                   onClick={() => setCopyModalOpen(true)}
                 >复制昨日任务</Button>
               )}
               {canUseTaskTemplates && (
-                <Button actionKey="learning-tasks.learning-task-management-page.2"
+                <Button actionKey="LEARNING_TASK_TEMPLATE_READ"
                   icon={<BookOpen size={16} />}
                   onClick={() => setTemplateLibraryOpen(true)}
                 >任务模板</Button>
               )}
-              <Button actionKey="learning-tasks.learning-task-management-page.3"
+              <Button actionKey="LEARNING_TASK_PUBLISH"
                 icon={<Rocket size={16} />}
                 disabled={selectedTaskIds.length === 0}
                 loading={batchPublishing}
@@ -233,7 +234,7 @@ export function LearningTaskManagementPage({
           type="error"
           showIcon
           message={errorMessage}
-          action={<Button actionKey="learning-tasks.learning-task-management-page.5" size="small" onClick={() => void loadTasks(filters, directory.page)}>重试</Button>}
+          action={<PlainButton  size="small" onClick={() => void loadTasks(filters, directory.page)}>重试</PlainButton>}
         />
       )}
 
@@ -250,7 +251,7 @@ export function LearningTaskManagementPage({
           </Form.Item>
           <Form.Item label="计划日期" name="scheduledDate"><Input type="date" /></Form.Item>
           <Form.Item label="标题" name="keyword"><Input allowClear maxLength={50} /></Form.Item>
-          <Form.Item><Button actionKey="learning-tasks.learning-task-management-page.6" type="primary" htmlType="submit" icon={<Search size={16} />}>查询</Button></Form.Item>
+          <Form.Item><Button actionKey="LEARNING_TASK_READ_MANAGED" type="primary" htmlType="submit" icon={<Search size={16} />}>查询</Button></Form.Item>
         </Form>
 
         <Table<LearningTaskSummary>
@@ -268,8 +269,8 @@ export function LearningTaskManagementPage({
             current: directory.page,
             pageSize: directory.pageSize,
             total: directory.total,
-            showSizeChanger: false,
-            onChange: (page) => void loadTasks(filters, page)
+            showSizeChanger: true,
+            onChange: (page, pageSize) => void loadTasks(filters, page, pageSize)
           }}
           columns={[
             { title: '任务标题', dataIndex: 'title', key: 'title', width: 220 },
@@ -297,7 +298,7 @@ export function LearningTaskManagementPage({
               render: (_, task) => task.status === 'DRAFT' ? (
                 <Space size={2}>
                   <ActionButton
-                    actionKey="learning-tasks.draft.edit" label={`编辑 ${task.title}`}
+                    actionKey="LEARNING_TASK_CREATE" label={`编辑 ${task.title}`}
                     title="编辑草稿"
                     icon={<Edit3 size={16} />}
                     onClick={() => void openEditor(task)}
@@ -313,7 +314,7 @@ export function LearningTaskManagementPage({
                 <Space size={2}>
                   {currentUser.permissionCodes.includes('LEARNING_TASK_PROGRESS_READ') && (
                     <ActionButton
-                      actionKey="learning-tasks.progress" label={`查看进度 ${task.title}`}
+                      actionKey="LEARNING_TASK_PROGRESS_READ" label={`查看进度 ${task.title}`}
                       title="学生进度"
                       icon={<BarChart3 size={16} />}
                       onClick={() => setProgressTask(task)}
@@ -321,7 +322,7 @@ export function LearningTaskManagementPage({
                   )}
                   {task.recurrenceStatus === 'ACTIVE' && (
                     <ActionButton
-                      actionKey="learning-tasks.recurrence.stop" label={`停止 ${task.title}`}
+                      actionKey="LEARNING_TASK_PUBLISH" label={`停止 ${task.title}`}
                       title="停止每日固定任务"
                       icon={<CircleStop size={16} />}
                       onClick={() => confirmStopRecurrence(task)}
@@ -388,12 +389,10 @@ function ActionButton({
 }
 
 function availableSources(currentUser: CurrentUser) {
-  const options: Array<{ role: string; value: LearningTaskSourceType; label: string }> = [
-    { role: 'PARENT', value: 'FAMILY', label: '家庭' },
-    { role: 'ORG_ADMIN', value: 'ORGANIZATION', label: '机构' },
-    { role: 'TEACHER', value: 'TEACHER', label: '教师' }
-  ];
-  return options.filter(option => option.value === 'ORGANIZATION' || currentUser.roleCodes.includes(option.role));
+  const supported = currentUser.learningTaskSourceTypes ?? [];
+  return (['FAMILY', 'ORGANIZATION', 'TEACHER'] as LearningTaskSourceType[])
+    .filter(source => supported.includes(source))
+    .map(source => ({value:source,label:sourceLabels[source]}));
 }
 
 function sourceColor(source: LearningTaskSourceType): string {

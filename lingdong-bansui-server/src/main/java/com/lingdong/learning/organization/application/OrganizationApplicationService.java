@@ -100,6 +100,7 @@ public class OrganizationApplicationService {
         Integer sortOrder = normalizeSortOrder(command.sortOrder());
         String adminDivisionCode = normalizeAdminDivisionCode(command.adminDivisionCode());
         ParentContext parentContext = resolveParent(command.parentId());
+        OrganizationHierarchy.requireParent(typeCode, command.parentId() == null ? null : organizationMapper.findById(command.parentId()), organizationMapper);
 
         if (organizationMapper.existsByCode(code)) {
             throw new DuplicateOrganizationCodeException(code);

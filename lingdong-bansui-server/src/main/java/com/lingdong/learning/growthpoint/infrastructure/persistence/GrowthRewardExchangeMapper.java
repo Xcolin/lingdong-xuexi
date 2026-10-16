@@ -27,6 +27,8 @@ public interface GrowthRewardExchangeMapper {
 
     long countByStudentId(@Param("studentId") Long studentId);
 
+    long countPendingByParent(@Param("parentUserId") Long parentUserId, @Param("status") String status);
+
     int approve(
             @Param("id") Long id,
             @Param("expectedVersion") int expectedVersion,

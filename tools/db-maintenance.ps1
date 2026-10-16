@@ -36,8 +36,7 @@ try {
 $cp = (Get-Content $classpathFile -Raw).Trim()
 
 # 2) 编译维护工具到临时目录
-$classes = Join-Path $env:TEMP 'lingdong-maintenance-classes'
-if (Test-Path $classes) { Remove-Item $classes -Recurse -Force }
+$classes = Join-Path $env:TEMP ('lingdong-maintenance-classes-' + [Guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Force -Path $classes | Out-Null
 javac -encoding UTF-8 -cp $cp -d $classes (Join-Path $PSScriptRoot 'mysql-maintenance\MysqlRecovery.java') (Join-Path $PSScriptRoot 'mysql-maintenance\MysqlMigration.java')
 if ($LASTEXITCODE -ne 0) { throw '维护工具编译失败。' }

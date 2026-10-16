@@ -1,3 +1,4 @@
+import { Button as PlainButton } from 'antd';
 import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { useEffect, useState } from 'react';
 import { Alert, Checkbox, Descriptions, Empty, List, Modal, Select, Space, Spin, Tag, message } from 'antd';
@@ -106,7 +107,7 @@ export function PreviousDayTaskCopyModal({
       styles={{ body: { maxHeight: 'calc(100vh - 220px)', overflowY: 'auto' } }}
       onCancel={onClose}
       footer={[
-        <Button actionKey="learning-tasks.previous-day-task-copy-modal.1" key="close" onClick={onClose}>关闭</Button>,
+        <PlainButton  key="close" onClick={onClose}>关闭</PlainButton>,
         <Button actionKey="LEARNING_TASK_COPY_PREVIOUS_DAY"
           key="copy"
           type="primary"
@@ -172,13 +173,13 @@ export function PreviousDayTaskCopyModal({
             renderItem={(item) => (
               <List.Item
                 actions={[
-                  <Button actionKey="learning-tasks.previous-day-task-copy-modal.3"
+                  <PlainButton 
                     key="retry"
                     type="text"
                     icon={<RotateCcw size={16} />}
                     loading={submitting}
                     onClick={() => void retry(item.itemId)}
-                  >重试</Button>
+                  >重试</PlainButton>
                 ]}
               >
                 <List.Item.Meta title={item.taskTitle} description={item.failureMessage} />

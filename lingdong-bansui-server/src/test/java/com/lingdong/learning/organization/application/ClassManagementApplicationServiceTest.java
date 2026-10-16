@@ -35,6 +35,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class ClassManagementApplicationServiceTest {
     @Autowired
     private ClassManagementApplicationService classManagementApplicationService;
+    @Autowired private com.lingdong.learning.learningtask.infrastructure.persistence.LearningTaskOptionMapper taskOptions;
+    @Autowired private com.lingdong.learning.learningtask.application.LearningTaskOptionService taskOptionService;
 
     @Autowired
     private OrganizationApplicationService organizationApplicationService;
@@ -63,11 +65,11 @@ class ClassManagementApplicationServiceTest {
 
         List<Organization> schools = classManagementApplicationService.listManageableSchools(fixture.currentUser());
         Organization created = classManagementApplicationService.createClass(
-                fixture.currentUser(), new CreateClassCommand(fixture.school().id(), "一年级一班", 10));
+                fixture.currentUser(), new CreateClassCommand(gradeId(fixture.school().id()), "一年级一班", 10));
 
         assertThat(schools).extracting(Organization::id).containsExactly(fixture.school().id());
         assertThat(created.typeCode()).isEqualTo("CLASS");
-        assertThat(created.parentId()).isEqualTo(fixture.school().id());
+        assertThat(created.parentId()).isEqualTo(gradeId(fixture.school().id()));
         assertThat(created.code()).matches("CLS_[0-9]{19}");
         assertThat(Long.toString(created.id())).hasSize(19);
         assertThat(created.versionNo()).isEqualTo(1);
@@ -86,16 +88,16 @@ class ClassManagementApplicationServiceTest {
                 new CreateOrganizationCommand("REGION_CLASS_MANAGE_B", "班级管理区域乙", "REGION", null, 1));
 
         classManagementApplicationService.createClass(
-                fixture.currentUser(), new CreateClassCommand(fixture.school().id(), "二年级一班", 10));
+                fixture.currentUser(), new CreateClassCommand(gradeId(fixture.school().id()), "二年级一班", 10));
 
         assertThatThrownBy(() -> classManagementApplicationService.createClass(
-                fixture.currentUser(), new CreateClassCommand(fixture.outsideSchool().id(), "范围外班级", 10)))
+                fixture.currentUser(), new CreateClassCommand(gradeId(fixture.outsideSchool().id()), "范围外班级", 10)))
                 .isInstanceOf(ResourceNotFoundException.class);
         assertThatThrownBy(() -> classManagementApplicationService.createClass(
                 fixture.currentUser(), new CreateClassCommand(region.id(), "非学校班级", 10)))
                 .isInstanceOf(ResourceNotFoundException.class);
         assertThatThrownBy(() -> classManagementApplicationService.createClass(
-                fixture.currentUser(), new CreateClassCommand(fixture.school().id(), "二年级一班", 20)))
+                fixture.currentUser(), new CreateClassCommand(gradeId(fixture.school().id()), "二年级一班", 20)))
                 .isInstanceOf(DuplicateOrganizationNameException.class);
     }
 
@@ -104,10 +106,10 @@ class ClassManagementApplicationServiceTest {
         Fixture fixture = createFixture("class_manage_c");
         Organization ownClass = organizationApplicationService.createOrganization(
                 new CreateOrganizationCommand(
-                        "CLASS_MANAGE_C_OWN", "待编辑班级", "CLASS", fixture.school().id(), 10));
+                        "CLASS_MANAGE_C_OWN", "待编辑班级", "CLASS", gradeId(fixture.school().id()), 10));
         organizationApplicationService.createOrganization(
                 new CreateOrganizationCommand(
-                        "CLASS_MANAGE_C_OUTSIDE", "范围外班级", "CLASS", fixture.outsideSchool().id(), 10));
+                        "CLASS_MANAGE_C_OUTSIDE", "范围外班级", "CLASS", gradeId(fixture.outsideSchool().id()), 10));
         jdbcTemplate.update("""
                 UPDATE sys_organization
                 SET status = 'DISABLED', effective_status = 'DISABLED'
@@ -134,10 +136,10 @@ class ClassManagementApplicationServiceTest {
         Fixture fixture = createFixture("class_manage_d");
         Organization classOrganization = organizationApplicationService.createOrganization(
                 new CreateOrganizationCommand(
-                        "CLASS_MANAGE_D_OWN", "停用联动班级", "CLASS", fixture.school().id(), 10));
+                        "CLASS_MANAGE_D_OWN", "停用联动班级", "CLASS", gradeId(fixture.school().id()), 10));
         Organization outsideClass = organizationApplicationService.createOrganization(
                 new CreateOrganizationCommand(
-                        "CLASS_MANAGE_D_OUT", "停用范围外班级", "CLASS", fixture.outsideSchool().id(), 10));
+                        "CLASS_MANAGE_D_OUT", "停用范围外班级", "CLASS", gradeId(fixture.outsideSchool().id()), 10));
         long insideStudentId = insertStudentInClass(classOrganization.id(), "停用班内学生");
         long outsideStudentId = insertStudentInClass(outsideClass.id(), "停用班外学生");
         long organizationPending = insertTaskAssignment(
@@ -189,10 +191,70 @@ class ClassManagementApplicationServiceTest {
         assertThat(assignmentStatus(organizationPending)).isEqualTo("INVALIDATED");
     }
 
-    private Fixture createFixture(String suffix) {
+
+    @Test
+    void managesGradesAndRejectsMismatchedSchoolOrDisabledGrade() {
+        Fixture f=createFixture("grade_management");
+        Organization grade=classManagementApplicationService.createGrade(f.currentUser(),f.school().id(),"一年级",0);
+        assertThat(classManagementApplicationService.listGrades(f.currentUser(),f.school().id())).extracting(Organization::id).containsExactly(grade.id());
+        assertThat(classManagementApplicationService.listGrades(f.currentUser(),f.outsideSchool().id())).isEmpty();
+        assertThatThrownBy(() -> classManagementApplicationService.createGrade(f.currentUser(),f.outsideSchool().id(),"范围外年级",0)).isInstanceOf(ResourceNotFoundException.class);
+        assertThatThrownBy(() -> classManagementApplicationService.createClass(f.currentUser(),new CreateClassCommand(f.outsideSchool().id(),grade.id(),"错校班",0))).isInstanceOf(IllegalArgumentException.class);
+        Organization cls=classManagementApplicationService.createClass(f.currentUser(),new CreateClassCommand(f.school().id(),grade.id(),"一班",0));
+        assertThat(classManagementApplicationService.listClasses(f.currentUser(),f.school().id(),grade.id())).extracting(Organization::id).containsExactly(cls.id());
+        assertThat(classManagementApplicationService.listClasses(f.currentUser(),f.outsideSchool().id(),null)).isEmpty();
+        Organization updated=classManagementApplicationService.updateGrade(f.currentUser(),new UpdateClassCommand(grade.id(),"二年级",5,grade.versionNo()));
+        Organization disabled=classManagementApplicationService.disableGrade(f.currentUser(),grade.id(),updated.versionNo());
+        assertThat(classManagementApplicationService.listGrades(f.currentUser(),f.school().id())).extracting(Organization::status).containsExactly(com.lingdong.learning.organization.domain.OrganizationStatus.DISABLED);
+        assertThatThrownBy(() -> classManagementApplicationService.createClass(f.currentUser(),new CreateClassCommand(grade.id(),"停用新增",0))).isInstanceOf(ResourceNotFoundException.class);
+        classManagementApplicationService.enableGrade(f.currentUser(),grade.id(),disabled.versionNo());
+        assertThat(organizationMapper.findById(cls.id()).effectiveStatus().name()).isEqualTo("ENABLED");
+    }
+
+    @Test
+    void assignsLegacyClassWithinSchoolPreservingStudentRelationsAndAuditing() {
+        Fixture f=createFixture("legacy_grade");
+        Organization legacy=Organization.create(idGenerator.nextId(),f.school().id(),"PARENT:"+f.school().id(),"LEGACY_CLASS_TEST","存量班级","CLASS",f.school().path()+"LEGACY_CLASS_TEST/",0,null);
+        organizationMapper.insert(legacy);
+        long student=insertStudentInClass(legacy.id(),"存量学生");
+        Organization grade=classManagementApplicationService.createGrade(f.currentUser(),f.school().id(),"归并年级",0);
+        Organization outsideGrade=organizationApplicationService.createOrganization(new CreateOrganizationCommand("OTHER_LEGACY_GRADE_NODE","其他年级","GRADE",f.outsideSchool().id(),0));
+        assertThatThrownBy(() -> classManagementApplicationService.assignGrade(f.currentUser(),legacy.id(),outsideGrade.id(),1)).isInstanceOf(ResourceNotFoundException.class);
+        assertThatThrownBy(() -> classManagementApplicationService.assignGrade(f.currentUser(),legacy.id(),grade.id(),2)).isInstanceOf(OrganizationVersionConflictException.class);
+        Organization assigned=classManagementApplicationService.assignGrade(f.currentUser(),legacy.id(),grade.id(),1);
+        assertThat(assigned.id()).isEqualTo(legacy.id());
+        assertThat(assigned.parentId()).isEqualTo(grade.id());
+        assertThat(assigned.versionNo()).isEqualTo(2);
+        assertThat(jdbcTemplate.queryForObject("SELECT organization_id FROM edu_student_organization WHERE student_id=? AND relation_type='CLASS'",Long.class,student)).isEqualTo(legacy.id());
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM sys_organization_change_audit WHERE organization_id=? AND event_type='DIRECT_MOVE'",Integer.class,legacy.id())).isEqualTo(1);
+        assertThatThrownBy(() -> classManagementApplicationService.assignGrade(f.currentUser(),legacy.id(),grade.id(),2)).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void trainingInstitutionManagesDirectAndCampusCourseClassesWithinItsScope() {
+        Fixture fixture = createFixture("training_class_manager", "TRAINING_INSTITUTION");
+        assertThat(taskOptions.findOrganizationOptionsForAdministrator(fixture.currentUser().userId(), "SCHOOL")).extracting(com.lingdong.learning.learningtask.application.OrganizationOption::id).containsExactly(fixture.school().id());
+        assertThat(taskOptionService.organizations(fixture.currentUser(), com.lingdong.learning.learningtask.domain.LearningTaskSourceType.ORGANIZATION, "SCHOOL")).extracting(com.lingdong.learning.learningtask.application.OrganizationOption::id).containsExactly(fixture.school().id());
+        assertThat(taskOptionService.organizations(fixture.currentUser(), com.lingdong.learning.learningtask.domain.LearningTaskSourceType.ORGANIZATION, "TRAINING_INSTITUTION")).extracting(com.lingdong.learning.learningtask.application.OrganizationOption::id).containsExactly(fixture.school().id());
+        var directGrade = classManagementApplicationService.createGrade(fixture.currentUser(), fixture.school().id(), "钢琴课程", 0);
+        var directClass = classManagementApplicationService.createClass(fixture.currentUser(), new CreateClassCommand(directGrade.id(), "钢琴初级班", 0));
+        var campus = classManagementApplicationService.createCampus(fixture.currentUser(), fixture.school().id(), "北教学点", 1);
+        var campusGrade = classManagementApplicationService.createGrade(fixture.currentUser(), fixture.school().id(), campus.id(), "美术课程", 0);
+        var campusClass = classManagementApplicationService.createClass(fixture.currentUser(), new CreateClassCommand(campusGrade.id(), "美术班", 0));
+        assertThat(classManagementApplicationService.listManageableSchools(fixture.currentUser())).extracting(Organization::id).containsExactly(fixture.school().id());
+        assertThat(classManagementApplicationService.listClasses(fixture.currentUser(), fixture.school().id(), null)).extracting(Organization::id).containsExactly(directClass.id(), campusClass.id());
+        assertThat(classManagementApplicationService.ancestor(campusClass, "SCHOOL").typeCode()).isEqualTo("TRAINING_INSTITUTION");
+        var miniappUser = new AuthenticatedUser(fixture.currentUser().userId(), idGenerator.nextId(), fixture.currentUser().username(), fixture.currentUser().displayName(), AuthClientType.MINIAPP, List.of("ORG_ADMIN"));
+        assertThat(classManagementApplicationService.listManageableSchools(miniappUser)).extracting(Organization::id).containsExactly(fixture.school().id());
+        assertThatThrownBy(() -> classManagementApplicationService.createGrade(fixture.currentUser(), fixture.outsideSchool().id(), "范围外课程", 0)).isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    private Fixture createFixture(String suffix) { return createFixture(suffix, "SCHOOL"); }
+
+    private Fixture createFixture(String suffix, String institutionType) {
         Organization school = organizationApplicationService.createOrganization(
                 new CreateOrganizationCommand(
-                        ("SCHOOL_" + suffix).toUpperCase(), "授权学校" + suffix, "SCHOOL", null, 10));
+                        ("SCHOOL_" + suffix).toUpperCase(), "授权学校" + suffix, institutionType, null, 10));
         Organization outsideSchool = organizationApplicationService.createOrganization(
                 new CreateOrganizationCommand(
                         ("OUTSIDE_" + suffix).toUpperCase(), "范围外学校" + suffix, "SCHOOL", null, 20));
@@ -273,4 +335,26 @@ class ClassManagementApplicationServiceTest {
             Organization outsideSchool
     ) {
     }
+
+    private final java.util.Map<Long,Long> fixtureGrades=new java.util.HashMap<>();
+    private Long gradeId(Long schoolId) {
+        return fixtureGrades.computeIfAbsent(schoolId,id -> organizationApplicationService.createOrganization(
+                new CreateOrganizationCommand("GRD_"+java.util.UUID.randomUUID().toString().replace("-", "").toUpperCase(),"测试年级","GRADE",id,0)).id());
+    }
+
+ @Test void campusCrudKeepsSchoolBoundaryAndDisableInvalidatesSubtreeOnly() {
+  Fixture f=createFixture("class_manage_d");
+  var campus=classManagementApplicationService.createCampus(f.currentUser(),f.school().id(),"东校区",1);
+  var grade=classManagementApplicationService.createGrade(f.currentUser(),f.school().id(),campus.id(),"一年级",0);
+  var cls=classManagementApplicationService.createClass(f.currentUser(),new CreateClassCommand(grade.id(),"一班",0));
+  long student=insertStudentInClass(cls.id(),"校区学生");
+  long task=insertTaskAssignment(student,"ORGANIZATION",campus.id(),"PENDING_CLAIM");
+  long family=insertTaskAssignment(student,"FAMILY",null,"PENDING_CLAIM");
+  assertThat(classManagementApplicationService.listGrades(f.currentUser(),f.school().id(),campus.id())).extracting(Organization::id).containsExactly(grade.id());
+  assertThatThrownBy(() -> classManagementApplicationService.createGrade(f.currentUser(),f.outsideSchool().id(),campus.id(),"错误年级",0)).isInstanceOf(ResourceNotFoundException.class);
+  classManagementApplicationService.disableCampus(f.currentUser(),campus.id(),campus.versionNo());
+  assertThat(organizationMapper.findById(cls.id()).effectiveStatus().name()).isEqualTo("DISABLED");
+  assertThat(assignmentStatus(task)).isEqualTo("INVALIDATED");
+  assertThat(assignmentStatus(family)).isEqualTo("PENDING_CLAIM");
+ }
 }

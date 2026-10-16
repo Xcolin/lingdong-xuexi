@@ -7,7 +7,7 @@ export interface GrowthReviewSummary {
   reviewId: string;
   studentId: string;
   studentName: string;
-  periodType: 'DAY';
+  periodType: 'DAY' | 'WEEK' | 'MONTH';
   periodStart: string;
   periodEnd: string;
   snapshotId: string;
@@ -55,11 +55,12 @@ export interface GrowthReviewPageData {
   total: number;
 }
 
-export function listMyDailyGrowthReviews(): Promise<GrowthReviewPageData> {
-  return authenticatedRequest<GrowthReviewPageData>(
-    '/growth-reviews/me?periodType=DAY&page=1&pageSize=20'
-  );
+export function listMyGrowthReviews(periodType:'DAY'|'WEEK'):Promise<GrowthReviewPageData> {
+ return authenticatedRequest(`/growth-reviews/me?periodType=${periodType}&page=1&pageSize=20`);
 }
+export function listMyDailyGrowthReviews(): Promise<GrowthReviewPageData> {return listMyGrowthReviews('DAY');}
+export function getMyReviewIdentity():Promise<{clientType:string;roleCodes:string[];permissionCodes:string[]}> {return authenticatedRequest('/auth/me');}
+
 
 export function getMyGrowthReview(reviewId: string): Promise<GrowthReviewDetail> {
   return authenticatedRequest<GrowthReviewDetail>(`/growth-reviews/me/${reviewId}`);
@@ -74,6 +75,10 @@ export function addMyGrowthReviewSupplement(
     `/growth-reviews/me/${reviewId}/supplements`,
     { method: 'POST', data: { supplementType, content } }
   );
+}
+
+export function saveMyDailyReflection(reviewId:string, insight:string, difficulty:string, nextPlan:string):Promise<GrowthReviewSupplement[]> {
+ return authenticatedRequest(`/growth-reviews/me/${reviewId}/daily-reflection`,{method:'POST',data:{insight,difficulty,nextPlan}});
 }
 
 function authenticatedRequest<T>(

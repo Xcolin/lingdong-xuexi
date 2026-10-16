@@ -26,8 +26,32 @@ public record LearningTask(
         LocalDateTime publishedAt,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
-        LearningTaskRecurrenceStatus recurrenceStatus
+        LearningTaskRecurrenceStatus recurrenceStatus,
+        String recurrenceFrequency, java.util.List<Integer> recurrenceWeekdays
 ) {
+    public LearningTask(
+        Long id,
+        LearningTaskSourceType sourceType,
+        Long sourceOrganizationId,
+        Long creatorUserId,
+        String title,
+        Integer difficultyLevel,
+        Integer basePoints,
+        Integer durationMinutes,
+        LocalDate scheduledDate,
+        String categoryCode,
+        String remark,
+        Long reviewerUserId,
+        Integer reviewTimeoutHours,
+        Boolean recurrenceEnabled,
+        LocalDate recurrenceEndDate,
+        LearningTaskStatus status,
+        LocalDateTime publishedAt,
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt,
+        LearningTaskRecurrenceStatus recurrenceStatus
+) { this(id, sourceType, sourceOrganizationId, creatorUserId, title, difficultyLevel, basePoints, durationMinutes, scheduledDate, categoryCode, remark, reviewerUserId, reviewTimeoutHours, recurrenceEnabled, recurrenceEndDate, status, publishedAt, createdAt, updatedAt, recurrenceStatus, "DAILY", java.util.List.of()); }
+
     public static LearningTask draft(
             Long id,
             LearningTaskSourceType sourceType,
@@ -41,7 +65,7 @@ public record LearningTask(
                 draft.difficultyLevel(), draft.basePoints(), draft.durationMinutes(), draft.scheduledDate(),
                 draft.categoryCode(), draft.remark(), reviewerUserId, 72,
                 draft.recurrenceEnabled(), draft.recurrenceEndDate(), LearningTaskStatus.DRAFT,
-                null, null, null, null);
+                null, null, null, null, draft.recurrenceFrequency(), draft.recurrenceWeekdays());
     }
 
     public LearningTask withDraft(ValidatedLearningTaskDraft draft, Long reviewerUserId) {
@@ -50,6 +74,6 @@ public record LearningTask(
                 draft.difficultyLevel(), draft.basePoints(), draft.durationMinutes(), draft.scheduledDate(),
                 draft.categoryCode(), draft.remark(), reviewerUserId, reviewTimeoutHours,
                 draft.recurrenceEnabled(), draft.recurrenceEndDate(), status,
-                publishedAt, createdAt, updatedAt, recurrenceStatus);
+                publishedAt, createdAt, updatedAt, recurrenceStatus, draft.recurrenceFrequency(), draft.recurrenceWeekdays());
     }
 }

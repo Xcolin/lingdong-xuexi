@@ -2,6 +2,10 @@ package com.lingdong.learning.auth.application;
 
 /** 短信供应商未配置或暂不可用时的失败关闭异常。 */
 public class SmsDeliveryUnavailableException extends RuntimeException {
+    /** Only application-generated, credential-free provider descriptions are accepted. */
+    public SmsDeliveryUnavailableException(String safeMessage) {
+        super(safeMessage);
+    }
     public SmsDeliveryUnavailableException() {
         super("短信服务暂不可用");
     }

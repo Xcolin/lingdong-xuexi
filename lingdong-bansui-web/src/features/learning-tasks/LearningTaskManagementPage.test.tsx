@@ -55,7 +55,9 @@ const parent: CurrentUser = {
   username: 'parent',
   displayName: '测试家长',
   clientType: 'WEB',
-  roleCodes: ['PARENT'],
+  roleCodes: ['CUSTOM_FAMILY'],
+  learningTaskSourceTypes: ['FAMILY','ORGANIZATION'],
+  parentProfile: true,
   permissionCodes: ['LEARNING_TASK_READ_MANAGED', 'LEARNING_TASK_CREATE', 'TASK_ASSIGNMENT_DEFER', 'LEARNING_TASK_COPY_PREVIOUS_DAY', 'LEARNING_TASK_TEMPLATE_READ', 'LEARNING_TASK_TEMPLATE_MANAGE_PERSONAL']
 };
 
@@ -77,7 +79,7 @@ describe('学习任务管理页面', () => {
         createdAt: '2026-08-01T10:00:00'
       }],
       page: 1,
-      pageSize: 20,
+      pageSize: 10,
       total: 1
     });
     learningTaskApi.listStudents.mockResolvedValue([
@@ -88,7 +90,7 @@ describe('学习任务管理页面', () => {
     learningTaskApi.publish.mockResolvedValue({
       taskId: '1874244142494647001', assignmentCount: 1, status: 'PUBLISHED'
     });
-    learningTaskApi.progress.mockResolvedValue({ items: [], page: 1, pageSize: 20, total: 0 });
+    learningTaskApi.progress.mockResolvedValue({ items: [], page: 1, pageSize: 10, total: 0 });
     learningTaskApi.stopRecurrence.mockResolvedValue({
       taskId: '1874244142494647001',
       recurrenceId: '1874244142494647009',
@@ -123,7 +125,7 @@ describe('学习任务管理页面', () => {
         overnightMigrated: false
       }],
       page: 1,
-      pageSize: 20,
+      pageSize: 10,
       total: 1
     });
     taskDeferApi.defer.mockResolvedValue({
@@ -226,7 +228,7 @@ describe('学习任务管理页面', () => {
         }]
       }
     } as const;
-    taskReviewApi.list.mockResolvedValue({ items: [review], page: 1, pageSize: 20, total: 1 });
+    taskReviewApi.list.mockResolvedValue({ items: [review], page: 1, pageSize: 10, total: 1 });
     taskReviewApi.findById.mockResolvedValue(review);
     taskReviewApi.listReviewerOptions.mockResolvedValue([]);
     taskReviewApi.readAttachment.mockResolvedValue(new Blob(['image'], { type: 'image/jpeg' }));
@@ -333,7 +335,7 @@ describe('学习任务管理页面', () => {
         createdAt: '2026-08-01T10:00:00'
       }],
       page: 1,
-      pageSize: 20,
+      pageSize: 10,
       total: 1
     });
     const user = userEvent.setup();
@@ -484,6 +486,7 @@ describe('学习任务管理页面', () => {
       username: 'teacher',
       displayName: '张老师',
       roleCodes: ['TEACHER'],
+      learningTaskSourceTypes: ['TEACHER'],
       permissionCodes: ['LEARNING_TASK_PROGRESS_READ']
     };
     learningTaskApi.list.mockResolvedValueOnce({
@@ -495,7 +498,7 @@ describe('学习任务管理页面', () => {
         recurrenceStatus: null, status: 'PUBLISHED',
         publishedAt: '2026-09-06T08:00:00', createdAt: '2026-09-06T07:00:00'
       }],
-      page: 1, pageSize: 20, total: 1
+      page: 1, pageSize: 10, total: 1
     });
     learningTaskApi.progress.mockResolvedValueOnce({
       items: [{
@@ -506,7 +509,7 @@ describe('学习任务管理页面', () => {
         claimedAt: '2026-09-06T08:30:00', completedAt: null,
         lastTransitionAt: '2026-09-06T08:30:00'
       }],
-      page: 1, pageSize: 20, total: 1
+      page: 1, pageSize: 10, total: 1
     });
     const user = userEvent.setup();
 
@@ -515,6 +518,6 @@ describe('学习任务管理页面', () => {
     await user.click(await screen.findByRole('button', { name: '查看进度 班级阅读' }));
     expect(await screen.findByText('李同学')).toBeInTheDocument();
     expect(screen.getByText('12****78')).toBeInTheDocument();
-    expect(learningTaskApi.progress).toHaveBeenCalledWith('1874244142494647702', 1, 20);
+    expect(learningTaskApi.progress).toHaveBeenCalledWith('1874244142494647702', 1, 10);
   });
 });

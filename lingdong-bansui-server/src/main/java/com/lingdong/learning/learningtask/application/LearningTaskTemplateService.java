@@ -34,12 +34,15 @@ public class LearningTaskTemplateService {
     private final LearningTaskTemplateMapper templateMapper;
     private final IdGenerator idGenerator;
 
+    private final com.lingdong.learning.auth.application.ParentActorAccessService parentActors;
+
     public LearningTaskTemplateService(
             FeatureAccessService featureAccessService,
             DictionaryQueryService dictionaryQueryService,
             LearningTaskTemplateMapper templateMapper,
             IdGenerator idGenerator
-    ) {
+    , com.lingdong.learning.auth.application.ParentActorAccessService parentActors) {
+        this.parentActors = parentActors;
         this.featureAccessService = featureAccessService;
         this.dictionaryQueryService = dictionaryQueryService;
         this.templateMapper = templateMapper;
@@ -175,10 +178,10 @@ public class LearningTaskTemplateService {
     private Long authorize(AuthenticatedUser currentUser) {
         featureAccessService.requireEnabled("LEARNING_TASK_MANAGEMENT", null);
         featureAccessService.requireEnabled("LEARNING_TASK_TEMPLATE", null);
-        if (currentUser == null || currentUser.clientType() != AuthClientType.WEB
-                || !currentUser.roleCodes().contains("PARENT")) {
+        if (currentUser == null || currentUser.clientType() != AuthClientType.WEB) {
             throw new IllegalArgumentException("仅 Web 家长可使用任务模板");
         }
+        parentActors.require(currentUser);
         return currentUser.userId();
     }
 

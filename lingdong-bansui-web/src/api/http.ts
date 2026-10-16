@@ -1,4 +1,14 @@
 const API_PREFIX = '/api/v1';
+const ORGANIZATION_STORAGE_KEY = 'lingdong.web.selected-organization';
+export const organizationContextStore = {
+ getSelectedId():string|null { try { const selected=JSON.parse(sessionStorage.getItem(ORGANIZATION_STORAGE_KEY)??'null'); return selected?.sessionId===authSessionStore.get()?.sessionId ? selected?.organizationId??null : null; } catch { return null; } },
+ select(organizationId: string) { const session = authSessionStore.get(); if(session) sessionStorage.setItem(ORGANIZATION_STORAGE_KEY, JSON.stringify({ organizationId, sessionId: session.sessionId })); },
+ clear() { sessionStorage.removeItem(ORGANIZATION_STORAGE_KEY); }
+};
+function addOrganizationContext(headers: Headers, path: string, session: AuthSession | null) {
+ if(!session || /^\/(auth|organization-onboarding|parent-onboarding|public)(\/|$)/.test(path)) return;
+ try { const selected = JSON.parse(sessionStorage.getItem(ORGANIZATION_STORAGE_KEY) ?? 'null'); if(selected?.sessionId === session.sessionId && /^[1-9][0-9]{0,18}$/.test(selected.organizationId)) headers.set('X-Organization-Id', selected.organizationId); } catch { organizationContextStore.clear(); }
+}
 const SESSION_STORAGE_KEY = 'lingdong-learning.web.session';
 
 export interface AuthSession {
@@ -45,6 +55,7 @@ export const authSessionStore = {
   },
   clear(): void {
     sessionStorage.removeItem(SESSION_STORAGE_KEY);
+    organizationContextStore.clear();
   }
 };
 
@@ -70,6 +81,7 @@ async function request<T>(
   }
   if (authenticated && session) {
     headers.set('Authorization', `Bearer ${session.accessToken}`);
+    addOrganizationContext(headers,path,session);
   }
 
   const response = await fetch(`${API_PREFIX}${path}`, { ...init, headers });
@@ -91,7 +103,7 @@ export interface DownloadContent { blob: Blob; fileName?: string; }
 async function requestDownload(path: string, retryAfterRefresh = true): Promise<DownloadContent> {
   const session = authSessionStore.get();
   const headers = new Headers();
-  if (session) headers.set('Authorization', `Bearer ${session.accessToken}`);
+  if (session) { headers.set('Authorization', `Bearer ${session.accessToken}`); addOrganizationContext(headers,path,session); }
   const response = await fetch(`${API_PREFIX}${path}`, { headers });
   if (response.status === 401 && retryAfterRefresh && session) {
     await refreshSession();

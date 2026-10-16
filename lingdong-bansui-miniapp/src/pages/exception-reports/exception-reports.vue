@@ -1,9 +1,9 @@
 <template>
-  <view class="has-tabbar page-shell">
+  <view class="prototype-workspace has-tabbar page-shell"><view class="prototype-section-header"><PrototypeIcon name="school" :size="22" /><text>异常报备</text></view>
     <view v-if="error" class="state">{{ error }}</view>
     <view v-if="loading" class="state">正在加载</view>
     <template v-else>
-      <view v-if="identity === 'teacher' && canCreate" class="form-band">
+      <button v-if="identity === 'teacher' && canCreate" class="primary block-action" @tap="creating=!creating">{{creating?'返回报备记录':'＋ 新增异常报备'}}</button><view v-if="creating && identity === 'teacher' && canCreate" class="form-band">
         <text class="section-title">新增异常报备</text>
         <picker :range="classes" range-key="className" @change="changeClass">
           <view class="field">{{ selectedClass?.className || '选择班级' }}</view>
@@ -18,7 +18,7 @@
         <button class="primary" :disabled="submitting" @tap="submit">提交报备</button>
       </view>
 
-      <view class="list-band">
+      <view v-if="!creating" class="list-band">
         <view class="list-head">
           <text class="section-title">{{ statusFilter==='SUBMITTED'?'待处理异常':'报备记录' }} · 共 {{ total }} 项</text>
           <button class="filter-button" @tap="toggleStatus">{{ statusFilter==='SUBMITTED'?'全部记录':'只看待处理' }}</button>
@@ -44,11 +44,12 @@
         </view>
       </view>
     </template>
-  <AppTabBar v-if="identity === 'teacher'" :items="TEACHER_TABS" :active="1" />
+  <AppTabBar v-if="identity === 'teacher'" :items="TEACHER_TABS" :active="2" />
   </view>
 </template>
 
 <script setup lang="ts">
+import PrototypeIcon from '@/components/PrototypeIcon.vue';
 import AppTabBar from '@/components/AppTabBar.vue';
 import { TEACHER_TABS, ORG_TABS } from '@/config/tabbar';
 import { computed, ref } from 'vue';
@@ -62,7 +63,7 @@ import { createExceptionReport, getExceptionReport, handleExceptionReport, listE
 import { getOrganizationSession } from '@/session/organization-session';
 
 const identity = ref<'teacher' | 'organization'>('teacher');
-const loading = ref(true); const submitting = ref(false);
+const creating = ref(false); const loading = ref(true); const submitting = ref(false);
 const reports = ref<ExceptionReport[]>([]); const classes = ref<TeacherWorkbenchClass[]>([]);
 const students = ref<ExceptionReportStudentOption[]>([]); const selectedClass = ref<TeacherWorkbenchClass>();
 const selectedStudent = ref<ExceptionReportStudentOption>(); const typeIndex = ref(0); const content = ref('');
@@ -70,7 +71,7 @@ const permissionCodes = ref<string[]>([]); const handlingId = ref(''); const han
 const enabled = ref(false);
 const error=ref(''),page=ref(1),total=ref(0),statusFilter=ref<ExceptionReportStatus>();
 let revision=0;
-function reset(){revision++;reports.value=[];total.value=0;permissionCodes.value=[];enabled.value=false;classes.value=[];students.value=[];selectedClass.value=undefined;selectedStudent.value=undefined;handlingId.value='';handlingNote.value='';content.value='';submitting.value=false;loading.value=false;}
+function reset(){creating.value=false;revision++;reports.value=[];total.value=0;permissionCodes.value=[];enabled.value=false;classes.value=[];students.value=[];selectedClass.value=undefined;selectedStudent.value=undefined;handlingId.value='';handlingNote.value='';content.value='';submitting.value=false;loading.value=false;}
 function active(n:number,token:string){return n===revision&&getOrganizationSession()?.accessToken===token;}
 function failed(cause:unknown,message:string){if(cause instanceof ApiError&&([401,403,404].includes(cause.statusCode)||cause.code==='FEATURE_DISABLED'))reset();error.value=cause instanceof Error?cause.message:message;}
 function toggleStatus(){if(loading.value||submitting.value)return;statusFilter.value=statusFilter.value==='SUBMITTED'?undefined:'SUBMITTED';void load(1);}
@@ -153,59 +154,6 @@ function formatTime(value: string): string { return value ? value.replace('T', '
 function leave(): Promise<unknown> { return uni.reLaunch({ url: '/pages/index/index' }); }
 </script>
 
-<style lang="scss" scoped>
-.page-shell { min-height: 100vh; background: $ld-bg; padding-bottom: 40rpx; }
-
-.form-band, .list-band { background: $ld-card; border-radius: $ld-radius-lg; box-shadow: $ld-shadow-card; }
-.form-band { margin-top: $ld-gap-block; padding: 30rpx; }
-.list-band { margin-top: $ld-gap-block; padding: 30rpx; }
-.list-head { display: flex; align-items: center; justify-content: space-between; gap: 20rpx; }
-.filter-button {
-  width: auto;
-  height: 56rpx;
-  display: flex;
-  align-items: center;
-  margin: 0;
-  padding: 0 24rpx;
-  border-radius: $ld-radius-pill;
-  background: $ld-primary-soft;
-  color: $ld-primary;
-  font-size: $ld-font-mini;
-  font-weight: 600;
-  flex-shrink: 0;
-}
-.filter-button::after { border: 0; }
-
-.section-title { display: block; color: $ld-text; font-size: $ld-font-heading; font-weight: 700; }
-.field, .textarea, .handle-note { box-sizing: border-box; width: 100%; margin-top: 22rpx; border: 2rpx solid $ld-line-strong; border-radius: $ld-radius-md; background: #fbfdfc; color: $ld-text; font-size: $ld-font-body; }
-.field { min-height: 82rpx; padding: 22rpx 24rpx; } .textarea { height: 180rpx; padding: 20rpx 24rpx; }
-.primary, .outline { height: 82rpx; margin: 24rpx 0 0; border-radius: $ld-radius-md; background: $ld-gradient-primary; color: #fff; font-size: $ld-font-body; font-weight: 600; box-shadow: $ld-shadow-btn; }
-.outline { border: 2rpx solid $ld-primary-border; background: $ld-card; color: $ld-primary; box-shadow: none; } .compact { height: 72rpx; }
-.primary::after, .outline::after { border: 0; } .state { padding: 80rpx 40rpx; color: $ld-text-muted; text-align: center; }
-.report-row { padding: 28rpx 4rpx; border-top: 2rpx solid $ld-line; }
-.list-head + .state { padding-top: 40rpx; }
-.row-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 20rpx; }
-.student { min-width: 0; color: $ld-text; font-size: 29rpx; font-weight: 600; word-break: break-word; }
-.status { flex: none; font-size: $ld-font-mini; font-weight: 600; } .submitted { color: $ld-warning; } .handled { color: $ld-primary; }
-.meta, .content { display: block; margin-top: 12rpx; } .meta { color: $ld-text-muted; font-size: $ld-font-caption; }
-.content { color: $ld-text-secondary; font-size: 27rpx; line-height: 1.6; word-break: break-word; }
-.handle-note { height: 140rpx; padding: 18rpx 22rpx; }
-
-.pager { display: flex; align-items: center; justify-content: center; gap: 28rpx; padding: 28rpx 0 8rpx; }
-.pager-button {
-  width: 160rpx;
-  height: 64rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0;
-  border-radius: $ld-radius-pill;
-  background: $ld-card;
-  color: $ld-primary;
-  font-size: $ld-font-caption;
-  border: 2rpx solid $ld-primary-border;
-}
-.pager-button::after { border: 0; }
-.pager-button[disabled] { color: $ld-text-muted; border-color: $ld-line; }
-.pager-label { color: $ld-text-muted; font-size: $ld-font-caption; }
+<style scoped>
+.secondary-page,.prototype-workspace{padding:24rpx 28rpx 60rpx;min-height:calc(100vh - var(--window-top,0px));box-sizing:border-box;background:#f6f9f5;color:#172e25}.has-footer,.has-tabbar{padding-bottom:160rpx}.prototype-section-header{display:flex;justify-content:center;align-items:center;gap:12rpx;margin:-24rpx -28rpx 24rpx;padding:28rpx;background:linear-gradient(120deg,#206b52,#0c4f3e);color:white;font-size:32rpx;font-weight:650}.section,.form-band,.band,.heading-band{background:#fff;border:1rpx solid #e4ece3;border-radius:24rpx;padding:26rpx;margin-bottom:22rpx}.segmented,.mode-control,.tabs,.action-grid,.form-actions,.paging,.search-row,.two-columns{display:flex;align-items:center;gap:14rpx;margin:18rpx 0}.segmented button,.mode-control button,.tab,.action-grid button{flex:1}.active{background:#e2f2e6;color:#0a774d}.field-label{display:block;font-size:26rpx;margin:20rpx 0 12rpx}.picker-field,.picker-value,.field,input,textarea{background:#f7faf6;border:1rpx solid #dfe8dc;border-radius:16rpx;padding:18rpx;font-size:26rpx;box-sizing:border-box}.picker-field{display:flex;justify-content:space-between}.search-row input{flex:1;min-width:0}textarea{width:100%;min-height:180rpx}.row,.request-person,.invitation-class{display:flex;align-items:center;gap:18rpx;padding:24rpx 0;border-bottom:1rpx solid #e8eee6}.person{width:80rpx;height:80rpx;border-radius:50%;background:#e2eee3;display:flex;align-items:center;justify-content:center;flex-shrink:0}.person-copy{flex:1;min-width:0}.row-top,.section-heading,.detail-line,.list-head{display:flex;justify-content:space-between;align-items:center;gap:12rpx}.name,.section-title,.title,.form-title{font-size:30rpx;font-weight:650}.meta,.small,.counter{display:block;font-size:23rpx;color:#778179;line-height:1.7}.badge,.status{border-radius:12rpx;background:#e2f4e7;color:#13734d;padding:4rpx 12rpx;font-size:23rpx}.PENDING,.submitted{background:#fff0cb;color:#b37a20}.detail-line{font-size:25rpx;padding:15rpx 0}.error,.danger{color:#ac4e42}.empty,.state,.state-text{padding:30rpx;text-align:center;font-size:25rpx;color:#7c867d}.empty text{display:block}.bottom-actions{position:fixed;bottom:0;left:0;right:0;background:#fff;padding:24rpx 28rpx calc(24rpx + env(safe-area-inset-bottom));border-top:1rpx solid #e2ebe0;z-index:4}.qr-content{text-align:center;padding:28rpx 0}.invite-code{display:block;font-size:38rpx;font-weight:700;letter-spacing:2rpx;margin:20rpx 0}.block-action{width:100%;margin-top:24rpx}.list-band{background:#fff;border-radius:24rpx;padding:20rpx}.list-row,.record-row,.history-row{border-bottom:1rpx solid #e6ede4;padding:24rpx 0}button{font-size:26rpx;line-height:1.5;margin:0;padding:16rpx 22rpx;background:#eaf2e8;color:#24583d;border-radius:16rpx}button::after{border:0}.primary,.submit-button,.save-button{background:#176f50;color:white}.secondary,.outline{background:#f2f6ef;color:#28563e}.required{color:#ba5b4c}.reason-input,.textarea{width:100%}
 </style>

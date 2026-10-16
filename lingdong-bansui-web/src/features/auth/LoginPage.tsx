@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Alert, Button, Checkbox, Form, Input, Segmented, Spin, Typography } from 'antd';
+import { Alert, Button, Form, Input, Segmented, Spin, Typography } from 'antd';
 import { KeyRound, LogIn, MessageSquareText } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { authApi } from '../../api/auth';
 
 interface LoginValues {
@@ -12,7 +12,6 @@ interface LoginValues {
 interface SmsLoginValues {
   mobile: string;
   code: string;
-  agreementAccepted: boolean;
 }
 
 const DEVICE_ID_KEY = 'lingdong-learning.web.device-id';
@@ -29,7 +28,7 @@ export function LoginPage() {
 
   useEffect(() => {
     if (authApi.hasLocalSession()) {
-      navigate('/dashboard', { replace: true });
+      navigate('/', { replace: true });
     }
     void authApi.parentAuthContext()
       .then((loaded) => {
@@ -57,14 +56,14 @@ export function LoginPage() {
         deviceName: '灵动伴随管理端'
       });
       const user = await authApi.currentUser();
-      if (user.roleCodes.includes('PARENT')) {
+      if (user.parentProfile === true) {
         const state = await authApi.parentState();
         navigate(
-          state.onboardingRequired || state.agreementAcceptanceRequired ? '/parent-onboarding' : '/dashboard',
+          state.onboardingRequired || state.agreementAcceptanceRequired ? '/parent-onboarding' : '/',
           { replace: true }
         );
       } else {
-        navigate('/dashboard', { replace: true });
+        navigate('/', { replace: true });
       }
     } catch (error) {
       authApi.clearLocalSession();
@@ -100,12 +99,10 @@ export function LoginPage() {
         code: values.code,
         clientType: 'WEB',
         deviceId: getDeviceId(),
-        deviceName: '灵动伴随 Web 端',
-        agreementAccepted: values.agreementAccepted,
-        agreementVersion: context.agreementVersion
+        deviceName: '灵动伴随 Web 端'
       });
       await authApi.currentUser();
-      navigate(result.onboardingRequired ? '/parent-onboarding' : '/dashboard', { replace: true });
+      navigate(result.onboardingRequired || result.agreementAcceptanceRequired ? '/parent-onboarding' : '/', { replace: true });
     } catch (error) {
       authApi.clearLocalSession();
       setErrorMessage(error instanceof Error ? error.message : '登录未能完成');
@@ -139,7 +136,7 @@ export function LoginPage() {
           requiredMark={false}
           className="login-form"
         >
-          <Form.Item name="mobile" label="手机号" rules={[
+          <Form.Item name="mobile" label="已注册账号手机号" rules={[
             { required: true, message: '请输入手机号' },
             { pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确' }
           ]}>
@@ -158,11 +155,6 @@ export function LoginPage() {
               </Button>
             </div>
           </Form.Item>
-          <Form.Item name="agreementAccepted" valuePropName="checked" rules={[
-            { validator: (_, checked) => checked ? Promise.resolve() : Promise.reject(new Error('请先同意用户协议')) }
-          ]}>
-            <Checkbox>我已阅读并同意当前用户协议</Checkbox>
-          </Form.Item>
           <Button block type="primary" size="large" htmlType="submit" loading={submitting} icon={<LogIn size={17} />}>登录</Button>
         </Form> : <Form layout="vertical" onFinish={submit} requiredMark={false} className="login-form">
           <Form.Item name="username" label="账号" rules={[{ required: true, message: '请输入账号' }]}>
@@ -174,12 +166,15 @@ export function LoginPage() {
           <Button block type="primary" size="large" htmlType="submit" loading={submitting} icon={<LogIn size={17} />}>登录</Button>
         </Form>
         }</>}
+        <Typography.Paragraph style={{ marginTop: 16, marginBottom: 0, textAlign: 'center' }}>
+          <Link to="/register">注册账号</Link>
+        </Typography.Paragraph>
       </section>
     </main>
   );
 }
 
-function getDeviceId(): string {
+export function getDeviceId(): string {
   const current = localStorage.getItem(DEVICE_ID_KEY);
   if (current) {
     return current;

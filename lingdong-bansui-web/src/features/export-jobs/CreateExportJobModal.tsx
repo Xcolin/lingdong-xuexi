@@ -174,7 +174,7 @@ export function CreateExportJobModal(props: CreateExportJobModalProps) {
   }
 
   const exportType = Form.useWatch('exportType', form);
-  return <Modal actionPrefix="export-jobs.create-export-job-modal.modal.1"
+  return <Modal actionPrefix="EXPORT_JOB_CREATE"
     open={props.open}
     title="新建数据导出"
     className="export-job-create-modal"

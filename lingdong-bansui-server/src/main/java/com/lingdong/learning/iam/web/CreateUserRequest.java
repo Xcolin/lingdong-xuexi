@@ -12,10 +12,20 @@ public record CreateUserRequest(
         @Size(max = 32) String mobile,
         @NotNull UserType type,
         @NotNull Long organizationId,
-        @Size(max = 64) String password
+        @Size(max = 64) String password,
+        Long studentSchoolOrganizationId,
+        @Size(max = 64) String gradeCode,
+        @Size(max = 64) String defaultRoleCode, @Size(max = 254) String email
 ) {
-    public CreateUserRequest(String username, String displayName, String mobile, UserType type, Long organizationId) {
-        this(username, displayName, mobile, type, organizationId, null);
+    public CreateUserRequest(String username,String displayName,String mobile,UserType type,Long organizationId,String password,Long schoolId,String gradeCode) {
+        this(username,displayName,mobile,type,organizationId,password,schoolId,gradeCode,null,null);
     }
+    public CreateUserRequest(String username, String displayName, String mobile, UserType type, Long organizationId, String password) {
+        this(username, displayName, mobile, type, organizationId, password, null, null, null, null);
+    }
+    public CreateUserRequest(String username, String displayName, String mobile, UserType type, Long organizationId) {
+        this(username, displayName, mobile, type, organizationId, null, null, null, null, null);
+    }
+    public CreateUserRequest(String username,String displayName,String mobile,UserType type,Long organizationId,String password,Long schoolId,String gradeCode,String defaultRoleCode) { this(username,displayName,mobile,type,organizationId,password,schoolId,gradeCode,defaultRoleCode,null); }
     @Override public String toString() { return "CreateUserRequest[password=REDACTED]"; }
 }

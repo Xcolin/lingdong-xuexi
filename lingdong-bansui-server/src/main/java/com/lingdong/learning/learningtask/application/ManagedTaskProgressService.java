@@ -47,7 +47,7 @@ public class ManagedTaskProgressService {
             throw new ResourceNotFoundException("任务不存在或不可访问");
         }
         scopeService.requireProgressReadable(currentUser, task);
-        Long teacherUserId = currentUser.roleCodes().contains("TEACHER")
+        Long teacherUserId = scopeService.isTeacher(currentUser)
                 && !scopeService.canReadOrganizationProgress(currentUser, task) ? currentUser.userId() : null;
         ManagedTaskProgressQuery query = new ManagedTaskProgressQuery(
                 task.id(), teacherUserId, normalizedPageSize,

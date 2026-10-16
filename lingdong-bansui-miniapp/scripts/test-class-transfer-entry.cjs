@@ -1,0 +1,13 @@
+const fs=require('fs'),vm=require('vm'),ts=require('typescript'),assert=require('node:assert/strict');
+const file='src/pages/organization-class-detail/organization-class-detail.vue';const source=fs.readFileSync(file,'utf8').match(/<script setup lang="ts">([\s\S]*?)<\/script>/)[1];
+let selected={accessToken:'fixture-token',organizationId:'21',typeCode:'SCHOOL'},session={accessToken:'fixture-token'};const navigation=[],exportsValue={};
+const imports={vue:{ref:value=>({value}),computed:fn=>({get value(){return fn();}})},'@dcloudio/uni-app':{onLoad(){},onShow(){},onHide(){},onUnload(){}},'@/session/organization-session':{getOrganizationSession:()=>session}};
+const code=source+`\nexports.test={requestTransfer,canTransfer,students,verify(){verifiedToken='fixture-token';verifiedScope=scopeKey();}};`;
+vm.runInNewContext(ts.transpileModule(code,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}}).outputText,{exports:exportsValue,require:n=>imports[n]||{},uni:{getStorageSync:()=>selected,navigateTo:o=>navigation.push(o)}});
+const p=exportsValue.test,student={studentId:'11',enrollmentOrganizationId:'21'};p.students.value=[student];p.verify();p.requestTransfer(student);assert.equal(navigation.length,0);
+p.canTransfer.value=true;p.requestTransfer(student);assert.match(navigation[0].url,/mode=INSTITUTION&studentId=11&sourceId=21$/);
+p.requestTransfer({studentId:'99',enrollmentOrganizationId:'21'});assert.equal(navigation.length,1);
+selected={...selected,organizationId:'99'};p.requestTransfer(student);assert.equal(navigation.length,1);
+selected={accessToken:'fixture-token',organizationId:'21',typeCode:'FAMILY'};p.verify();p.requestTransfer(student);assert.equal(navigation.length,1);
+selected={...selected,typeCode:'SCHOOL'};p.verify();session={accessToken:'new-token'};p.requestTransfer(student);assert.equal(navigation.length,1);
+console.log('PASS class transfer entry permission, actual member, organization type, source and session guards');

@@ -16,10 +16,14 @@ public record PermissionResponse(
         PermissionClient client,
         @JsonSerialize(using = ToStringSerializer.class) Long parentId,
         PermissionStatus status,
-        String description
+        String description,
+        Boolean available, String unavailableReason, java.util.List<String> requiredScopeKinds, java.util.List<String> allowedUserTypes
 ) {
-    static PermissionResponse from(Permission permission) {
+    public static PermissionResponse availability(Permission p,String reason,com.lingdong.learning.permission.application.PermissionAvailabilityService.Rule rule) {
+        return new PermissionResponse(p.id(),p.code(),p.name(),p.resourceType(),p.client(),p.parentId(),p.status(),p.description(),reason==null,reason,rule==null?java.util.List.of():rule.scopeKinds(),rule==null?java.util.List.of():rule.allowedUserTypes());
+    }
+    public static PermissionResponse from(Permission permission) {
         return new PermissionResponse(permission.id(), permission.code(), permission.name(), permission.resourceType(),
-                permission.client(), permission.parentId(), permission.status(), permission.description());
+                permission.client(), permission.parentId(), permission.status(), permission.description(), null,null,java.util.List.of(),java.util.List.of());
     }
 }

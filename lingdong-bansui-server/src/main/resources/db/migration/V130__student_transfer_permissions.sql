@@ -1,0 +1,10 @@
+-- Register transfer actions without assigning roles or changing existing grants.
+INSERT INTO sys_permission(id,permission_code,permission_name,resource_type,client_type,status) VALUES(2201000000000130001,'STUDENT_TRANSFER_VIEW','转学申请 · 查看申请','BUTTON','BOTH','ENABLED');
+UPDATE sys_permission SET parent_id=(SELECT id FROM (SELECT id FROM sys_permission WHERE permission_code='ORG_NODE_READ') parent_permission) WHERE permission_code='STUDENT_TRANSFER_VIEW';
+INSERT INTO sys_menu(id,code,name,type,parent_id,permission_code,grantable,sort_order,status,version) VALUES(2201000000000130001,'STUDENT_TRANSFER_VIEW','转学申请 · 查看申请','BUTTON',(SELECT id FROM (SELECT id FROM sys_menu WHERE code='ORG_NODE_READ') parent_menu),'STUDENT_TRANSFER_VIEW',1,891,'ENABLED',0);
+INSERT INTO sys_permission(id,permission_code,permission_name,resource_type,client_type,status) VALUES(2201000000000130002,'STUDENT_TRANSFER_REQUEST_CREATE','转学申请 · 提交与撤销','BUTTON','BOTH','ENABLED');
+UPDATE sys_permission SET parent_id=(SELECT id FROM (SELECT id FROM sys_permission WHERE permission_code='ORG_NODE_READ') parent_permission) WHERE permission_code='STUDENT_TRANSFER_REQUEST_CREATE';
+INSERT INTO sys_menu(id,code,name,type,parent_id,permission_code,grantable,sort_order,status,version) VALUES(2201000000000130002,'STUDENT_TRANSFER_REQUEST_CREATE','转学申请 · 提交与撤销','BUTTON',(SELECT id FROM (SELECT id FROM sys_menu WHERE code='ORG_NODE_READ') parent_menu),'STUDENT_TRANSFER_REQUEST_CREATE',1,892,'ENABLED',0);
+INSERT INTO sys_permission(id,permission_code,permission_name,resource_type,client_type,status) VALUES(2201000000000130003,'STUDENT_TRANSFER_REVIEW','转学申请 · 审核申请','BUTTON','BOTH','ENABLED');
+UPDATE sys_permission SET parent_id=(SELECT id FROM (SELECT id FROM sys_permission WHERE permission_code='ORG_NODE_READ') parent_permission) WHERE permission_code='STUDENT_TRANSFER_REVIEW';
+INSERT INTO sys_menu(id,code,name,type,parent_id,permission_code,grantable,sort_order,status,version) VALUES(2201000000000130003,'STUDENT_TRANSFER_REVIEW','转学申请 · 审核申请','BUTTON',(SELECT id FROM (SELECT id FROM sys_menu WHERE code='ORG_NODE_READ') parent_menu),'STUDENT_TRANSFER_REVIEW',1,893,'ENABLED',0);

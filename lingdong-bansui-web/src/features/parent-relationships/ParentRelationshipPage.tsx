@@ -89,7 +89,7 @@ export function ParentRelationshipPage({ currentUser }: ParentRelationshipPagePr
 
   function confirmUnbindSecondary(member: ParentRelationshipMember): void {
     if (!selectedStudentId) return;
-    Modal.confirm({ actionPrefix: 'parent-relationships.parent-relationship-page.confirm.1',
+    Modal.confirm({ actionPrefix: 'SECONDARY_PARENT_UNBIND',
       title: '确认解除副家长',
       content: `解除后，${member.displayName || '该副家长'}将立即失去该学生的数据访问权限。`,
       okText: '确认解除',
@@ -105,7 +105,7 @@ export function ParentRelationshipPage({ currentUser }: ParentRelationshipPagePr
 
   function confirmUnbindPrimary(): void {
     if (!selectedStudentId) return;
-    Modal.confirm({ actionPrefix: 'parent-relationships.parent-relationship-page.confirm.2',
+    Modal.confirm({ actionPrefix: 'PRIMARY_PARENT_SELF_UNBIND',
       title: '确认解除主家长关系',
       content: relationship?.secondaryParent
         ? '解除后，当前副家长将自动晋升为主家长。'
@@ -186,7 +186,7 @@ export function ParentRelationshipPage({ currentUser }: ParentRelationshipPagePr
         </>}
       </ProCard>
 
-      <Modal actionPrefix="parent-relationships.parent-relationship-page.modal.1"
+      <Modal actionPrefix={invitationMode === 'SECONDARY' ? 'SECONDARY_PARENT_INVITE_CREATE' : 'PRIMARY_PARENT_TRANSFER_CREATE'}
         title={invitationMode === 'SECONDARY' ? '邀请副家长' : '转移监护权'}
         open={Boolean(invitationMode)}
         okText="发送邀请"

@@ -34,8 +34,11 @@ class ExceptionReportApplicationServiceTest {
     private final FeatureAccessService featureAccessService = mock(FeatureAccessService.class);
     private final IdGenerator idGenerator = mock(IdGenerator.class);
     private final Clock clock = Clock.fixed(Instant.parse("2026-09-06T09:30:00Z"), ZoneId.of("Asia/Shanghai"));
+    private final com.lingdong.learning.teacher.application.TeacherIdentityService teachers=mock(com.lingdong.learning.teacher.application.TeacherIdentityService.class);
+    private final com.lingdong.learning.user.infrastructure.persistence.UserMapper users=mock(com.lingdong.learning.user.infrastructure.persistence.UserMapper.class);
     private final ExceptionReportApplicationService service = new ExceptionReportApplicationService(
-            mapper, dataScopeService, featureAccessService, idGenerator, clock, org.mockito.Mockito.mock(com.lingdong.learning.permission.application.PermissionDecisionService.class, invocation -> invocation.getMethod().getName().equals("isAllowed") ? true : org.mockito.Answers.RETURNS_DEFAULTS.answer(invocation)));
+            mapper, dataScopeService, featureAccessService, idGenerator, clock, org.mockito.Mockito.mock(com.lingdong.learning.permission.application.PermissionDecisionService.class, invocation -> invocation.getMethod().getName().equals("isAllowed") ? true : org.mockito.Answers.RETURNS_DEFAULTS.answer(invocation)),
+            org.mockito.Mockito.mock(com.lingdong.learning.organization.application.OrganizationNamePathService.class),teachers,users);
 
     @Test
     void createsReportHistoryAndOrganizationEventForAuthorizedTeacherStudent() {
@@ -118,6 +121,7 @@ class ExceptionReportApplicationServiceTest {
                 "SCHOOL-1042", "示例学校", "SCHOOL", "/SCHOOL-1042/", 1, null);
         Organization classOrganization = Organization.create(8910000000000001043L, school.id(), null,
                 "CLASS-1043", "一年级一班", "CLASS", "/SCHOOL-1042/CLASS-1043/", 1, null);
+        when(dataScopeService.resolve(administrator.userId())).thenReturn(OrganizationDataScope.all(false));
         when(dataScopeService.findAccessibleOrganizations(administrator.userId()))
                 .thenReturn(List.of(school, classOrganization));
 
@@ -126,7 +130,13 @@ class ExceptionReportApplicationServiceTest {
     }
 
     private AuthenticatedUser user(long id, String role, AuthClientType client) {
-        return new AuthenticatedUser(id, 1L, "account", "测试用户", client, List.of(role));
+        when(users.findById(id)).thenReturn(com.lingdong.learning.user.domain.User.create(id,"fixture","fixture",null,com.lingdong.learning.user.domain.UserType.ORGANIZATION));
+        if ("TEACHER".equals(role)) {
+            when(teachers.isTeacher(id)).thenReturn(true);
+            when(mapper.findTeacherClassOptions(id)).thenReturn(List.of(new ExceptionReportClassOption(8910000000000001098L,"active class")));
+        }
+
+        return new AuthenticatedUser(id, 1L, "account", "测试用户", client, List.of("CUSTOM_BUSINESS"));
     }
 
     private ExceptionReportRow row(long id, long classId, long studentId, long reporterId,

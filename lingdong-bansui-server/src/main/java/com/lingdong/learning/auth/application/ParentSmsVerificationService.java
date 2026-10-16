@@ -55,7 +55,8 @@ public class ParentSmsVerificationService {
         try {
             smsSender.send(mobile, purpose, code);
         } catch (RuntimeException exception) {
-            store.remove(mobileDigest, purpose, clientType);
+            // An older failed send must not clear a newer challenge for the same recipient.
+            store.consumeIfMatches(mobileDigest, purpose, clientType, codeDigest);
             throw exception;
         }
         return new IssuedParentSmsCode(

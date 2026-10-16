@@ -1,3 +1,4 @@
+import { Button as PlainButton } from 'antd';
 import { ConfiguredModal as Modal } from '../../components/ConfiguredModal';
 import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { ViewportTable as Table } from '../../components/ViewportTable';
@@ -8,7 +9,7 @@ import { CalendarClock } from 'lucide-react';
 import { taskDeferApi } from './taskDeferApi';
 import type { ManagedDeferCandidate, ManagedDeferCandidatePage } from './types';
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 const sourceLabels = { FAMILY: '家庭', ORGANIZATION: '机构', TEACHER: '教师' } as const;
 
 /** 管理角色查看并顺延数据范围内的待优化任务。 */
@@ -26,11 +27,11 @@ export function TaskDeferQueue() {
     void load(1);
   }, []);
 
-  async function load(nextPage: number): Promise<void> {
+  async function load(nextPage: number, pageSize = page.pageSize): Promise<void> {
     setLoading(true);
     setErrorMessage(null);
     try {
-      setPage(await taskDeferApi.list(nextPage, PAGE_SIZE));
+      setPage(await taskDeferApi.list(nextPage, pageSize));
     } catch (error) {
       setErrorMessage(toMessage(error));
     } finally {
@@ -69,7 +70,7 @@ export function TaskDeferQueue() {
           type="error"
           showIcon
           message={errorMessage}
-          action={<Button actionKey="learning-tasks.task-defer-queue.1" size="small" onClick={() => void load(page.page)}>重试</Button>}
+          action={<PlainButton  size="small" onClick={() => void load(page.page)}>重试</PlainButton>}
         />
       )}
       <div className="table-toolbar">
@@ -82,10 +83,10 @@ export function TaskDeferQueue() {
         locale={{ emptyText: '暂无可顺延任务' }}
         pagination={{
           current: page.page,
-          pageSize: PAGE_SIZE,
+          pageSize: page.pageSize,
           total: page.total,
-          showSizeChanger: false,
-          onChange: (nextPage) => void load(nextPage)
+          showSizeChanger: true,
+          onChange: (nextPage, pageSize) => void load(nextPage, pageSize)
         }}
         columns={[
           { title: '任务', dataIndex: 'title', width: 220 },
@@ -118,7 +119,7 @@ export function TaskDeferQueue() {
           }
         ]}
       />
-      <Modal actionPrefix="learning-tasks.task-defer-queue.modal.1"
+      <Modal actionPrefix="TASK_ASSIGNMENT_DEFER"
         title="顺延任务"
         open={selected !== null}
         width="min(520px, 92vw)"

@@ -51,6 +51,13 @@ public class IamQueryApplicationService {
     }
 
     public UserDirectoryPage listUsers(String keyword, UserType type, UserStatus status, Long organizationId, int page, int pageSize) {
+        return directory(keyword, type, status, organizationId, page, pageSize, null);
+    }
+    private UserDirectoryPage directory(String keyword, UserType type, UserStatus status, Long organizationId, int page, int pageSize, List<Long> visibleIds) {
+        return directory(keyword,type,status,organizationId,page,pageSize,visibleIds,null);
+    }
+    private UserDirectoryPage directory(String keyword, UserType type, UserStatus status, Long organizationId, int page, int pageSize, List<Long> visibleIds, String identityRoleCode) {
+        if(identityRoleCode != null && !identityRoleCode.matches("[A-Z][A-Z0-9_]{1,63}")) throw new IllegalArgumentException("身份编码格式不合法");
         if (organizationId != null && organizationId <= 0) throw new IllegalArgumentException("组织标识必须为正数");
         if (page < 1 || page > 1_000_000) {
             throw new IllegalArgumentException("页码必须在 1 至 1000000 之间");
@@ -60,16 +67,21 @@ public class IamQueryApplicationService {
         }
         String normalizedKeyword = normalizeKeyword(keyword);
         UserDirectoryQuery query = new UserDirectoryQuery(
-                normalizedKeyword, type, status, organizationId, Math.multiplyExact(page - 1, pageSize), pageSize
+                normalizedKeyword, type, status, organizationId, Math.multiplyExact(page - 1, pageSize), pageSize, visibleIds, identityRoleCode
         );
         List<User> items = userMapper.findPage(query);
         java.util.Map<Long, List<String>> names = new java.util.LinkedHashMap<>();
         if (!items.isEmpty()) {
-            for (var relation : userOrganizationMapper.findNamesByUserIds(items.stream().map(User::id).toList())) {
+            for (var relation : (visibleIds == null ? userOrganizationMapper.findNamesByUserIds(items.stream().map(User::id).toList()) : userOrganizationMapper.findScopedNamesByUserIds(items.stream().map(User::id).toList(), visibleIds))) {
                 names.computeIfAbsent(relation.userId(), ignored -> new java.util.ArrayList<>()).add(relation.name());
             }
         }
-        return new UserDirectoryPage(items, page, pageSize, userMapper.count(query), names);
+        java.util.Map<Long,List<com.lingdong.learning.user.infrastructure.persistence.UserOrganizationMapper.RoleIdentity>> identities = new java.util.LinkedHashMap<>();
+        if (!items.isEmpty()) {
+            for (var identity : userOrganizationMapper.findRoleIdentities(items.stream().map(User::id).toList(),visibleIds))
+                identities.computeIfAbsent(identity.userId(), ignored -> new java.util.ArrayList<>()).add(identity);
+        }
+        return new UserDirectoryPage(items, page, pageSize, userMapper.count(query), names,identities);
     }
 
     public List<Role> listRoles() {
@@ -82,12 +94,20 @@ public class IamQueryApplicationService {
 
     public User findUser(Long operatorId, Long userId) {
         requirePermission(operatorId, "IAM_USER_READ");
+        List<Long> scope = directoryScope(operatorId);
+        if (scope != null && userOrganizationMapper.findOrganizationIds(userId).stream().noneMatch(scope::contains))
+            throw new ResourceNotFoundException("用户不存在或不可访问");
         return findUser(userId);
     }
     public UserDirectoryPage listUsers(Long operatorId, String keyword, UserType type, UserStatus status,
             Long organizationId, int page, int pageSize) {
         requirePermission(operatorId, "IAM_USER_LIST");
-        return listUsers(keyword, type, status, organizationId, page, pageSize);
+        return directory(keyword, type, status, organizationId, page, pageSize, directoryScope(operatorId));
+    }
+    public UserDirectoryPage listUsers(Long operatorId, String keyword, UserType type, UserStatus status,
+            Long organizationId, int page, int pageSize, String identityRoleCode) {
+        requirePermission(operatorId,"IAM_USER_LIST");
+        return directory(keyword,type,status,organizationId,page,pageSize,directoryScope(operatorId),identityRoleCode);
     }
     public List<Role> listRoles(Long operatorId) {
         requirePermission(operatorId, "IAM_ROLE_READ");
@@ -96,6 +116,9 @@ public class IamQueryApplicationService {
     public List<Permission> listPermissions(Long operatorId) {
         requirePermission(operatorId, "IAM_PERMISSION_READ");
         return listPermissions();
+    }
+    public List<Long> directoryScope(Long operatorId) {
+        return userOrganizationMapper.isEnabledSystemAdmin(operatorId) ? null : java.util.List.copyOf(userOrganizationMapper.findDirectoryOrganizationIds(operatorId));
     }
     private void requirePermission(Long operatorId, String code) {
         if (!decisions.isAllowed(operatorId, com.lingdong.learning.permission.domain.PermissionClient.WEB, code))

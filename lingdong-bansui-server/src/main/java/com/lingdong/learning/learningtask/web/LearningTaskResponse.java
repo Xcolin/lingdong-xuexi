@@ -35,8 +35,34 @@ public record LearningTaskResponse(
         LocalDateTime publishedAt,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
-        List<LearningTaskTargetResponse> targets
+        List<LearningTaskTargetResponse> targets,
+        String recurrenceFrequency, java.util.List<Integer> recurrenceWeekdays
 ) {
+    public LearningTaskResponse(
+        Long id,
+        LearningTaskSourceType sourceType,
+        Long sourceOrganizationId,
+        Long creatorUserId,
+        String title,
+        Integer difficultyLevel,
+        Integer basePoints,
+        Integer durationMinutes,
+        LocalDate scheduledDate,
+        String categoryCode,
+        List<String> tagCodes,
+        String remark,
+        Long reviewerUserId,
+        Integer reviewTimeoutHours,
+        boolean recurrenceEnabled,
+        LocalDate recurrenceEndDate,
+        LearningTaskRecurrenceStatus recurrenceStatus,
+        LearningTaskStatus status,
+        LocalDateTime publishedAt,
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt,
+        List<LearningTaskTargetResponse> targets
+) { this(id, sourceType, sourceOrganizationId, creatorUserId, title, difficultyLevel, basePoints, durationMinutes, scheduledDate, categoryCode, tagCodes, remark, reviewerUserId, reviewTimeoutHours, recurrenceEnabled, recurrenceEndDate, recurrenceStatus, status, publishedAt, createdAt, updatedAt, targets, "DAILY", java.util.List.of()); }
+
     static LearningTaskResponse from(LearningTaskDetails details) {
         LearningTask task = details.task();
         return new LearningTaskResponse(
@@ -46,6 +72,6 @@ public record LearningTaskResponse(
                 task.reviewerUserId(), task.reviewTimeoutHours(), Boolean.TRUE.equals(task.recurrenceEnabled()),
                 task.recurrenceEndDate(), task.recurrenceStatus(), task.status(), task.publishedAt(),
                 task.createdAt(), task.updatedAt(), details.targets().stream()
-                .map(LearningTaskTargetResponse::from).toList());
+                .map(LearningTaskTargetResponse::from).toList(), task.recurrenceFrequency(), task.recurrenceWeekdays());
     }
 }

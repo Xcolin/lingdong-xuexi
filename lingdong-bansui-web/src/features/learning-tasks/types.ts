@@ -75,6 +75,8 @@ export interface LearningTaskFilters {
 }
 
 export interface OrganizationOption {
+  schoolOrganizationId?:string|null;
+  schoolName?:string|null;
   id: string;
   name: string;
   organizationType: string;
@@ -92,6 +94,7 @@ export interface StudentOption {
 }
 
 export interface TeacherOption {
+  organizationNames?: string[];
   userId: string;
   displayName: string;
   classIds: string[];

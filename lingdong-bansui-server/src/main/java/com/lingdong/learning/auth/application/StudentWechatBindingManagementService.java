@@ -18,6 +18,8 @@ public class StudentWechatBindingManagementService {
     private static final String FEATURE_CODE = "STUDENT_WECHAT_AUTH";
     private static final String CONFIRMATION = "确认解绑学生微信";
 
+    private final com.lingdong.learning.student.application.StudentActorIdentityService actors;
+    private final com.lingdong.learning.student.application.StudentManagementAccessService access;
     private final StudentWechatBindingMapper bindingMapper;
     private final ParentStudentMapper relationshipMapper;
     private final FeatureAccessService featureAccessService;
@@ -29,19 +31,24 @@ public class StudentWechatBindingManagementService {
             ParentStudentMapper relationshipMapper,
             FeatureAccessService featureAccessService,
             IdGenerator idGenerator,
-            Clock clock
+            Clock clock,
+            com.lingdong.learning.student.application.StudentActorIdentityService actors,
+            com.lingdong.learning.student.application.StudentManagementAccessService access
     ) {
         this.bindingMapper = bindingMapper;
         this.relationshipMapper = relationshipMapper;
         this.featureAccessService = featureAccessService;
         this.idGenerator = idGenerator;
-        this.clock = clock;
+        this.clock = clock;this.actors=actors;this.access=access;
     }
 
     public List<StudentWechatBindingSummary> list(AuthenticatedUser currentUser) {
         requireParent(currentUser);
         featureAccessService.requireEnabled(FEATURE_CODE, null);
-        return bindingMapper.findPrimaryStudentsByParentUserId(currentUser.userId()).stream()
+        var rows=actors.isParent(currentUser)
+                ? bindingMapper.findPrimaryStudentsByParentUserId(currentUser.userId())
+                : bindingMapper.findScopedStudents(access.scope(currentUser));
+        return rows.stream()
                 .map(row -> new StudentWechatBindingSummary(
                         row.studentId(), row.studentName(), maskAccount(row.studentAccount()),
                         row.bindingId() != null, row.boundAt()))
@@ -56,7 +63,10 @@ public class StudentWechatBindingManagementService {
             throw new IllegalArgumentException("请输入正确的学生微信解绑确认语句");
         }
         ParentRelationship primary = relationshipMapper.findActivePrimaryByStudentIdForUpdate(studentId);
-        if (primary == null || !currentUser.userId().equals(primary.parentUserId())) {
+        boolean parentAllowed=actors.isParent(currentUser) && primary!=null
+                && currentUser.userId().equals(primary.parentUserId());
+        boolean institutionAllowed=actors.isInstitutionOperator(currentUser) && access.schoolStudentAllowed(currentUser,studentId);
+        if (!parentAllowed && !institutionAllowed) {
             throw new StudentWechatBindingUnavailableException();
         }
         StudentWechatBinding binding = bindingMapper.findByStudentIdForUpdate(studentId);
@@ -76,7 +86,8 @@ public class StudentWechatBindingManagementService {
     }
 
     private void requireParent(AuthenticatedUser currentUser) {
-        if (currentUser == null || !currentUser.roleCodes().contains("PARENT")) {
+        access.require(currentUser,"STUDENT_WECHAT_UNBIND");
+        if (!actors.isParent(currentUser) && !actors.isInstitutionOperator(currentUser)) {
             throw new StudentWechatBindingUnavailableException();
         }
     }

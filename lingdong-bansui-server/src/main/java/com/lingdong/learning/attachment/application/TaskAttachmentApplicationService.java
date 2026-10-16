@@ -141,7 +141,7 @@ public class TaskAttachmentApplicationService {
 
     private ManagedFileRecord requireFile(Long fileId) {
         ManagedFileRecord file = fileId == null ? null : fileMapper.findById(fileId);
-        if (file == null) {
+        if (file == null || !MODULE_CODE.equals(file.moduleCode()) || !FILE_CATEGORY.equals(file.fileCategory())) {
             throw new ResourceNotFoundException("附件不存在或不可访问");
         }
         return file;

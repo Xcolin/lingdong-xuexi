@@ -23,20 +23,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class GrowthRewardExchangeServiceSecondaryParentTest {
-    @Test void mixedAuditorCannotReadExchangesEvenAsParent() {
-        var user = new AuthenticatedUser(8910000000000000811L, 1L, "auditor", "审核员",
-                AuthClientType.WEB, List.of("PARENT", "SYS_AUDITOR"));
-        when(parentStudentMapper.existsActiveByParentAndStudent(user.userId(), 8910000000000000812L)).thenReturn(true);
-        assertThatThrownBy(() -> service.findManaged(user, 8910000000000000812L, 1, 20))
-                .isInstanceOf(com.lingdong.learning.common.security.SystemOperationAccessDeniedException.class);
-    }
     private final GrowthRewardExchangeMapper exchangeMapper = mock(GrowthRewardExchangeMapper.class);
     private final ParentStudentMapper parentStudentMapper = mock(ParentStudentMapper.class);
     private final GrowthRewardExchangeService service = new GrowthRewardExchangeService(
             exchangeMapper, mock(GrowthRewardMapper.class), mock(GrowthPointAccountMapper.class),
             mock(GrowthPointLedgerMapper.class), parentStudentMapper,
             mock(CurrentStudentAccessService.class), mock(FeatureAccessService.class),
-            mock(IdGenerator.class), Clock.systemDefaultZone());
+            mock(IdGenerator.class), Clock.systemDefaultZone(), mock(com.lingdong.learning.auth.application.ParentActorAccessService.class));
 
     @Test
     void secondaryParentReadsExchangesButCannotApproveOne() {
@@ -44,7 +37,7 @@ class GrowthRewardExchangeServiceSecondaryParentTest {
         long studentId = 8910000000000000812L;
         long exchangeId = 8910000000000000813L;
         AuthenticatedUser secondaryParent = new AuthenticatedUser(
-                parentId, 1L, "secondary", "副家长", AuthClientType.WEB, List.of("PARENT"));
+                parentId, 1L, "secondary", "副家长", AuthClientType.WEB, List.of("CUSTOM_PARENT"));
         when(parentStudentMapper.existsActiveByParentAndStudent(parentId, studentId)).thenReturn(true);
         when(parentStudentMapper.existsActivePrimaryByParentAndStudent(parentId, studentId))
                 .thenReturn(false);

@@ -29,6 +29,20 @@ public class SecurityConfiguration {
                         .requestMatchers(
                                 "/api/v1/health",
                                 "/api/v1/auth/sessions/password",
+                                "/api/v1/auth/login-sms-codes",
+                                "/api/v1/auth/login-email-codes",
+                                "/api/v1/auth/sessions/email",
+                                "/api/v1/auth/account-wechat-sessions",
+                                "/api/v1/auth/account-wechat-bindings",
+                                "/api/v1/auth/account-wechat-email-codes",
+                                "/api/v1/auth/account-wechat-email-bindings",
+                                "/api/v1/auth/account-wechat-registrations",
+                                "/api/v1/auth/sessions/sms",
+                                "/api/v1/auth/registration-sessions/password",
+                                "/api/v1/auth/registration-codes",
+                                "/api/v1/auth/registrations",
+                                "/api/v1/public/registration/context",
+                                "/api/v1/public/registration/agreement",
                                 "/api/v1/auth/organization-sessions/password",
                                 "/api/v1/auth/sessions/refresh",
                                 "/api/v1/auth/student-captchas",
@@ -55,3 +69,6 @@ public class SecurityConfiguration {
                 .build();
     }
 }
+
+
+

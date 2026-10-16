@@ -13,6 +13,7 @@ export interface MiniappCapabilities {
   parentMobileManualRecoveryEnabled?: boolean;
   studentAccountCancellationEnabled?: boolean;
   learningTaskManagementEnabled: boolean;
+  taskWeekdayRecurrenceEnabled?: boolean;
   classManagementEnabled?: boolean;
   teacherManagementEnabled?: boolean;
   studentExceptionReportEnabled?: boolean;

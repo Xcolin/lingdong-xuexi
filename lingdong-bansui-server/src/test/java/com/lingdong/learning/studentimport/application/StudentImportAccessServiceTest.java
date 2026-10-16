@@ -60,6 +60,26 @@ class StudentImportAccessServiceTest {
     }
 
     @Test
+    void acceptsGradeParentClassButRejectsOtherSchoolEvenWithBothSchoolsInScope() {
+        allow("STUDENT_IMPORT_EXECUTE");
+        when(organizationMapper.findById(CLASS_ID)).thenReturn(new Organization(
+                CLASS_ID, 700L, "700", "GRADED-CLASS", "年级下班级", "CLASS",
+                "/school/grade/class/", 1, OrganizationStatus.ENABLED,
+                OrganizationEffectiveStatus.ENABLED, 1, null, null, null));
+        assertThatCode(() -> service.requireExecute(USER_ID, SCHOOL_ID, CLASS_ID))
+                .doesNotThrowAnyException();
+        long otherSchool = SCHOOL_ID + 100;
+        when(dataScopeService.canAccess(USER_ID, otherSchool)).thenReturn(true);
+        when(organizationMapper.findById(otherSchool)).thenReturn(new Organization(
+                otherSchool, null, "ROOT", "OTHER-SCHOOL", "另一学校", "SCHOOL",
+                "/other-school/", 1, OrganizationStatus.ENABLED,
+                OrganizationEffectiveStatus.ENABLED, 1, null, null, null));
+        assertThatThrownBy(() -> service.requireExecute(USER_ID, otherSchool, CLASS_ID))
+                .isInstanceOf(SystemOperationAccessDeniedException.class)
+                .hasMessageContaining("不属于所选学校");
+    }
+
+    @Test
     void allowsOrganizationAdministratorWithCurrentPermissionAndScope() {
         allow("STUDENT_IMPORT_EXECUTE");
         allow("STUDENT_IMPORT_RESULT_READ");
@@ -118,6 +138,15 @@ class StudentImportAccessServiceTest {
                 .isInstanceOf(SystemOperationAccessDeniedException.class);
     }
 
+    @Test
+    void acceptsTrainingInstitutionAndKeepsClassWithinItsRoot() {
+        allow("STUDENT_IMPORT_EXECUTE");
+        when(organizationMapper.findById(SCHOOL_ID)).thenReturn(organization(SCHOOL_ID, "TRAINING_INSTITUTION"));
+        assertThatCode(() -> service.requireExecute(USER_ID, SCHOOL_ID, CLASS_ID)).doesNotThrowAnyException();
+        when(dataScopeService.canAccess(USER_ID, SCHOOL_ID)).thenReturn(false);
+        assertThatThrownBy(() -> service.requireExecute(USER_ID, SCHOOL_ID, CLASS_ID))
+                .isInstanceOf(SystemOperationAccessDeniedException.class);
+    }
     private void allow(String permissionCode) {
         when(permissionDecisionService.isAllowed(USER_ID, PermissionClient.WEB, permissionCode))
                 .thenReturn(true);

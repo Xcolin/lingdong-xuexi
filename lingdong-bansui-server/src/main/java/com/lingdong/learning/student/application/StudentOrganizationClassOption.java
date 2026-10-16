@@ -1,5 +1,4 @@
 package com.lingdong.learning.student.application;
-
-/** 学生机构关系维护可选择的启用班级。 */
-public record StudentOrganizationClassOption(Long id, String name) {
+public record StudentOrganizationClassOption(Long id,String name,Long schoolOrganizationId){
+ public StudentOrganizationClassOption(Long id,String name){this(id,name,null);}
 }

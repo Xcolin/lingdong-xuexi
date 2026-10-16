@@ -29,7 +29,7 @@ public class GrowthRewardController {
         this.rewardService = rewardService;
     }
 
-    @RequirePermission("REWARD_MANAGE_CHILD")
+    @RequirePermission("REWARD_READ")
     @GetMapping("/students/{studentId}")
     public GrowthRewardPageResponse findManaged(
             @AuthenticationPrincipal AuthenticatedUser currentUser,
@@ -41,7 +41,7 @@ public class GrowthRewardController {
                 rewardService.findManaged(currentUser, studentId, page, pageSize));
     }
 
-    @RequirePermission("REWARD_MANAGE_CHILD")
+    @RequirePermission("REWARD_CREATE")
     @PostMapping("/students/{studentId}")
     @ResponseStatus(HttpStatus.CREATED)
     public GrowthRewardResponse create(
@@ -53,7 +53,7 @@ public class GrowthRewardController {
                 rewardService.create(currentUser, studentId, request.toCommand()));
     }
 
-    @RequirePermission("REWARD_MANAGE_CHILD")
+    @RequirePermission("REWARD_UPDATE")
     @PatchMapping("/{rewardId}")
     public GrowthRewardResponse update(
             @AuthenticationPrincipal AuthenticatedUser currentUser,
@@ -64,7 +64,7 @@ public class GrowthRewardController {
                 rewardService.update(currentUser, rewardId, request.toCommand()));
     }
 
-    @RequirePermission("REWARD_MANAGE_CHILD")
+    @RequirePermission("REWARD_DELETE")
     @DeleteMapping("/{rewardId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(

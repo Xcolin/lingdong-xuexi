@@ -44,6 +44,7 @@ class ParentAccountFinalizationServiceTest {
     private final ParentWechatBindingMapper wechatBindingMapper = mock(ParentWechatBindingMapper.class);
     private final DeviceSessionMapper sessionMapper = mock(DeviceSessionMapper.class);
     private final FeatureAccessService featureAccessService = mock(FeatureAccessService.class);
+    private final com.lingdong.learning.auth.infrastructure.persistence.ParentAuthenticationMapper parentProfiles = mock(com.lingdong.learning.auth.infrastructure.persistence.ParentAuthenticationMapper.class);
     private ParentAccountFinalizationService service;
 
     @BeforeEach
@@ -54,7 +55,8 @@ class ParentAccountFinalizationServiceTest {
                 Instant.parse("2026-08-14T01:00:00Z"), ZoneId.of("Asia/Shanghai"));
         service = new ParentAccountFinalizationService(
                 lifecycleMapper, userMapper, userRoleMapper, parentStudentMapper,
-                wechatBindingMapper, sessionMapper, featureAccessService, properties, clock);
+                wechatBindingMapper, sessionMapper, featureAccessService, properties, clock, parentProfiles);
+        when(parentProfiles.findProfileByUserId(USER_ID)).thenReturn(mock(ParentProfile.class));
     }
 
     @Test
@@ -84,7 +86,7 @@ class ParentAccountFinalizationServiceTest {
         when(lifecycleMapper.findFinalizationCandidateForUpdate(CANCELLATION_ID))
                 .thenReturn(candidate(NOW.minusMinutes(1)));
         when(userMapper.findByIdForUpdate(USER_ID)).thenReturn(parent());
-        when(userRoleMapper.hasRoleCode(USER_ID, "PARENT")).thenReturn(true);
+        when(userRoleMapper.hasAnyEnabledRole(USER_ID)).thenReturn(true);
         when(parentStudentMapper.countActiveStudentsByParent(USER_ID)).thenReturn(1L);
         when(lifecycleMapper.deferFinalization(
                 CANCELLATION_ID, NOW.plusDays(1), "ACTIVE_RELATIONSHIP")).thenReturn(1);
@@ -103,7 +105,7 @@ class ParentAccountFinalizationServiceTest {
         when(lifecycleMapper.findFinalizationCandidateForUpdate(CANCELLATION_ID))
                 .thenReturn(candidate(NOW.minusMinutes(1)));
         when(userMapper.findByIdForUpdate(USER_ID)).thenReturn(parent());
-        when(userRoleMapper.hasRoleCode(USER_ID, "PARENT")).thenReturn(true);
+        when(userRoleMapper.hasAnyEnabledRole(USER_ID)).thenReturn(true);
         when(parentStudentMapper.countActiveStudentsByParent(USER_ID)).thenReturn(0L);
         when(userMapper.anonymizeCancelledParent(USER_ID, "cancelled_" + USER_ID)).thenReturn(1);
         when(lifecycleMapper.finalizeCancellation(

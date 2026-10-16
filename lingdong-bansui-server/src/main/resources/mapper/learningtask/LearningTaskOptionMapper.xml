@@ -45,6 +45,27 @@
     </sql>
 
     <sql id="studentOptionCurrentClassJoins">
+        LEFT JOIN sys_user student_user ON student_user.id=student.student_user_id
+        LEFT JOIN edu_student_organization current_class
+          ON current_class.student_id=student.id AND current_class.relation_type='CLASS' AND current_class.status='ACTIVE'
+          AND current_class.organization_id=(SELECT CASE WHEN COUNT(*)=1 THEN MAX(candidate.organization_id) END
+            FROM edu_student_organization candidate JOIN sys_organization candidate_org ON candidate_org.id=candidate.organization_id
+            WHERE candidate.student_id=student.id AND candidate.relation_type='CLASS' AND candidate.status='ACTIVE'
+              AND candidate_org.status='ENABLED' AND candidate_org.effective_status='ENABLED'
+              <if test="_parameter.containsKey('organizationId') and organizationId != null">
+                AND EXISTS(SELECT 1 FROM sys_organization context_org WHERE context_org.id=#{organizationId}
+                  AND candidate_org.organization_path LIKE CONCAT(context_org.organization_path,'%'))
+              </if>
+              <if test="_parameter.containsKey('organizationIds')">
+                AND candidate.organization_id IN <foreach collection="organizationIds" item="id" open="(" close=")" separator=",">#{id}</foreach>
+              </if>
+              <if test="_parameter.containsKey('organizationId') and _parameter.containsKey('userId')">
+                AND EXISTS(SELECT 1 FROM sys_organization_admin candidate_admin JOIN sys_organization admin_org ON admin_org.id=candidate_admin.organization_id
+                  WHERE candidate_admin.user_id=#{userId} AND candidate_org.organization_path LIKE CONCAT(admin_org.organization_path,'%'))
+              </if>)
+        LEFT JOIN sys_organization current_class_organization ON current_class_organization.id=current_class.organization_id
+    </sql>
+    <sql id="teacherStudentOptionCurrentClassJoins">
         LEFT JOIN sys_user student_user ON student_user.id = student.student_user_id
         LEFT JOIN edu_student_organization current_class
           ON current_class.student_id = student.id
@@ -55,8 +76,11 @@
     </sql>
 
     <select id="findOrganizationOptionsForAdministrator" resultMap="OrganizationOptionMap">
-        SELECT DISTINCT organization.id, organization.organization_name, organization.organization_type,
-               organization.parent_id, organization.organization_path
+        SELECT DISTINCT organization.id,
+               (SELECT GROUP_CONCAT(o.organization_name ORDER BY LENGTH(o.organization_path) ASC SEPARATOR '·')
+                  FROM sys_organization o
+                 WHERE organization.organization_path LIKE CONCAT(o.organization_path, '%')) AS organization_name,
+               organization.organization_type, organization.parent_id, organization.organization_path
         FROM sys_organization organization
         WHERE organization.status = 'ENABLED'
           AND organization.effective_status = 'ENABLED'
@@ -71,14 +95,20 @@
                 AND organization.organization_path LIKE CONCAT(administrator_root.organization_path, '%')
           )
         <if test="organizationType != null">
-          AND organization.organization_type = #{organizationType}
+          <choose>
+            <when test='organizationType == "SCHOOL"'>AND organization.organization_type IN ('SCHOOL', 'TRAINING_INSTITUTION')</when>
+            <otherwise>AND organization.organization_type = #{organizationType}</otherwise>
+          </choose>
         </if>
         ORDER BY organization.organization_path, organization.id
     </select>
 
     <select id="findOrganizationOptionsForTeacher" resultMap="OrganizationOptionMap">
-        SELECT DISTINCT organization.id, organization.organization_name, organization.organization_type,
-               organization.parent_id, organization.organization_path
+        SELECT DISTINCT organization.id,
+               (SELECT GROUP_CONCAT(o.organization_name ORDER BY LENGTH(o.organization_path) ASC SEPARATOR '·')
+                  FROM sys_organization o
+                 WHERE organization.organization_path LIKE CONCAT(o.organization_path, '%')) AS organization_name,
+               organization.organization_type, organization.parent_id, organization.organization_path
         FROM edu_teacher_class teacher_class
         JOIN sys_organization organization
           ON organization.id = teacher_class.class_organization_id
@@ -87,7 +117,10 @@
           AND organization.status = 'ENABLED'
           AND organization.effective_status = 'ENABLED'
         <if test="organizationType != null">
-          AND organization.organization_type = #{organizationType}
+          <choose>
+            <when test='organizationType == "SCHOOL"'>AND organization.organization_type IN ('SCHOOL', 'TRAINING_INSTITUTION')</when>
+            <otherwise>AND organization.organization_type = #{organizationType}</otherwise>
+          </choose>
         </if>
         ORDER BY organization.organization_path, organization.id
     </select>
@@ -100,6 +133,7 @@
          ON parent_student.student_id = student.id
          AND parent_student.parent_user_id = #{userId}
          AND parent_student.status = 'ACTIVE'
+        <include refid="com.lingdong.learning.student.infrastructure.persistence.ParentStudentMapper.selectedStudentScope"><property name="studentIdColumn" value="student.id"/></include>
         <include refid="studentOptionCurrentClassJoins"/>
         WHERE student.status = 'ENABLED'
         <if test="keyword != null">
@@ -179,7 +213,7 @@
         SELECT DISTINCT <include refid="studentOptionColumns"/>,
                NULL AS relationship_role
         FROM edu_student student
-        <include refid="studentOptionCurrentClassJoins"/>
+        <include refid="teacherStudentOptionCurrentClassJoins"/>
         JOIN edu_teacher_class teacher_class
           ON teacher_class.teacher_user_id = #{userId}
          AND teacher_class.class_organization_id = current_class.organization_id
@@ -220,11 +254,10 @@
         WHERE teacher.status = 'ENABLED'
           AND EXISTS (
               SELECT 1
-              FROM sys_user_role teacher_role_assignment
-              JOIN sys_role teacher_role ON teacher_role.id = teacher_role_assignment.role_id
-              WHERE teacher_role_assignment.user_id = teacher.id
-                AND teacher_role.role_code = 'TEACHER'
-                AND teacher_role.status = 'ENABLED'
+              FROM edu_teacher_profile teacher_profile
+              WHERE teacher_profile.user_id = teacher.id
+                AND teacher_profile.status = 'ENABLED'
+                AND teacher.user_type = 'ORGANIZATION'
           )
           AND EXISTS (
               SELECT 1
@@ -243,9 +276,7 @@
                 AND administrator_root.effective_status = 'ENABLED'
                 AND organization_admin.user_id = #{userId}
           )
-        <if test="classId != null">
-          AND teacher_class.class_organization_id = #{classId}
-        </if>
+        <include refid="teacherInTargetSchool"/>
         <if test="keyword != null">
           AND teacher.display_name LIKE CONCAT('%', #{keyword}, '%')
         </if>
@@ -254,24 +285,64 @@
     <select id="findScopedStudentOptions" resultMap="StudentOptionRowMap">
         SELECT DISTINCT <include refid="studentOptionColumns"/>, NULL AS relationship_role
         FROM edu_student student <include refid="studentOptionCurrentClassJoins"/>
-        WHERE student.status = 'ENABLED' AND EXISTS (
+        WHERE student.status = 'ENABLED' AND (EXISTS (
             SELECT 1 FROM edu_student_organization scoped_relation
             JOIN sys_organization scoped_organization ON scoped_organization.id = scoped_relation.organization_id
             WHERE scoped_relation.student_id = student.id AND scoped_relation.status = 'ACTIVE'
               AND scoped_organization.status = 'ENABLED' AND scoped_organization.effective_status = 'ENABLED'
               AND scoped_relation.organization_id IN
               <foreach collection="organizationIds" item="id" open="(" separator="," close=")">#{id}</foreach>
-        )
-        <if test="organizationId != null">AND EXISTS (
+        ) OR (NOT EXISTS (SELECT 1 FROM edu_student_organization any_class
+                WHERE any_class.student_id=student.id AND any_class.relation_type='CLASS' AND any_class.status='ACTIVE'
+                  AND any_class.organization_id IN <foreach collection="organizationIds" item="id" open="(" close=")" separator=",">#{id}</foreach>)
+          AND EXISTS (SELECT 1 FROM sys_user_organization placement
+            JOIN sys_organization placement_org ON placement_org.id=placement.organization_id
+            WHERE placement.user_id=student.student_user_id AND placement_org.organization_type IN ('GRADE','CAMPUS')
+              AND placement_org.status='ENABLED' AND placement_org.effective_status='ENABLED'
+              AND placement.organization_id IN
+              <foreach collection="organizationIds" item="id" open="(" separator="," close=")">#{id}</foreach>
+              AND EXISTS (SELECT 1 FROM edu_student_organization enroll
+                JOIN sys_organization school ON school.id=enroll.organization_id
+                WHERE enroll.student_id=student.id AND enroll.relation_type='ENROLLMENT' AND enroll.status='ACTIVE'
+                  AND school.status='ENABLED' AND school.effective_status='ENABLED'
+                  AND placement_org.organization_path LIKE CONCAT(school.organization_path,'%')))))
+        <if test="organizationId != null">AND (EXISTS (
             SELECT 1 FROM edu_student_organization filtered_relation
             JOIN sys_organization filtered_organization ON filtered_organization.id = filtered_relation.organization_id
             JOIN sys_organization filter_root ON filter_root.id = #{organizationId}
             WHERE filtered_relation.student_id = student.id AND filtered_relation.status = 'ACTIVE'
             AND filtered_organization.organization_path LIKE CONCAT(filter_root.organization_path, '%')
-        )</if>
+        ) OR (NOT EXISTS (SELECT 1 FROM edu_student_organization current_class
+             WHERE current_class.student_id=student.id AND current_class.relation_type='CLASS' AND current_class.status='ACTIVE'
+               AND EXISTS(SELECT 1 FROM sys_organization candidate_class JOIN sys_organization candidate_root ON candidate_root.id=#{organizationId}
+                 WHERE candidate_class.id=current_class.organization_id AND candidate_class.organization_path LIKE CONCAT(candidate_root.organization_path,'%')))
+          AND EXISTS (SELECT 1 FROM sys_user_organization filter_membership
+            JOIN sys_organization placement ON placement.id=filter_membership.organization_id
+            JOIN sys_organization filter_root ON filter_root.id=#{organizationId}
+            WHERE filter_membership.user_id=student.student_user_id AND placement.organization_type IN ('CAMPUS','GRADE')
+              AND placement.status='ENABLED' AND placement.effective_status='ENABLED'
+              AND placement.organization_path LIKE CONCAT(filter_root.organization_path,'%'))))</if>
         <if test="keyword != null">AND student.student_name LIKE CONCAT('%', #{keyword}, '%')</if>
         ORDER BY student.student_name, student.id
     </select>
+    <sql id="teacherInTargetSchool">
+        <if test="classId != null">
+          AND EXISTS (
+            SELECT 1 FROM sys_user_organization candidate_membership
+            JOIN sys_organization candidate_organization ON candidate_organization.id = candidate_membership.organization_id
+            JOIN sys_organization candidate_school
+              ON candidate_school.organization_type IN ('SCHOOL', 'TRAINING_INSTITUTION')
+             AND candidate_organization.organization_path LIKE CONCAT(candidate_school.organization_path, '%')
+            JOIN sys_organization target_class ON target_class.id = #{classId}
+            WHERE candidate_membership.user_id = teacher.id
+              AND candidate_organization.status = 'ENABLED' AND candidate_organization.effective_status = 'ENABLED'
+              AND candidate_school.status = 'ENABLED' AND candidate_school.effective_status = 'ENABLED'
+              AND target_class.organization_type = 'CLASS'
+              AND target_class.status = 'ENABLED' AND target_class.effective_status = 'ENABLED'
+              AND target_class.organization_path LIKE CONCAT(candidate_school.organization_path, '%')
+          )
+        </if>
+    </sql>
     <select id="findScopedTeacherOptions" resultMap="TeacherOptionRowMap">
         SELECT DISTINCT teacher.id AS user_id, teacher.display_name, teacher_class.class_organization_id
         FROM sys_user teacher
@@ -279,13 +350,19 @@
           AND teacher_class.status = 'ACTIVE' AND teacher_class.class_organization_id IN
           <foreach collection="organizationIds" item="id" open="(" separator="," close=")">#{id}</foreach>
         WHERE teacher.status = 'ENABLED'
-          AND EXISTS (SELECT 1 FROM sys_user_role ur JOIN sys_role r ON r.id = ur.role_id
-            WHERE ur.user_id = teacher.id AND r.role_code = 'TEACHER' AND r.status = 'ENABLED')
+          AND EXISTS (SELECT 1 FROM edu_teacher_profile tp
+            WHERE tp.user_id = teacher.id AND tp.status = 'ENABLED' AND teacher.user_type = 'ORGANIZATION')
           AND EXISTS (SELECT 1 FROM sys_user_organization membership
-            WHERE membership.user_id = teacher.id AND membership.organization_id IN
+            JOIN sys_organization membership_organization ON membership_organization.id = membership.organization_id
+            WHERE membership.user_id = teacher.id
+              AND membership_organization.status = 'ENABLED' AND membership_organization.effective_status = 'ENABLED'
+              AND membership.organization_id IN
             <foreach collection="organizationIds" item="id" open="(" separator="," close=")">#{id}</foreach>)
-        <if test="classId != null">AND teacher_class.class_organization_id = #{classId}</if>
+        <include refid="teacherInTargetSchool"/>
         <if test="keyword != null">AND teacher.display_name LIKE CONCAT('%', #{keyword}, '%')</if>
         ORDER BY teacher.display_name, teacher.id, teacher_class.class_organization_id
     </select>
 </mapper>
+
+
+

@@ -22,12 +22,14 @@ public class RoleApplicationService {
     private final com.lingdong.learning.permission.application.PermissionDecisionService decisions;
     private static final Pattern ROLE_CODE_PATTERN = Pattern.compile("[A-Z][A-Z0-9_]{2,63}");
 
+    private final com.lingdong.learning.user.infrastructure.persistence.UserRoleMapper userRoles;
     private final RoleMapper roleMapper;
     private final IdGenerator idGenerator;
     private final IamChangeAuditService auditService;
 
-    public RoleApplicationService(RoleMapper roleMapper, IdGenerator idGenerator, IamChangeAuditService auditService, com.lingdong.learning.permission.application.PermissionDecisionService decisions) {
+    public RoleApplicationService(RoleMapper roleMapper, IdGenerator idGenerator, IamChangeAuditService auditService, com.lingdong.learning.permission.application.PermissionDecisionService decisions, com.lingdong.learning.user.infrastructure.persistence.UserRoleMapper userRoles) {
         this.decisions = decisions;
+        this.userRoles = userRoles;
         this.roleMapper = roleMapper;
         this.idGenerator = idGenerator;
         this.auditService = auditService;
@@ -66,6 +68,61 @@ public class RoleApplicationService {
         } catch (DuplicateKeyException exception) {
             throw new DuplicateRoleCodeException(code);
         }
+    }
+
+    @Transactional
+    public Role updateRole(Long operatorId, Long roleId, String name, String description) {
+        requirePermission(operatorId, "IAM_ROLE_UPDATE");
+        Role current = roleMapper.lockById(roleId);
+        if (current == null) throw new IllegalArgumentException("角色不存在");
+        if ((current.builtIn() || current.type() == com.lingdong.learning.iam.domain.RoleType.BUILT_IN)
+                && !userRoles.findEnabledRoleCodesByUserId(operatorId).contains("SYS_ADMIN"))
+            throw new com.lingdong.learning.common.security.SystemOperationAccessDeniedException("内置角色仅系统管理员可编辑");
+        String normalizedName = requiredText(name, "角色名称", 64);
+        String normalizedDescription = optionalText(description, 512);
+        roleMapper.updateDetails(roleId, normalizedName, normalizedDescription);
+        auditService.record(IamChangeAuditEventType.ROLE_UPDATE, operatorId, IamChangeTargetType.ROLE,
+                roleId, null, null, current.name(), normalizedName);
+        return roleMapper.findById(roleId);
+    }
+
+    @Transactional
+    public Role changeRoleStatus(Long operatorId, Long roleId, com.lingdong.learning.iam.domain.RoleStatus status) {
+        requirePermission(operatorId, "IAM_ROLE_STATUS_CHANGE");
+        Role current = requireCustomRole(roleId);
+        if (status == null) throw new IllegalArgumentException("角色状态不能为空");
+        if (current.status() != status) {
+            roleMapper.updateStatus(roleId, status);
+            roleMapper.revokeAssociatedSessions(roleId);
+            auditService.record(IamChangeAuditEventType.ROLE_STATUS_CHANGE, operatorId, IamChangeTargetType.ROLE,
+                    roleId, null, null, current.status().name(), status.name());
+        }
+        return roleMapper.findById(roleId);
+    }
+
+    @Transactional
+    public void deleteRole(Long operatorId, Long roleId) {
+        requirePermission(operatorId, "IAM_ROLE_DELETE");
+        Role current = requireCustomRole(roleId);
+        if (roleMapper.hasUserAssignments(roleId)) throw new IllegalArgumentException("角色已关联用户，请先撤销用户角色后再删除");
+        roleMapper.deletePermissions(roleId);
+        roleMapper.deleteDataScopes(roleId);
+        roleMapper.deleteById(roleId);
+        auditService.record(IamChangeAuditEventType.ROLE_DELETE, operatorId, IamChangeTargetType.ROLE,
+                roleId, null, null, current.code(), null);
+    }
+
+    private Role requireCustomRole(Long roleId) {
+        Role role = roleMapper.lockById(roleId);
+        if (role == null) throw new IllegalArgumentException("角色不存在");
+        if (role.builtIn() || role.type() == com.lingdong.learning.iam.domain.RoleType.BUILT_IN)
+            throw new IllegalArgumentException("内置角色不允许编辑、删除或启停");
+        return role;
+    }
+
+    private void requirePermission(Long operatorId, String code) {
+        if (operatorId == null || !decisions.isAllowed(operatorId, com.lingdong.learning.permission.domain.PermissionClient.WEB, code))
+            throw new com.lingdong.learning.common.security.SystemOperationAccessDeniedException("当前账号无此角色管理权限");
     }
 
     private String requiredText(String value, String fieldName, int maxLength) {

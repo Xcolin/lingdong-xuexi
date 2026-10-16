@@ -117,4 +117,10 @@
           AND student.status = 'ENABLED'
         ORDER BY student.created_at, student.id
     </select>
+    <!-- Earnings are positive task rewards, excluding corrections, exchanges and dormancy clears. -->
+    <select id="sumTaskRewards" resultType="long">
+        SELECT COALESCE(SUM(amount), 0) FROM growth_point_ledger
+        WHERE student_id = #{studentId} AND change_type = 'TASK_REWARD' AND amount &gt; 0
+          AND occurred_at &gt;= #{start} AND occurred_at &lt; #{end}
+    </select>
 </mapper>

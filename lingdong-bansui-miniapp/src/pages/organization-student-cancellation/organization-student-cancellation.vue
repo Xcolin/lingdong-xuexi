@@ -1,5 +1,6 @@
 <template>
-  <view class="page-shell">
+  <view class="prototype-workspace page-shell">
+    <PrototypePageHeader title="账号注销" icon="shield"/>
     <view class="warning-band">
       <text class="warning-title">学生账号注销</text>
       <text class="warning-text">仅可注销已退学且已解除全部家长关系的学生。账号身份将永久匿名化，所有登录凭据立即失效。</text>
@@ -37,6 +38,7 @@
 </template>
 
 <script setup lang="ts">
+import PrototypePageHeader from "@/components/PrototypePageHeader.vue";
 import { computed, ref } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { getMiniappCapabilities } from '@/api/capability';
@@ -146,3 +148,7 @@ function leavePage(missingSession: boolean): Promise<unknown> {
 .submit-button { height: 88rpx; margin-top: 36rpx; border-radius: 10rpx; background: #b42318; color: #ffffff; font-size: 29rpx; }
 .submit-button::after { border: 0; }
 </style>
+
+<style lang="scss" scoped>@import "@/styles/workspace-prototype.scss";</style>
+
+<style scoped>.page-shell{min-height:calc(100vh - var(--window-top,0px));box-sizing:border-box;padding:28rpx 28rpx calc(48rpx + env(safe-area-inset-bottom));background:#F6F8F5;}.warning-band{background:#fff8e9;border:1rpx solid #eedfbc;border-radius:20rpx;margin-bottom:24rpx;padding:24rpx;}.warning-title{color:#aa8038;font-size:28rpx;}.warning-text{color:#927a4d;font-size:24rpx;line-height:1.7;}.form-band{background:#fffefa;border:1rpx solid #e1e9e2;border-radius:24rpx;padding:28rpx;}.field-label{display:block;margin:24rpx 0 12rpx;color:#637f6d;font-size:25rpx;}.field-label:first-child{margin-top:0;}.text-input,.picker-value,.reason-input{width:100%;box-sizing:border-box;background:#f8faf7;border:1rpx solid #d8e4db;border-radius:14rpx;padding:18rpx 22rpx;font-size:26rpx;}.reason-input{height:168rpx;}.submit-button{background:#184f40;border-radius:16rpx;font-size:26rpx;margin-top:30rpx;}button::after{border:0;}.mobile-row{align-items:center;gap:14rpx;}.mobile-input{min-width:0;}.code-button{flex-shrink:0;font-size:23rpx;margin:0;line-height:1.5;padding:22rpx 18rpx;color:#184f40;background:#edf4ee;}.state-text{padding:40rpx 24rpx;}</style>

@@ -19,6 +19,8 @@ export interface ManagedLearningTask {
   remark?: string | null;
   reviewerUserId?: string;
   targets?: Array<{ id?: string; targetType: 'ORGANIZATION' | 'STUDENT'; targetId: string }>;
+  recurrenceFrequency?: 'DAILY' | 'WEEKLY' | 'CUSTOM' | null;
+  recurrenceWeekdays?: number[];
   recurrenceEnabled: boolean;
   recurrenceEndDate?: string | null;
   status: ManagedTaskStatus;
@@ -71,16 +73,22 @@ export interface ManagedTaskInput {
   scheduledDate: string;
   remark?: string;
   reviewerUserId?: string;
-  targets: Array<{ targetType: 'ORGANIZATION'; targetId: string }>;
+  targets: Array<{ targetType: 'ORGANIZATION' | 'STUDENT'; targetId: string }>;
+  categoryCode?: string | null;
+  tagCodes?: string[];
+  recurrenceEndDate?: string | null;
+  recurrenceFrequency?: 'DAILY' | 'WEEKLY' | 'CUSTOM' | null;
+  recurrenceWeekdays?: number[];
   recurrenceEnabled: boolean;
 }
 
 export function listManagedTasks(
   accessToken: string,
-  page = 1
+  page = 1,
+  sourceType?: ManagedTaskSource
 ): Promise<ManagedLearningTaskPage> {
   return authenticated<ManagedLearningTaskPage>(
-    accessToken, `/learning-tasks?page=${page}&pageSize=20`);
+    accessToken, `/learning-tasks?page=${page}&pageSize=20${sourceType?'&sourceType='+sourceType:''}`);
 }
 
 export function getManagedTask(
@@ -118,10 +126,10 @@ export function publishManagedTask(accessToken: string, taskId: string): Promise
 }
 
 export function listManagedOrganizations(
-  accessToken: string
+  accessToken: string, sourceType: ManagedTaskSource = 'ORGANIZATION'
 ): Promise<ManagedOrganizationOption[]> {
   return authenticated<ManagedOrganizationOption[]>(
-    accessToken, '/learning-task-options/organizations?sourceType=ORGANIZATION');
+    accessToken, `/learning-task-options/organizations?sourceType=${sourceType}`);
 }
 
 export function listManagedTaskProgress(
@@ -168,4 +176,13 @@ function authenticated<T>(
     ...options,
     header: { Authorization: `Bearer ${accessToken}` }
   });
+}
+
+export interface ManagedStudentOption {
+  id: string; studentName: string; studentAccountMasked: string | null;
+  currentClassId: string | null; currentClassName: string | null;
+  relationshipRole: string | null;
+}
+export function listManagedStudents(token: string, source: ManagedTaskSource, organizationId: string): Promise<ManagedStudentOption[]> {
+  return authenticated(token, `/learning-task-options/students?sourceType=${source}&organizationId=${encodeURIComponent(organizationId)}`);
 }

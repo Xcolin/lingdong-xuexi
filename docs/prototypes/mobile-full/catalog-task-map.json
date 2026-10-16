@@ -1,0 +1,190 @@
+{
+  "02-01": {
+    "route": "/pages/parent-home/parent-home",
+    "viewState": "home",
+    "api": [
+      "GET /auth/me",
+      "GET /students?page=&pageSize=20",
+      "GET /task-reviews?page=&pageSize=20"
+    ],
+    "gaps": [
+      "真实当前家庭待审核提交动态；未覆盖审核完成及兑换历史"
+    ],
+    "status": "未验收",
+    "evidenceDocument": "task-layout-gaps.md",
+    "referencePath": "reference/02-01.png",
+    "verification": {
+      "nativeScreenshot": null,
+      "diff": null,
+      "acceptedAt": null
+    }
+  },
+  "02-02": {
+    "route": "/pages/family-tasks/family-tasks",
+    "viewState": "list",
+    "api": [
+      "GET /learning-tasks?sourceType=FAMILY&page=&pageSize=20"
+    ],
+    "gaps": [
+      "只有草稿/已发布状态；缺执行状态筛选与重复完成进度"
+    ],
+    "status": "未验收",
+    "evidenceDocument": "task-layout-gaps.md",
+    "referencePath": "reference/02-02.png",
+    "verification": {
+      "nativeScreenshot": null,
+      "diff": null,
+      "acceptedAt": null
+    }
+  },
+  "02-03": {
+    "route": "/pages/family-tasks/family-tasks",
+    "viewState": "editing && !scopeStep && !confirming",
+    "api": [
+      "GET /learning-tasks/:id",
+      "POST /learning-tasks",
+      "PUT /learning-tasks/:id"
+    ],
+    "gaps": [
+      "缺原图任务类型、日期区间、每周/自定义重复配置；独立路由未拆分"
+    ],
+    "status": "未验收",
+    "evidenceDocument": "task-layout-gaps.md",
+    "referencePath": "reference/02-03.png",
+    "verification": {
+      "nativeScreenshot": null,
+      "diff": null,
+      "acceptedAt": null
+    }
+  },
+  "02-04": {
+    "route": "/pages/family-tasks/family-tasks",
+    "viewState": "editing && scopeStep && !confirming",
+    "api": [
+      "GET /learning-task-options/students?sourceType=FAMILY"
+    ],
+    "gaps": [
+      "真实主监护孩子选择；缺家庭+班级/本校/自定义可见范围DTO，目标学生不能替代可见范围"
+    ],
+    "status": "未验收",
+    "evidenceDocument": "task-layout-gaps.md",
+    "referencePath": "reference/02-04.png",
+    "verification": {
+      "nativeScreenshot": null,
+      "diff": null,
+      "acceptedAt": null
+    }
+  },
+  "02-05": {
+    "route": "/pages/family-tasks/family-tasks",
+    "viewState": "editing && confirming",
+    "api": [
+      "POST /learning-tasks",
+      "PUT /learning-tasks/:id",
+      "POST /learning-tasks/:id/publish"
+    ],
+    "gaps": [
+      "真实保存后发布，旧分类/标签/重复配置保留；未原生逐屏验收"
+    ],
+    "status": "未验收",
+    "evidenceDocument": "task-layout-gaps.md",
+    "referencePath": "reference/02-05.png",
+    "verification": {
+      "nativeScreenshot": null,
+      "diff": null,
+      "acceptedAt": null
+    }
+  },
+  "02-06": {
+    "route": "/pages/family-tasks/family-tasks",
+    "viewState": "missing",
+    "api": [
+      "GET /learning-tasks/:id"
+    ],
+    "gaps": [
+      "家庭详情与执行进度独立视图未实现；现有只有草稿编辑"
+    ],
+    "status": "未验收",
+    "evidenceDocument": "task-layout-gaps.md",
+    "referencePath": "reference/02-06.png",
+    "verification": {
+      "nativeScreenshot": null,
+      "diff": null,
+      "acceptedAt": null
+    }
+  },
+  "02-07": {
+    "route": "/pages/parent-task-reviews/parent-task-reviews",
+    "viewState": "!detail && stage !== success",
+    "api": [
+      "GET /task-reviews?page=&pageSize=20"
+    ],
+    "gaps": [
+      "当前审核人真实待办；未原生逐屏验收"
+    ],
+    "status": "未验收",
+    "evidenceDocument": "task-layout-gaps.md",
+    "referencePath": "reference/02-07.png",
+    "verification": {
+      "nativeScreenshot": null,
+      "diff": null,
+      "acceptedAt": null
+    }
+  },
+  "02-08": {
+    "route": "/pages/parent-task-reviews/parent-task-reviews",
+    "viewState": "detail && stage === detail",
+    "api": [
+      "GET /task-reviews/:assignmentId"
+    ],
+    "gaps": [
+      "真实打卡与授权附件预览；未原生逐屏验收"
+    ],
+    "status": "未验收",
+    "evidenceDocument": "task-layout-gaps.md",
+    "referencePath": "reference/02-08.png",
+    "verification": {
+      "nativeScreenshot": null,
+      "diff": null,
+      "acceptedAt": null
+    }
+  },
+  "02-09": {
+    "route": "/pages/parent-task-reviews/parent-task-reviews",
+    "viewState": "stage === approve / stage === success",
+    "api": [
+      "GET /task-reviews/:assignmentId",
+      "POST /task-reviews/:assignmentId/approve"
+    ],
+    "gaps": [
+      "确认+expectedCheckInId最新版本校验+接口成功状态；未原生逐屏验收"
+    ],
+    "status": "未验收",
+    "evidenceDocument": "task-layout-gaps.md",
+    "referencePath": "reference/02-09.png",
+    "verification": {
+      "nativeScreenshot": null,
+      "diff": null,
+      "acceptedAt": null
+    }
+  },
+  "02-10": {
+    "route": "/pages/parent-task-reviews/parent-task-reviews",
+    "viewState": "stage === reject",
+    "api": [
+      "GET /task-reviews/:assignmentId",
+      "POST /task-reviews/:assignmentId/reject"
+    ],
+    "gaps": [
+      "必填意见，版本变化阻断，失败保留；未原生逐屏验收"
+    ],
+    "status": "未验收",
+    "evidenceDocument": "task-layout-gaps.md",
+    "referencePath": "reference/02-10.png",
+    "verification": {
+      "nativeScreenshot": null,
+      "diff": null,
+      "acceptedAt": null
+    }
+  }
+}

@@ -7,16 +7,16 @@ const node = (suffix: string, name: string, status: 'ENABLED' | 'DISABLED' = 'EN
 afterEach(() => { act(() => ConfiguredModal.destroyAll()); });
 describe('ConfiguredModal', () => {
   it('keeps dynamic business labels when configuration still has the default name', () => {
-    render(<MenuConfigurationProvider nodes={[node('ok', '确定'), node('cancel', '取消')]} refresh={async () => {}}><ConfiguredModal open actionPrefix="test.modal" okText="确认批准" cancelText="暂不操作" /></MenuConfigurationProvider>);
+    render(<MenuConfigurationProvider permissionCodes={['test.modal.ok']} nodes={[node('ok', '确定'), node('cancel', '取消')]} refresh={async () => {}}><ConfiguredModal open actionPrefix="test.modal" okText="确认批准" cancelText="暂不操作" /></MenuConfigurationProvider>);
     expect(screen.getByRole('button', { name: '确认批准' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '暂不操作' })).toBeInTheDocument();
   });
   it('configures default footer names, visibility and order while retaining events', () => {
     const onOk = vi.fn();
-    const { rerender } = render(<MenuConfigurationProvider nodes={[node('ok', '保存变更', 'ENABLED', 8), node('cancel', '取消', 'DISABLED')]} refresh={async () => {}}><ConfiguredModal open actionPrefix="test.modal" onOk={onOk} /></MenuConfigurationProvider>);
+    const { rerender } = render(<MenuConfigurationProvider permissionCodes={['test.modal.ok']} nodes={[node('ok', '保存变更', 'ENABLED', 8), node('cancel', '取消', 'DISABLED')]} refresh={async () => {}}><ConfiguredModal open actionPrefix="test.modal" onOk={onOk} /></MenuConfigurationProvider>);
     fireEvent.click(screen.getByRole('button', { name: '保存变更' }));
     expect(onOk).toHaveBeenCalledOnce();
-    expect(screen.queryByRole('button', { name: '取消' })).toBeNull();
+    expect(screen.getByRole('button', { name: /取\s*消/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '保存变更' }).parentElement).toHaveStyle({ order: '8' });
     rerender(<ConfiguredModal open actionPrefix="test.modal" footer={null} />);
     expect(screen.queryByRole('button', { name: '保存变更' })).toBeNull();
@@ -24,14 +24,23 @@ describe('ConfiguredModal', () => {
   it('captures configuration for static confirms and preserves promise-based confirmation', async () => {
     let finish!: () => void;
     const onOk = vi.fn(() => new Promise<void>(resolve => { finish = resolve; }));
-    render(<MenuConfigurationProvider nodes={[node('ok', '执行确认'), node('cancel', '取消', 'DISABLED')]} refresh={async () => {}}><div /></MenuConfigurationProvider>);
+    render(<MenuConfigurationProvider permissionCodes={['test.modal.ok']} nodes={[node('ok', '执行确认'), node('cancel', '取消', 'DISABLED')]} refresh={async () => {}}><div /></MenuConfigurationProvider>);
     act(() => { ConfiguredModal.confirm({ actionPrefix: 'test.modal', title: '静态操作', onOk }); });
     const button = await screen.findByRole('button', { name: '执行确认' });
-    expect(screen.queryByRole('button', { name: '取消' })).toBeNull();
+    expect(screen.getByRole('button', { name: /取\s*消/ })).toBeInTheDocument();
     fireEvent.click(button);
     expect(onOk).toHaveBeenCalledOnce();
     await waitFor(() => expect(button).toHaveClass('ant-btn-loading'));
     await act(async () => { finish(); });
     await waitFor(() => expect(screen.queryByRole('button', { name: '执行确认' })).toBeNull());
   });
+});
+
+it('完整业务规范动作控制确认按钮，不追加独立ok授权，取消始终可用', () => {
+ const action={...node('ok','确定'),code:'BUSINESS_WRITE',permissionCode:'BUSINESS_WRITE'};
+ const view=render(<MenuConfigurationProvider nodes={[action]} permissionCodes={['BUSINESS_WRITE']} refresh={async()=>{}}><ConfiguredModal open actionPrefix="BUSINESS_WRITE" okText="提交业务" /></MenuConfigurationProvider>);
+ expect(screen.getByRole('button',{name:'提交业务'})).toBeInTheDocument();
+ view.rerender(<MenuConfigurationProvider nodes={[action]} permissionCodes={[]} refresh={async()=>{}}><ConfiguredModal open actionPrefix="BUSINESS_WRITE" okText="提交业务" /></MenuConfigurationProvider>);
+ expect(screen.queryByRole('button',{name:'提交业务'})).toBeNull();
+ expect(screen.getByRole('button',{name:/取\s*消/})).toBeInTheDocument();
 });

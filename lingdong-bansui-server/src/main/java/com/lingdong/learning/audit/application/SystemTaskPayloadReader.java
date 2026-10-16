@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 /** 仅在任务范围校验通过后读取领域快照；不读取凭据、附件存储信息或导出内容。 */
 @Component
 public class SystemTaskPayloadReader {
+    @org.springframework.beans.factory.annotation.Autowired private com.lingdong.learning.organization.onboarding.infrastructure.persistence.OnboardingMapper onboarding;
     private final CacheOperationMapper caches;
     private final FeatureToggleChangeMapper features;
     private final InterfaceServiceChangeMapper interfaces;
@@ -30,6 +31,10 @@ public class SystemTaskPayloadReader {
 
     public Payload read(SystemTask task) {
         switch (task.type()) {
+            case ORGANIZATION_ONBOARDING -> {
+                Long id=onboarding.byTask(task.id());if(id==null)return missing();var row=onboarding.lock(id);
+                return new Payload(List.of(field("申请 ID",id),field("机构类型",row.get("typeCode")),field("机构名称",row.get("name")),field("区域 ID",row.get("regionId")),field("联系人",row.get("contactName")),field("已验证手机号",row.get("mobile")),field("已验证邮箱",row.get("email")),field("提交批次",row.get("submissionBatch")),field("创建组织 ID",row.get("organizationId"))),List.of(),text(row.get("status")),text(row.get("rejectionReason")),"入驻通过后创建组织并授予该组织管理员权限；入驻不等于认证。");
+            }
             case CACHE_CLEAR -> {
                 var row = caches.findByTaskId(task.id());
                 if (row == null) return missing();

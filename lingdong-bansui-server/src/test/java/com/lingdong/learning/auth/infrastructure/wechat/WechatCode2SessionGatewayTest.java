@@ -50,6 +50,53 @@ class WechatCode2SessionGatewayTest {
     }
 
     @Test
+    void acceptsWechatTextPlainJsonResponse() {
+        server.expect(once(), requestTo("https://api.weixin.qq.com/sns/jscode2session"
+                        + "?appid=wx-test-app&secret=test-secret-never-log&js_code=temporary-code&grant_type=authorization_code"))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess("""
+                        {"openid":"openid-1","unionid":"unionid-1","session_key":"session-key-1"}
+                        """, MediaType.TEXT_PLAIN));
+
+        ParentWechatIdentity identity = gateway.exchange("temporary-code");
+
+        assertThat(identity.appId()).isEqualTo("wx-test-app");
+        assertThat(identity.openId()).isEqualTo("openid-1");
+        assertThat(identity.unionId()).isEqualTo("unionid-1");
+        assertThat(identity.sessionKey()).isEqualTo("session-key-1");
+        server.verify();
+    }
+
+    @Test
+    void acceptsExplicitZeroWechatSuccessCodeWithAdditionalFields() {
+        server.expect(once(), requestTo("https://api.weixin.qq.com/sns/jscode2session"
+                        + "?appid=wx-test-app&secret=test-secret-never-log&js_code=temporary-code&grant_type=authorization_code"))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess("""
+                        {"errcode":0,"errmsg":"ok","future_field":{"value":true},"openid":"openid-1","unionid":"unionid-1","session_key":"session-key-1"}
+                        """, MediaType.APPLICATION_JSON));
+
+        ParentWechatIdentity identity = gateway.exchange("temporary-code");
+
+        assertThat(identity.appId()).isEqualTo("wx-test-app");
+        assertThat(identity.openId()).isEqualTo("openid-1");
+        assertThat(identity.unionId()).isEqualTo("unionid-1");
+        assertThat(identity.sessionKey()).isEqualTo("session-key-1");
+        server.verify();
+    }
+
+    @Test
+    void rejectsNonzeroErrorEvenWhenIdentityFieldsArePresent() {
+        server.expect(once(), requestTo("https://api.weixin.qq.com/sns/jscode2session"
+                        + "?appid=wx-test-app&secret=test-secret-never-log&js_code=bad-code&grant_type=authorization_code"))
+                .andRespond(withSuccess("""
+                        {"errcode":40029,"errmsg":"invalid code","openid":"open","session_key":"key"}
+                        """, MediaType.TEXT_PLAIN));
+        assertThatThrownBy(() -> gateway.exchange("bad-code"))
+                .isInstanceOf(WechatAuthenticationUnavailableException.class).hasNoCause();
+        server.verify();
+    }
+    @Test
     void mapsWechatErrorToControlledFailureWithoutEchoingSensitiveValues() {
         server.expect(once(), requestTo("https://api.weixin.qq.com/sns/jscode2session"
                         + "?appid=wx-test-app&secret=test-secret-never-log&js_code=bad-code&grant_type=authorization_code"))
@@ -88,3 +135,4 @@ class WechatCode2SessionGatewayTest {
                 .hasNoCause();
     }
 }
+

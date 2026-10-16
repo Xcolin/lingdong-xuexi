@@ -96,4 +96,12 @@
         FROM sys_role
         ORDER BY role_code ASC
     </select>
+    <select id="lockById" resultMap="RoleResultMap">SELECT * FROM sys_role WHERE id=#{id} FOR UPDATE</select>
+    <update id="updateDetails">UPDATE sys_role SET role_name=#{name}, description=#{description}, updated_at=CURRENT_TIMESTAMP WHERE id=#{id}</update>
+    <update id="updateStatus">UPDATE sys_role SET status=#{status}, updated_at=CURRENT_TIMESTAMP WHERE id=#{id}</update>
+    <select id="hasUserAssignments" resultType="boolean">SELECT EXISTS(SELECT 1 FROM sys_user_role WHERE role_id=#{id})</select>
+    <update id="revokeAssociatedSessions">UPDATE auth_device_session SET status='REVOKED', signed_out_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE status='ACTIVE' AND user_id IN (SELECT user_id FROM sys_user_role WHERE role_id=#{id})</update>
+    <delete id="deletePermissions">DELETE FROM sys_role_permission WHERE role_id=#{id}</delete>
+    <delete id="deleteDataScopes">DELETE FROM sys_role_data_scope WHERE role_id=#{id}</delete>
+    <delete id="deleteById">DELETE FROM sys_role WHERE id=#{id}</delete>
 </mapper>

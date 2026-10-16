@@ -7,3 +7,11 @@ describe('用户权限继承与独立授权',()=>{
  it('级联修改只操作额外权限，继承始终保留',()=>{const tree=buildUserPermissionTree(menus,permissions,[],['read'],[]);let selected=new Set(['read']);selected=toggleUserPermissionBranch(tree[0],selected,true,new Set(['read']));expect([...selected].sort()).toEqual(['edit','read']);selected=toggleUserPermissionBranch(tree[0],selected,false,new Set(['read']));expect([...selected]).toEqual(['read']);});
  it('已有用户和角色拒绝保持禁用，不进入可修改范围',()=>{const tree=buildUserPermissionTree(menus,permissions,[{permissionId:'edit',effect:'DENY'}],['read'],['deny']);expect(tree[0].children![0].disableCheckbox).toBe(true);expect(tree.flatMap(n=>n.permissionIds)).not.toContain('edit');expect(tree.flatMap(n=>n.permissionIds)).not.toContain('deny');});
 });
+
+it('不可用的用户权限和继承权限保留原因但不产生额外可修改权限',()=>{
+ const catalog=permissions.map((p:any)=>p.id==='edit'?{...p,available:false,unavailableReason:'用户身份不适用'}:p);
+ const tree=buildUserPermissionTree(menus,catalog,[{permissionId:'edit',effect:'ALLOW'}],['read'],[]);
+ expect(tree[0].children![0].title).toContain('用户身份不适用');
+ expect(tree[0].children![0].disableCheckbox).toBe(true);
+ expect(tree[0].permissionIds).not.toContain('edit');
+});

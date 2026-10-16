@@ -7,6 +7,8 @@ import jakarta.validation.constraints.Size;
 public record CreateStudentRequest(
         @NotBlank @Size(max = 64) String studentName,
         @Size(max = 64) String gradeCode,
-        Long organizationId
+        Long organizationId,
+        Long familyOrganizationId
 ) {
+    public CreateStudentRequest(String studentName,String gradeCode,Long organizationId) { this(studentName,gradeCode,organizationId,null); }
 }

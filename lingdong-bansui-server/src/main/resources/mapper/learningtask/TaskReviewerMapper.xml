@@ -13,6 +13,11 @@
         SELECT DISTINCT candidate.id AS user_id, candidate.display_name
         FROM sys_user candidate
         WHERE candidate.status = 'ENABLED'
+          AND (
+              candidate.user_type = 'FAMILY' AND EXISTS (SELECT 1 FROM auth_parent_profile profile WHERE profile.user_id = candidate.id)
+              OR candidate.user_type = 'ORGANIZATION' AND EXISTS (SELECT 1 FROM edu_teacher_profile profile WHERE profile.user_id = candidate.id AND profile.status = 'ENABLED')
+              OR candidate.user_type IN ('ORGANIZATION','PLATFORM') AND EXISTS (SELECT 1 FROM sys_organization_admin administrator WHERE administrator.user_id = candidate.id)
+          )
           AND candidate.id &lt;&gt; #{currentReviewerId}
           AND (
               (
@@ -82,10 +87,8 @@
               )
           )
         ORDER BY CASE WHEN EXISTS (
-                     SELECT 1 FROM sys_user_role candidate_role
-                     JOIN sys_role role ON role.id = candidate_role.role_id
-                     WHERE candidate_role.user_id = candidate.id
-                       AND role.role_code = 'TEACHER'
+                     SELECT 1 FROM edu_teacher_profile profile
+                     WHERE profile.user_id = candidate.id AND profile.status = 'ENABLED'
                  ) THEN 0 ELSE 1 END,
                  candidate.display_name, candidate.id
     </select>

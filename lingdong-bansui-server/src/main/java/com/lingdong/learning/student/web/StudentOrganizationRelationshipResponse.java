@@ -10,7 +10,8 @@ public record StudentOrganizationRelationshipResponse(
         String enrollmentOrganizationId,
         String currentClassOrganizationId,
         String status,
-        List<StudentOrganizationChangeResponse> changes
+        List<StudentOrganizationChangeResponse> changes,
+        List<String> currentClassOrganizationIds
 ) {
     static StudentOrganizationRelationshipResponse from(StudentOrganizationRelationshipView view) {
         return new StudentOrganizationRelationshipResponse(
@@ -19,6 +20,7 @@ public record StudentOrganizationRelationshipResponse(
                 view.currentClassOrganizationId() == null
                         ? null : view.currentClassOrganizationId().toString(),
                 view.status(),
-                view.changes().stream().map(StudentOrganizationChangeResponse::from).toList());
+                view.changes().stream().map(StudentOrganizationChangeResponse::from).toList(),view.currentClassOrganizationIds().stream().map(Object::toString).toList());
     }
 }
+

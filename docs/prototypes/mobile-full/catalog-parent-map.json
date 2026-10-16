@@ -1,0 +1,210 @@
+{
+  "03-01": {
+    "route": "/pages/organization-home/organization-home",
+    "viewState": "institution=SCHOOL",
+    "api": "GET /auth/me; /organization-workbench/context; /task-reviews",
+    "gaps": "缺原图机构汇总统计，真实工作台入口已实现",
+    "status": "未验收",
+    "implementationStatus": "部分实现，未通过逐屏像素验收"
+  },
+  "03-02": {
+    "route": "/pages/organization-home/organization-home",
+    "viewState": "institution=TRAINING_INSTITUTION",
+    "api": "GET /auth/me; /organization-workbench/context",
+    "gaps": "培训机构复用工作台，课程分类使用GRADE别名；缺统计",
+    "status": "未验收",
+    "implementationStatus": "部分实现，未通过逐屏像素验收"
+  },
+  "03-03": {
+    "route": "/pages/teacher-home/teacher-home",
+    "viewState": "default",
+    "api": "GET /teacher-workbench/context",
+    "gaps": "真实身份与任教班级；培训学习/成长记录及原图统计未实现",
+    "status": "未验收",
+    "implementationStatus": "部分实现，未通过逐屏像素验收"
+  },
+  "03-04": {
+    "route": "/pages/organization-hierarchy/organization-hierarchy",
+    "viewState": "creating=false",
+    "api": "GET /classes/schools; /classes/campuses; /classes/grades; /classes",
+    "gaps": "真实parentId层级，CLASS_READ及当前组织范围；截图未验收",
+    "status": "未验收",
+    "implementationStatus": "部分实现，未通过逐屏像素验收"
+  },
+  "03-05": {
+    "route": "/pages/organization-hierarchy/organization-hierarchy",
+    "viewState": "creating=true",
+    "api": "POST /classes/campuses; /classes/grades; /classes",
+    "gaps": "专用CLASS_CREATE，机构课程分类=GRADE；后台生成编码",
+    "status": "未验收",
+    "implementationStatus": "部分实现，未通过逐屏像素验收"
+  },
+  "03-06": {
+    "route": "/pages/organization-classes/organization-classes",
+    "viewState": "mode=CLASSES;formVisible=false",
+    "api": "GET /classes; /classes/schools; /classes/grades",
+    "gaps": "真实班级列表；缺原图人数班主任字段与筛选布局",
+    "status": "未验收",
+    "implementationStatus": "部分实现，未通过逐屏像素验收"
+  },
+  "03-07": {
+    "route": "/pages/organization-class-detail/organization-class-detail",
+    "viewState": "classId=<real>;tab=students|teachers",
+    "api": "GET /classes; /students/organization-relationships; /learning-task-options/teachers?classId",
+    "gaps": "学生限STUDENT_ORGANIZATION_MANAGE，教师限TEACHER_CLASS_ASSIGN或LEARNING_TASK_CREATE；按绑定班级筛选",
+    "status": "未验收",
+    "implementationStatus": "部分实现，未通过逐屏像素验收"
+  },
+  "03-08": {
+    "route": "/pages/organization-teachers/organization-teachers",
+    "viewState": "mode=CREATE",
+    "api": "POST /teachers",
+    "gaps": "目前仅教师新增账号；原图新增成长小主人成员未独立实现",
+    "status": "未验收",
+    "implementationStatus": "部分实现，未通过逐屏像素验收"
+  },
+  "03-09": {
+    "route": "/pages/organization-teachers/organization-teachers",
+    "viewState": "mode=LIST",
+    "api": "GET /teachers",
+    "gaps": "真实教师列表与通用图标；无真实头像/学科字段",
+    "status": "未验收",
+    "implementationStatus": "部分实现，未通过逐屏像素验收"
+  },
+  "03-10": {
+    "route": "/pages/organization-teachers/organization-teachers",
+    "viewState": "mode=CLASSES",
+    "api": "GET /classes; PUT/DELETE /teachers/{teacherId}/classes/{classId}",
+    "gaps": "配置视图与列表互斥，按既有教师绑定权限",
+    "status": "未验收",
+    "implementationStatus": "部分实现，未通过逐屏像素验收"
+  },
+  "04-01": {
+    "route": "/pages/organization-class-detail/organization-class-detail",
+    "viewState": "tab=students",
+    "api": "GET /students/organization-relationships",
+    "gaps": "仅当前班级真实成员；全机构独立学员列表/筛选尚未实现",
+    "status": "未验收",
+    "implementationStatus": "部分实现，未通过逐屏像素验收"
+  },
+  "04-02": {
+    "route": "/pages/organization-students/organization-students",
+    "viewState": "mode=TRANSFER",
+    "api": "GET /students/organization-relationships; /students/organization-relationship-classes; POST /students/{id}/class-transfers",
+    "gaps": "现有独立转班表单，真实范围候选",
+    "status": "未验收",
+    "implementationStatus": "部分实现，未通过逐屏像素验收"
+  },
+  "04-03": {
+    "route": "/pages/organization-students/organization-students",
+    "viewState": "mode=DEACTIVATE",
+    "api": "POST /students/{id}/organization-deactivations",
+    "gaps": "转出原因与真实确认，独立成功页未实现",
+    "status": "未验收",
+    "implementationStatus": "部分实现，未通过逐屏像素验收"
+  },
+  "04-04": {
+    "route": "/pages/organization-members/organization-members",
+    "viewState": "side=CANDIDATES",
+    "api": "GET /organizations/{id}/member-picker; POST /organizations/{id}/members:associate",
+    "gaps": "现有候选关联支持真实组织成员；原图微信/邮箱/密码关联成长账号多步骤未实现",
+    "status": "未验收",
+    "implementationStatus": "部分实现，未通过逐屏像素验收"
+  },
+  "04-05": {
+    "route": "/pages/organization-members/organization-members",
+    "viewState": "side=MEMBERS;selected=<real>",
+    "api": "GET /organizations/{id}/members; POST /organizations/{id}/administrators:assign; /administrators:revoke; /members:remove",
+    "gaps": "真实设管理员/撤销/移除权限；原图独立角色配置页未实现",
+    "status": "未验收",
+    "implementationStatus": "部分实现，未通过逐屏像素验收"
+  },
+  "04-06": {
+    "route": "/pages/organization-overview/organization-overview",
+    "viewState": "OrganizationOwnerTransfer selected organization",
+    "api": "GET /organization-onboarding/organizations/{id}/owner-transfer-options; POST /owner-transfer",
+    "gaps": "真实owner与options校验，当前已验证组织限定",
+    "status": "未验收",
+    "implementationStatus": "部分实现，未通过逐屏像素验收"
+  },
+  "04-07": {
+    "route": "/pages/institution-enrollment/institution-enrollment",
+    "viewState": "parent=false;tab=invite",
+    "api": "POST /institution-enrollment/invitations",
+    "gaps": "真实InvitationQrCode，扫码内容为接口真实inviteCode；未伪造分享海报",
+    "status": "未验收",
+    "implementationStatus": "部分实现，未通过逐屏像素验收"
+  },
+  "04-08": {
+    "route": "/pages/institution-enrollment/institution-enrollment",
+    "viewState": "parent=false;tab=requests",
+    "api": "GET /institution-enrollment/requests; POST /institution-enrollment/requests/{id}/approve; /reject",
+    "gaps": "真实申请审核及拒绝原因，原图独立详情未拆分",
+    "status": "未验收",
+    "implementationStatus": "部分实现，未通过逐屏像素验收"
+  },
+  "04-09": {
+    "route": "/pages/attendance/attendance",
+    "viewState": "mode=record|list;detail=<real>",
+    "api": "attendance API roster/list/create/detail/correct",
+    "gaps": "真实点名/记录/更正，确认与详情现有viewstate；无原图虚构人数",
+    "status": "未验收",
+    "implementationStatus": "部分实现，未通过逐屏像素验收"
+  },
+  "04-10": {
+    "route": "/pages/exception-reports/exception-reports",
+    "viewState": "creating=false|true;handlingId=<real>",
+    "api": "GET /exception-reports; /exception-reports/{id}; POST /exception-reports; /exception-reports/{id}/handle",
+    "gaps": "真实报备/处理，新建与列表互斥；详情仍列表内处理",
+    "status": "未验收",
+    "implementationStatus": "部分实现，未通过逐屏像素验收"
+  },
+  "06-05": {
+    "route": "/pages/parent-rewards/parent-rewards",
+    "viewState": "tab=rewards;editing=false;rewardFilter=ALL|ONLINE|OFFLINE",
+    "api": "GET /parent-rewards/students; /parent-rewards/students/{id}; PUT /parent-rewards/{id}",
+    "gaps": "原图实际奖励库管理，非兑换确认。当前页筛选真实记录，分页total仍全部；库存/图片/分类DTO缺失，不伪造。",
+    "status": "未验收",
+    "implementationStatus": "已有部分真实视图，未通过原型逐屏验收"
+  },
+  "06-06": {
+    "route": "/pages/parent-rewards/parent-rewards",
+    "viewState": "tab=rewards;editing=true;editingId=null",
+    "api": "POST /parent-rewards/students/{id}",
+    "gaps": "原图实际新增奖励，现有独立编辑视图。仅真实name/points/description/expiry/status；图片、库存、分类不受当前DTO支持。",
+    "status": "未验收",
+    "implementationStatus": "已有部分真实视图，未通过原型逐屏验收"
+  },
+  "06-07": {
+    "route": "/pages/parent-rewards/parent-rewards",
+    "viewState": "tab=exchanges;exchangeFilter=PENDING_APPROVAL|PENDING_VERIFICATION|VERIFIED|REJECTED|ALL;verification=<real>",
+    "api": "GET /parent-reward-exchanges/students/{id}; POST /parent-reward-exchanges/{id}/approve|reject|verify",
+    "gaps": "当前页筛选，非全部状态计数；主监护+精确审核permission可操作。核销已有独立确认视图。奖励图片/学班资料缺失。",
+    "status": "未验收",
+    "implementationStatus": "已有部分真实视图，未通过原型逐屏验收"
+  },
+  "07-01": {
+    "route": "/pages/parent-relationships/parent-relationships",
+    "viewState": "relationship=<real>;invitationMode=SECONDARY|TRANSFER",
+    "api": "GET /parent-relationships/students; /students/{id}/parent-relationships; POST /students/{id}/secondary-parent-invitations",
+    "gaps": "可读真实主副监护伙伴，非原图全陪伴者分类列表。称谓、陪伴天数、真实头像DTO缺失；不伪造。",
+    "status": "未验收",
+    "implementationStatus": "已有部分真实视图，未通过原型逐屏验收"
+  },
+  "07-02": {
+    "route": "/pages/parent-children/parent-children",
+    "viewState": "editing=false;detail=null;created=null",
+    "api": "GET /students; /students/{id}; POST /students",
+    "gaps": "真实孩子列表/详情/新增。原图性别、年龄、学校班级、陪伴天数未由当前Child DTO提供。",
+    "status": "未验收",
+    "implementationStatus": "已有部分真实视图，未通过原型逐屏验收"
+  },
+  "07-03": {
+    "route": "/pages/parent-relationships/parent-relationships",
+    "viewState": "relationship=<real>;issuedInvitation=<server>;scannerVisible=true",
+    "api": "GET /students/{id}/parent-relationships; POST invitations; recipient POST /parent-relationship-invitations/{id}/acceptance|rejection",
+    "gaps": "当前主副监护关系与真实邀请二维码存在；没有已发/已收邀请列表、失效关系列表API，未冒充原图独立关系列表。扫码受邀手机号OTP仍验证。",
+    "status": "未验收",
+    "implementationStatus": "已有部分真实视图，未通过原型逐屏验收"
+  }
+}

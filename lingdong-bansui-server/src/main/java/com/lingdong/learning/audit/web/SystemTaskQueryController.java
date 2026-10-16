@@ -38,9 +38,10 @@ public class SystemTaskQueryController {
     public record Page(List<Response> items,int page,int pageSize,long total) { }
     public record Response(String id,String code,SystemTaskType type,String title,String description,
             ImpactScope impactScope,SystemTaskStatus status,String submittedBy,LocalDateTime submittedAt,
-            String reviewedBy,LocalDateTime reviewedAt,String reviewComment,LocalDateTime createdAt,LocalDateTime updatedAt){
+            String reviewedBy,LocalDateTime reviewedAt,String reviewComment,LocalDateTime createdAt,LocalDateTime updatedAt,String submittedById,String reviewedById){
         static Response from(SystemTask task,Function<Long,String> nameOf){return new Response(task.id().toString(),task.code(),task.type(),task.title(),task.description(),
                 task.impactScope(),task.status(),nameOf.apply(task.submittedBy()),task.submittedAt(),
-                nameOf.apply(task.reviewedBy()),task.reviewedAt(),task.reviewComment(),task.createdAt(),task.updatedAt());}
+                nameOf.apply(task.reviewedBy()),task.reviewedAt(),task.reviewComment(),task.createdAt(),task.updatedAt(),
+                task.submittedBy()==null?null:task.submittedBy().toString(),task.reviewedBy()==null?null:task.reviewedBy().toString());}
     }
 }

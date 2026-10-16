@@ -1,0 +1,349 @@
+{
+  "version": 1,
+  "date": "2026-10-09",
+  "canonicalRule": "menu.code and menu.permissionCode must equal the canonical permission; legacy actionKey is only a frontend identifier mapped to the canonical code",
+  "actionKeyToCanonicalPermission": {
+    "organizations.members.query": "ORG_MEMBER_READ",
+    "organizations.members.add": "ORG_MEMBER_ASSOCIATE",
+    "organizations.member-picker.save": "ORG_MEMBER_ASSOCIATE",
+    "organizations.member-picker.query": "ORG_MEMBER_ASSOCIATE",
+    "organizations.members.dissociate": "ORG_MEMBER_REMOVE",
+    "organizations.members.add-admin": "ORG_ADMIN_ASSIGN",
+    "organizations.members.promote": "ORG_ADMIN_ASSIGN",
+    "organizations.admin-picker.save": "ORG_ADMIN_ASSIGN",
+    "organizations.admin-picker.query": "ORG_ADMIN_ASSIGN",
+    "organizations.members.revoke-admin": "ORG_ADMIN_REVOKE",
+    "users.edit.save": "IAM_USER_UPDATE"
+  },
+  "api": [
+    {
+      "method": "GET",
+      "path": "/api/v1/organizations/{organizationId}/members",
+      "permission": "ORG_MEMBER_READ"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/organizations/{organizationId}/member-picker?administrator=false",
+      "permission": "ORG_MEMBER_ASSOCIATE"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/organizations/{organizationId}/member-picker?administrator=true",
+      "permission": "ORG_ADMIN_ASSIGN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/organizations/{organizationId}/members:associate",
+      "permission": "ORG_MEMBER_ASSOCIATE"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/organizations/{organizationId}/members:remove",
+      "permission": "ORG_MEMBER_REMOVE"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/organizations/{organizationId}/administrators:assign",
+      "permission": "ORG_ADMIN_ASSIGN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/organizations/{organizationId}/administrators:revoke",
+      "permission": "ORG_ADMIN_REVOKE"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/roles/{roleId}/user-picker",
+      "permission": "IAM_USER_ROLE_ASSIGN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/roles/{roleId}/users",
+      "permission": "IAM_USER_ROLE_ASSIGN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/users/{id}/role-associations",
+      "permission": "IAM_USER_ROLE_ASSIGN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/users/{id}/roles:batch",
+      "permission": "IAM_USER_ROLE_ASSIGN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/users/{id}/roles:revoke",
+      "permission": "IAM_USER_ROLE_ASSIGN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/users/{id}/organization-edit",
+      "permission": "IAM_USER_UPDATE"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/users/{id}",
+      "permission": "IAM_USER_UPDATE"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/users/{id}/organizations",
+      "permission": "ORG_MEMBER_ASSOCIATE"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/organizations/{organizationId}/member-relations?administrator=false",
+      "permission": "ORG_MEMBER_ASSOCIATE"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/organizations/{organizationId}/member-relations?administrator=true",
+      "permission": "ORG_ADMIN_ASSIGN"
+    }
+  ],
+  "legacyEndpoints": [
+    {
+      "method": "POST",
+      "path": "/api/v1/organizations/{organizationId}/members:batch",
+      "permissionByAdministrator": {
+        "false": "ORG_MEMBER_ASSOCIATE",
+        "true": "ORG_ADMIN_ASSIGN"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/organizations/{organizationId}/members:revoke",
+      "permissionByAdministrator": {
+        "false": "ORG_MEMBER_REMOVE",
+        "true": "ORG_ADMIN_REVOKE"
+      }
+    }
+  ],
+  "requiredConditions": [
+    "Enabled actor and permission; explicit DENY has priority",
+    "Actual target organization and visible user scope",
+    "Organization/user type and operational status validation",
+    "Administrator role and membership are internal atomic side effects, no extra IAM action required",
+    "User editing preserves business relation locks, at least one organization, optimistic expectedOrganizationIds snapshot",
+    "Global data-scope endpoints retain IAM_DATA_SCOPE_CONFIGURE"
+  ],
+  "verification": {
+    "profile": "test",
+    "database": "isolated H2",
+    "flywayTarget": 108,
+    "limitation": "V109 and later migrations are not verified by this H2 run; canonical test permissions are seeded within rollback-only test transaction",
+    "latestBatch": "New tests added, not executed per root instruction to avoid concurrent Maven. XML parsed successfully; root final compile/test required.",
+    "featureSingleActionTests": "FeatureManagementSingleActionTest added (4 cases), not run; root final verification."
+  },
+  "lookups": [
+    {
+      "method": "GET",
+      "path": "/api/v1/users/creation-organizations",
+      "query": {
+        "type": "optional STUDENT/FAMILY/PLATFORM/ORGANIZATION"
+      },
+      "permission": "IAM_USER_CREATE",
+      "response": "array {id,parentId,name,typeCode,disabled}, all identifiers strings"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/users/scope-organizations",
+      "query": {
+        "permission": "required exact action"
+      },
+      "supportedActions": [
+        "IAM_USER_LIST",
+        "IAM_USER_ROLE_ASSIGN",
+        "IAM_USER_UPDATE",
+        "ORG_MEMBER_ASSOCIATE",
+        "ORG_ADMIN_ASSIGN"
+      ],
+      "response": "array {id,parentId,name,typeCode,disabled}; only actually scoped nodes, missing parent is a local tree root"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/classes/lookup",
+      "query": {
+        "permission": "required exact action",
+        "kind": "SCHOOL/CAMPUS/GRADE/CLASS (default CLASS)",
+        "schoolOrganizationId": "optional",
+        "gradeOrganizationId": "optional",
+        "campusOrganizationId": "optional"
+      },
+      "supportedActions": [
+        "IAM_USER_CREATE",
+        "IAM_USER_UPDATE",
+        "CLASS_READ",
+        "CLASS_CREATE",
+        "CLASS_UPDATE",
+        "CLASS_STATUS_CHANGE",
+        "STUDENT_CREATE",
+        "STUDENT_CLASS_ASSIGN",
+        "STUDENT_IMPORT_EXECUTE",
+        "TEACHER_READ",
+        "TEACHER_CREATE",
+        "TEACHER_UPDATE",
+        "TEACHER_STATUS_CHANGE",
+        "TEACHER_PASSWORD_RESET",
+        "TEACHER_BATCH_MANAGE",
+        "TEACHER_CLASS_ASSIGN",
+        "LEARNING_TASK_CREATE",
+        "ATTENDANCE_READ",
+        "ATTENDANCE_RECORD"
+      ],
+      "response": "existing ClassOrganizationResponse[]",
+      "boundary": "only actually scoped classes; ancestor school/grade/campus metadata does not grant descendant/sibling access"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/organization-teachers/lookup",
+      "query": {
+        "permission": "required exact action",
+        "schoolId": "optional",
+        "classOrganizationId": "optional",
+        "keyword": "optional",
+        "page": "default 1",
+        "pageSize": "default 20"
+      },
+      "supportedActions": [
+        "TEACHER_READ",
+        "TEACHER_UPDATE",
+        "TEACHER_STATUS_CHANGE",
+        "TEACHER_PASSWORD_RESET",
+        "TEACHER_BATCH_MANAGE",
+        "TEACHER_CLASS_ASSIGN",
+        "LEARNING_TASK_CREATE",
+        "IAM_USER_ROLE_ASSIGN"
+      ],
+      "response": "{items:[{id,displayName,schoolId,schoolName,classOrganizationIds}],page,pageSize,total}; identifiers strings; enabled teachers only"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/teachers/{teacherUserId}/classes",
+      "query": {
+        "permission": "LEARNING_TASK_CREATE (default) or TEACHER_CLASS_ASSIGN"
+      },
+      "supportedActions": [
+        "LEARNING_TASK_CREATE",
+        "TEACHER_CLASS_ASSIGN"
+      ],
+      "response": "existing TeacherClassResponse[]"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/feature-management/toggle-options",
+      "query": {
+        "permission": "required exact FEATURE_TOGGLE_READ/MANAGE/REVIEW"
+      },
+      "supportedActions": [
+        "FEATURE_TOGGLE_READ",
+        "FEATURE_TOGGLE_MANAGE",
+        "FEATURE_TOGGLE_REVIEW"
+      ],
+      "response": "existing ToggleView[]",
+      "boundary": "no additional READ required; domain management intentionally not gated by feature toggles to avoid lockout"
+    }
+  ],
+  "userCreation": {
+    "action": "IAM_USER_CREATE",
+    "internalSideEffects": [
+      "fixed default SELF role for PLATFORM_USER/ORG_MEMBER",
+      "STUDENT default profile/credential/point account and initial selected class",
+      "TEACHER independent occupational profile and initial selected class"
+    ],
+    "notAdditionalActions": [
+      "STUDENT_CREATE",
+      "STUDENT_CLASS_ASSIGN",
+      "TEACHER_CREATE",
+      "TEACHER_CLASS_ASSIGN"
+    ],
+    "scope": "target organization actually accessible, type/hierarchy/enrollment constraints preserved; no granting broader scope to actor",
+    "defaultRoleRequest": "only ORGANIZATION+TEACHER special choice allowed; no SYS_ADMIN/SYS_AUDITOR user-supplied default"
+  },
+  "teacherIdentity": {
+    "class": "com.lingdong.learning.teacher.application.TeacherIdentityService",
+    "methods": [
+      "isTeacher(Long)",
+      "requireTeacher(Long)",
+      "hasProfile(Long)",
+      "register(Long)"
+    ],
+    "table": "edu_teacher_profile(user_id PK,status,created_at,updated_at)",
+    "migrationOwnedByRoot": "V117__teacher_identity_profile.sql",
+    "runtimeFallback": false,
+    "testingLimitation": "Flyway target108 has no teacher_profile table; root must initialize new schema/profile fixtures or run V117-compatible test migrations"
+  },
+  "approvalAudit": [
+    {
+      "module": "SystemTaskApplicationService",
+      "finding": "same domain action rechecked; no hardcoded SYS_ADMIN/SYS_AUDITOR role requirement; preserve submitter-only draft, no self-review, pending-state transition"
+    },
+    {
+      "module": "FeatureManagementService",
+      "finding": "Fixed: submit only FEATURE_TOGGLE_MANAGE; review and review queue only FEATURE_TOGGLE_REVIEW; ordinary history retains FEATURE_TOGGLE_READ; toggle-options uses exact specified action. Domain tasks recheck same domain code, no generic extra permission. Self-review, domain, version, location publish boundary preserved.",
+      "locations": [
+        "FeatureManagementService.java:42-68",
+        "FeatureManagementController.java:23-34"
+      ]
+    },
+    {
+      "module": "CacheOperationApplicationService",
+      "finding": "CACHE_MANAGE/REVIEW checks repeat same domain action in SystemTask; not extra permission; queue REVIEW, history READ. Maintain risk classification and no self-review."
+    },
+    {
+      "module": "InterfaceServiceApplicationService",
+      "finding": "MANAGE/REVIEW checks repeat corresponding SystemTask action; no runtime SYS_ADMIN role gate (SYSTEM_ADMIN_ROLE constant unused). listServices/details/logs still READ; writer/reviewer lookup UI may need scoped read dependency/selector. Preserve owner existence, scope syntax and task state."
+    }
+  ],
+  "roleAssociationIdentity": {
+    "service": "RoleIdentityCompatibilityService.requireCompatible(userId,roleId)",
+    "entryPoints": [
+      "UserAccess.assignAuthorizedRole",
+      "UserAccess.batchAssignRole",
+      "UserRoleAssociationService.change(remove=false)"
+    ],
+    "rule": "existing ALLOW permission assignments checked using availability.identityReason(permission,userId,candidateRoleCode); role/grants locked in transaction",
+    "ignoredConditions": [
+      "feature toggle",
+      "menu status",
+      "permission enabled status",
+      "current scope before granting candidate role"
+    ],
+    "unchanged": [
+      "remove associations",
+      "trusted fixed default-role provisioning"
+    ],
+    "tests": [
+      "RoleIdentityCompatibilityServiceTest",
+      "UserRoleAssociationServiceTest"
+    ]
+  },
+  "trustedInitialization": {
+    "entryPoints": [
+      "TeacherIdentityService.registerCreatedIdentity(actor,user)",
+      "TeacherClassAssignmentService.assignCreatedTeacher",
+      "ManagedStudentProfileService.validateInitialPlacement/completeCreatedIdentity"
+    ],
+    "action": "IAM_USER_CREATE",
+    "flags": "does not require or enable TEACHER_MANAGEMENT/CLASS_MANAGEMENT/STUDENT_ORGANIZATION_RELATIONSHIP solely for fresh identity initial relationships",
+    "boundaries": [
+      "actual target scope",
+      "enabled entity and correct identity/type",
+      "same-school/hierarchy and enrollment consistency",
+      "trusted entry points have no independent HTTP mapping"
+    ],
+    "independentOperations": "original module feature checks remain on direct teacher/class APIs and student profile repair",
+    "lookup": "uses exact calling action availability, not blanket teacher/class management feature"
+  },
+  "teacherSchoolIdentityScope": {
+    "rule": "CLASS role provisioned at SCHOOL/TRAINING root resolves only operational ACTIVE teaching classes in that exact institution with an enabled teacher profile; resulting class paths still intersect actual user membership paths",
+    "unchanged": [
+      "HTTP role organization type checks",
+      "normal explicit CLASS role roots",
+      "actor permission grants",
+      "ALL and other declared role scopes"
+    ],
+    "test": "TeacherSchoolIdentityClassScopeTest (5 cases), not executed by worker"
+  }
+}

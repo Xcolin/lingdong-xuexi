@@ -63,12 +63,16 @@ class LearningTaskOptionControllerTest {
         User teacher = createUser("task_option_teacher", "任务候选教师");
         Organization school = organizationApplicationService.createOrganization(
                 new CreateOrganizationCommand("TASK_OPTION_SCHOOL", "任务候选学校", "SCHOOL", null, 10));
+        Organization schoolGrade = organizationApplicationService.createOrganization(
+                new CreateOrganizationCommand("TASK_OPTION_CLASS_GRADE", "测试年级", "GRADE", school.id(), 10));
         Organization classOrganization = organizationApplicationService.createOrganization(
-                new CreateOrganizationCommand("TASK_OPTION_CLASS", "任务候选一班", "CLASS", school.id(), 10));
+                new CreateOrganizationCommand("TASK_OPTION_CLASS", "任务候选一班", "CLASS", schoolGrade.id(), 10));
         Organization outsideSchool = organizationApplicationService.createOrganization(
                 new CreateOrganizationCommand("TASK_OPTION_OUTSIDE_SCHOOL", "候选范围外学校", "SCHOOL", null, 20));
+        Organization outsideSchoolGrade = organizationApplicationService.createOrganization(
+                new CreateOrganizationCommand("TASK_OPTION_OUTSIDE_CLASS_GRADE", "测试年级", "GRADE", outsideSchool.id(), 10));
         organizationApplicationService.createOrganization(
-                new CreateOrganizationCommand("TASK_OPTION_OUTSIDE_CLASS", "候选范围外班级", "CLASS", outsideSchool.id(), 10));
+                new CreateOrganizationCommand("TASK_OPTION_OUTSIDE_CLASS", "候选范围外班级", "CLASS", outsideSchoolGrade.id(), 10));
 
         userAccessApplicationService.associateWithOrganization(
                 new AssociateUserWithOrganizationCommand(organizationAdministrator.id(), school.id()));
@@ -131,7 +135,7 @@ class LearningTaskOptionControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].id").value(classOrganization.id().toString()))
-                .andExpect(jsonPath("$[0].name").value("任务候选一班"));
+                .andExpect(jsonPath("$[0].name").value("任务候选学校·测试年级·任务候选一班"));
 
         mockMvc.perform(get("/api/v1/learning-task-options/students")
                         .param("sourceType", "ORGANIZATION")
@@ -167,8 +171,8 @@ class LearningTaskOptionControllerTest {
                 .andExpect(jsonPath("$.length()").value(0));
 
         jdbcTemplate.update(
-                "update sys_organization set effective_status = 'DISABLED' where id in (?, ?)",
-                school.id(), classOrganization.id());
+                "update sys_organization set effective_status = 'DISABLED' where id in (?, ?, ?)",
+                school.id(), schoolGrade.id(), classOrganization.id());
         sqlSession.clearCache();
 
         mockMvc.perform(get("/api/v1/learning-task-options/organizations")

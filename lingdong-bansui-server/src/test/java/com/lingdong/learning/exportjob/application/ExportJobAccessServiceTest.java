@@ -34,6 +34,8 @@ class ExportJobAccessServiceTest {
     private UserRoleMapper userRoleMapper;
     private UserMapper userMapper;
     private GrowthPointQueryMapper growthPointQueryMapper;
+    private final com.lingdong.learning.auth.infrastructure.persistence.ParentAuthenticationMapper profiles=mock(com.lingdong.learning.auth.infrastructure.persistence.ParentAuthenticationMapper.class);
+    private com.lingdong.learning.auth.application.ParentActorAccessService parentActors;
     private ExportJobAccessService service;
 
     @BeforeEach
@@ -43,9 +45,13 @@ class ExportJobAccessServiceTest {
         userRoleMapper = mock(UserRoleMapper.class);
         userMapper = mock(UserMapper.class);
         growthPointQueryMapper = mock(GrowthPointQueryMapper.class);
+        parentActors=new com.lingdong.learning.auth.application.ParentActorAccessService(userMapper,profiles,userRoleMapper);
+        when(profiles.findProfileByUserId(USER_ID)).thenReturn(mock(com.lingdong.learning.auth.application.ParentProfile.class));
+        when(userRoleMapper.hasAnyEnabledRole(USER_ID)).thenReturn(true);
         service = new ExportJobAccessService(
                 featureAccessService, permissionDecisionService, userRoleMapper,
                 userMapper, growthPointQueryMapper);
+        org.springframework.test.util.ReflectionTestUtils.setField(service,"parentActors",parentActors);
         when(userMapper.findById(USER_ID)).thenReturn(enabledUser());
     }
 
@@ -67,6 +73,22 @@ class ExportJobAccessServiceTest {
 
         assertThatThrownBy(() -> service.requireOrdinaryCreate(USER_ID, STUDENT_ID + 1))
                 .isInstanceOf(SystemOperationAccessDeniedException.class);
+    }
+
+    @Test void familyProfileAndPrimaryRelationCannotBeReplacedByParentRoleName() {
+        allow("EXPORT_JOB_CREATE");allow("GROWTH_POINT_READ_CHILD");
+        when(growthPointQueryMapper.findPrimaryStudentsByParentUserId(USER_ID)).thenReturn(List.of(new GrowthPointStudentOptionRow(STUDENT_ID,"child")));
+        when(userRoleMapper.hasRoleCode(USER_ID,"PARENT")).thenReturn(true);
+        when(userMapper.findById(USER_ID)).thenReturn(new User(USER_ID,"platform","platform",null,null,UserType.PLATFORM,UserStatus.ENABLED,null,null));
+        assertThatThrownBy(() -> service.requireOrdinaryCreate(USER_ID,STUDENT_ID)).isInstanceOf(SystemOperationAccessDeniedException.class);
+    }
+    @Test void mixedRoleActualParentExportsRewardsWithDeclaredReadDependency() {
+        allow("REWARD_EXCHANGE_EXPORT");allow("REWARD_EXCHANGE_READ");
+        when(userRoleMapper.hasRoleCode(USER_ID,"SYS_AUDITOR")).thenReturn(true);
+        when(growthPointQueryMapper.findPrimaryStudentsByParentUserId(USER_ID)).thenReturn(List.of(new GrowthPointStudentOptionRow(STUDENT_ID,"child")));
+        assertThatCode(() -> service.requireRewardExchangeExport(USER_ID,STUDENT_ID)).doesNotThrowAnyException();
+        when(permissionDecisionService.isAllowed(USER_ID,PermissionClient.WEB,"REWARD_EXCHANGE_READ")).thenReturn(false);
+        assertThatThrownBy(() -> service.requireRewardExchangeExport(USER_ID,STUDENT_ID)).isInstanceOf(SystemOperationAccessDeniedException.class);
     }
 
     @Test
@@ -216,6 +238,7 @@ class ExportJobAccessServiceTest {
         var json=new com.fasterxml.jackson.databind.ObjectMapper();
         service=new ExportJobAccessService(featureAccessService,permissionDecisionService,userRoleMapper,
                 userMapper,growthPointQueryMapper,query,json);
+        org.springframework.test.util.ReflectionTestUtils.setField(service,"parentActors",parentActors);
         allow("SYSTEM_TASK_EXPORT");allow("EXPORT_JOB_READ");
         var cache=com.lingdong.learning.audit.application.SystemTaskType.CACHE_CLEAR;
         var organization=com.lingdong.learning.audit.application.SystemTaskType.ORGANIZATION_MOVE;
@@ -244,6 +267,7 @@ class ExportJobAccessServiceTest {
         var json = new com.fasterxml.jackson.databind.ObjectMapper();
         service = new ExportJobAccessService(featureAccessService, permissionDecisionService, userRoleMapper,
                 userMapper, growthPointQueryMapper, query, json);
+        org.springframework.test.util.ReflectionTestUtils.setField(service,"parentActors",parentActors);
         allow("SYSTEM_TASK_EXPORT"); allow("EXPORT_JOB_READ");
         var cache = com.lingdong.learning.audit.application.SystemTaskType.CACHE_CLEAR;
         var organization = com.lingdong.learning.audit.application.SystemTaskType.ORGANIZATION_MOVE;

@@ -202,9 +202,10 @@ export function getParentAuthContext(): Promise<ParentAuthContext> {
 }
 
 export function issueParentSmsCode(mobile: string): Promise<{ expiresAt: string; retryAfterSeconds: number }> {
-  return request('/auth/parent-sms-codes', {
+  return request('/auth/login-sms-codes', {
     method: 'POST',
-    data: { mobile, purpose: 'REGISTER_OR_LOGIN', clientType: 'MINIAPP' }
+    timeoutMs: 40000,
+    data: { mobile, clientType: 'MINIAPP' }
   });
 }
 
@@ -248,10 +249,8 @@ export function loginParentBySms(payload: {
   code: string;
   deviceId: string;
   deviceName: string;
-  agreementAccepted: boolean;
-  agreementVersion: string;
 }): Promise<ParentSessionResult> {
-  return request<ParentSessionResult>('/auth/parent-sessions/sms', {
+  return request<ParentSessionResult>('/auth/sessions/sms', {
     method: 'POST',
     data: { ...payload, clientType: 'MINIAPP' }
   });

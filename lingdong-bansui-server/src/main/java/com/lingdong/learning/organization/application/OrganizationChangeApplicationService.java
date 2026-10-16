@@ -38,6 +38,7 @@ import java.util.Objects;
 /** 协调高风险组织变更申请与系统任务审核状态机。 */
 @Service
 public class OrganizationChangeApplicationService {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(OrganizationChangeApplicationService.class);
     private final com.lingdong.learning.datascope.application.OrganizationDataScopeService scopes;
     private final com.lingdong.learning.permission.application.PermissionDecisionService decisions;
     private final OrganizationMapper organizationMapper;
@@ -106,6 +107,12 @@ public class OrganizationChangeApplicationService {
         }
         if (command.changeType() == OrganizationChangeType.MOVE) {
             validateMoveTargetAtSubmission(organization, command.targetParentId());
+        }
+        // 删除申请在提交时即校验业务引用，避免审核通过后才发现无法执行；专用异常向前端透出真实原因。
+        if (command.changeType() == OrganizationChangeType.DELETE
+                && organizationMapper.countDeleteReferences(organization.id()) > 0) {
+            throw new OrganizationChangeExecutionException(
+                    "组织存在下级节点或业务引用（成员、管理员、师生关系、任务等），不能删除", null);
         }
         if (organizationChangeMapper.existsActiveByOrganizationId(organization.id())) {
             throw new IllegalStateException("该组织已有待处理的高风险变更申请");
@@ -196,6 +203,12 @@ public class OrganizationChangeApplicationService {
         if (Objects.equals(before.parentId(), command.targetParentId())) {
             throw new IllegalStateException("组织已属于目标父级，同级顺序请使用排序接口");
         }
+        Organization target = organizationMapper.findById(command.targetParentId());
+        Organization oldSchool = OrganizationHierarchy.schoolOf(before,organizationMapper);
+        Organization newSchool = OrganizationHierarchy.schoolOf(target,organizationMapper);
+        if ((java.util.Set.of("CLASS","GRADE","CAMPUS").contains(before.typeCode()))
+                && oldSchool != null && newSchool != null && !oldSchool.id().equals(newSchool.id()))
+            throw new IllegalArgumentException("跨校移动请使用专门变更流程");
         OrganizationChange pendingMove = OrganizationChange.pending(
                 idGenerator.nextId(), null, before, OrganizationChangeType.MOVE,
                 command.targetParentId(), null);
@@ -259,6 +272,9 @@ public class OrganizationChangeApplicationService {
             return Objects.requireNonNull(effective, "组织变更生效失败");
         } catch (RuntimeException exception) {
             String failureReason = safeFailureReason(exception);
+            log.error("组织变更执行失败 taskId={} changeId={} type={} reason={} handler={}",
+                    change.taskId(), change.id(), change.changeType(), failureReason,
+                    exception.getClass().getName(), exception);
             failureTransaction.executeWithoutResult(status -> recordExecutionFailure(
                     change, auditorId, failureReason));
             throw new OrganizationChangeExecutionException(failureReason, exception);
@@ -302,9 +318,10 @@ public class OrganizationChangeApplicationService {
             throw new OrganizationVersionConflictException();
         }
         organizationMapper.disableDescendantEffectiveStatus(organization.id(), organization.path());
-        if ("CLASS".equals(organization.typeCode())) {
-            classTaskInvalidationService.invalidateUnfinishedAssignments(
-                    organization.id(), operatorUserId);
+        for (Organization node : organizationMapper.findSubtreeByPathForUpdate(organization.path())) {
+            if ("CLASS".equals(node.typeCode())) {
+                classTaskInvalidationService.invalidateUnfinishedAssignments(node.id(), operatorUserId);
+            }
         }
         return organizationMapper.findById(organization.id());
     }
@@ -314,6 +331,14 @@ public class OrganizationChangeApplicationService {
         validateMoveTarget(organization, targetParent);
         if (Objects.equals(organization.parentId(), targetParent.id())) {
             throw new IllegalStateException("组织已属于目标父级");
+        }
+        Organization oldSchool=OrganizationHierarchy.schoolOf(organization,organizationMapper);
+        Organization newSchool=OrganizationHierarchy.schoolOf(targetParent,organizationMapper);
+        if ((java.util.Set.of("CLASS","GRADE","CAMPUS").contains(organization.typeCode()))
+                && oldSchool != null && newSchool != null && !oldSchool.id().equals(newSchool.id())) {
+            for (Organization node : organizationMapper.findSubtreeByPathForUpdate(organization.path()))
+                if (organizationMapper.countMoveBusinessReferences(node.id()) > 0)
+                    throw new IllegalStateException("组织存在业务关系，不能跨校移动");
         }
         String targetScopeKey = "PARENT:" + targetParent.id();
         if (organizationMapper.existsByParentScopeAndNameExcludingId(
@@ -391,11 +416,17 @@ public class OrganizationChangeApplicationService {
         if (targetParent == null) {
             throw new ResourceNotFoundException("目标父级组织不存在");
         }
+        OrganizationHierarchy.requireParent(organization.typeCode(), targetParent, organizationMapper);
         if (organization.id().equals(targetParent.id())) {
             throw new IllegalArgumentException("组织不能移动到自身");
         }
         if (targetParent.path().startsWith(organization.path())) {
             throw new IllegalArgumentException("组织不能移动到自身后代");
+        }
+        if (OrganizationHierarchy.schoolOf(targetParent, organizationMapper) != null
+                && organizationMapper.findSubtreeByPathForUpdate(organization.path()).stream()
+                        .anyMatch(node -> OrganizationHierarchy.isInstitutionRoot(node))) {
+            throw new IllegalArgumentException("包含学校的组织子树不能移动到另一所学校内");
         }
         if (targetParent.status() != OrganizationStatus.ENABLED
                 || targetParent.effectiveStatus() != OrganizationEffectiveStatus.ENABLED) {
@@ -426,7 +457,12 @@ public class OrganizationChangeApplicationService {
     }
 
     private String safeFailureReason(RuntimeException exception) {
+        // 业务规则类异常保留真实原因供审核人与失败记录使用；其余归因为统一的条件变化提示。
         if (exception instanceof OrganizationVersionConflictException) {
+            return exception.getMessage();
+        }
+        if ((exception instanceof IllegalArgumentException || exception instanceof IllegalStateException)
+                && exception.getMessage() != null && !exception.getMessage().isBlank()) {
             return exception.getMessage();
         }
         return "组织变更条件已变化，请核对后重新申请";

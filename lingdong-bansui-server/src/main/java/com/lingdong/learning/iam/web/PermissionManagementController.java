@@ -39,6 +39,17 @@ public class PermissionManagementController {
         this.permissionAdministrationService = permissionAdministrationService;
     }
 
+    @RequirePermission("IAM_ROLE_PERMISSION_GRANT")
+    @GetMapping("/roles/{roleId}/permission-catalog")
+    public List<PermissionResponse> roleCatalog(@AuthenticationPrincipal AuthenticatedUser current,@PathVariable Long roleId) {
+        return permissionAdministrationService.roleCatalog(current.userId(),roleId);
+    }
+    @RequirePermission("IAM_USER_PERMISSION_CONFIGURE")
+    @GetMapping("/users/{userId}/permission-catalog")
+    public List<PermissionResponse> userCatalog(@AuthenticationPrincipal AuthenticatedUser current,@PathVariable Long userId) {
+        return permissionAdministrationService.userCatalog(current.userId(),userId);
+    }
+
     @RequirePermission("IAM_PERMISSION_READ")
     @GetMapping("/permissions")
     public List<PermissionResponse> listPermissions(@AuthenticationPrincipal AuthenticatedUser currentUser) {

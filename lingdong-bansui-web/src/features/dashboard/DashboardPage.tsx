@@ -1,3 +1,4 @@
+import { Button as PlainButton } from 'antd';
 import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { ViewportTable as Table } from '../../components/ViewportTable';
 import { useEffect, useState } from 'react';
@@ -92,7 +93,7 @@ export function DashboardPage({ currentUser, accountSecurityManagementEnabled, p
     <div className="page-stack">
       <div className="page-heading">
         <h1>工作台</h1>
-        {attendanceAvailable && <Button actionKey="dashboard.dashboard-page.1" icon={<ClipboardCheck size={16} />} onClick={onOpenAttendance}>考勤台账</Button>}
+        {attendanceAvailable && <PlainButton  icon={<ClipboardCheck size={16} />} onClick={onOpenAttendance}>考勤台账</PlainButton>}
       </div>
       {errorMessage && <Alert type="error" showIcon message={errorMessage} />}
       <ProCard className="content-panel" bordered={false}>
@@ -104,13 +105,13 @@ export function DashboardPage({ currentUser, accountSecurityManagementEnabled, p
             <Descriptions.Item label="角色"><Space wrap>{currentUser.roleCodes.map((role) => <Tag key={role}>{role}</Tag>)}</Space></Descriptions.Item>
           </Descriptions>
           <div className="identity-actions">
-            <Button actionKey="dashboard.dashboard-page.3" danger icon={<LogOut size={16} />} onClick={() => void authApi.signOutCurrent().finally(onSessionEnded)}>退出当前会话</Button>
+            <PlainButton  danger icon={<LogOut size={16} />} onClick={() => void authApi.signOutCurrent().finally(onSessionEnded)}>退出当前会话</PlainButton>
           </div>
         </div>
       </ProCard>
       <Tabs className="page-sections" items={[
-        ...(learningTaskManagementEnabled
-          && currentUser.permissionCodes.includes('TASK_ASSIGNMENT_REVIEW')
+        ...((currentUser.permissionCodes.includes('SYSTEM_TASK_READ') || (learningTaskManagementEnabled
+          && currentUser.permissionCodes.includes('TASK_ASSIGNMENT_REVIEW')))
           ? [{ key: 'reviews', label: '待审核任务', children: <DashboardTaskReviews key={currentUser.userId} userId={currentUser.userId} /> }] : []),
         ...(learningTaskManagementEnabled && currentUser.permissionCodes.includes('LEARNING_TASK_PROGRESS_READ')
           ? [{ key: 'activity', label: '活跃趋势', children: <OrganizationActivityTrend key={currentUser.userId} userId={currentUser.userId} /> }] : []),
@@ -123,25 +124,25 @@ export function DashboardPage({ currentUser, accountSecurityManagementEnabled, p
             rowKey="id"
             loading={loading}
             dataSource={events}
-            pagination={{ pageSize: 8, showSizeChanger: false, hideOnSinglePage: true }}
+            pagination={{}}
             locale={{ emptyText: '暂无安全事件' }}
             columns={[
               { title: '事件', key: 'eventType', render: (_, event) => eventTitle(event) },
               { title: '设备', dataIndex: 'deviceName', key: 'deviceName' },
               { title: '发生时间', dataIndex: 'occurredAt', key: 'occurredAt', render: formatTime },
               { title: '状态', key: 'status', width: 120, render: (_, event) => event.status === 'UNREAD'
-                ? <Button actionKey="dashboard.dashboard-page.4" type="link" onClick={() => void markEventRead(event.id)}>标记已读</Button>
+                ? <PlainButton  type="link" onClick={() => void markEventRead(event.id)}>标记已读</PlainButton>
                 : <Tag>已读</Tag> }
             ]}
           />
-          <div className="panel-footer"><Button actionKey="dashboard.dashboard-page.5" onClick={() => void markAllEventsRead()}>全部标记已读</Button></div>
+          <div className="panel-footer"><PlainButton  onClick={() => void markAllEventsRead()}>全部标记已读</PlainButton></div>
         </ProCard>) },
           { key: 'devices', label: '设备会话', children: (<ProCard className="content-panel" title="设备会话" bordered={false}>
           <Table<DeviceSession>
             rowKey="id"
             loading={loading}
             dataSource={devices}
-            pagination={{ pageSize: 8, showSizeChanger: false, hideOnSinglePage: true }}
+            pagination={{}}
             locale={{ emptyText: '暂无活动设备' }}
             columns={[
               { title: '设备名称', dataIndex: 'deviceName', key: 'deviceName' },
@@ -151,14 +152,14 @@ export function DashboardPage({ currentUser, accountSecurityManagementEnabled, p
                 title: '操作', key: 'action', width: 110,
                 render: (_, device) => device.current
                   ? <Tag color="green">当前设备</Tag>
-                  : <Popconfirm title="确认下线此设备？" onConfirm={() => void signOutDevice(device.id)}><Button actionKey="dashboard.dashboard-page.6" danger type="text" icon={<MonitorX size={16} />} aria-label={`下线 ${device.deviceName}`} /></Popconfirm>
+                  : <Popconfirm title="确认下线此设备？" onConfirm={() => void signOutDevice(device.id)}><PlainButton  danger type="text" icon={<MonitorX size={16} />} aria-label={`下线 ${device.deviceName}`} /></Popconfirm>
               }
             ]}
           />
-          <div className="panel-footer"><Popconfirm title="确认下线全部设备？" onConfirm={() => void signOutAllDevices()}><Button actionKey="dashboard.dashboard-page.7" danger>下线全部设备</Button></Popconfirm></div>
+          <div className="panel-footer"><Popconfirm title="确认下线全部设备？" onConfirm={() => void signOutAllDevices()}><PlainButton  danger>下线全部设备</PlainButton></Popconfirm></div>
         </ProCard>) }
         ] : []),
-        ...(parentAccountLifecycleEnabled && currentUser.roleCodes.includes('PARENT')
+        ...(parentAccountLifecycleEnabled && currentUser.permissionCodes.includes('PARENT_ACCOUNT_LIFECYCLE_MANAGE')
           ? [{ key: 'account', label: '账号设置', children: <ParentAccountLifecyclePanel onSessionEnded={onSessionEnded} /> }] : [])
       ]} />
     </div>
@@ -174,3 +175,4 @@ function eventTitle(event: AccountSecurityEvent): string {
 function toMessage(error: unknown): string {
   return error instanceof Error ? error.message : '请求未能完成';
 }
+

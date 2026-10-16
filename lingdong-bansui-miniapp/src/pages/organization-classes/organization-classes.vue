@@ -1,5 +1,5 @@
 <template>
-  <view class="page-shell">
+  <view class="prototype-workspace page-shell"><view class="prototype-section-header"><PrototypeIcon name="school" :size="22" /><text>{{formVisible ? (editingClass ? "班级详情" : "新增班级") : "班级列表"}}</text></view>
     <view class="mode-control">
       <button :class="{ active: mode === 'CLASSES' }" @tap="setMode('CLASSES')">班级维护</button>
       <button :class="{ active: mode === 'TEACHERS' }" @tap="setMode('TEACHERS')">教师班级</button>
@@ -7,7 +7,7 @@
 
     <view v-if="loading" class="state-text">正在加载</view>
     <template v-else-if="mode === 'CLASSES'">
-      <view class="action-band">
+      <view class="action-band"><button v-if="entryPermissions.includes('ORG_MEMBER_READ')" class="secondary-button" @tap="openMembers">组织成员</button><button v-if="entryPermissions.some(p=>['STUDENT_ENROLLMENT_INVITE_CREATE','STUDENT_ENROLLMENT_REVIEW'].includes(p))" class="secondary-button" @tap="openEnrollment">班级入学</button>
         <button class="secondary-button" @tap="openStudents">学员关系</button>
         <button class="primary-button" @tap="openCreate">新增班级</button>
       </view>
@@ -18,6 +18,10 @@
           <text class="field-label">所属学校</text>
           <picker :range="schoolLabels" :value="schoolIndex" @change="selectSchool">
             <view class="picker-value">{{ selectedSchoolLabel || '请选择所属学校' }}</view>
+          </picker>
+          <text class="field-label">所属年级</text>
+          <picker :range="gradeLabels" :value="gradeIndex" @change="selectGrade">
+            <view class="picker-value">{{ gradeLabels[gradeIndex] || '请选择所属年级' }}</view>
           </picker>
         </template>
         <text class="field-label">班级名称</text>
@@ -32,11 +36,11 @@
         </view>
       </view>
 
-      <view class="list-band">
+      <view v-if="!formVisible" class="list-band"><text class="class-meta">共 {{classes.length}} 个班级</text>
         <view v-for="item in classes" :key="item.id" class="class-row">
-          <view class="class-main">
+          <view class="class-badge"><PrototypeIcon name="people" :size="28"/></view><view class="class-main" @tap="openDetail(item)">
             <text class="class-name">{{ item.name }}</text>
-            <text class="class-meta">{{ schoolName(item.parentId) }} · 排序 {{ item.sortOrder }}</text>
+            <text class="class-meta">{{ item.schoolName || schoolName(item.schoolOrganizationId || item.parentId) }} · {{ item.gradeName || '待归属年级' }} · 排序 {{ item.sortOrder }}</text>
             <text class="class-code">{{ item.code }}</text>
           </view>
           <view class="row-actions">
@@ -72,8 +76,12 @@
 </template>
 
 <script setup lang="ts">
+import {classDetailRoute} from '@/models/class-detail';
+function openDetail(item:OrganizationClass){uni.navigateTo({url:classDetailRoute(item.id)});}
+import PrototypeIcon from '@/components/PrototypeIcon.vue';
 import { computed, ref } from 'vue';
-import { onShow } from '@dcloudio/uni-app';
+import { onShow,onHide,onUnload,onLoad } from '@dcloudio/uni-app';
+import {getOrganizationWorkbenchContext} from '@/api/organization-workbench';
 import { getMiniappCapabilities } from '@/api/capability';
 import { ApiError } from '@/api/http';
 import {
@@ -81,6 +89,7 @@ import {
   changeManagedClassStatus,
   createManagedClass,
   listManageableSchools,
+  listManageableGrades,
   listManagedClasses,
   listOrganizationTeachers,
   unbindOrganizationTeacher,
@@ -92,15 +101,19 @@ import { getOrganizationSession } from '@/session/organization-session';
 
 type PageMode = 'CLASSES' | 'TEACHERS';
 
+let requestedEdit='';onLoad(q=>{requestedEdit=typeof q?.editClassId==='string'?q.editClassId:'';});
 const mode = ref<PageMode>('CLASSES');
 const schools = ref<OrganizationClass[]>([]);
+const grades = ref<OrganizationClass[]>([]);
 const classes = ref<OrganizationClass[]>([]);
 const teachers = ref<OrganizationTeacherOption[]>([]);
+const entryPermissions=ref<string[]>([]);let entryEpoch=0;function clearEntries(){entryEpoch++;entryPermissions.value=[];}onHide(clearEntries);onUnload(clearEntries);onShow(async()=>{const s=getOrganizationSession(),n=++entryEpoch;entryPermissions.value=[];if(!s)return;try{const me=await getOrganizationWorkbenchContext(s.accessToken);if(n===entryEpoch&&getOrganizationSession()?.accessToken===s.accessToken)entryPermissions.value=me.permissionCodes;}catch{/* Existing page displays its own authorization error. */}});function openMembers(){uni.navigateTo({url:"/pages/organization-members/organization-members"});}function openEnrollment(){uni.navigateTo({url:"/pages/institution-enrollment/institution-enrollment"});}
 const loading = ref(true);
 const submitting = ref(false);
 const formVisible = ref(false);
 const editingClass = ref<OrganizationClass | null>(null);
 const schoolIndex = ref(-1);
+const gradeIndex = ref(-1);
 const className = ref('');
 const sortOrderText = ref('100');
 const teacherClassIndex = ref(-1);
@@ -109,6 +122,9 @@ const teacherIndex = ref(-1);
 const schoolLabels = computed(() => schools.value.map((item) => `${item.name}（${item.code}）`));
 const selectedSchool = computed(() => schools.value[schoolIndex.value] || null);
 const selectedSchoolLabel = computed(() => schoolLabels.value[schoolIndex.value] || '');
+const availableGrades = computed(() => grades.value.filter(item => item.parentId === selectedSchool.value?.id && item.effectiveStatus === 'ENABLED'));
+const gradeLabels = computed(() => availableGrades.value.map(item => item.name));
+const selectedGrade = computed(() => availableGrades.value[gradeIndex.value] || null);
 const activeClasses = computed(() => classes.value.filter((item) => item.status === 'ENABLED'));
 const teacherClassLabels = computed(() => activeClasses.value.map((item) => item.name));
 const selectedTeacherClass = computed(() => activeClasses.value[teacherClassIndex.value] || null);
@@ -130,6 +146,7 @@ onShow(async () => {
       return leavePage(false);
     }
     await loadClasses(session.accessToken);
+    if(requestedEdit){const target=classes.value.find(item=>item.id===requestedEdit);if(target&&getOrganizationSession()?.accessToken===session.accessToken)openEdit(target);requestedEdit='';}
   } catch (error) {
     if (error instanceof ApiError
         && (error.statusCode === 401 || error.statusCode === 403 || error.code === 'FEATURE_DISABLED')) {
@@ -149,6 +166,7 @@ function setMode(nextMode: PageMode): void {
 function openCreate(): void {
   editingClass.value = null;
   schoolIndex.value = -1;
+  gradeIndex.value = -1;
   className.value = '';
   sortOrderText.value = '100';
   formVisible.value = true;
@@ -168,6 +186,11 @@ function closeForm(): void {
 
 function selectSchool(event: { detail: { value: string } }): void {
   schoolIndex.value = Number(event.detail.value);
+  gradeIndex.value = -1;
+}
+
+function selectGrade(event: { detail: { value: string } }): void {
+  gradeIndex.value = Number(event.detail.value);
 }
 
 async function saveClass(): Promise<void> {
@@ -179,6 +202,7 @@ async function saveClass(): Promise<void> {
     return;
   }
   if (!editingClass.value && !selectedSchool.value) return showError('请选择所属学校');
+  if (!editingClass.value && !selectedGrade.value) return showError('请选择所属年级');
   if (!normalizedName) return showError('请输入班级名称');
   if (!Number.isInteger(sortOrder) || sortOrder < 0) return showError('排序必须是非负整数');
 
@@ -192,7 +216,7 @@ async function saveClass(): Promise<void> {
       uni.showToast({ title: '班级已更新', icon: 'success' });
     } else {
       await createManagedClass(
-        session.accessToken, selectedSchool.value!.id, normalizedName, sortOrder
+        session.accessToken, selectedSchool.value!.id, normalizedName, sortOrder, selectedGrade.value!.id
       );
       uni.showToast({ title: '班级已创建', icon: 'success' });
     }
@@ -280,8 +304,8 @@ async function updateTeacher(active: boolean): Promise<void> {
 }
 
 async function loadClasses(accessToken: string): Promise<void> {
-  [schools.value, classes.value] = await Promise.all([
-    listManageableSchools(accessToken), listManagedClasses(accessToken)
+  [schools.value, grades.value, classes.value] = await Promise.all([
+    listManageableSchools(accessToken), listManageableGrades(accessToken), listManagedClasses(accessToken)
   ]);
 }
 
@@ -319,41 +343,6 @@ function showConfirm(
 }
 </script>
 
-<style lang="scss" scoped>
-.page-shell { min-height: 100vh; padding: 28rpx 0 48rpx; box-sizing: border-box; background: #f4f7f5; }
-.mode-control { display: grid; grid-template-columns: 1fr 1fr; margin: 0 40rpx 28rpx; border: 2rpx solid #b8c7c0; border-radius: 10rpx; overflow: hidden; }
-.mode-control button { height: 72rpx; margin: 0; border-radius: 0; background: #ffffff; color: #52625b; font-size: 26rpx; line-height: 72rpx; }
-.mode-control button::after, button::after { border: 0; }
-.mode-control button.active { background: #167c5a; color: #ffffff; }
-.state-text { min-height: 360rpx; display: flex; align-items: center; justify-content: center; color: #708078; font-size: 28rpx; }
-.action-band { display: grid; grid-template-columns: 1fr 1fr; gap: 20rpx; margin: 0 40rpx 28rpx; }
-.action-band button { height: 76rpx; margin: 0; border-radius: 8rpx; font-size: 27rpx; }
-.secondary-button { border: 2rpx solid #167c5a; background: #ffffff; color: #167c5a; }
-.primary-button, .save-button, .bind-button { background: #167c5a; color: #ffffff; }
-.form-band { padding: 32rpx 40rpx 40rpx; border-top: 2rpx solid #dbe3df; border-bottom: 2rpx solid #dbe3df; background: #ffffff; }
-.form-title, .field-label, .class-name, .class-meta, .class-code { display: block; }
-.form-title { color: #1c2b28; font-size: 30rpx; font-weight: 700; }
-.field-label { margin: 28rpx 0 12rpx; color: #31413b; font-size: 26rpx; font-weight: 600; }
-.field-label.first { margin-top: 0; }
-.picker-value, .text-input { min-height: 84rpx; padding: 0 24rpx; box-sizing: border-box; border: 2rpx solid #cfd9d4; border-radius: 8rpx; color: #1c2b28; font-size: 27rpx; }
-.picker-value { display: flex; align-items: center; }
-.form-actions, .teacher-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 20rpx; margin-top: 36rpx; }
-.form-actions button, .teacher-actions button { height: 80rpx; margin: 0; border-radius: 8rpx; font-size: 27rpx; }
-.cancel-button { background: #eef2f0; color: #52625b; }
-.list-band { margin-top: 28rpx; border-top: 2rpx solid #dbe3df; border-bottom: 2rpx solid #dbe3df; background: #ffffff; }
-.class-row { padding: 28rpx 40rpx; border-top: 2rpx solid #edf1ef; }
-.class-row:first-child { border-top: 0; }
-.class-main { min-width: 0; }
-.class-name { color: #1c2b28; font-size: 30rpx; font-weight: 650; word-break: break-word; }
-.class-meta { margin-top: 10rpx; color: #52625b; font-size: 24rpx; }
-.class-code { margin-top: 8rpx; color: #87938d; font-size: 21rpx; word-break: break-all; }
-.row-actions { display: flex; align-items: center; gap: 14rpx; margin-top: 22rpx; }
-.status-text { margin-right: auto; font-size: 24rpx; font-weight: 600; }
-.status-text.enabled { color: #167c5a; }
-.status-text.disabled { color: #7b8781; }
-.row-button { width: 112rpx; height: 60rpx; margin: 0; padding: 0; border-radius: 8rpx; background: #eef2f0; color: #31413b; font-size: 24rpx; line-height: 60rpx; }
-.row-button.danger, .unbind-button { background: #fff1ef; color: #b42318; }
-.row-button.enable { background: #e9f5ef; color: #167c5a; }
-.empty-text { padding: 80rpx 40rpx; color: #87938d; font-size: 27rpx; text-align: center; }
-.teacher-form { margin-top: 0; }
+<style scoped>
+.prototype-workspace{min-height:calc(100vh - var(--window-top,0px));box-sizing:border-box;background:#f5f8f4;color:#182d26;padding:20rpx 28rpx 150rpx}.page-shell{padding-bottom:48rpx}.ld-topbar{display:flex;align-items:center;gap:18rpx;background:linear-gradient(120deg,#21664f,#0b4b3d);margin:-24rpx -24rpx 28rpx;padding:28rpx 26rpx 50rpx;color:white;border-radius:24rpx 24rpx 0 0}.ld-topbar-brand{display:flex;align-items:center;gap:18rpx;flex:1}.ld-topbar-name{display:block;font-size:32rpx;font-weight:650}.ld-topbar-meta{display:block;font-size:23rpx;opacity:.8;margin-top:8rpx}.ld-topbar-logo,.profile-avatar{width:80rpx;height:80rpx;border-radius:50%;background:#ffffff25;display:flex;align-items:center;justify-content:center}.profile-copy{flex:1}.ld-card,.ld-group,.form-band,.band,.search-band{background:#fff;border:1rpx solid #e5ece5;border-radius:24rpx;padding:24rpx;margin-bottom:20rpx}.workspace-intro{background:#fff;border-radius:24rpx;padding:30rpx 24rpx;margin-bottom:20rpx}.workspace-intro-title{display:block;font-size:34rpx;font-weight:700}.workspace-intro-caption{display:block;font-size:24rpx;color:#778078;margin-top:10rpx}.workspace-shortcuts{display:flex;flex-direction:column;gap:16rpx;margin-bottom:16rpx}.workspace-shortcut{display:flex;align-items:center;flex-wrap:wrap;text-align:left;background:#fff;border-radius:24rpx;padding:22rpx 26rpx;font-size:30rpx;font-weight:600;color:#182d26;min-height:120rpx}.workspace-shortcut>text{width:100%;padding-left:80rpx;font-size:23rpx;font-weight:400;color:#7b837d}.shortcut-symbol,.ld-cell-icon,.class-badge{width:64rpx;height:64rpx;border-radius:14rpx;background:#138655;display:flex;align-items:center;justify-content:center;margin-right:18rpx}.ld-heading{margin:28rpx 0 18rpx}.ld-heading-title,.form-title,.section-title{display:block;font-size:30rpx;font-weight:650}.ld-heading-sub{display:block;font-size:23rpx;color:#7b837d;margin-top:8rpx}.ld-cell,.class-row,.teacher-row,.organization-row{display:flex;align-items:center;padding:20rpx 0;border-bottom:1rpx solid #edf1eb;text-align:left;background:#fff;color:#182d26}.ld-cell:last-child,.class-row:last-child,.teacher-row:last-child{border-bottom:0}.ld-cell-body,.class-main,.organization-main{flex:1}.ld-cell-title,.class-name,.organization-name{display:block;font-size:29rpx;font-weight:600}.ld-cell-sub,.school-name,.organization-type{display:block;font-size:23rpx;color:#7d847e;margin-top:8rpx}.ld-cell-arrow{font-size:34rpx;color:#65726a}.prototype-section-header{display:flex;align-items:center;justify-content:center;font-size:32rpx;font-weight:700;margin-bottom:20rpx;gap:12rpx}.prototype-section-header>.prototype-icon{display:none}.mode-control,.search-band,.action-band,.form-actions,.paging{display:flex;gap:14rpx;align-items:center;flex-wrap:wrap;margin-bottom:24rpx}.mode-control button{flex:1}.active{background:#e1f3e4;color:#0c7748}.field-label{display:block;margin:24rpx 0 12rpx;font-size:26rpx}.text-input,.search-input,.picker-value{background:#f8faf7;border:1rpx solid #e0e7df;border-radius:16rpx;padding:18rpx;min-height:72rpx;box-sizing:border-box;font-size:26rpx}.search-input{flex:1;min-width:180rpx}.check-row{display:flex;align-items:center;gap:12rpx;padding:16rpx 0}.state-text{font-size:26rpx;color:#7a837c;padding:24rpx}.review-card{display:flex;align-items:center;gap:20rpx}.review-info{flex:1}.ld-card-title{display:block;font-size:30rpx;font-weight:650}.review-count{display:block;margin-top:12rpx;font-size:24rpx;color:#718077}button{margin:0;font-size:25rpx;line-height:1.5;background:#eaf2e9;color:#21563e;padding:14rpx 20rpx;border-radius:16rpx}button::after{border:0}.primary-button,.save-button,.submit-button,.create-button{background:#137c53;color:white}.logout-button{margin-top:30rpx;color:#b65c50}.ld-logout,.space-switch{font-size:23rpx;flex-shrink:0}.org-badge{margin-right:18rpx;background:#e4f2e4;border-radius:14rpx;padding:16rpx}.error{color:#a43b31}.check-list{margin:18rpx 0}
 </style>

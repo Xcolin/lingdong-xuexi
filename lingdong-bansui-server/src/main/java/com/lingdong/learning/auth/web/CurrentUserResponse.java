@@ -14,5 +14,15 @@ public record CurrentUserResponse(
         String displayName,
         AuthClientType clientType,
         List<String> roleCodes,
-        List<String> permissionCodes
-) { }
+        List<String> permissionCodes,
+        com.lingdong.learning.user.domain.UserType userType,
+        boolean parentProfile,
+        boolean teacherProfile,
+        List<String> learningTaskSourceTypes
+) {
+    /** Source compatibility for older tests; no inferred identity from role names. */
+    public CurrentUserResponse(Long userId,Long sessionId,String username,String displayName,
+            AuthClientType clientType,List<String> roleCodes,List<String> permissionCodes) {
+        this(userId,sessionId,username,displayName,clientType,roleCodes,permissionCodes,null,false,false,List.of());
+    }
+}

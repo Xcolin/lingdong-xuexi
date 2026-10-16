@@ -12,31 +12,31 @@
         <text>正在加载</text>
       </view>
       <view v-else-if="studentLoginEnabled || parentLoginEnabled || organizationLoginEnabled" class="ld-group">
-        <button v-if="parentLoginEnabled" class="ld-cell" @tap="openParentLogin">
+        <!-- #ifdef MP-WEIXIN --><button class="ld-cell" @tap="openUnified"><view class="ld-cell-icon teal">微</view><view class="ld-cell-body"><text class="ld-cell-title">微信登录</text><text class="ld-cell-sub">成长伙伴 · 微信一键登录</text></view><text class="ld-cell-arrow">›</text></button><!-- #endif --><!-- #ifndef MP-WEIXIN --><button v-if="parentLoginEnabled" class="ld-cell" @tap="openParentLogin">
           <view class="ld-cell-icon orange">家</view>
           <view class="ld-cell-body">
-            <text class="ld-cell-title">{{ parentSessionExists ? '进入家长端' : '家长登录' }}</text>
+            <text class="ld-cell-title">{{ parentSessionExists ? '进入成长陪伴' : '成长伙伴登录' }}</text>
             <text class="ld-cell-sub">审核任务 · 家庭奖励 · 成长周报</text>
           </view>
           <text class="ld-cell-arrow">›</text>
         </button>
-        <button v-if="studentLoginEnabled" class="ld-cell" @tap="openStudentLogin">
+        <!-- #endif --><button v-if="studentLoginEnabled" class="ld-cell student-entry" @tap="openStudentLogin">
           <view class="ld-cell-icon teal">学</view>
           <view class="ld-cell-body">
-            <text class="ld-cell-title">{{ studentSessionExists ? '进入学生端' : '学生登录' }}</text>
+            <text class="ld-cell-title">{{ studentSessionExists ? '进入成长空间' : '成长小主人登录' }}</text>
             <text class="ld-cell-sub">今日任务 · 积分 · 成长复盘</text>
           </view>
           <text class="ld-cell-arrow">›</text>
         </button>
-        <button v-if="organizationLoginEnabled" class="ld-cell" @tap="openOrganizationLogin">
+        <!-- #ifndef MP-WEIXIN --><button v-if="organizationLoginEnabled" class="ld-cell" @tap="openOrganizationLogin">
           <view class="ld-cell-icon blue">校</view>
           <view class="ld-cell-body">
-            <text class="ld-cell-title">{{ organizationSessionExists ? '进入机构或教师工作台' : '机构与教师登录' }}</text>
+            <text class="ld-cell-title">{{ organizationSessionExists ? '进入机构或教师工作台' : '成长伙伴登录' }}</text>
             <text class="ld-cell-sub">班级管理 · 点名 · 任务发布</text>
           </view>
           <text class="ld-cell-arrow">›</text>
         </button>
-      </view>
+<!-- #endif -->      </view>
       <view v-else class="ld-empty">
         <text class="ld-empty-main">服务暂不可用</text>
         <text class="ld-empty-sub">请稍后重试，或联系管理员确认服务状态</text>
@@ -56,6 +56,7 @@ import { getParentSession } from '@/session/parent-session';
 import { getStudentSession } from '@/session/student-session';
 import { getOrganizationSession } from '@/session/organization-session';
 
+function openUnified(){uni.navigateTo({url:'/pages/unified-login/unified-login'});}
 const loading = ref(true);
 const studentLoginEnabled = ref(false);
 const parentLoginEnabled = ref(false);
@@ -65,6 +66,7 @@ const parentSessionExists = ref(false);
 const organizationSessionExists = ref(false);
 
 onShow(async () => {
+  if(!getParentSession()&&!getStudentSession()&&!getOrganizationSession()){await uni.reLaunch({url:'/pages/unified-login/unified-login'});return;}
   loading.value = true;
   const [capabilityResult, parentContextResult] = await Promise.allSettled([
     getMiniappCapabilities(), getParentAuthContext()
@@ -82,18 +84,18 @@ onShow(async () => {
 
 function openStudentLogin(): void {
   uni.navigateTo({ url: studentSessionExists.value
-    ? '/pages/student-home/student-home'
+    ? '/pages/student-dashboard/student-dashboard'
     : '/pages/student-login/student-login' });
 }
 
 function openParentLogin(): void {
   uni.navigateTo({ url: parentSessionExists.value
     ? '/pages/parent-onboarding/parent-onboarding'
-    : '/pages/parent-login/parent-login' });
+    : '/pages/unified-login/unified-login' });
 }
 
 function openOrganizationLogin(): void {
-  uni.navigateTo({ url: '/pages/organization-login/organization-login' });
+  uni.navigateTo({ url: organizationSessionExists.value ? '/pages/organization-login/organization-login' : '/pages/unified-login/unified-login?mode=PASSWORD' });
 }
 </script>
 
@@ -190,3 +192,4 @@ function openOrganizationLogin(): void {
   opacity: 0.8;
 }
 </style>
+<style scoped>.student-entry{border:2rpx solid #184F40!important;background:#e7efe9!important;}.student-entry .ld-cell-title{font-weight:700;color:#184F40;font-size:34rpx;}</style>

@@ -1,3 +1,4 @@
+import { Button as PlainButton } from 'antd';
 import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { ViewportTable as Table } from '../../components/ViewportTable';
 import { Alert, Checkbox, Form, Input, InputNumber, message, Modal, Select, Space, Tag, Tooltip } from 'antd';
@@ -144,17 +145,17 @@ export function DictionaryManagementPage({ canManage }: { canManage: boolean }) 
 
   const selectedType = types.find((type) => type.id === selectedTypeId);
   return (
-    <div className="page-stack">
+    <div className="page-stack dictionary-management-page">
       <div className="page-heading">
         <h1>数据字典</h1>
         {canManage && (
           <Space wrap>
             <Button actionKey="DICTIONARY_MANAGE" icon={<Plus size={16} />} onClick={openCreateType}>新增类型</Button>
-            <Button actionKey="dictionaries.dictionary-management-page.2" type="primary" icon={<Plus size={16} />} disabled={!selectedTypeId} onClick={openCreateItem}>新增字典项</Button>
+            <Button actionKey="DICTIONARY_MANAGE" type="primary" icon={<Plus size={16} />} disabled={!selectedTypeId} onClick={openCreateItem}>新增字典项</Button>
           </Space>
         )}
       </div>
-      {errorMessage && <Alert type="error" showIcon message={errorMessage} action={<Button actionKey="dictionaries.dictionary-management-page.3" size="small" onClick={() => void loadTypes()}>重试</Button>} />}
+      {errorMessage && <Alert type="error" showIcon message={errorMessage} action={<PlainButton  size="small" onClick={() => void loadTypes()}>重试</PlainButton>} />}
       <div className="dictionary-workspace">
         <ProCard className="content-panel" title="字典类型" bordered={false}>
           <Table<DictionaryType>
@@ -170,7 +171,7 @@ export function DictionaryManagementPage({ canManage }: { canManage: boolean }) 
                 title: '操作', key: 'actions', width: 64, hidden: !canManage,
                 render: (_, record) => (
                   <Tooltip title="编辑类型">
-                    <Button actionKey="dictionaries.dictionary-management-page.4"
+                    <Button actionKey="DICTIONARY_MANAGE"
                       type="text"
                       icon={<Pencil size={16} />}
                       aria-label={`编辑字典类型-${record.name}`}
@@ -196,7 +197,7 @@ export function DictionaryManagementPage({ canManage }: { canManage: boolean }) 
                 title: '操作', key: 'actions', width: 64, hidden: !canManage,
                 render: (_, record) => (
                   <Tooltip title="编辑字典项">
-                    <Button actionKey="dictionaries.dictionary-management-page.5" type="text" icon={<Pencil size={16} />} aria-label={`编辑字典项-${record.name}`} onClick={() => openEditItem(record)} />
+                    <Button actionKey="DICTIONARY_MANAGE" type="text" icon={<Pencil size={16} />} aria-label={`编辑字典项-${record.name}`} onClick={() => openEditItem(record)} />
                   </Tooltip>
                 )
               }
@@ -245,7 +246,7 @@ function StatusSelect({ value, onChange, id }: {
   );
 }
 function FormActions({ submitting, onCancel }: { submitting: boolean; onCancel: () => void }) {
-  return <div className="form-actions"><Button actionKey="dictionaries.dictionary-management-page.6" onClick={onCancel}>取消</Button><Button actionKey="dictionaries.dictionary-management-page.7" type="primary" htmlType="submit" loading={submitting}>保存</Button></div>;
+  return <div className="form-actions"><PlainButton  onClick={onCancel}>取消</PlainButton><Button actionKey="DICTIONARY_MANAGE" type="primary" htmlType="submit" loading={submitting}>保存</Button></div>;
 }
 function toMessage(error: unknown): string {
   return error instanceof Error ? error.message : '请求未能完成';

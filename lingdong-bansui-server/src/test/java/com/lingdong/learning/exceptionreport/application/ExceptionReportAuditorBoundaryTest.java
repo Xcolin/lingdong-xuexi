@@ -16,9 +16,12 @@ import static org.mockito.Mockito.*;
 /** 系统审核员不能因兼任教师而进入学生异常报备领域。 */
 class ExceptionReportAuditorBoundaryTest {
     private final ExceptionReportMapper mapper = mock(ExceptionReportMapper.class);
+    private final com.lingdong.learning.teacher.application.TeacherIdentityService teachers=mock(com.lingdong.learning.teacher.application.TeacherIdentityService.class);
+    private final com.lingdong.learning.user.infrastructure.persistence.UserMapper users=mock(com.lingdong.learning.user.infrastructure.persistence.UserMapper.class);
     private final ExceptionReportApplicationService service = new ExceptionReportApplicationService(
             mapper, mock(OrganizationDataScopeService.class), mock(FeatureAccessService.class),
-            mock(IdGenerator.class), Clock.systemUTC(), org.mockito.Mockito.mock(com.lingdong.learning.permission.application.PermissionDecisionService.class, invocation -> invocation.getMethod().getName().equals("isAllowed") ? true : org.mockito.Answers.RETURNS_DEFAULTS.answer(invocation)));
+            mock(IdGenerator.class), Clock.systemUTC(), org.mockito.Mockito.mock(com.lingdong.learning.permission.application.PermissionDecisionService.class, invocation -> invocation.getMethod().getName().equals("isAllowed") ? true : org.mockito.Answers.RETURNS_DEFAULTS.answer(invocation)),
+            mock(com.lingdong.learning.organization.application.OrganizationNamePathService.class),teachers,users);
     private final AuthenticatedUser user = new AuthenticatedUser(1874244142494694001L,
             1874244142494694002L, "auditor", "测试审核员", AuthClientType.MINIAPP,
             List.of("TEACHER", "SYS_AUDITOR"));

@@ -1,3 +1,4 @@
+import { Button as PlainButton } from 'antd';
 import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { ViewportTable as Table } from '../../components/ViewportTable';
 import { useEffect, useState } from 'react';
@@ -18,6 +19,8 @@ type AuditFilter = Omit<IamAuditQuery, 'page' | 'pageSize'>;
 const eventLabels: Record<IamAuditEventType, string> = {
   USER_CREATE: '创建用户', USER_STATUS_CHANGE: '用户状态变更',
   USER_ORGANIZATION_ASSOCIATE: '用户关联组织', USER_ROLE_ASSIGN: '用户授予角色',
+  ROLE_UPDATE:'编辑角色', ROLE_DELETE:'删除角色', ROLE_STATUS_CHANGE:'角色启停',
+  ORGANIZATION_TYPE_UPDATE:'编辑组织类型', ORGANIZATION_TYPE_DELETE:'删除组织类型', ORGANIZATION_TYPE_STATUS_CHANGE:'组织类型启停',
   ROLE_CREATE: '创建角色', PERMISSION_CREATE: '创建权限',
   ROLE_PERMISSION_CONFIGURE: '配置角色权限', ROLE_PERMISSION_REMOVE: '撤销角色权限',
   USER_PERMISSION_CONFIGURE: '配置用户权限', USER_PERMISSION_REMOVE: '撤销用户权限',
@@ -26,7 +29,7 @@ const eventLabels: Record<IamAuditEventType, string> = {
 };
 
 const targetLabels: Record<IamAuditTargetType, string> = {
-  USER: '用户', ROLE: '角色', PERMISSION: '权限', ROLE_PERMISSION: '角色权限',
+  ORGANIZATION_TYPE:'组织类型', USER: '用户', ROLE: '角色', PERMISSION: '权限', ROLE_PERMISSION: '角色权限',
   USER_PERMISSION: '用户权限', ROLE_DATA_SCOPE: '角色数据范围',
   ORGANIZATION_ADMIN: '组织管理员', USER_ORGANIZATION: '用户组织关系', USER_ROLE: '用户角色关系', MENU: '菜单'
 };
@@ -80,7 +83,7 @@ export function IamAuditPanel() {
         <Form.Item>
           <Space>
             <Button actionKey="IAM_AUDIT_READ" type="primary" htmlType="submit" icon={<Search size={16} />}>查询审计日志</Button>
-            <Button actionKey="iam.iam-audit-panel.2" icon={<RotateCcw size={16} />} onClick={reset}>重置</Button>
+            <PlainButton  icon={<RotateCcw size={16} />} onClick={reset}>重置</PlainButton>
           </Space>
         </Form.Item>
       </Form>

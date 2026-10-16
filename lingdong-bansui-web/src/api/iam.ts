@@ -1,4 +1,5 @@
 import { apiClient } from './http';
+import type {UserPickerPage,UserPickerQuery,UserGrant} from './users';
 import type { MenuNode } from './menus';
 
 export interface Role {
@@ -6,13 +7,17 @@ export interface Role {
   code: string;
   name: string;
   type: 'BUILT_IN' | 'CUSTOM';
-  dataScope: 'ALL' | 'REGION' | 'SCHOOL' | 'CLASS' | 'SELF' | 'CUSTOM';
+  dataScope: 'ALL' | 'REGION' | 'SCHOOL' | 'CLASS' | 'FAMILY' | 'SELF' | 'CUSTOM';
   builtIn: boolean;
   status: 'ENABLED' | 'DISABLED';
   description: string | null;
 }
 
 export interface Permission {
+  available?: boolean;
+  unavailableReason?: string;
+  requiredScopeKinds?: string[];
+  allowedUserTypes?: string[];
   id: string;
   code: string;
   name: string;
@@ -47,13 +52,14 @@ export interface PermissionAssignment {
 
 export type IamAuditEventType =
   | 'USER_CREATE' | 'USER_STATUS_CHANGE' | 'USER_ORGANIZATION_ASSOCIATE' | 'USER_ROLE_ASSIGN'
+  | 'ROLE_UPDATE' | 'ROLE_DELETE' | 'ROLE_STATUS_CHANGE' | 'ORGANIZATION_TYPE_UPDATE' | 'ORGANIZATION_TYPE_DELETE' | 'ORGANIZATION_TYPE_STATUS_CHANGE'
   | 'ROLE_CREATE' | 'PERMISSION_CREATE' | 'ROLE_PERMISSION_CONFIGURE' | 'ROLE_PERMISSION_REMOVE'
   | 'USER_PERMISSION_CONFIGURE' | 'USER_PERMISSION_REMOVE' | 'ROLE_DATA_SCOPE_ADD'
   | 'ORGANIZATION_ADMIN_ASSIGN' | 'MENU_CREATE' | 'MENU_UPDATE' | 'MENU_REORDER';
 
 export type IamAuditTargetType =
   | 'USER' | 'ROLE' | 'PERMISSION' | 'ROLE_PERMISSION' | 'USER_PERMISSION'
-  | 'ROLE_DATA_SCOPE' | 'ORGANIZATION_ADMIN' | 'USER_ORGANIZATION' | 'USER_ROLE' | 'MENU';
+  | 'ROLE_DATA_SCOPE' | 'ORGANIZATION_ADMIN' | 'USER_ORGANIZATION' | 'USER_ROLE' | 'MENU' | 'ORGANIZATION_TYPE';
 
 export interface IamChangeAudit {
   id: string;
@@ -87,6 +93,20 @@ export interface IamAuditPage {
 }
 
 export const iamApi = {
+  userPermissionCatalog(userId: string): Promise<Permission[]> {
+    return apiClient.get(`/users/${userId}/permission-catalog`);
+  },
+  rolePermissionCatalog(roleId: string): Promise<Permission[]> {
+    return apiClient.get(`/roles/${roleId}/permission-catalog`);
+  },
+  roleUserPicker(roleId:string, query:UserPickerQuery):Promise<UserPickerPage> {
+    const parameters=new URLSearchParams({side:query.side,page:String(query.page),pageSize:String(query.pageSize)});
+    if(query.keyword)parameters.set('keyword',query.keyword);
+    if(query.filterOrganizationId)parameters.set('filterOrganizationId',query.filterOrganizationId);
+    if(query.grantOrganizationId)parameters.set('grantOrganizationId',query.grantOrganizationId);
+    return apiClient.get(`/roles/${roleId}/user-picker?${parameters}`);
+  },
+  revokeRoleUsers(roleId:string,assignments:UserGrant[]):Promise<void> { return apiClient.post(`/roles/${roleId}/users:revoke`,{assignments}); },
   listRoles(): Promise<Role[]> {
     return apiClient.get<Role[]>('/roles');
   },
@@ -96,7 +116,7 @@ export const iamApi = {
   assignRoleUsers(roleId: string, assignments: {userId:string;organizationId:string|null}[]): Promise<void> {
     return apiClient.post(`/roles/${roleId}/users:batch`, {assignments});
   },
-  userPermissionTree(userId:string): Promise<{menus:MenuNode[];inheritedPermissionIds:string[];inheritedDeniedPermissionIds:string[]}> {
+  userPermissionTree(userId:string): Promise<{menus:MenuNode[];inheritedPermissionIds:string[];inheritedDeniedPermissionIds:string[];unavailablePermissions?:{permissionId:string;reason:string}[]}> {
     return apiClient.get(`/users/${userId}/permission-tree`);
   },
   batchUserPermissions(userId:string,input:{permissionIds:string[];managedPermissionIds:string[];expectedAssignments:PermissionAssignment[]}):Promise<void> {
@@ -104,6 +124,15 @@ export const iamApi = {
   },
   createRole(input: CreateRoleInput): Promise<Role> {
     return apiClient.post<Role>('/roles', input);
+  },
+  updateRole(roleId: string, input: Pick<CreateRoleInput, 'name' | 'description'>): Promise<Role> {
+    return apiClient.patch(`/roles/${roleId}`, input);
+  },
+  updateRoleStatus(roleId: string, status: Role['status']): Promise<Role> {
+    return apiClient.patch(`/roles/${roleId}/status`, { status });
+  },
+  deleteRole(roleId: string): Promise<void> {
+    return apiClient.delete(`/roles/${roleId}`);
   },
   listPermissions(): Promise<Permission[]> {
     return apiClient.get<Permission[]>('/permissions');

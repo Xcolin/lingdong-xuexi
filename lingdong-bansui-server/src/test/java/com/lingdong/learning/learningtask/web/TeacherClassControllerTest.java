@@ -64,12 +64,16 @@ class TeacherClassControllerTest {
         User ordinaryUser = createUser("teacher_class_ordinary", "非教师用户");
         Organization school = organizationApplicationService.createOrganization(
                 new CreateOrganizationCommand("TEACHER_CLASS_SCHOOL", "教师班级学校", "SCHOOL", null, 10));
+        Organization schoolGrade = organizationApplicationService.createOrganization(
+                new CreateOrganizationCommand("TEACHER_CLASS_ONE_GRADE", "测试年级", "GRADE", school.id(), 10));
         Organization classOrganization = organizationApplicationService.createOrganization(
-                new CreateOrganizationCommand("TEACHER_CLASS_ONE", "教师班级一班", "CLASS", school.id(), 10));
+                new CreateOrganizationCommand("TEACHER_CLASS_ONE", "教师班级一班", "CLASS", schoolGrade.id(), 10));
         Organization outsideSchool = organizationApplicationService.createOrganization(
                 new CreateOrganizationCommand("TEACHER_CLASS_OUTSIDE_SCHOOL", "教师范围外学校", "SCHOOL", null, 20));
+        Organization outsideSchoolGrade = organizationApplicationService.createOrganization(
+                new CreateOrganizationCommand("TEACHER_CLASS_OUTSIDE_GRADE", "测试年级", "GRADE", outsideSchool.id(), 10));
         Organization outsideClass = organizationApplicationService.createOrganization(
-                new CreateOrganizationCommand("TEACHER_CLASS_OUTSIDE", "教师范围外班级", "CLASS", outsideSchool.id(), 10));
+                new CreateOrganizationCommand("TEACHER_CLASS_OUTSIDE", "教师范围外班级", "CLASS", outsideSchoolGrade.id(), 10));
 
         userAccessApplicationService.associateWithOrganization(
                 new AssociateUserWithOrganizationCommand(organizationAdministrator.id(), school.id()));
@@ -187,6 +191,38 @@ class TeacherClassControllerTest {
                 """, Long.class, teacher.id(), classOrganization.id()))
                 .hasSize(3)
                 .allSatisfy(id -> assertThat(Long.toString(id)).hasSize(19));
+    }
+
+    @Test
+    void rejectsTeacherOutsideCampusScopeWithoutBlockingSchoolAdministrator() throws Exception {
+        User system = createUserWithRole("source_scope_system", "系统管理员", "SYS_ADMIN", null);
+        User campusAdmin = createUser("source_scope_campus_admin", "校区管理员");
+        User teacher = createUser("source_scope_teacher", "同名教师");
+        Organization school = organizationApplicationService.createOrganization(new CreateOrganizationCommand("SRC_SCHOOL", "源范围学校", "SCHOOL", null, 10));
+        Organization a = organizationApplicationService.createOrganization(new CreateOrganizationCommand("SRC_A", "A校区", "CAMPUS", school.id(), 10));
+        Organization b = organizationApplicationService.createOrganization(new CreateOrganizationCommand("SRC_B", "B校区", "CAMPUS", school.id(), 20));
+        Organization grade = organizationApplicationService.createOrganization(new CreateOrganizationCommand("SRC_GRADE", "一年级", "GRADE", a.id(), 10));
+        Organization clazz = organizationApplicationService.createOrganization(new CreateOrganizationCommand("SRC_CLASS", "一班", "CLASS", grade.id(), 10));
+        userAccessApplicationService.associateWithOrganization(new AssociateUserWithOrganizationCommand(campusAdmin.id(), school.id()));
+        assignRole(campusAdmin, "ORG_ADMIN", school.id());
+        organizationAdminMapper.insert(idGenerator.nextId(), campusAdmin.id(), a.id());
+        userAccessApplicationService.associateWithOrganization(new AssociateUserWithOrganizationCommand(teacher.id(), b.id()));
+        assignRole(teacher, "TEACHER", b.id());
+        setPassword(system, system);
+        setPassword(system, campusAdmin);
+        String campusToken = loginAccessToken(campusAdmin.username());
+        String systemToken = loginAccessToken(system.username());
+        mockMvc.perform(get("/api/v1/learning-task-options/teachers").param("classId", clazz.id().toString()).header("Authorization", "Bearer " + campusToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(0));
+        mockMvc.perform(put("/api/v1/teachers/{teacher}/classes/{clazz}", teacher.id(), clazz.id()).header("Authorization", "Bearer " + campusToken))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(put("/api/v1/teachers/{teacher}/classes/{clazz}", teacher.id(), clazz.id()).header("Authorization", "Bearer " + systemToken))
+                .andExpect(status().isOk());
+        mockMvc.perform(delete("/api/v1/teachers/{teacher}/classes/{clazz}", teacher.id(), clazz.id()).header("Authorization", "Bearer " + campusToken))
+                .andExpect(status().isNotFound());
+        assertThat(jdbcTemplate.queryForObject("select status from edu_teacher_class where teacher_user_id=? and class_organization_id=?", String.class, teacher.id(), clazz.id())).isEqualTo("ACTIVE");
+        mockMvc.perform(get("/api/v1/learning-task-options/teachers").param("classId", clazz.id().toString()).header("Authorization", "Bearer " + systemToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$[0].organizationNames[0]").value("源范围学校·B校区"));
     }
 
     private User createUserWithRole(String username, String displayName, String roleCode, Long organizationId) {

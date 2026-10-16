@@ -1,3 +1,4 @@
+import { Button as PlainButton } from 'antd';
 import { ConfiguredModal as Modal } from '../../components/ConfiguredModal';
 import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { ViewportTable as Table } from '../../components/ViewportTable';
@@ -11,6 +12,7 @@ import {
 
 interface ClassFormValues {
   schoolOrganizationId?: string;
+  gradeOrganizationId?: string;
   name: string;
   sortOrder: number;
 }
@@ -18,7 +20,9 @@ interface ClassFormValues {
 /** 机构管理员班级列表及低风险维护操作。 */
 export function ClassManagementPanel() {
   const [form] = Form.useForm<ClassFormValues>();
+  const selectedSchoolId = Form.useWatch('schoolOrganizationId', form);
   const [schools, setSchools] = useState<ClassOrganization[]>([]);
+  const [grades, setGrades] = useState<ClassOrganization[]>([]);
   const [classes, setClasses] = useState<ClassOrganization[]>([]);
   const [editing, setEditing] = useState<ClassOrganization | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -36,11 +40,12 @@ export function ClassManagementPanel() {
     setLoading(true);
     setErrorMessage(null);
     try {
-      const [loadedSchools, loadedClasses] = await Promise.all([
-        classApi.listSchools(), classApi.listClasses()
+      const [loadedSchools, loadedClasses, loadedGrades] = await Promise.all([
+        classApi.listSchools(), classApi.listClasses(), classApi.listGrades()
       ]);
       setSchools(loadedSchools);
       setClasses(loadedClasses);
+      setGrades(loadedGrades);
     } catch (error) {
       setErrorMessage(toMessage(error));
     } finally {
@@ -50,7 +55,8 @@ export function ClassManagementPanel() {
 
   function openCreate(): void {
     setEditing(null);
-    form.setFieldsValue({ schoolOrganizationId: undefined, name: '', sortOrder: 100 });
+    form.resetFields();
+    form.setFieldsValue({ schoolOrganizationId: undefined, gradeOrganizationId: undefined, name: '', sortOrder: 100 });
     setModalOpen(true);
   }
 
@@ -71,7 +77,8 @@ export function ClassManagementPanel() {
         message.success('班级信息已更新');
       } else {
         const input: CreateClassInput = {
-          schoolOrganizationId: values.schoolOrganizationId ?? '',
+          schoolOrganizationId: values.schoolOrganizationId,
+          gradeOrganizationId: values.gradeOrganizationId ?? '',
           name: values.name.trim(), sortOrder: values.sortOrder
         };
         await classApi.createClass(input);
@@ -89,7 +96,7 @@ export function ClassManagementPanel() {
 
   function confirmStatus(item: ClassOrganization): void {
     const disabling = item.status === 'ENABLED';
-    Modal.confirm({ actionPrefix: 'organizations.class-management-panel.confirm.1',
+    Modal.confirm({ actionPrefix: 'CLASS_STATUS_CHANGE',
       title: disabling ? '确认停用班级' : '确认启用班级',
       content: disabling
         ? `停用“${item.name}”后，班内未完成的机构和教师任务将失效。`
@@ -114,8 +121,7 @@ export function ClassManagementPanel() {
     { title: '班级名称', dataIndex: 'name', key: 'name' },
     {
       title: '所属学校', dataIndex: 'parentId', key: 'parentId',
-      render: (parentId: string | null) => parentId
-        ? schoolNameById.get(parentId) ?? `学校标识 ${parentId}` : '-'
+      render: (_: string | null,item:ClassOrganization) => item.schoolName ?? schoolNameById.get(item.schoolOrganizationId ?? '') ?? '-'
     },
     { title: '编码', dataIndex: 'code', key: 'code' },
     { title: '排序', dataIndex: 'sortOrder', key: 'sortOrder', width: 80 },
@@ -130,8 +136,8 @@ export function ClassManagementPanel() {
     {
       title: '操作', key: 'actions', width: 190,
       render: (_, item) => <Space size="small">
-        <Button actionKey="organizations.class-management-panel.1" size="small" icon={<Edit3 size={14} />} onClick={() => openEdit(item)}>编辑</Button>
-        <Button actionKey="organizations.class-management-panel.2"
+        <Button actionKey="CLASS_UPDATE" size="small" icon={<Edit3 size={14} />} onClick={() => openEdit(item)}>编辑</Button>
+        <Button actionKey="CLASS_STATUS_CHANGE"
           size="small"
           danger={item.status === 'ENABLED'}
           icon={item.status === 'ENABLED' ? <PowerOff size={14} /> : <Power size={14} />}
@@ -148,10 +154,10 @@ export function ClassManagementPanel() {
         <Button actionKey="CLASS_CREATE" type="primary" icon={<Plus size={15} />} onClick={openCreate}>新增班级</Button>
       </Space>
     </div>
-    {errorMessage && <Alert type="error" showIcon message={errorMessage} action={<Button actionKey="organizations.class-management-panel.5" size="small" onClick={() => void loadData()}>重试</Button>} />}
+    {errorMessage && <Alert type="error" showIcon message={errorMessage} action={<PlainButton  size="small" onClick={() => void loadData()}>重试</PlainButton>} />}
     <Table<ClassOrganization>
       rowKey="id" columns={columns} dataSource={classes} loading={loading}
-      size="small" pagination={{ pageSize: 20, hideOnSinglePage: true }}
+      size="small" pagination={{}}
       locale={{ emptyText: '暂无班级' }} scroll={{ x: 760 }}
     />
     <Modal
@@ -166,11 +172,13 @@ export function ClassManagementPanel() {
         >
           <Select
             showSearch optionFilterProp="label"
+            onChange={() => form.setFieldValue('gradeOrganizationId', undefined)}
             options={schools.map((school) => ({
               value: school.id, label: `${school.name}（${school.code}）`
             }))}
           />
         </Form.Item>}
+        {!editing && <Form.Item name="gradeOrganizationId" label="所属年级" rules={[{required:true,message:'请选择所属年级'}]}><Select options={grades.filter(item=>item.effectiveStatus==='ENABLED' && item.schoolOrganizationId===selectedSchoolId).map(item=>({value:item.id,label:item.namePath??[item.schoolName,item.campusName,item.name].filter(Boolean).join(' / ')}))}/></Form.Item>}
         <Form.Item
           name="name" label="班级名称"
           rules={[{ required: true, whitespace: true, message: '请输入班级名称' }, { max: 50 }]}
@@ -180,8 +188,8 @@ export function ClassManagementPanel() {
           rules={[{ required: true, message: '请输入排序值' }]}
         ><InputNumber min={0} precision={0} className="full-width" /></Form.Item>
         <div className="form-actions">
-          <Button actionKey="organizations.class-management-panel.6" onClick={() => setModalOpen(false)}>取消</Button>
-          <Button actionKey="organizations.class-management-panel.7" type="primary" htmlType="submit" loading={submitting}>
+          <PlainButton  onClick={() => setModalOpen(false)}>取消</PlainButton>
+          <Button actionKey={editing ? 'CLASS_UPDATE' : 'CLASS_CREATE'} type="primary" htmlType="submit" loading={submitting}>
             {editing ? '保存修改' : '创建班级'}
           </Button>
         </div>

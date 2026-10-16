@@ -1,6 +1,7 @@
 package com.lingdong.learning.student.application;
 
 import com.lingdong.learning.auth.application.AuthenticatedUser;
+import com.lingdong.learning.auth.application.ParentActorAccessService;
 import com.lingdong.learning.common.id.IdGenerator;
 import com.lingdong.learning.common.security.SystemOperationAccessDeniedException;
 import com.lingdong.learning.common.web.ResourceNotFoundException;
@@ -42,6 +43,9 @@ public class ParentBindingInvitationApplicationService {
     private final InvitationTokenService invitationTokenService;
     private final IdGenerator idGenerator;
 
+    private final ParentActorAccessService parentActors;
+    private final com.lingdong.learning.feature.application.FeatureAccessService features;
+
     public ParentBindingInvitationApplicationService(
             StudentMapper studentMapper,
             OrganizationMapper organizationMapper,
@@ -50,8 +54,12 @@ public class ParentBindingInvitationApplicationService {
             ParentStudentMapper parentStudentMapper,
             ParentBindingInvitationMapper parentBindingInvitationMapper,
             InvitationTokenService invitationTokenService,
-            IdGenerator idGenerator, StudentManagementAccessService managementAccess
+            IdGenerator idGenerator, StudentManagementAccessService managementAccess,
+            ParentActorAccessService parentActors,
+            com.lingdong.learning.feature.application.FeatureAccessService features
     ) {
+        this.parentActors = parentActors;
+        this.features = features;
         this.managementAccess = managementAccess;
         this.studentMapper = studentMapper;
         this.organizationMapper = organizationMapper;
@@ -68,6 +76,7 @@ public class ParentBindingInvitationApplicationService {
     public IssuedParentBindingInvitation create(
             AuthenticatedUser currentUser, Long studentId, CreateParentBindingInvitationCommand command
     ) {
+        features.requireEnabled("PARENT_RELATIONSHIP_MANAGEMENT", null);
         Objects.requireNonNull(currentUser, "当前登录用户不能为空");
         Objects.requireNonNull(command, "创建邀请请求不能为空");
         managementAccess.require(currentUser, "STUDENT_PARENT_INVITE_CREATE");
@@ -141,9 +150,10 @@ public class ParentBindingInvitationApplicationService {
             RespondParentBindingInvitationCommand command,
             ParentBindingInvitationStatus targetStatus
     ) {
+        features.requireEnabled("PARENT_RELATIONSHIP_MANAGEMENT", null);
         Objects.requireNonNull(currentUser, "当前登录用户不能为空");
         Objects.requireNonNull(command, "响应邀请请求不能为空");
-        requireRole(currentUser, PARENT_ROLE, "仅家长可响应家长绑定邀请");
+        parentActors.require(currentUser);
         if (command.invitationId() == null) {
             throw new IllegalArgumentException("邀请标识不能为空");
         }

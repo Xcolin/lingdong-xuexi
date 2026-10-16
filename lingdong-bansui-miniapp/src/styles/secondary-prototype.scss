@@ -1,0 +1,43 @@
+/* Secondary-page contract from the approved people/enrollment prototype. */
+.secondary-page{min-height:calc(100vh - var(--window-top,0px));box-sizing:border-box;padding:28rpx 28rpx calc(48rpx + env(safe-area-inset-bottom));background:#F6F8F5;color:#193e32;}
+.secondary-page.has-footer{padding-bottom:calc(230rpx + env(safe-area-inset-bottom));}
+.secondary-page .section{background:#fffefa;border:1rpx solid #e1e9e2;border-radius:24rpx;padding:28rpx;margin-bottom:22rpx;box-sizing:border-box;}
+.secondary-page .section-heading{display:flex;align-items:center;justify-content:space-between;gap:16rpx;margin-bottom:22rpx;}
+.secondary-page .section-title{font-size:28rpx;font-weight:650;}
+.secondary-page .small{font-size:23rpx;color:#809486;line-height:1.6;}
+.secondary-page .field-label{display:block;font-size:25rpx;color:#637f6d;margin:24rpx 0 12rpx;}
+.secondary-page .field-label:first-child{margin-top:0;}
+.secondary-page .required{color:#b65a4d;margin-left:6rpx;}
+.secondary-page .picker-field,.secondary-page input,.secondary-page textarea{box-sizing:border-box;border:1rpx solid #d8e4db;background:#f8faf7;border-radius:14rpx;min-height:82rpx;padding:18rpx 22rpx;font-size:26rpx;color:#294b3a;width:100%;}
+.secondary-page .picker-field{display:flex;align-items:center;justify-content:space-between;gap:18rpx;}
+.secondary-page .picker-field>text:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.secondary-page .segmented{display:flex;border-bottom:1rpx solid #e6ece7;margin-bottom:24rpx;gap:18rpx;}
+.secondary-page .segmented button{flex:1;background:transparent;border-radius:0;color:#839187;border-bottom:4rpx solid transparent;padding:0 8rpx;}
+.secondary-page .segmented button.active{color:#184f40;border-bottom-color:#184f40;font-weight:650;}
+.secondary-page button{font-size:26rpx;line-height:1.5;padding:22rpx;border-radius:16rpx;box-sizing:border-box;margin:0;}
+.secondary-page button::after{border:0;}
+.secondary-page .primary{background:#184f40;color:#fff;}
+.secondary-page .secondary{background:#edf4ee;color:#184f40;border:1rpx solid #d9e7dc;}
+.secondary-page .danger{background:#fff3f0;color:#b65a4d;border:1rpx solid #f0d4cd;}
+.secondary-page button[disabled]{opacity:.45;}
+.secondary-page .error{display:block;background:#fff3f0;border:1rpx solid #f0d4cd;border-radius:16rpx;padding:20rpx;color:#b65a4d;font-size:25rpx;line-height:1.6;margin-bottom:22rpx;}
+.secondary-page .empty{display:flex;flex-direction:column;align-items:center;gap:18rpx;padding:50rpx 24rpx;color:#87998b;font-size:26rpx;text-align:center;}
+.secondary-page .person{width:76rpx;height:76rpx;flex-shrink:0;border-radius:50%;background:#edf4ee;display:flex;align-items:center;justify-content:center;}
+.secondary-page .person-copy{flex:1;min-width:0;}
+.secondary-page .name{font-size:28rpx;font-weight:650;overflow-wrap:anywhere;}
+.secondary-page .meta{display:block;font-size:23rpx;color:#809486;line-height:1.6;margin-top:8rpx;overflow-wrap:anywhere;}
+.secondary-page .row{display:flex;gap:20rpx;align-items:center;padding:24rpx 0;border-bottom:1rpx solid #edf1ed;}
+.secondary-page .row:last-child{border-bottom:0;}
+.secondary-page .row-top{display:flex;align-items:center;justify-content:space-between;gap:12rpx;}
+.secondary-page .badge{font-size:21rpx;padding:5rpx 12rpx;border-radius:8rpx;background:#eaf3ed;color:#184f40;white-space:nowrap;}
+.secondary-page .badge.owner,.secondary-page .badge.PENDING{background:#fff3d7;color:#a47a29;}
+.secondary-page .badge.REJECTED{background:#fff0eb;color:#b65a4d;}
+.secondary-page .paging{display:flex;align-items:center;justify-content:space-between;gap:18rpx;margin-top:24rpx;font-size:24rpx;color:#809486;}
+.secondary-page .paging button{background:#f0f5f1;color:#184f40;padding:14rpx 24rpx;font-size:23rpx;}
+.secondary-page .bottom-actions{position:fixed;z-index:5;left:0;right:0;bottom:0;border-top:1rpx solid #e0e8e1;background:#fffefa;padding:20rpx 28rpx calc(20rpx + env(safe-area-inset-bottom));}
+.secondary-page .action-grid{display:flex;gap:14rpx;margin-top:12rpx;}
+.secondary-page .action-grid button{flex:1;min-width:0;padding:20rpx 8rpx;font-size:24rpx;}
+.secondary-page .detail-line{display:flex;justify-content:space-between;gap:24rpx;padding:22rpx 0;border-bottom:1rpx solid #edf1ed;font-size:26rpx;}
+.secondary-page .detail-line>text:first-child{color:#809486;flex-shrink:0;}
+.secondary-page .detail-line>text:last-child{text-align:right;overflow-wrap:anywhere;}
+.secondary-page .detail-line:last-child{border-bottom:0;}

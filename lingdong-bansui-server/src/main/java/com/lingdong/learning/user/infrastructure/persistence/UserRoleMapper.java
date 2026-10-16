@@ -10,6 +10,9 @@ import java.util.List;
  */
 @Mapper
 public interface UserRoleMapper {
+    int markAutomaticOrganizationAdmin(@Param("userId") Long userId,@Param("roleId") Long roleId,@Param("organizationId") Long organizationId);
+    boolean isAutomaticOrganizationAdmin(@Param("userId") Long userId,@Param("roleId") Long roleId,@Param("organizationId") Long organizationId);
+
     List<com.lingdong.learning.user.application.RoleUserAssignment> findByRoleId(@Param("roleId") Long roleId);
 
     boolean hasRoleCode(@Param("userId") Long userId, @Param("roleCode") String roleCode);
@@ -30,6 +33,12 @@ public interface UserRoleMapper {
             @Param("userId") Long userId,
             @Param("roleId") Long roleId,
             @Param("organizationId") Long organizationId,
+            @Param("organizationScopeKey") String organizationScopeKey
+    );
+
+    int deleteScoped(
+            @Param("userId") Long userId,
+            @Param("roleId") Long roleId,
             @Param("organizationScopeKey") String organizationScopeKey
     );
 }

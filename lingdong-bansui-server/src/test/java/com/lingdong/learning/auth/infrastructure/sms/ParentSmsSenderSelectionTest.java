@@ -14,6 +14,13 @@ import java.time.Clock;
 import static org.assertj.core.api.Assertions.*;
 
 class ParentSmsSenderSelectionTest {
+    @Test void configuredSmsBaoUsesOneRealSenderIncludingLocalProfile() {
+        for(String profile:new String[]{"local","prod"})runner
+            .withBean(com.lingdong.learning.auth.application.RegistrationDelivery.class,()->org.mockito.Mockito.mock(com.lingdong.learning.auth.application.RegistrationDelivery.class))
+            .withBean(com.lingdong.learning.auth.infrastructure.config.ParentSmsProperties.class,com.lingdong.learning.auth.infrastructure.config.ParentSmsProperties::new)
+            .withPropertyValues("spring.profiles.active="+profile,"lingdong.auth.parent-sms.provider=smsbao")
+            .run(context->{assertThat(context).hasSingleBean(ParentSmsSender.class);assertThat(context.getBean(ParentSmsSender.class)).isInstanceOf(SmsBaoParentSmsSender.class);});
+    }
     private final ApplicationContextRunner runner = new ApplicationContextRunner()
             .withUserConfiguration(Senders.class)
             .withBean(ObjectMapper.class, ObjectMapper::new)
@@ -50,6 +57,6 @@ class ParentSmsSenderSelectionTest {
 
     @Configuration(proxyBeanMethods = false)
     @EnableConfigurationProperties(AliyunParentSmsProperties.class)
-    @Import({AliyunParentSmsSender.class, UnconfiguredParentSmsSender.class, LocalParentSmsSender.class})
+    @Import({AliyunParentSmsSender.class, UnconfiguredParentSmsSender.class, LocalParentSmsSender.class, SmsBaoParentSmsSender.class})
     static class Senders { }
 }

@@ -17,6 +17,7 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.assertj.core.api.Assertions.*;
@@ -31,6 +32,31 @@ class UserOrganizationAuthorizationControllerTest {
  @Autowired OrganizationApplicationService organizations;
  @Autowired AuthenticationApplicationService auth;
  @Autowired JdbcTemplate jdbc;
+
+ @Test @Transactional void studentHttpCreationAndRepairPreserveAccountAndHideCredentials() throws Exception {
+  String token=admin("unified_http_admin");
+  Long operator=jdbc.queryForObject("select id from sys_user where username='unified_http_admin'",Long.class);
+  jdbc.update("insert into sys_user_permission(id,user_id,permission_id,effect) values(?,?,?,'ALLOW')",900050L,operator,permissions.findByCode("STUDENT_CREATE").id());
+  Organization region=org("UNIFIED_HTTP_REGION");
+  Organization school=organizations.createOrganization(new CreateOrganizationCommand("UNIFIED_HTTP_SCHOOL","统一接口学校","SCHOOL",region.id(),0));
+  String body="{\"username\":\"unified_http_student\",\"displayName\":\"统一学生\",\"type\":\"STUDENT\",\"organizationId\":\"%s\",\"gradeCode\":\"三年级\"}".formatted(school.id());
+  String response=mvc.perform(post("/api/v1/users").header("Authorization","Bearer "+token).contentType(MediaType.APPLICATION_JSON).content(body))
+   .andExpect(status().isCreated()).andExpect(jsonPath("$.username").value("unified_http_student"))
+   .andExpect(jsonPath("$.passwordHash").doesNotExist()).andExpect(jsonPath("$.plainLoginCode").doesNotExist())
+   .andExpect(jsonPath("$.initialLoginCode").value(org.hamcrest.Matchers.matchesPattern("\\d{4}")))
+   .andExpect(jsonPath("$.studentId").isNotEmpty())
+   .andExpect(jsonPath("$.studentId").isString())
+   .andReturn().getResponse().getContentAsString();
+  String id=json.readTree(response).path("id").asText();
+  String repair="{\"organizationId\":\"%s\",\"gradeCode\":\"四年级\"}".formatted(school.id());
+  for(int i=0;i<2;i++)mvc.perform(post("/api/v1/users/{id}/student-profile",id).header("Authorization","Bearer "+token).contentType(MediaType.APPLICATION_JSON).content(repair))
+   .andExpect(status().isOk()).andExpect(jsonPath("$.id").value(id)).andExpect(jsonPath("$.plainLoginCode").doesNotExist())
+   .andExpect(jsonPath("$.initialLoginCode").doesNotExist());
+  mvc.perform(get("/api/v1/users/{id}",id).header("Authorization","Bearer "+token)).andExpect(status().isOk())
+   .andExpect(jsonPath("$.initialLoginCode").doesNotExist());
+  assertThat(jdbc.queryForObject("select count(*) from edu_student where student_user_id=?",Integer.class,id)).isEqualTo(1);
+  assertThat(jdbc.queryForObject("select grade_code from edu_student where student_user_id=?",String.class,id)).isEqualTo("三年级");
+ }
 
  @Test void httpCreationRequiresOrganizationAndAssociatesAtomically() throws Exception {
   String token=admin("new_org_create"); Organization org=org("NEW_ORG_CREATE");
@@ -87,7 +113,7 @@ class UserOrganizationAuthorizationControllerTest {
   jdbc.update("update sys_role set status='DISABLED' where id=?",role.id());
   mvc.perform(get("/api/v1/users/{id}/permission-tree",target.id()).header("Authorization","Bearer "+token)).andExpect(status().isOk()).andExpect(jsonPath("$.inheritedPermissionIds").isEmpty()).andExpect(jsonPath("$.inheritedDeniedPermissionIds").isEmpty());
  }
- @Test void organizationMemberOperationsRejectAuditorsMissingAdditionalPermissionsAndIneffectiveOrganizations() throws Exception {
+ @Test void organizationMemberOperationsHonorExplicitPermissionsAcrossMixedRolesAndRejectIneffectiveOrganizations() throws Exception {
   String token=admin("member_security_admin");Organization org=org("MEMBER_SECURITY");User target=user("member_security_target");
   Long operator=jdbc.queryForObject("select id from sys_user where username='member_security_admin'",Long.class);
   Long pid=permissions.findByCode("IAM_DATA_SCOPE_CONFIGURE").id();
@@ -97,7 +123,11 @@ class UserOrganizationAuthorizationControllerTest {
   assertThat(jdbc.queryForObject("select count(*) from sys_user_organization where organization_id=?",Integer.class,org.id())).isZero();
   jdbc.update("delete from sys_user_permission where user_id=? and permission_id=?",operator,pid);
   users.assignRole(new AssignRoleToUserCommand(operator,roles.findByCode("SYS_AUDITOR").id(),null));
+  mvc.perform(post("/api/v1/organizations/{id}/members:batch",org.id()).header("Authorization","Bearer "+token).contentType(MediaType.APPLICATION_JSON).content(body.replace("true","false"))).andExpect(status().isNoContent());
+  Long memberPermission=permissions.findByCode("IAM_USER_ORGANIZATION_ASSIGN").id();
+  jdbc.update("insert into sys_user_permission(id,user_id,permission_id,effect) values(?,?,?,'DENY')",990000000000000021L,operator,memberPermission);
   mvc.perform(post("/api/v1/organizations/{id}/members:batch",org.id()).header("Authorization","Bearer "+token).contentType(MediaType.APPLICATION_JSON).content(body.replace("true","false"))).andExpect(status().isForbidden());
+  jdbc.update("delete from sys_user_permission where user_id=? and permission_id=?",operator,memberPermission);
   jdbc.update("delete from sys_user_role where user_id=? and role_id=?",operator,roles.findByCode("SYS_AUDITOR").id());
   jdbc.update("update sys_organization set effective_status='DISABLED' where id=?",org.id());
   mvc.perform(post("/api/v1/organizations/{id}/members:batch",org.id()).header("Authorization","Bearer "+token).contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isConflict());
@@ -112,7 +142,7 @@ class UserOrganizationAuthorizationControllerTest {
   try{var a=executor.submit(save);var b=executor.submit(save);start.countDown();assertThat(java.util.List.of(a.get(15,java.util.concurrent.TimeUnit.SECONDS),b.get(15,java.util.concurrent.TimeUnit.SECONDS))).containsExactlyInAnyOrder(204,409);}finally{executor.shutdownNow();}
   assertThat(jdbc.queryForObject("select count(*) from sys_iam_change_audit where target_id=? and event_type='USER_PERMISSION_CONFIGURE'",Integer.class,target.id())).isEqualTo(1);
  }
- @Test void boundedMemberRelationsReturnOnlyDirectExistingMembersAndRequireAdministrator() throws Exception {
+ @Test void boundedMemberRelationsReturnOnlyDirectMembersAndHonorCustomReadPermission() throws Exception {
   String token=admin("relations_admin");Organization org=org("RELATIONS_ROOT");User member=user("relations_member");User administrator=user("relations_manager");User absent=user("relations_absent");
   for(User target:java.util.List.of(member,administrator))mvc.perform(post("/api/v1/organizations/{id}/members:batch",org.id()).header("Authorization","Bearer "+token).contentType(MediaType.APPLICATION_JSON)
    .content("{\"userIds\":[\"%s\"],\"administrator\":%s}".formatted(target.id(),target==administrator))).andExpect(status().isNoContent());
@@ -131,13 +161,15 @@ class UserOrganizationAuthorizationControllerTest {
   String ordinary=json.readTree(mvc.perform(post("/api/v1/auth/sessions/password").contentType(MediaType.APPLICATION_JSON)
    .content("{\"username\":\"relations_absent\",\"password\":\"Password123\",\"deviceId\":\"relations-absent-device\",\"deviceName\":\"test\"}"))
    .andExpect(status().isOk()).andReturn().getResponse().getContentAsString()).path("accessToken").asText();
+  mvc.perform(get("/api/v1/organizations/{id}/member-relations",org.id()).header("Authorization","Bearer "+ordinary).param("userIds",ids)).andExpect(status().isOk());
+  jdbc.update("insert into sys_user_permission(id,user_id,permission_id,effect) values(?,?,?,'DENY')",990000000000000033L,absent.id(),permissions.findByCode("IAM_USER_LIST").id());
   mvc.perform(get("/api/v1/organizations/{id}/member-relations",org.id()).header("Authorization","Bearer "+ordinary).param("userIds",ids)).andExpect(status().isForbidden());
  }
  @Test void managedPasswordCreationResetAndOrganizationFilter() throws Exception {
-  String token=admin("managed_password_admin"); Organization org=org("MANAGED_PASSWORD_ORG"); Organization other=org("MANAGED_PASSWORD_OTHER");
+  String token=admin("managed_password_admin"); Organization org=organizations.createOrganization(new CreateOrganizationCommand("MANAGED_PASSWORD_ORG","家庭","FAMILY",null,0)); Organization other=org("MANAGED_PASSWORD_OTHER");
   String body="{\"username\":\"managed_password_family\",\"displayName\":\"家长\",\"type\":\"FAMILY\",\"organizationId\":\"%s\",\"password\":\"FamilyPass123\"}".formatted(org.id());
   String id=json.readTree(mvc.perform(post("/api/v1/users").header("Authorization","Bearer "+token).contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isCreated()).andExpect(jsonPath("$.password").doesNotExist()).andReturn().getResponse().getContentAsString()).path("id").asText();
-  users.assignRole(new AssignRoleToUserCommand(Long.valueOf(id),roles.findByCode("PARENT").id(),null));
+  assertThat(jdbc.queryForObject("select count(*) from sys_user_role where user_id=? and role_id=? and organization_scope_key='GLOBAL'",Integer.class,id,roles.findByCode("PARENT").id())).isEqualTo(1);
   jdbc.update("insert into auth_parent_profile(id,user_id,onboarding_status,first_login_at,onboarding_completed_at) values(?,?,'COMPLETED',current_timestamp,current_timestamp)",990000000000000040L,Long.valueOf(id));
   AuthenticatedSession session=auth.loginByPassword(new PasswordLoginCommand("managed_password_family","FamilyPass123","managed-family-device","test"));
   AuthenticatedSession miniSession=auth.loginByPassword(new PasswordLoginCommand("managed_password_family","FamilyPass123","managed-mini-device","test"));

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Modal, Select, Spin, Tree, message } from 'antd';
+import { Alert, Button as PlainButton, Modal, Select, Spin, Tree, message } from 'antd';
 import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { iamApi, type Permission, type PermissionAssignment, type Role } from '../../api/iam';
 import { menuApi, type MenuNode } from '../../api/menus';
@@ -9,6 +9,7 @@ import { buildRolePermissionTree, treeCheckState, togglePermissionBranch, type P
 interface Props { open: boolean; roles: Role[]; role?:Role; permissions: Permission[]; onClose: () => void; }
 export function RolePermissionTreeModal({ open, roles, role, permissions, onClose }: Props) {
   const [roleId, setRoleId] = useState<string>();
+  const [catalog, setCatalog] = useState<Permission[]>(permissions);
   const [menus, setMenus] = useState<MenuNode[]>([]);
   const [assignments, setAssignments] = useState<PermissionAssignment[]>([]);
   const [selected, setSelected] = useState(new Set<string>());
@@ -23,20 +24,20 @@ export function RolePermissionTreeModal({ open, roles, role, permissions, onClos
   }, [open]);
   useEffect(() => () => { request.current++; }, []);
   useEffect(()=>{if(open&&role)void load(role.id);},[open,role?.id]);
-  const tree = useMemo(() => buildRolePermissionTree(menus, permissions, assignments), [menus, permissions, assignments]);
+  const tree = useMemo(() => buildRolePermissionTree(menus, catalog, assignments), [menus, catalog, assignments]);
   const checked = useMemo(() => treeCheckState(tree, selected), [tree, selected]);
   async function load(id: string) {
     const version = ++request.current;
     setRoleId(id); setReady(false); setLoading(true); setError(undefined); setMenus([]); setAssignments([]); setSelected(new Set());
     try {
-      const [nodes, current] = await Promise.all([
+      const [nodes, current, applicable] = await Promise.all([
         menuApi.list().catch(error => {
           if (error instanceof ApiRequestError && error.status === 403) return iamApi.listRolePermissionMenus();
           throw error;
-        }), iamApi.listRolePermissions(id)
+        }), iamApi.listRolePermissions(id), iamApi.rolePermissionCatalog ? iamApi.rolePermissionCatalog(id) : Promise.resolve(permissions)
       ]);
       if (request.current !== version) return;
-      setMenus(nodes); setAssignments(current); setSelected(new Set(current.filter(a => a.effect === 'ALLOW').map(a => a.permissionId))); setReady(true);
+      setMenus(nodes); setCatalog(applicable); setAssignments(current); setSelected(new Set(current.filter(a => a.effect === 'ALLOW').map(a => a.permissionId))); setReady(true);
     } catch (error) {
       if (request.current === version) setError(error instanceof Error ? error.message : '权限树加载失败');
     } finally { if (request.current === version) setLoading(false); }
@@ -62,12 +63,12 @@ export function RolePermissionTreeModal({ open, roles, role, permissions, onClos
     } finally { saveLock.current = false; setSaving(false); }
   }
   return <Modal title="配置角色权限" centered open={open} onCancel={saving ? undefined : onClose} closable={!saving} maskClosable={!saving} keyboard={!saving} width="min(880px, 92vw)" footer={[
-    <Button actionKey="iam.role-permission-tree.cancel" key="cancel" disabled={saving} onClick={onClose}>取消</Button>,
-    <Button actionKey="iam.role-permission-tree.save" key="save" type="primary" loading={saving} disabled={!roleId || !ready || loading} onClick={() => void save()}>保存角色权限</Button>
+    <PlainButton key="cancel" disabled={saving} onClick={onClose}>取消</PlainButton>,
+    <Button actionKey="IAM_ROLE_PERMISSION_GRANT" key="save" type="primary" loading={saving} disabled={!roleId || !ready || loading} onClick={() => void save()}>保存角色权限</Button>
   ]}>
     <label htmlFor="role-permission-subject">角色</label>
     <Select id="role-permission-subject" style={{ width: '100%', marginBottom: 16 }} value={roleId} showSearch optionFilterProp="label" disabled={saving||!!role} options={roles.map(role => ({ value: role.id, label: `${role.name}（${role.code}）` }))} onChange={id => void load(id)} />
-    {error && <Alert type="error" showIcon message={error} action={<Button actionKey="iam.role-permission-tree.retry" disabled={saving} onClick={() => roleId && void load(roleId)}>重新加载</Button>} />}
+    {error && <Alert type="error" showIcon message={error} action={<PlainButton disabled={saving} onClick={() => roleId && void load(roleId)}>重新加载</PlainButton>} />}
     <Spin spinning={loading}>
       {ready && <Tree<PermissionTreeNode> height={Math.max(180,window.innerHeight-300)} checkable checkStrictly treeData={tree} checkedKeys={checked} disabled={saving} onCheck={(_, info) => setSelected(previous => togglePermissionBranch(info.node, previous, info.checked))} />}
       {!roleId && <p>请先选择角色</p>}

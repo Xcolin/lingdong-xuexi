@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 /** 排行读取前的动态对象鉴权，不替代家长主动开启偏好的独立检查。 */
 @Service
 public class AnonymousRankAccess {
+    private final com.lingdong.learning.auth.application.ParentActorAccessService parentActors;
     private final UserMapper users;
     private final UserRoleMapper roles;
     private final ParentStudentMapper parents;
@@ -24,9 +25,10 @@ public class AnonymousRankAccess {
     private final FeatureAccessService features;
 
     public AnonymousRankAccess(UserMapper users, UserRoleMapper roles, ParentStudentMapper parents,
-            StudentOrganizationMapper classes, PermissionDecisionService permissions, FeatureAccessService features) {
+            StudentOrganizationMapper classes, PermissionDecisionService permissions, FeatureAccessService features,
+            com.lingdong.learning.auth.application.ParentActorAccessService parentActors) {
         this.users=users; this.roles=roles; this.parents=parents; this.classes=classes;
-        this.permissions=permissions; this.features=features;
+        this.permissions=permissions; this.features=features; this.parentActors=parentActors;
     }
 
     public void requireRead(AuthenticatedUser user, Long studentId, Long classId) {
@@ -62,9 +64,7 @@ public class AnonymousRankAccess {
 
     public void requireParent(AuthenticatedUser user) {
         requireSession(user);
-        var account=users.findById(user.userId());
-        if (account == null || account.status() != UserStatus.ENABLED
-                || !roles.hasRoleCode(user.userId(),"PARENT") || roles.hasRoleCode(user.userId(),"SYS_AUDITOR")) throw denied();
+        parentActors.require(user);
     }
 
     /** 仅验证会话形状，不在写事务获取行锁前建立数据库快照。 */

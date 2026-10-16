@@ -1,7 +1,7 @@
 import { apiClient } from './http';
-import type { ManagedUser, UserDirectoryPage } from './users';
+import type { ManagedUser, UserDirectoryPage, UserPickerPage, UserPickerQuery } from './users';
 
-export interface OrganizationMember extends ManagedUser { administrator:boolean; }
+export interface OrganizationMember extends ManagedUser { administrator:boolean; owner?:boolean; }
 export interface OrganizationMemberPage extends Omit<UserDirectoryPage,'items'> { items:OrganizationMember[]; }
 
 export interface OrganizationType {
@@ -18,6 +18,7 @@ export interface OrganizationNode {
   parentId: string | null;
   code: string;
   name: string;
+  namePath?: string;
   typeCode: string;
   path: string;
   sortOrder: number;
@@ -95,8 +96,15 @@ export interface OrganizationChangeReviewInput {
 }
 
 export const organizationApi = {
-  memberRelations(id:string,userIds:string[]):Promise<{userId:string;administrator:boolean}[]> {
-    return apiClient.get(`/organizations/${id}/member-relations?${new URLSearchParams({userIds:userIds.join(',')})}`);
+  memberPicker(id:string, query:UserPickerQuery & {administrator?:boolean}):Promise<UserPickerPage> {
+    const parameters=new URLSearchParams({side:query.side,page:String(query.page),pageSize:String(query.pageSize),administrator:String(query.administrator??false)});
+    if(query.keyword)parameters.set('keyword',query.keyword);
+    if(query.filterOrganizationId)parameters.set('filterOrganizationId',query.filterOrganizationId);
+    if(query.group)parameters.set('group',query.group);
+    return apiClient.get(`/organizations/${id}/member-picker?${parameters}`);
+  },
+  memberRelations(id:string,userIds:string[],administrator=false):Promise<{userId:string;administrator:boolean}[]> {
+    return apiClient.get(`/organizations/${id}/member-relations?${new URLSearchParams({userIds:userIds.join(','),administrator:String(administrator)})}`);
   },
   members(id:string,query:{page:number;pageSize:number;keyword?:string}):Promise<OrganizationMemberPage> {
     const parameters=new URLSearchParams({page:String(query.page),pageSize:String(query.pageSize)});
@@ -104,7 +112,11 @@ export const organizationApi = {
     return apiClient.get(`/organizations/${id}/members?${parameters}`);
   },
   associateMembers(id:string,userIds:string[],administrator:boolean):Promise<void> {
-    return apiClient.post(`/organizations/${id}/members:batch`,{userIds,administrator});
+    return apiClient.post(`/organizations/${id}/${administrator?'administrators:assign':'members:associate'}`,{userIds});
+  },
+
+  revokeMembers(id:string,userIds:string[],administrator:boolean):Promise<void> {
+    return apiClient.post<void>(`/organizations/${id}/${administrator?'administrators:revoke':'members:remove'}`,{userIds});
   },
   listTypes(): Promise<OrganizationType[]> {
     return apiClient.get<OrganizationType[]>('/organization-types');
@@ -112,8 +124,20 @@ export const organizationApi = {
   createType(input: CreateOrganizationTypeInput): Promise<OrganizationType> {
     return apiClient.post<OrganizationType>('/organization-types', input);
   },
+  updateType(id: string, input: Pick<CreateOrganizationTypeInput, 'name' | 'sortOrder'>): Promise<OrganizationType> {
+    return apiClient.patch<OrganizationType>(`/organization-types/${id}`, input);
+  },
+  changeTypeStatus(id: string, status: OrganizationType['status']): Promise<OrganizationType> {
+    return apiClient.patch<OrganizationType>(`/organization-types/${id}/status`, {status});
+  },
+  deleteType(id: string): Promise<void> {
+    return apiClient.delete(`/organization-types/${id}`);
+  },
   listTree(): Promise<OrganizationNode[]> {
     return apiClient.get<OrganizationNode[]>('/organizations');
+  },
+  listAdminDivisions(): Promise<Array<{code:string;name:string}>> {
+    return apiClient.get('/organizations/admin-divisions');
   },
   createOrganization(input: CreateOrganizationInput): Promise<OrganizationNode> {
     return apiClient.post<OrganizationNode>('/organizations', input);
@@ -145,3 +169,5 @@ export const organizationApi = {
     return apiClient.post<OrganizationChange>(`/organization-changes/${taskId}/reject`, input);
   }
 };
+
+

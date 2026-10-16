@@ -10,6 +10,7 @@ import java.util.UUID;
 /** Keeps system-task role checks and state changes in one transactional boundary. */
 @Service
 public class SystemTaskApplicationService {
+    @org.springframework.beans.factory.annotation.Autowired private com.lingdong.learning.organization.onboarding.application.OrganizationOnboardingService onboarding;
     private final com.lingdong.learning.permission.application.PermissionDecisionService decisions;
     private final SystemTaskMapper taskMapper;
     private final UserRoleMapper userRoleMapper;
@@ -44,13 +45,16 @@ public class SystemTaskApplicationService {
         SystemTask task = requireTask(id); requirePermission(reviewer, task.type(), true); String text = comment == null ? null : comment.trim();
         if (required && (text == null || text.isEmpty())) throw new IllegalArgumentException("驳回时审批意见不能为空");
         if (task.submittedBy().equals(reviewer)) throw new IllegalStateException("系统审核员不得审批自己提交的任务");
+        if (task.type()==SystemTaskType.ORGANIZATION_ONBOARDING) onboarding.review(id,reviewer,status==SystemTaskStatus.APPROVED,text);
         if (taskMapper.updateReview(id, status, reviewer, text) != 1) throw new IllegalStateException("仅待审核任务可审批");
+        if(task.type()==SystemTaskType.ORGANIZATION_ONBOARDING && status==SystemTaskStatus.APPROVED && taskMapper.markEffective(id)!=1)throw new IllegalStateException("入驻任务生效失败");
         return taskMapper.findById(id);
     }
     private SystemTask requireTask(Long id) { SystemTask task = taskMapper.findById(id); if (task == null) throw new IllegalArgumentException("系统任务不存在：" + id); return task; }
     private void requirePermission(Long userId, SystemTaskType type, boolean review) {
         if (type == null) throw new IllegalArgumentException("任务类型不能为空");
         String permission = switch (type) {
+            case ORGANIZATION_ONBOARDING -> review ? "ORGANIZATION_ONBOARDING_REVIEW" : "ORGANIZATION_ONBOARDING_SUBMIT";
             case GLOBAL_FEATURE_TOGGLE -> review ? "FEATURE_TOGGLE_REVIEW" : "FEATURE_TOGGLE_MANAGE";
             case ORGANIZATION_DISABLE, ORGANIZATION_MOVE, ORGANIZATION_DELETE -> review ? "ORG_NODE_CHANGE_REVIEW" : "ORG_NODE_CHANGE_SUBMIT";
             case CACHE_CLEAR -> review ? "CACHE_REVIEW" : "CACHE_MANAGE";

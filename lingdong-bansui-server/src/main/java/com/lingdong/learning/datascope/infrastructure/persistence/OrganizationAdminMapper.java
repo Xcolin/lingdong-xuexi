@@ -24,4 +24,9 @@ public interface OrganizationAdminMapper {
             @Param("userId") Long userId,
             @Param("organizationId") Long organizationId
     );
+
+    int delete(
+            @Param("organizationId") Long organizationId,
+            @Param("userId") Long userId
+    );
 }

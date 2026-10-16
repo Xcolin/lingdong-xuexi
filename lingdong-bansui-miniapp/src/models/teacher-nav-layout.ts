@@ -1,0 +1,1 @@
+export function teacherNavReservedRight(width:number,capsule:{left:number;right:number}|null){if(!Number.isFinite(width)||width<=0||!capsule||!Number.isFinite(capsule.left)||!Number.isFinite(capsule.right)||capsule.left<=0||capsule.right<=capsule.left||capsule.right>width)return 112;return Math.ceil(width-capsule.left+8);}

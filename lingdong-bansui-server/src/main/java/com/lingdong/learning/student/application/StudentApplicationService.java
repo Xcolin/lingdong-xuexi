@@ -25,7 +25,9 @@ import java.util.Objects;
  */
 @Service
 public class StudentApplicationService {
+    @org.springframework.beans.factory.annotation.Autowired private com.lingdong.learning.user.infrastructure.persistence.UserOrganizationMapper memberships;
     private final StudentManagementAccessService managementAccess;
+    private final StudentActorIdentityService actors;
     private static final String SYSTEM_ADMIN_ROLE = "SYS_ADMIN";
     private static final String PARENT_ROLE = "PARENT";
     private static final String ORGANIZATION_ADMIN_ROLE = "ORG_ADMIN";
@@ -49,9 +51,10 @@ public class StudentApplicationService {
             StudentIdentityProvisioningService identityProvisioningService,
             GrowthPointAccountMapper pointAccountMapper,
             GrowthPointLifecycleMapper pointLifecycleMapper,
-            IdGenerator idGenerator, StudentManagementAccessService managementAccess
+            IdGenerator idGenerator, StudentManagementAccessService managementAccess, StudentActorIdentityService actors
     ) {
         this.managementAccess = managementAccess;
+        this.actors=actors;
         this.studentMapper = studentMapper;
         this.parentStudentMapper = parentStudentMapper;
         this.studentOrganizationMapper = studentOrganizationMapper;
@@ -69,21 +72,34 @@ public class StudentApplicationService {
         Objects.requireNonNull(currentUser, "当前登录用户不能为空");
         Objects.requireNonNull(command, "创建学生请求不能为空");
 
+        managementAccess.require(currentUser,"STUDENT_CREATE");
         String studentName = requiredText(command.studentName(), "学生姓名", 64);
         String gradeCode = optionalText(command.gradeCode(), "年级编码", 64);
+        if(command.organizationId()!=null && command.familyOrganizationId()!=null)
+            throw new IllegalArgumentException("机构与家庭归属不能同时提交");
         if (command.organizationId() == null) {
-            requireRole(currentUser, PARENT_ROLE, "仅家长可创建家庭学生档案");
+            actors.requireParent(currentUser);
+            Long familyId=command.familyOrganizationId();
+            if(familyId!=null) {
+                Organization family=organizationMapper.findByIdForUpdate(familyId);
+                if(family==null || !"FAMILY".equals(family.typeCode()))throw new ResourceNotFoundException("家庭不存在");
+                if(!OrganizationOperationalStatusService.isOperational(family))throw new IllegalStateException("家庭已停用，不能创建学生档案");
+                // A broad administrator scope must never substitute for real family membership.
+                if(!memberships.exists(currentUser.userId(),familyId) || !managementAccess.organizationAllowed(currentUser,familyId))
+                    throw new SystemOperationAccessDeniedException("只能在当前实际所属家庭创建学生");
+                if(memberships.lockRelation(currentUser.userId(),familyId)==null)throw new SystemOperationAccessDeniedException("家庭成员关联已变化");
+            }
             IssuedStudentCredential issued = identityProvisioningService.issue(studentName);
             Student student = Student.create(idGenerator.nextId(), studentName, gradeCode, issued.studentUserId());
             studentMapper.insert(student);
             createPointAccount(student.id());
             parentStudentMapper.insertPrimary(idGenerator.nextId(), currentUser.userId(), student.id());
+            if(familyId!=null && memberships.insert(idGenerator.nextId(),issued.studentUserId(),familyId)!=1)
+                throw new IllegalStateException("学生家庭成员关联失败");
             return createdStudent(student.id(), issued);
         }
 
-        managementAccess.require(currentUser, "STUDENT_CREATE");
-        if (currentUser.clientType() != com.lingdong.learning.auth.domain.AuthClientType.WEB)
-            requireRole(currentUser, ORGANIZATION_ADMIN_ROLE, "当前身份不能创建机构学生档案");
+        actors.requireInstitutionCreationAccount(currentUser);
         Organization organization = organizationMapper.findById(command.organizationId());
         if (organization == null) {
             throw new ResourceNotFoundException("机构不存在：" + command.organizationId());
@@ -91,16 +107,22 @@ public class StudentApplicationService {
         if (!OrganizationOperationalStatusService.isOperational(organization)) {
             throw new IllegalStateException("机构已停用，不能创建学生档案");
         }
-        if (currentUser.clientType() == com.lingdong.learning.auth.domain.AuthClientType.WEB
-                ? !managementAccess.organizationAllowed(currentUser, organization.id())
-                : !organizationAdminMapper.exists(currentUser.userId(), organization.id())) {
+        if (!managementAccess.organizationAllowed(currentUser, organization.id())) {
             throw new SystemOperationAccessDeniedException("当前用户不是该机构管理员");
         }
+        Organization institution=com.lingdong.learning.organization.application.OrganizationHierarchy.schoolOf(organization,organizationMapper);
+        if(institution==null)throw new IllegalArgumentException("机构创建入口仅支持学校或培训机构，请使用家庭创建入口");
+        if("CLASS".equals(organization.typeCode()))managementAccess.require(currentUser,"STUDENT_CLASS_ASSIGN");
         IssuedStudentCredential issued = identityProvisioningService.issue(studentName);
         Student student = Student.create(idGenerator.nextId(), studentName, gradeCode, issued.studentUserId());
         studentMapper.insert(student);
         createPointAccount(student.id());
-        studentOrganizationMapper.insertEnrollment(idGenerator.nextId(), student.id(), organization.id());
+        studentOrganizationMapper.insertEnrollment(idGenerator.nextId(),student.id(),institution.id());
+        if("CLASS".equals(organization.typeCode())) {
+            studentOrganizationMapper.insertClass(idGenerator.nextId(),student.id(),organization.id());
+        }
+        if(memberships!=null&&!memberships.exists(student.studentUserId(),institution.id()))memberships.insert(idGenerator.nextId(),student.studentUserId(),institution.id());
+        if(memberships!=null&&!memberships.exists(student.studentUserId(),organization.id()))memberships.insert(idGenerator.nextId(),student.studentUserId(),organization.id());
         return createdStudent(student.id(), issued);
     }
 
@@ -127,11 +149,11 @@ public class StudentApplicationService {
 
     private StudentDirectoryQuery directoryQuery(AuthenticatedUser currentUser, String keyword, int page, int pageSize) {
         Objects.requireNonNull(currentUser, "当前登录用户不能为空");
-        boolean webManager = managementAccess.webAllowed(currentUser, "STUDENT_READ");
+        boolean webManager = actors.isInstitutionOperator(currentUser) && managementAccess.webAllowed(currentUser, "STUDENT_READ");
         var scope = webManager ? managementAccess.scope(currentUser) : com.lingdong.learning.datascope.application.OrganizationDataScope.empty();
         boolean systemAdministrator = false;
         boolean parent = hasRole(currentUser, PARENT_ROLE);
-        boolean organizationAdministrator = webManager || hasRole(currentUser, ORGANIZATION_ADMIN_ROLE);
+        boolean organizationAdministrator = webManager || hasRole(currentUser, ORGANIZATION_ADMIN_ROLE) || actors.isParent(currentUser);
         if (!systemAdministrator && !parent && !organizationAdministrator) {
             throw new SystemOperationAccessDeniedException("当前角色没有学生数据范围");
         }
@@ -146,14 +168,14 @@ public class StudentApplicationService {
             return false;
         }
         if (managementAccess.webAllowed(currentUser, "STUDENT_READ")) {
-            return managementAccess.studentAllowed(currentUser, studentId)
+            return actors.isInstitutionOperator(currentUser) && managementAccess.studentAllowed(currentUser, studentId)
                     || (hasRole(currentUser, PARENT_ROLE) && parentStudentMapper.existsActiveByParentAndStudent(currentUser.userId(), studentId));
         }
         boolean parentRelation = hasRole(currentUser, PARENT_ROLE)
                 && parentStudentMapper.existsActiveByParentAndStudent(currentUser.userId(), studentId);
         boolean organizationRelation = hasRole(currentUser, ORGANIZATION_ADMIN_ROLE)
                 && studentOrganizationMapper.existsActiveByOrganizationAdministratorAndStudent(currentUser.userId(), studentId);
-        return parentRelation || organizationRelation;
+        return parentRelation || organizationRelation || (actors.isParent(currentUser) && managementAccess.studentAllowed(currentUser, studentId));
     }
 
     /** 回查数据库生成的审计时间，避免创建响应使用未持久化的临时对象。 */
@@ -195,7 +217,8 @@ public class StudentApplicationService {
     }
 
     private boolean hasRole(AuthenticatedUser currentUser, String roleCode) {
-        return currentUser != null && currentUser.roleCodes().contains(roleCode);
+        return PARENT_ROLE.equals(roleCode) ? actors.isParent(currentUser)
+                : ORGANIZATION_ADMIN_ROLE.equals(roleCode) && actors.isInstitutionOperator(currentUser);
     }
 
     private String requiredText(String value, String fieldName, int maxLength) {
@@ -220,3 +243,4 @@ public class StudentApplicationService {
         return normalized;
     }
 }
+

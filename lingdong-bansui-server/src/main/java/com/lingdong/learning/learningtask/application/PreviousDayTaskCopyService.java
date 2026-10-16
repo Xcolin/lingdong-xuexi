@@ -33,6 +33,8 @@ public class PreviousDayTaskCopyService {
     private final PreviousDayTaskCopyTransactionService transactionService;
     private final Clock clock;
 
+    private final com.lingdong.learning.auth.application.ParentActorAccessService parentActors;
+
     public PreviousDayTaskCopyService(
             FeatureAccessService featureAccessService,
             ParentStudentMapper parentStudentMapper,
@@ -40,7 +42,8 @@ public class PreviousDayTaskCopyService {
             PreviousDayTaskCopyMapper copyMapper,
             PreviousDayTaskCopyTransactionService transactionService,
             Clock clock
-    ) {
+    , com.lingdong.learning.auth.application.ParentActorAccessService parentActors) {
+        this.parentActors = parentActors;
         this.featureAccessService = featureAccessService;
         this.parentStudentMapper = parentStudentMapper;
         this.studentMapper = studentMapper;
@@ -117,10 +120,10 @@ public class PreviousDayTaskCopyService {
         featureAccessService.requireEnabled(TASK_FEATURE, null);
         featureAccessService.requireEnabled(COPY_FEATURE, null);
         requirePositiveId(studentId, "学生标识不合法");
-        if (currentUser == null || currentUser.clientType() != AuthClientType.WEB
-                || !currentUser.roleCodes().contains("PARENT")) {
+        if (currentUser == null || currentUser.clientType() != AuthClientType.WEB) {
             throw new IllegalArgumentException("仅活动主家长可复制昨日任务");
         }
+        parentActors.require(currentUser);
         Student student = studentMapper.findById(studentId);
         if (student == null || student.status() != StudentStatus.ENABLED
                 || !parentStudentMapper.existsActivePrimaryByParentAndStudent(

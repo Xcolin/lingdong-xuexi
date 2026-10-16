@@ -58,6 +58,8 @@ class ParentMobileManualRecoveryServiceTest {
     private final DeviceSessionMapper sessionMapper = mock(DeviceSessionMapper.class);
     private final FeatureAccessService featureAccessService = mock(FeatureAccessService.class);
     private final IdGenerator idGenerator = mock(IdGenerator.class);
+    private final ParentActorAccessService parentActors = mock(ParentActorAccessService.class);
+    private final com.lingdong.learning.permission.application.PermissionDecisionService permissions = mock(com.lingdong.learning.permission.application.PermissionDecisionService.class);
     private ParentMobileManualRecoveryService service;
 
     @BeforeEach
@@ -67,7 +69,24 @@ class ParentMobileManualRecoveryServiceTest {
         service = new ParentMobileManualRecoveryService(
                 recoveryMapper, userMapper, userRoleMapper, studentMapper, relationshipMapper,
                 lifecycleMapper, smsService, smsCodeHasher, sessionMapper,
-                featureAccessService, idGenerator, clock);
+                featureAccessService, idGenerator, clock, parentActors, permissions);
+        when(permissions.isAllowed(OPERATOR_ID, com.lingdong.learning.permission.domain.PermissionClient.WEB, "PARENT_MOBILE_MANUAL_RECOVERY_MANAGE")).thenReturn(true);
+    }
+
+    @Test void deniedSingleActionBlocksDirectServiceBeforeCandidateRead() {
+        when(permissions.isAllowed(OPERATOR_ID, com.lingdong.learning.permission.domain.PermissionClient.WEB,
+                "PARENT_MOBILE_MANUAL_RECOVERY_MANAGE")).thenReturn(false);
+        assertThatThrownBy(() -> service.listCandidates(operator())).isInstanceOf(ResourceNotFoundException.class);
+        org.mockito.Mockito.verifyNoInteractions(recoveryMapper);
+    }
+
+    @Test void customOperatorCannotRecoverParentOutsideOrganizationScope() {
+        when(userMapper.findByIdForUpdate(PARENT_ID)).thenReturn(parent());
+        when(studentMapper.findByIdForUpdate(STUDENT_ID)).thenReturn(student());
+        when(relationshipMapper.findByParentAndStudentForUpdate(PARENT_ID, STUDENT_ID)).thenReturn(relationship());
+        assertThatThrownBy(() -> service.recover(operator(), recoveryCommand())).isInstanceOf(ResourceNotFoundException.class);
+        verify(smsService, never()).verifyAndConsume(any(), any(), any(), any());
+        verify(userMapper, never()).updateMobileIfExpected(any(), any(), any());
     }
 
     @Test
@@ -98,7 +117,6 @@ class ParentMobileManualRecoveryServiceTest {
     @Test
     void rejectsRecoveryWhileParentHasActiveCancellation() {
         when(userMapper.findByIdForUpdate(PARENT_ID)).thenReturn(parent());
-        when(userRoleMapper.hasRoleCode(PARENT_ID, "PARENT")).thenReturn(true);
         when(lifecycleMapper.findActiveCancellation(PARENT_ID)).thenReturn(new ParentAccountCancellationRecord(
                 AUDIT_ID, PARENT_ID, ParentAccountCancellationStatus.COOLING_OFF,
                 "ACTIVE", NOW.minusDays(1), NOW.plusDays(6), null, null));
@@ -113,7 +131,6 @@ class ParentMobileManualRecoveryServiceTest {
     @Test
     void rejectsDefaultLoginNameCollisionBeforeConsumingCode() {
         when(userMapper.findByIdForUpdate(PARENT_ID)).thenReturn(parent());
-        when(userRoleMapper.hasRoleCode(PARENT_ID, "PARENT")).thenReturn(true);
         when(studentMapper.findByIdForUpdate(STUDENT_ID)).thenReturn(student());
         when(relationshipMapper.findByParentAndStudentForUpdate(PARENT_ID, STUDENT_ID))
                 .thenReturn(relationship());
@@ -131,7 +148,6 @@ class ParentMobileManualRecoveryServiceTest {
     @Test
     void changesMobileWritesDigestAuditAndRevokesSessionsAtomically() {
         when(userMapper.findByIdForUpdate(PARENT_ID)).thenReturn(parent());
-        when(userRoleMapper.hasRoleCode(PARENT_ID, "PARENT")).thenReturn(true);
         when(studentMapper.findByIdForUpdate(STUDENT_ID)).thenReturn(student());
         when(relationshipMapper.findByParentAndStudentForUpdate(PARENT_ID, STUDENT_ID))
                 .thenReturn(relationship());
@@ -158,7 +174,7 @@ class ParentMobileManualRecoveryServiceTest {
 
     private AuthenticatedUser operator() {
         return new AuthenticatedUser(OPERATOR_ID, 1L, "school_admin", "学校管理员",
-                AuthClientType.WEB, List.of("ORG_ADMIN"));
+                AuthClientType.WEB, List.of("CUSTOM_RECOVERY_OPERATOR"));
     }
 
     private ParentMobileManualRecoveryCandidateRow candidateRow() {

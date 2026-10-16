@@ -1,6 +1,8 @@
 param(
-    [ValidateSet('inspect','RESET-lingdong_learning')][string]$Mode='inspect',
-    [string]$JavaHome='C:\Users\Administrator\.jdks\temurin-17.0.20'
+    [ValidateSet('inspect','rehearse','RESET-lingdong_learning')][string]$Mode='inspect',
+    [string]$JavaHome='C:\Program Files\Microsoft\jdk-17.0.13.11-hotspot',
+    [string]$BackupDir,
+    [string]$Schema
 )
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
@@ -14,6 +16,9 @@ New-Item -ItemType Directory -Force $classDirectory | Out-Null
 if($LASTEXITCODE -ne 0){throw 'Reset tool compilation failed.'}
 Push-Location $projectRoot
 try {
-    & "$jdk/bin/java.exe" -cp "$classDirectory;$classpath" ResetProjectDatabase 'lingdong-bansui-server/src/main/resources/application-local.yml' '.local-verification/bansui-demo-credentials.properties' $Mode
+    $arguments=@('lingdong-bansui-server/src/main/resources/application-local.yml','.local-verification/bansui-demo-credentials.properties',$Mode)
+    if($Mode -ne 'inspect') { if(-not $BackupDir){throw 'Verified backup directory required'}; $arguments+=$BackupDir }
+    if($Mode -eq 'rehearse') { if(-not $Schema){throw 'Isolated schema required'}; $arguments+=$Schema }
+    & "$jdk/bin/java.exe" -cp "$classDirectory;$classpath" ResetProjectDatabase @arguments
     if($LASTEXITCODE -ne 0){throw 'Project reset failed. Inspect logs before any retry.'}
 } finally {Pop-Location}

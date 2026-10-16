@@ -1,0 +1,809 @@
+[
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/attachment/web/AttachmentManagementController.java",
+    "base": "/api/v1/attachment-management",
+    "actions": [
+      "GET /api/v1/attachment-management/rules",
+      "POST /api/v1/attachment-management/rules",
+      "PUT /api/v1/attachment-management/rules/{id}",
+      "POST /api/v1/attachment-management/rules/{id}/enable",
+      "POST /api/v1/attachment-management/rules/{id}/disable",
+      "GET /api/v1/attachment-management/files",
+      "GET /api/v1/attachment-management/files/{id}/relations"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/attachment/web/TaskAttachmentController.java",
+    "base": "/api/v1/attachments",
+    "actions": [
+      "POST /api/v1/attachments",
+      "GET /api/v1/attachments/{id}",
+      "GET /api/v1/attachments/{id}/content",
+      "GET /api/v1/attachments/{id}/download",
+      "DELETE /api/v1/attachments/{id}"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/attendance/web/AttendanceController.java",
+    "base": "/api/v1/attendance-records",
+    "actions": [
+      "GET /api/v1/attendance-records",
+      "GET /api/v1/attendance-records/class-options",
+      "GET /api/v1/attendance-records/roster",
+      "POST /api/v1/attendance-records/batch",
+      "GET /api/v1/attendance-records/{id}"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/audit/web/SystemTaskQueryController.java",
+    "base": "/api/v1/system-tasks",
+    "actions": [
+      "GET /api/v1/system-tasks",
+      "GET /api/v1/system-tasks/{id}"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/auth/web/AccountEmailAuthenticationController.java",
+    "base": "/api/v1/auth",
+    "actions": [
+      "POST /api/v1/auth/login-email-codes",
+      "POST /api/v1/auth/sessions/email"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/auth/web/AccountManagementController.java",
+    "base": "/api/v1/account-management",
+    "actions": [
+      "GET /api/v1/account-management/users",
+      "POST /api/v1/account-management/users/{id}/password-reset"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/auth/web/AccountSettingsController.java",
+    "base": "/api/v1/auth/account-settings",
+    "actions": [
+      "GET /api/v1/auth/account-settings",
+      "POST /api/v1/auth/account-settings/codes",
+      "POST /api/v1/auth/account-settings/contact",
+      "POST /api/v1/auth/account-settings/password"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/auth/web/AccountSmsAuthenticationController.java",
+    "base": "/api/v1/auth",
+    "actions": [
+      "POST /api/v1/auth/login-sms-codes",
+      "POST /api/v1/auth/sessions/sms"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/auth/web/AccountWechatAuthenticationController.java",
+    "base": "/api/v1/auth",
+    "actions": [
+      "POST /api/v1/auth/account-wechat-sessions",
+      "POST /api/v1/auth/account-wechat-bindings",
+      "POST /api/v1/auth/account-settings/wechat",
+      "POST /api/v1/auth/account-wechat-email-codes",
+      "POST /api/v1/auth/account-wechat-email-bindings",
+      "POST /api/v1/auth/account-wechat-registrations"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/auth/web/AuthenticationController.java",
+    "base": "/api/v1/auth",
+    "actions": [
+      "POST /api/v1/auth/sessions/password",
+      "POST /api/v1/auth/registration-sessions/password",
+      "POST /api/v1/auth/organization-sessions/password",
+      "POST /api/v1/auth/sessions/refresh",
+      "POST /api/v1/auth/password",
+      "DELETE /api/v1/auth/sessions/current",
+      "GET /api/v1/auth/me",
+      "GET /api/v1/auth/devices",
+      "DELETE /api/v1/auth/devices/{sessionId}",
+      "POST /api/v1/auth/devices/sign-out-all",
+      "GET /api/v1/auth/security-events",
+      "POST /api/v1/auth/security-events/{eventId}/read",
+      "POST /api/v1/auth/security-events/read-all"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/auth/web/ParentAuthenticationController.java",
+    "base": "/api/v1",
+    "actions": [
+      "GET /api/v1/public/parent-auth-context",
+      "GET /api/v1/auth/parent-state",
+      "POST /api/v1/auth/parent-sms-codes",
+      "POST /api/v1/auth/parent-sessions/sms",
+      "POST /api/v1/auth/parent-sessions/password",
+      "POST /api/v1/auth/parent-wechat-sessions",
+      "POST /api/v1/auth/parent-wechat-bindings",
+      "POST /api/v1/auth/parent-passwords",
+      "POST /api/v1/auth/parent-password-resets",
+      "POST /api/v1/auth/parent-agreement-acceptances",
+      "POST /api/v1/parent-onboarding/completion",
+      "GET /api/v1/auth/parent-account-lifecycle",
+      "POST /api/v1/auth/parent-mobile-change/current-codes",
+      "POST /api/v1/auth/parent-mobile-change-tickets",
+      "POST /api/v1/auth/parent-mobile-change/new-codes",
+      "POST /api/v1/auth/parent-mobile-changes",
+      "POST /api/v1/auth/parent-account-cancellation-codes",
+      "POST /api/v1/auth/parent-account-cancellations",
+      "DELETE /api/v1/auth/parent-account-cancellations/current"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/auth/web/ParentMobileManualRecoveryController.java",
+    "base": "/api/v1/organization-parent-mobile-recoveries",
+    "actions": [
+      "GET /api/v1/organization-parent-mobile-recoveries/candidates",
+      "POST /api/v1/organization-parent-mobile-recoveries/codes",
+      "POST /api/v1/organization-parent-mobile-recoveries"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/auth/web/PublicRegistrationController.java",
+    "base": "/api/v1",
+    "actions": [
+      "GET /api/v1/public/registration/context",
+      "GET /api/v1/public/registration/agreement",
+      "POST /api/v1/auth/registration-codes",
+      "POST /api/v1/auth/registrations"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/auth/web/StudentAuthenticationController.java",
+    "base": "/api/v1/auth",
+    "actions": [
+      "POST /api/v1/auth/student-captchas",
+      "POST /api/v1/auth/student-sessions/code",
+      "POST /api/v1/auth/student-sessions/qr",
+      "POST /api/v1/auth/student-qr-captchas"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/auth/web/StudentWechatAuthenticationController.java",
+    "base": "/api/v1/auth",
+    "actions": [
+      "POST /api/v1/auth/student-wechat-sessions",
+      "POST /api/v1/auth/student-wechat-binding-codes",
+      "POST /api/v1/auth/student-wechat-bindings"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/auth/web/StudentWechatBindingManagementController.java",
+    "base": "/api/v1",
+    "actions": [
+      "GET /api/v1/student-wechat-bindings",
+      "POST /api/v1/students/{studentId}/wechat-unbindings"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/cache/web/CacheManagementController.java",
+    "base": "/api/v1/cache-management",
+    "actions": [
+      "GET /api/v1/cache-management/operations",
+      "POST /api/v1/cache-management/operations",
+      "POST /api/v1/cache-management/review-submissions",
+      "GET /api/v1/cache-management/review-queue",
+      "POST /api/v1/cache-management/review-queue/{taskId}/approve",
+      "POST /api/v1/cache-management/review-queue/{taskId}/reject"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/common/web/HealthController.java",
+    "base": "/api/v1/health",
+    "actions": [
+      "GET /api/v1/health"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/dashboard/web/DashboardController.java",
+    "base": "/api/v1/dashboard",
+    "actions": [
+      "GET /api/v1/dashboard/activity-trends"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/dictionary/web/DictionaryManagementController.java",
+    "base": "/api/v1/dictionaries",
+    "actions": [
+      "GET /api/v1/dictionaries/types",
+      "POST /api/v1/dictionaries/types",
+      "PUT /api/v1/dictionaries/types/{typeId}",
+      "GET /api/v1/dictionaries/types/{typeId}/items",
+      "POST /api/v1/dictionaries/types/{typeId}/items",
+      "PUT /api/v1/dictionaries/items/{itemId}"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/exceptionreport/web/ExceptionReportController.java",
+    "base": "/api/v1/exception-reports",
+    "actions": [
+      "POST /api/v1/exception-reports",
+      "GET /api/v1/exception-reports",
+      "GET /api/v1/exception-reports/class-options",
+      "GET /api/v1/exception-reports/student-options",
+      "GET /api/v1/exception-reports/{id}",
+      "POST /api/v1/exception-reports/{id}/handle"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/exportjob/web/ExportJobController.java",
+    "base": "/api/v1/export-jobs",
+    "actions": [
+      "POST /api/v1/export-jobs",
+      "GET /api/v1/export-jobs",
+      "GET /api/v1/export-jobs/options",
+      "GET /api/v1/export-jobs/{id}",
+      "GET /api/v1/export-jobs/{id}/download"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/exportjob/web/ExportJobReviewController.java",
+    "base": "/api/v1/export-job-reviews",
+    "actions": [
+      "GET /api/v1/export-job-reviews",
+      "POST /api/v1/export-job-reviews/{taskId}/approve",
+      "POST /api/v1/export-job-reviews/{taskId}/reject"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/exportjob/web/GrowthReviewExportController.java",
+    "base": "/api/v1/growth-review-export-jobs",
+    "actions": [
+      "GET /api/v1/growth-review-export-jobs",
+      "GET /api/v1/growth-review-export-jobs/{id}",
+      "GET /api/v1/growth-review-export-jobs/{id}/download",
+      "POST /api/v1/growth-review-export-jobs"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/feature/web/FeatureManagementController.java",
+    "base": "/api/v1/feature-management",
+    "actions": [
+      "GET /api/v1/feature-management/toggles",
+      "GET /api/v1/feature-management/toggle-options",
+      "GET /api/v1/feature-management/changes",
+      "GET /api/v1/feature-management/review-queue",
+      "POST /api/v1/feature-management/review-submissions",
+      "POST /api/v1/feature-management/review-queue/{taskId}/approve",
+      "POST /api/v1/feature-management/review-queue/{taskId}/reject"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/feature/web/PublicCapabilityController.java",
+    "base": "/api/v1/public/capabilities",
+    "actions": [
+      "GET /api/v1/public/capabilities"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/growthpoint/web/AnonymousRankController.java",
+    "base": "/api/v1/anonymous-ranks",
+    "actions": [
+      "GET /api/v1/anonymous-ranks/preferences",
+      "GET /api/v1/anonymous-ranks/students",
+      "GET /api/v1/anonymous-ranks/students/{studentId}/classes",
+      "GET /api/v1/anonymous-ranks/students/{studentId}/classes/{classId}",
+      "GET /api/v1/anonymous-ranks/students/{studentId}/classes/{classId}/preference",
+      "PUT /api/v1/anonymous-ranks/students/{studentId}/classes/{classId}/preference"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/growthpoint/web/GrowthPointCorrectionController.java",
+    "base": "/api/v1/growth-points/students/{studentId}/corrections",
+    "actions": [
+      "POST /api/v1/growth-points/students/{studentId}/corrections"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/growthpoint/web/GrowthPointQueryController.java",
+    "base": "/api/v1/growth-points",
+    "actions": [
+      "GET /api/v1/growth-points/me/account",
+      "GET /api/v1/growth-points/me/ledgers",
+      "GET /api/v1/growth-points/students",
+      "GET /api/v1/growth-points/students/{studentId}/account",
+      "GET /api/v1/growth-points/students/{studentId}/ledgers"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/growthpoint/web/GrowthReviewController.java",
+    "base": "/api/v1/growth-reviews",
+    "actions": [
+      "GET /api/v1/growth-reviews/miniapp/students",
+      "GET /api/v1/growth-reviews/miniapp/students/{studentId}",
+      "GET /api/v1/growth-reviews/miniapp/students/{studentId}/{reviewId}",
+      "GET /api/v1/growth-reviews/me",
+      "GET /api/v1/growth-reviews/me/{reviewId}",
+      "POST /api/v1/growth-reviews/me/{reviewId}/supplements",
+      "GET /api/v1/growth-reviews/students/{studentId}",
+      "GET /api/v1/growth-reviews/students/{studentId}/{reviewId}",
+      "POST /api/v1/growth-reviews/students/{studentId}/{reviewId}/supplements"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/growthpoint/web/GrowthReviewSubscriptionController.java",
+    "base": "/api/v1/growth-review-subscriptions/students/{studentId}",
+    "actions": [
+      "GET /api/v1/growth-review-subscriptions/students/{studentId}",
+      "PUT /api/v1/growth-review-subscriptions/students/{studentId}"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/growthpoint/web/GrowthRewardController.java",
+    "base": "/api/v1/rewards",
+    "actions": [
+      "GET /api/v1/rewards/students/{studentId}",
+      "POST /api/v1/rewards/students/{studentId}",
+      "PATCH /api/v1/rewards/{rewardId}",
+      "DELETE /api/v1/rewards/{rewardId}",
+      "GET /api/v1/rewards/me",
+      "GET /api/v1/rewards/me/summary"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/growthpoint/web/GrowthRewardExchangeController.java",
+    "base": "/api/v1/reward-exchanges",
+    "actions": [
+      "POST /api/v1/reward-exchanges",
+      "GET /api/v1/reward-exchanges/me",
+      "GET /api/v1/reward-exchanges/students/{studentId}",
+      "POST /api/v1/reward-exchanges/{exchangeId}/approve",
+      "POST /api/v1/reward-exchanges/{exchangeId}/reject",
+      "POST /api/v1/reward-exchanges/{exchangeId}/verify"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/growthpoint/web/ParentRewardController.java",
+    "base": "/api/v1/parent-rewards",
+    "actions": [
+      "GET /api/v1/parent-rewards/students",
+      "GET /api/v1/parent-rewards/students/{studentId}",
+      "POST /api/v1/parent-rewards/students/{studentId}",
+      "PUT /api/v1/parent-rewards/{rewardId}",
+      "DELETE /api/v1/parent-rewards/{rewardId}"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/growthpoint/web/ParentRewardExchangeController.java",
+    "base": "/api/v1/parent-reward-exchanges",
+    "actions": [
+      "GET /api/v1/parent-reward-exchanges/students/{studentId}",
+      "POST /api/v1/parent-reward-exchanges/{exchangeId}/approve",
+      "POST /api/v1/parent-reward-exchanges/{exchangeId}/reject",
+      "POST /api/v1/parent-reward-exchanges/{exchangeId}/verify"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/iam/web/DataScopeManagementController.java",
+    "base": "/api/v1/organization-admins",
+    "actions": [
+      "POST /api/v1/organization-admins"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/iam/web/IamChangeAuditController.java",
+    "base": "/api/v1/iam/audits",
+    "actions": [
+      "GET /api/v1/iam/audits"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/iam/web/OrganizationMembershipController.java",
+    "base": "/api/v1",
+    "actions": [
+      "GET /api/v1/organizations/{organizationId}/member-picker",
+      "GET /api/v1/roles/{roleId}/user-picker",
+      "GET /api/v1/roles/{roleId}/users",
+      "GET /api/v1/organizations/{organizationId}/member-relations",
+      "GET /api/v1/organizations/{organizationId}/members",
+      "POST /api/v1/organizations/{organizationId}/members:batch",
+      "POST /api/v1/organizations/{organizationId}/members:revoke",
+      "POST /api/v1/organizations/{organizationId}/members:associate",
+      "POST /api/v1/organizations/{organizationId}/members:remove",
+      "POST /api/v1/organizations/{organizationId}/administrators:assign",
+      "POST /api/v1/organizations/{organizationId}/administrators:revoke"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/iam/web/PermissionManagementController.java",
+    "base": "/api/v1",
+    "actions": [
+      "GET /api/v1/roles/{roleId}/permission-catalog",
+      "GET /api/v1/users/{userId}/permission-catalog",
+      "GET /api/v1/permissions",
+      "GET /api/v1/iam/role-permission-menus",
+      "POST /api/v1/permissions",
+      "POST /api/v1/roles/{roleId}/permissions",
+      "GET /api/v1/roles/{roleId}/permissions",
+      "PUT /api/v1/roles/{roleId}/permissions:batch",
+      "PUT /api/v1/roles/{roleId}/permissions/{permissionId}",
+      "DELETE /api/v1/roles/{roleId}/permissions/{permissionId}",
+      "GET /api/v1/users/{userId}/permission-tree",
+      "PUT /api/v1/users/{userId}/permissions:batch",
+      "PUT /api/v1/users/{userId}/permissions/{permissionId}",
+      "GET /api/v1/users/{userId}/permissions",
+      "DELETE /api/v1/users/{userId}/permissions/{permissionId}"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/iam/web/RoleManagementController.java",
+    "base": "/api/v1/roles",
+    "actions": [
+      "GET /api/v1/roles",
+      "POST /api/v1/roles",
+      "POST /api/v1/roles/{roleId}/data-scopes",
+      "POST /api/v1/roles/{roleId}/users:batch",
+      "POST /api/v1/roles/{roleId}/users:revoke",
+      "GET /api/v1/roles/{roleId}/menu-grants",
+      "PUT /api/v1/roles/{roleId}/menu-grants"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/iam/web/UserManagementController.java",
+    "base": "/api/v1/users",
+    "actions": [
+      "GET /api/v1/users/creation-organizations",
+      "GET /api/v1/users/scope-organizations",
+      "GET /api/v1/users/{id}",
+      "GET /api/v1/users",
+      "POST /api/v1/users",
+      "POST /api/v1/users/{id}/student-profile",
+      "GET /api/v1/users/{id}/organization-edit",
+      "GET /api/v1/users/{id}/role-associations",
+      "POST /api/v1/users/{id}/roles:batch",
+      "POST /api/v1/users/{id}/roles:revoke",
+      "PATCH /api/v1/users/{id}",
+      "PATCH /api/v1/users/{id}/status",
+      "POST /api/v1/users/{id}/organizations",
+      "POST /api/v1/users/{id}/roles",
+      "POST /api/v1/users/{id}/password"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/importjob/web/ImportJobController.java",
+    "base": "/api/v1/import-jobs",
+    "actions": [
+      "POST /api/v1/import-jobs",
+      "GET /api/v1/import-jobs",
+      "GET /api/v1/import-jobs/options",
+      "GET /api/v1/import-jobs/{id}",
+      "GET /api/v1/import-jobs/{id}/errors",
+      "GET /api/v1/import-jobs/{id}/source-file",
+      "GET /api/v1/import-jobs/{id}/error-file"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/interfaceconfig/web/InterfaceServiceManagementController.java",
+    "base": "/api/v1/interface-services",
+    "actions": [
+      "GET /api/v1/interface-services",
+      "GET /api/v1/interface-services/changes",
+      "GET /api/v1/interface-services/call-logs",
+      "GET /api/v1/interface-services/review-queue",
+      "POST /api/v1/interface-services/registration-submissions",
+      "POST /api/v1/interface-services/{serviceId}/enable-submissions",
+      "POST /api/v1/interface-services/{serviceId}/disable-submissions",
+      "POST /api/v1/interface-services/{serviceId}/authorization-submissions",
+      "POST /api/v1/interface-services/review-tasks/{taskId}/approve",
+      "POST /api/v1/interface-services/review-tasks/{taskId}/reject"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/learningtask/web/LearningTaskController.java",
+    "base": "/api/v1/learning-tasks",
+    "actions": [
+      "POST /api/v1/learning-tasks",
+      "PATCH /api/v1/learning-tasks/{id}",
+      "PUT /api/v1/learning-tasks/{id}",
+      "GET /api/v1/learning-tasks/{id}",
+      "GET /api/v1/learning-tasks",
+      "POST /api/v1/learning-tasks/batch-publish",
+      "POST /api/v1/learning-tasks/{id}/publish",
+      "POST /api/v1/learning-tasks/{id}/recurrence/stop",
+      "GET /api/v1/learning-tasks/{id}/progress"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/learningtask/web/LearningTaskOptionController.java",
+    "base": "/api/v1/learning-task-options",
+    "actions": [
+      "GET /api/v1/learning-task-options/organizations",
+      "GET /api/v1/learning-task-options/students",
+      "GET /api/v1/learning-task-options/teachers"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/learningtask/web/LearningTaskTemplateController.java",
+    "base": "/api/v1/task-templates",
+    "actions": [
+      "GET /api/v1/task-templates",
+      "POST /api/v1/task-templates",
+      "PATCH /api/v1/task-templates/{templateId}",
+      "DELETE /api/v1/task-templates/{templateId}",
+      "PUT /api/v1/task-templates/personal-order"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/learningtask/web/ManagedTaskAssignmentController.java",
+    "base": "/api/v1/managed-task-assignments",
+    "actions": [
+      "POST /api/v1/managed-task-assignments/{id}/exempt",
+      "GET /api/v1/managed-task-assignments",
+      "POST /api/v1/managed-task-assignments/{id}/defer"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/learningtask/web/PreviousDayTaskCopyController.java",
+    "base": "/api/v1",
+    "actions": [
+      "GET /api/v1/students/{studentId}/previous-day-task-copy/preview",
+      "POST /api/v1/students/{studentId}/previous-day-task-copy",
+      "POST /api/v1/task-copy-batches/{batchId}/items/{itemId}/retry"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/learningtask/web/StudentTaskAssignmentController.java",
+    "base": "/api/v1/task-assignments",
+    "actions": [
+      "GET /api/v1/task-assignments",
+      "GET /api/v1/task-assignments/{id}",
+      "POST /api/v1/task-assignments/{id}/claim",
+      "POST /api/v1/task-assignments/{id}/pause",
+      "POST /api/v1/task-assignments/{id}/resume",
+      "POST /api/v1/task-assignments/{id}/abandon",
+      "POST /api/v1/task-assignments/{id}/check-ins"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/learningtask/web/TaskReviewController.java",
+    "base": "/api/v1/task-reviews",
+    "actions": [
+      "GET /api/v1/task-reviews",
+      "GET /api/v1/task-reviews/{assignmentId}",
+      "POST /api/v1/task-reviews/{assignmentId}/reject",
+      "POST /api/v1/task-reviews/{assignmentId}/approve",
+      "GET /api/v1/task-reviews/{assignmentId}/reviewer-options",
+      "POST /api/v1/task-reviews/{assignmentId}/transfer"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/learningtask/web/TeacherClassController.java",
+    "base": "/api/v1/teachers/{teacherUserId}/classes",
+    "actions": [
+      "PUT /api/v1/teachers/{teacherUserId}/classes/{classId}",
+      "DELETE /api/v1/teachers/{teacherUserId}/classes/{classId}",
+      "GET /api/v1/teachers/{teacherUserId}/classes"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/menu/web/MenuController.java",
+    "base": "/api/v1",
+    "actions": [
+      "GET /api/v1/iam/menus",
+      "GET /api/v1/menus/current",
+      "POST /api/v1/iam/menus",
+      "PUT /api/v1/iam/menus/order",
+      "PUT /api/v1/iam/menus/{id}",
+      "POST /api/v1/iam/menus/{id}/buttons:batch",
+      "PUT /api/v1/iam/menus/buttons:batch",
+      "PUT /api/v1/iam/menus/{id}/position",
+      "DELETE /api/v1/iam/menus/{id}"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/organization/onboarding/application/OrganizationOwnerController.java",
+    "base": "/api/v1/organization-onboarding/organizations",
+    "actions": [
+      "GET /api/v1/organization-onboarding/organizations/{id}/owner-transfer-options",
+      "POST /api/v1/organization-onboarding/organizations/{id}/owner-transfer"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/organization/onboarding/web/MobileVerificationController.java",
+    "base": "/api/v1/organization-onboarding",
+    "actions": [
+      "POST /api/v1/organization-onboarding/mobile-code",
+      "POST /api/v1/organization-onboarding/mobile-verify"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/organization/onboarding/web/OrganizationOnboardingController.java",
+    "base": "/api/v1/organization-onboarding",
+    "actions": [
+      "GET /api/v1/organization-onboarding/context",
+      "GET /api/v1/organization-onboarding/regions",
+      "GET /api/v1/organization-onboarding/my-organizations",
+      "POST /api/v1/organization-onboarding/families",
+      "GET /api/v1/organization-onboarding/applications",
+      "GET /api/v1/organization-onboarding/applications/{id}",
+      "POST /api/v1/organization-onboarding/applications",
+      "POST /api/v1/organization-onboarding/applications/{id}/withdraw",
+      "POST /api/v1/organization-onboarding/applications/{id}/resubmit",
+      "POST /api/v1/organization-onboarding/tasks/{taskId}/approve",
+      "POST /api/v1/organization-onboarding/tasks/{taskId}/reject"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/organization/web/ClassManagementController.java",
+    "base": "/api/v1/classes",
+    "actions": [
+      "GET /api/v1/classes/lookup",
+      "GET /api/v1/classes/schools",
+      "GET /api/v1/classes",
+      "POST /api/v1/classes",
+      "PUT /api/v1/classes/{classId}",
+      "POST /api/v1/classes/{classId}/disable",
+      "POST /api/v1/classes/{classId}/enable",
+      "GET /api/v1/classes/grades",
+      "POST /api/v1/classes/grades",
+      "PUT /api/v1/classes/grades/{gradeId}",
+      "POST /api/v1/classes/grades/{gradeId}/disable",
+      "POST /api/v1/classes/grades/{gradeId}/enable",
+      "POST /api/v1/classes/{classId}/assign-grade",
+      "GET /api/v1/classes/campuses",
+      "POST /api/v1/classes/campuses",
+      "PUT /api/v1/classes/campuses/{campusId}",
+      "POST /api/v1/classes/campuses/{campusId}/disable",
+      "POST /api/v1/classes/campuses/{campusId}/enable"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/organization/web/OrganizationChangeController.java",
+    "base": "/api/v1/organization-changes",
+    "actions": [
+      "POST /api/v1/organization-changes",
+      "GET /api/v1/organization-changes",
+      "POST /api/v1/organization-changes/{taskId}/approve",
+      "POST /api/v1/organization-changes/{taskId}/reject"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/organization/web/OrganizationManagementController.java",
+    "base": "/api/v1",
+    "actions": [
+      "GET /api/v1/organization-types",
+      "POST /api/v1/organization-types",
+      "GET /api/v1/organizations",
+      "POST /api/v1/organizations",
+      "PUT /api/v1/organizations/{organizationId}",
+      "POST /api/v1/organizations/{organizationId}/enable",
+      "PUT /api/v1/organizations/order",
+      "PUT /api/v1/organizations/{organizationId}/position"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/organization/web/OrganizationWorkbenchController.java",
+    "base": "/api/v1/organization-workbench",
+    "actions": [
+      "GET /api/v1/organization-workbench/context"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/student/web/InstitutionEnrollmentController.java",
+    "base": "/api/v1/institution-enrollment",
+    "actions": [
+      "POST /api/v1/institution-enrollment/invitations",
+      "POST /api/v1/institution-enrollment/invitations/resolve",
+      "POST /api/v1/institution-enrollment/requests",
+      "GET /api/v1/institution-enrollment/requests",
+      "POST /api/v1/institution-enrollment/requests/{id}/approve",
+      "POST /api/v1/institution-enrollment/requests/{id}/reject"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/student/web/ParentBindingInvitationController.java",
+    "base": "/api/v1/parent-invitations",
+    "actions": [
+      "POST /api/v1/parent-invitations/{id}/accept",
+      "POST /api/v1/parent-invitations/{id}/reject"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/student/web/ParentRelationshipController.java",
+    "base": "/api/v1",
+    "actions": [
+      "GET /api/v1/students/{studentId}/parent-relationships",
+      "GET /api/v1/parent-relationships/students",
+      "POST /api/v1/students/{studentId}/secondary-parent-invitations",
+      "DELETE /api/v1/students/{studentId}/secondary-parent-relationships/{parentUserId}",
+      "DELETE /api/v1/students/{studentId}/primary-parent-relationship",
+      "POST /api/v1/students/{studentId}/primary-transfer-invitations",
+      "POST /api/v1/parent-relationship-invitations/{invitationId}/acceptance",
+      "POST /api/v1/parent-relationship-invitations/{invitationId}/rejection"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/student/web/ParentStudentOptionController.java",
+    "base": "/api/v1/parent/student-options",
+    "actions": [
+      "GET /api/v1/parent/student-options"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/student/web/StudentAccountCancellationController.java",
+    "base": "/api/v1",
+    "actions": [
+      "GET /api/v1/student-account-cancellations/candidates",
+      "POST /api/v1/students/{studentId}/cancellations"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/student/web/StudentClassQueryController.java",
+    "base": "/api/v1/students",
+    "actions": [
+      "GET /api/v1/students/class-assignment-options",
+      "GET /api/v1/students/class-members"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/student/web/StudentManagementController.java",
+    "base": "/api/v1/students",
+    "actions": [
+      "GET /api/v1/students",
+      "GET /api/v1/students/{id}",
+      "POST /api/v1/students",
+      "PUT /api/v1/students/{studentId}/class",
+      "GET /api/v1/students/organization-relationships",
+      "GET /api/v1/students/organization-relationship-classes",
+      "GET /api/v1/students/{studentId}/organization-relationships",
+      "POST /api/v1/students/{studentId}/class-transfers",
+      "POST /api/v1/students/{studentId}/organization-deactivations",
+      "POST /api/v1/students/{studentId}/class-deactivations",
+      "POST /api/v1/students/{studentId}/credentials/initialize",
+      "POST /api/v1/students/{studentId}/login-code-resets",
+      "POST /api/v1/students/{studentId}/login-qr-tickets",
+      "POST /api/v1/students/{studentId}/parent-invitations"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/studentimport/web/StudentImportController.java",
+    "base": "/api/v1/student-import-executions",
+    "actions": [
+      "POST /api/v1/student-import-executions",
+      "GET /api/v1/student-import-executions",
+      "GET /api/v1/student-import-executions/{id}",
+      "GET /api/v1/student-import-executions/{id}/rows",
+      "POST /api/v1/student-import-executions/{id}/retry-failures",
+      "GET /api/v1/student-import-executions/{id}/credentials"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/teacher/web/TeacherManagementController.java",
+    "base": "/api/v1/organization-teachers",
+    "actions": [
+      "GET /api/v1/organization-teachers/lookup",
+      "GET /api/v1/organization-teachers",
+      "GET /api/v1/organization-teachers/{teacherUserId}",
+      "POST /api/v1/organization-teachers",
+      "PUT /api/v1/organization-teachers/{teacherUserId}/profile",
+      "PUT /api/v1/organization-teachers/{teacherUserId}/status",
+      "POST /api/v1/organization-teachers/{teacherUserId}/password-resets",
+      "POST /api/v1/organization-teachers/batch"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/teacher/web/TeacherWorkbenchController.java",
+    "base": "/api/v1/teacher-workbench",
+    "actions": [
+      "GET /api/v1/teacher-workbench/context"
+    ]
+  },
+  {
+    "source": "lingdong-bansui-server/src/main/java/com/lingdong/learning/templateconfig/web/ImportExportTemplateManagementController.java",
+    "base": "/api/v1/import-export-templates",
+    "actions": [
+      "GET /api/v1/import-export-templates/options",
+      "GET /api/v1/import-export-templates",
+      "POST /api/v1/import-export-templates",
+      "GET /api/v1/import-export-templates/{id}/fields",
+      "PUT /api/v1/import-export-templates/{id}/fields",
+      "POST /api/v1/import-export-templates/{id}/enable",
+      "POST /api/v1/import-export-templates/{id}/disable",
+      "POST /api/v1/import-export-templates/{id}/default",
+      "GET /api/v1/import-export-templates/{id}/download"
+    ]
+  }
+]

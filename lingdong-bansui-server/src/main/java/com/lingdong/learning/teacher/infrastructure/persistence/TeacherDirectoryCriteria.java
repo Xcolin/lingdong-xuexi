@@ -13,6 +13,10 @@ public record TeacherDirectoryCriteria(
         boolean allOrganizations,
         List<String> rootPaths,
         int limit,
-        int offset
+        int offset,
+        String campusPath,
+        String subjectCode
 ) {
+    public TeacherDirectoryCriteria(String keyword,Long schoolId,Long classOrganizationId,UserStatus status,boolean allOrganizations,List<String> rootPaths,int limit,int offset){this(keyword,schoolId,classOrganizationId,status,allOrganizations,rootPaths,limit,offset,null,null);}
+    public TeacherDirectoryCriteria(String keyword,Long schoolId,Long classOrganizationId,UserStatus status,boolean allOrganizations,List<String> rootPaths,int limit,int offset,String campusPath){this(keyword,schoolId,classOrganizationId,status,allOrganizations,rootPaths,limit,offset,campusPath,null);}
 }

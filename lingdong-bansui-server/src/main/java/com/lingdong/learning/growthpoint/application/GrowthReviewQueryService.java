@@ -1,12 +1,14 @@
 package com.lingdong.learning.growthpoint.application;
 
 import com.lingdong.learning.auth.application.AuthenticatedUser;
+import com.lingdong.learning.auth.application.ParentActorAccessService;
 import com.lingdong.learning.auth.domain.AuthClientType;
 import com.lingdong.learning.common.id.IdGenerator;
 import com.lingdong.learning.common.security.SystemOperationAccessDeniedException;
 import com.lingdong.learning.common.web.ResourceNotFoundException;
 import com.lingdong.learning.feature.application.FeatureAccessService;
 import com.lingdong.learning.growthpoint.domain.GrowthReviewPeriodType;
+import com.lingdong.learning.growthpoint.domain.GrowthReviewSupplementType;
 import com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthReviewCategoryRow;
 import com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthReviewDailyTrendRow;
 import com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthReviewDetailRow;
@@ -43,6 +45,8 @@ public class GrowthReviewQueryService {
     private final PermissionDecisionService permissions;
     private final UserRoleMapper roles;
 
+    private final ParentActorAccessService parentActors;
+
     public GrowthReviewQueryService(
             GrowthReviewMapper reviewMapper,
             CurrentStudentAccessService currentStudentAccessService,
@@ -51,8 +55,10 @@ public class GrowthReviewQueryService {
             IdGenerator idGenerator,
             Clock clock,
             PermissionDecisionService permissions,
-            UserRoleMapper roles
+            UserRoleMapper roles,
+            ParentActorAccessService parentActors
     ) {
+        this.parentActors = parentActors;
         this.reviewMapper = reviewMapper;
         this.currentStudentAccessService = currentStudentAccessService;
         this.parentStudentMapper = parentStudentMapper;
@@ -69,8 +75,7 @@ public class GrowthReviewQueryService {
     @Transactional(readOnly = true)
     public List<ChildOption> findMiniappChildren(AuthenticatedUser currentUser) {
         requireMiniappParent(currentUser);
-        return parentStudentMapper.findActiveStudentsByParent(currentUser.userId()).stream()
-                .map(row -> new ChildOption(row.studentId().toString(), row.studentName())).toList();
+        return parentStudentMapper.findMiniappReviewChildren(currentUser.userId());
     }
 
     @Transactional(readOnly = true)
@@ -89,15 +94,14 @@ public class GrowthReviewQueryService {
 
     private void requireMiniappReadableChild(AuthenticatedUser currentUser, Long studentId) {
         requireMiniappParent(currentUser);
-        if (studentId == null || !parentStudentMapper.existsActiveByParentAndStudent(currentUser.userId(), studentId)) {
+        if (studentId == null || !parentStudentMapper.existsMiniappReviewChild(currentUser.userId(), studentId)) {
             throw notFound();
         }
     }
 
     private void requireMiniappParent(AuthenticatedUser currentUser) {
+        parentActors.require(currentUser);
         if (currentUser == null || currentUser.userId() == null || currentUser.clientType() != AuthClientType.MINIAPP
-                || !roles.hasRoleCode(currentUser.userId(), "PARENT")
-                || roles.hasRoleCode(currentUser.userId(), "SYS_AUDITOR")
                 || !permissions.isAllowed(currentUser.userId(), PermissionClient.MINIAPP, "MINIAPP_GROWTH_REVIEW_READ_CHILD")) {
             throw new SystemOperationAccessDeniedException("仅具有授权的小程序活动关系家长可查看孩子周报");
         }
@@ -110,6 +114,7 @@ public class GrowthReviewQueryService {
             int page,
             int pageSize
     ) {
+        requirePeriodFeature(periodType);
         return findPage(requireMiniappStudent(currentUser).id(), periodType, page, pageSize);
     }
 
@@ -122,6 +127,7 @@ public class GrowthReviewQueryService {
             int pageSize
     ) {
         requireReadableChild(currentUser, studentId);
+        requirePeriodFeature(periodType);
         return findPage(studentId, periodType, page, pageSize);
     }
 
@@ -143,6 +149,15 @@ public class GrowthReviewQueryService {
         return requireDetail(studentId, reviewId);
     }
 
+    /** Atomically append the three daily reflection sections; existing single supplement API stays available. */
+    @Transactional
+    public List<GrowthReviewSupplementView> saveMyDailyReflection(AuthenticatedUser currentUser, Long reviewId, List<AddGrowthReviewSupplementCommand> commands) {
+        Student student = requireMiniappStudent(currentUser);
+        if(commands==null||commands.size()!=3||commands.stream().anyMatch(java.util.Objects::isNull)||commands.get(0).supplementType()!=GrowthReviewSupplementType.INSIGHT||commands.get(1).supplementType()!=GrowthReviewSupplementType.STRENGTH_WEAKNESS||commands.get(2).supplementType()!=GrowthReviewSupplementType.NEXT_PLAN)throw new IllegalArgumentException("每日复盘需填写三个栏目");
+        for(var command:commands){String content=normalizeContent(command.content());if(content.length()>200)throw new IllegalArgumentException("每个栏目最多200字");}
+        return commands.stream().map(command->addSupplement(student.id(),reviewId,currentUser.userId(),"STUDENT",command)).toList();
+    }
+
     @Transactional
     public GrowthReviewSupplementView addMySupplement(
             AuthenticatedUser currentUser,
@@ -162,6 +177,12 @@ public class GrowthReviewQueryService {
     ) {
         requireWritableChild(currentUser, studentId);
         return addSupplement(studentId, reviewId, currentUser.userId(), "PARENT", command);
+    }
+
+    private void requirePeriodFeature(GrowthReviewPeriodType periodType) {
+        if (periodType == null) throw new IllegalArgumentException("复盘周期类型不合法");
+        featureAccessService.requireEnabled(periodType == GrowthReviewPeriodType.DAY
+                ? DAILY_FEATURE_CODE : "PERIODIC_GROWTH_REPORT", null);
     }
 
     private GrowthReviewPage findPage(
@@ -197,6 +218,7 @@ public class GrowthReviewQueryService {
         if (row == null || (requiredPeriod != null && row.periodType() != requiredPeriod)) {
             throw notFound();
         }
+        if (requiredPeriod == null) requirePeriodFeature(row.periodType());
         List<GrowthReviewCategoryView> categories = reviewMapper.findCategories(row.snapshotId())
                 .stream().map(this::toCategory).toList();
         List<GrowthReviewDailyTrendView> trends = reviewMapper.findDailyTrends(row.snapshotId())
@@ -279,8 +301,8 @@ public class GrowthReviewQueryService {
     }
 
     private void requireReadableChild(AuthenticatedUser currentUser, Long studentId) {
-        if (currentUser == null || currentUser.clientType() != AuthClientType.WEB
-                || !currentUser.roleCodes().contains("PARENT")) {
+        parentActors.require(currentUser);
+        if (currentUser == null || currentUser.clientType() != AuthClientType.WEB) {
             throw new SystemOperationAccessDeniedException("仅 Web 端活动关系家长可访问孩子成长复盘");
         }
         if (studentId == null || !parentStudentMapper.existsActiveByParentAndStudent(
@@ -290,8 +312,8 @@ public class GrowthReviewQueryService {
     }
 
     private void requireWritableChild(AuthenticatedUser currentUser, Long studentId) {
-        if (currentUser == null || currentUser.clientType() != AuthClientType.WEB
-                || !currentUser.roleCodes().contains("PARENT")) {
+        parentActors.require(currentUser);
+        if (currentUser == null || currentUser.clientType() != AuthClientType.WEB) {
             throw new SystemOperationAccessDeniedException("仅 Web 端主家长可补录孩子成长复盘");
         }
         if (studentId == null || !parentStudentMapper.existsActivePrimaryByParentAndStudent(

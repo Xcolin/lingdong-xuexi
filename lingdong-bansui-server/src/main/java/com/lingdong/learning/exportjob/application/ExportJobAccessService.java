@@ -64,6 +64,8 @@ public class ExportJobAccessService {
     private static final String TEMPLATE_FEATURE = "IMPORT_EXPORT_TEMPLATE_MANAGEMENT";
     private static final String ATTACHMENT_FEATURE = "ATTACHMENT_SERVICE";
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.lingdong.learning.auth.application.ParentActorAccessService parentActors;
     private final FeatureAccessService featureAccessService;
     private final PermissionDecisionService permissionDecisionService;
     private final UserRoleMapper userRoleMapper;
@@ -122,7 +124,7 @@ public class ExportJobAccessService {
         requirePermission(userId, "EXCEPTION_REPORT_READ");
         var user = new com.lingdong.learning.auth.application.AuthenticatedUser(userId, null, null, null,
                 com.lingdong.learning.auth.domain.AuthClientType.WEB, roles);
-        return new ExceptionExportScope(roles.contains("TEACHER") && !roles.contains("ORG_ADMIN"), exceptionReports.findClassOptions(user));
+        return new ExceptionExportScope(exceptionReports.teacherOnlyScope(user), exceptionReports.findClassOptions(user));
     }
 
     private void requireExceptionSnapshot(ExportJobRecord job) {
@@ -174,10 +176,9 @@ public class ExportJobAccessService {
         requireFeatures();
         featureAccessService.requireEnabled("REWARD_EXCHANGE", null);
         requireEnabledUser(userId);
-        requireRole(userId, "PARENT", "仅家长可导出奖励兑换报表");
-        if (userRoleMapper.hasRoleCode(userId, "SYS_AUDITOR")) throw denied("系统审核员不能导出奖励兑换报表");
+        requireFamily(userId);
         requirePermission(userId, "REWARD_EXCHANGE_EXPORT");
-        requirePermission(userId, "REWARD_EXCHANGE_REVIEW_CHILD");
+        requirePermission(userId, "REWARD_EXCHANGE_READ");
     }
 
     public void requireRewardExchangeExport(long userId, long studentId) {
@@ -188,7 +189,7 @@ public class ExportJobAccessService {
     public void requireOrdinaryCreate(long userId, long studentId) {
         requireFeatures();
         requireEnabledUser(userId);
-        requireRole(userId, "PARENT", "仅家长可创建积分明细导出");
+        requireFamily(userId);
         requirePermission(userId, "EXPORT_JOB_CREATE");
         requirePermission(userId, "GROWTH_POINT_READ_CHILD");
         requirePrimaryStudent(userId, studentId);
@@ -375,7 +376,7 @@ public class ExportJobAccessService {
             return;
         }
         if (job.exportType() == ExportJobType.GROWTH_POINT_LEDGER && job.studentId() != null) {
-            requireRole(userId, "PARENT", "当前账号不再具备家长导出身份");
+            requireFamily(userId);
             requirePermission(userId, "GROWTH_POINT_READ_CHILD");
             requirePrimaryStudent(userId, job.studentId());
             return;
@@ -394,10 +395,9 @@ public class ExportJobAccessService {
         }
     }
 
-    private void requireRole(long userId, String roleCode, String message) {
-        if (!userRoleMapper.hasRoleCode(userId, roleCode)) {
-            throw denied(message);
-        }
+    private void requireFamily(long userId) {
+        parentActors.require(new com.lingdong.learning.auth.application.AuthenticatedUser(userId,null,"","",
+                com.lingdong.learning.auth.domain.AuthClientType.WEB,java.util.List.of()));
     }
 
     private void requirePermission(long userId, String permissionCode) {

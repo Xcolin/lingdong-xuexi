@@ -20,6 +20,9 @@ public interface StudentWechatBindingMapper {
     List<com.lingdong.learning.auth.application.StudentWechatBindingRow> findPrimaryStudentsByParentUserId(
             @Param("parentUserId") Long parentUserId);
 
+    List<com.lingdong.learning.auth.application.StudentWechatBindingRow> findScopedStudents(
+            @Param("scope") com.lingdong.learning.datascope.application.OrganizationDataScope scope);
+
     int insert(@Param("binding") StudentWechatBinding binding);
 
     int touchLastLogin(@Param("id") Long id, @Param("lastLoginAt") LocalDateTime lastLoginAt);

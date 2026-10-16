@@ -28,6 +28,9 @@ import java.util.Objects;
 /** 统一约束任务来源、原始目标、审核人与操作者的数据范围。 */
 @Service
 public class LearningTaskScopeService {
+    @org.springframework.beans.factory.annotation.Autowired private com.lingdong.learning.learningtask.infrastructure.persistence.LearningTaskTargetMapper selectedTaskTargets;
+    private final com.lingdong.learning.auth.application.ParentActorAccessService parentActors;
+    private final com.lingdong.learning.teacher.application.TeacherIdentityService teacherIdentity;
     private final OrganizationMapper organizationMapper;
     private final OrganizationDataScopeService organizationDataScopeService;
     private final ParentStudentMapper parentStudentMapper;
@@ -47,7 +50,9 @@ public class LearningTaskScopeService {
             UserMapper userMapper,
             UserRoleMapper userRoleMapper,
             LearningTaskAssignmentMapper assignmentMapper,
-            com.lingdong.learning.permission.application.PermissionDecisionService permissions
+            com.lingdong.learning.permission.application.PermissionDecisionService permissions,
+            com.lingdong.learning.auth.application.ParentActorAccessService parentActors,
+            com.lingdong.learning.teacher.application.TeacherIdentityService teacherIdentity
     ) {
         this.organizationMapper = organizationMapper;
         this.organizationDataScopeService = organizationDataScopeService;
@@ -58,6 +63,8 @@ public class LearningTaskScopeService {
         this.userRoleMapper = userRoleMapper;
         this.assignmentMapper = assignmentMapper;
         this.permissions = permissions;
+        this.parentActors = parentActors;
+        this.teacherIdentity = teacherIdentity;
     }
 
     public Long validateAndResolveReviewer(
@@ -79,14 +86,19 @@ public class LearningTaskScopeService {
         };
     }
 
+    private boolean selectedFamilyTaskAllowed(LearningTask task) {
+        Long selected = com.lingdong.learning.common.security.SelectedOrganizationContext.organizationId();
+        return selected == null || selectedTaskTargets.existsStudentInOrganization(task.id(), selected);
+    }
     public void requireManageable(AuthenticatedUser currentUser, LearningTask task) {
         if (currentUser == null || task == null) {
             throw notFound();
         }
+        if (task.sourceType()!=LearningTaskSourceType.FAMILY && !SelectedTaskInstitutionScope.allows(organizationMapper,organizationMapper.findById(task.sourceOrganizationId()))) throw notFound();
         boolean manageable = switch (task.sourceType()) {
             case FAMILY -> hasRole(currentUser, "PARENT")
-                    && task.creatorUserId().equals(currentUser.userId());
-            case TEACHER -> hasRole(currentUser, "TEACHER")
+                    && task.creatorUserId().equals(currentUser.userId()) && selectedFamilyTaskAllowed(task);
+            case TEACHER -> teacherSourceAllowed(currentUser, task.sourceOrganizationId())
                     && task.creatorUserId().equals(currentUser.userId());
             case ORGANIZATION -> hasRole(currentUser, "ORG_ADMIN")
                     && task.sourceOrganizationId() != null
@@ -122,8 +134,10 @@ public class LearningTaskScopeService {
                 && organizationDataScopeService.canAccess(currentUser.userId(), task.sourceOrganizationId())) {
             return;
         }
-        if (hasRole(currentUser, "TEACHER")
-                && (task.creatorUserId().equals(currentUser.userId())
+        if (isTeacher(currentUser)
+                && (task.sourceType() == LearningTaskSourceType.TEACHER
+                    && teacherSourceAllowed(currentUser, task.sourceOrganizationId())
+                    && task.creatorUserId().equals(currentUser.userId())
                 || task.status() == LearningTaskStatus.PUBLISHED
                 && task.sourceType() == LearningTaskSourceType.ORGANIZATION
                 && assignmentMapper.existsTaskVisibleToActiveTeacher(
@@ -165,9 +179,7 @@ public class LearningTaskScopeService {
             Long requestedReviewerUserId,
             ValidatedLearningTaskDraft draft
     ) {
-        if (currentUser != null && currentUser.clientType() == com.lingdong.learning.auth.domain.AuthClientType.WEB) {
-            if (!hasAnyTaskPermission(currentUser)) throw notFound();
-        } else requireRole(currentUser, "ORG_ADMIN");
+        requireRole(currentUser, "ORG_ADMIN");
         Organization source = requireEnabledAccessibleOrganization(currentUser, sourceOrganizationId);
         Long reviewerUserId = requestedReviewerUserId == null
                 ? currentUser.userId() : requestedReviewerUserId;
@@ -207,7 +219,7 @@ public class LearningTaskScopeService {
     ) {
         requireRole(currentUser, "TEACHER");
         Organization source = organizationMapper.findById(sourceOrganizationId);
-        if (!OrganizationOperationalStatusService.isOperational(source)
+        if (!SelectedTaskInstitutionScope.allows(organizationMapper,source) || !OrganizationOperationalStatusService.isOperational(source)
                 || !"CLASS".equals(source.typeCode())) {
             throw notFound();
         }
@@ -237,7 +249,7 @@ public class LearningTaskScopeService {
             throw new IllegalArgumentException("机构任务来源组织不能为空");
         }
         Organization organization = organizationMapper.findById(organizationId);
-        if (!OrganizationOperationalStatusService.isOperational(organization)
+        if (!SelectedTaskInstitutionScope.allows(organizationMapper,organization) || !OrganizationOperationalStatusService.isOperational(organization)
                 || !organizationDataScopeService.canAccess(currentUser.userId(), organizationId)) {
             throw notFound();
         }
@@ -247,7 +259,7 @@ public class LearningTaskScopeService {
     private void requireEnabledTeacher(Long userId) {
         User user = userMapper.findById(userId);
         if (user == null || user.status() != UserStatus.ENABLED
-                || !userRoleMapper.hasRoleCode(userId, "TEACHER")) {
+                || !teacherIdentity.isTeacher(userId)) {
             throw new IllegalArgumentException("审核教师不存在或不可用");
         }
     }
@@ -269,28 +281,56 @@ public class LearningTaskScopeService {
         }
     }
 
-    private boolean hasRole(AuthenticatedUser currentUser, String roleCode) {
-        if ("ORG_ADMIN".equals(roleCode) && currentUser != null
-                && currentUser.clientType() == com.lingdong.learning.auth.domain.AuthClientType.WEB) {
-            return hasAnyTaskPermission(currentUser);
+    /** Same source identity rules as task creation; actions/features remain independently effective capabilities. */
+    public java.util.List<String> allowedSourceTypes(AuthenticatedUser user) {
+        var result=new java.util.ArrayList<String>();
+        if (isParent(user)) result.add(LearningTaskSourceType.FAMILY.name());
+        if (isTeacher(user)) result.add(LearningTaskSourceType.TEACHER.name());
+        if (isOrganizationOperator(user)) {
+            var scope=organizationScope(user);
+            if (scope.allOrganizations() || !scope.rootPaths().isEmpty()) result.add(LearningTaskSourceType.ORGANIZATION.name());
         }
-        // 审核员仅处理系统审批，兼任业务角色也不能进入任务业务范围。
-        return currentUser != null && (currentUser.clientType() == com.lingdong.learning.auth.domain.AuthClientType.WEB
-                || !currentUser.roleCodes().contains("SYS_AUDITOR"))
-                && (currentUser.clientType() != com.lingdong.learning.auth.domain.AuthClientType.WEB
-                    || hasAnyTaskPermission(currentUser))
-                && currentUser.roleCodes().contains(roleCode);
+        return java.util.List.copyOf(result);
     }
-
+    public boolean isParent(AuthenticatedUser user) {
+        try { parentActors.require(user); return true; }
+        catch (SystemOperationAccessDeniedException exception) { return false; }
+    }
+    public boolean isTeacher(AuthenticatedUser user) {
+        return user != null && teacherIdentity.isTeacher(user.userId())
+                && teacherClassMapper.findActiveByTeacher(user.userId()).stream().anyMatch(relation ->
+                    relation.status() == TeacherClassStatus.ACTIVE
+                    && OrganizationOperationalStatusService.isOperational(organizationMapper.findById(relation.classOrganizationId())));
+    }
+    public boolean teacherSourceAllowed(AuthenticatedUser user, Long sourceOrganizationId) {
+        if (!isTeacher(user) || sourceOrganizationId==null) return false;
+        var relation=teacherClassMapper.findByTeacherAndClass(user.userId(),sourceOrganizationId);
+        return relation!=null && relation.status()==TeacherClassStatus.ACTIVE
+                && OrganizationOperationalStatusService.isOperational(organizationMapper.findById(sourceOrganizationId));
+    }
+    public boolean isOrganizationOperator(AuthenticatedUser user) {
+        var account = user == null ? null : userMapper.findById(user.userId());
+        return account != null && account.status() == UserStatus.ENABLED
+                && (account.type() == com.lingdong.learning.user.domain.UserType.ORGANIZATION
+                || account.type() == com.lingdong.learning.user.domain.UserType.PLATFORM
+                || account.type() != com.lingdong.learning.user.domain.UserType.STUDENT
+                    && userRoleMapper.hasRoleCode(account.id(), "ORG_ADMIN"));
+    }
+    private boolean hasRole(AuthenticatedUser user, String identity) {
+        return switch (identity) {
+            case "PARENT" -> isParent(user);
+            case "TEACHER" -> isTeacher(user);
+            case "ORG_ADMIN" -> isOrganizationOperator(user);
+            default -> false;
+        };
+    }
     public boolean hasOrganizationPermission(AuthenticatedUser user, String code) {
-        return user != null && user.clientType() == com.lingdong.learning.auth.domain.AuthClientType.WEB
-                && permissions.isAllowed(user.userId(), com.lingdong.learning.permission.domain.PermissionClient.WEB, code);
+        return isOrganizationOperator(user) && user.clientType() != null
+                && permissions.isAllowed(user.userId(),
+                com.lingdong.learning.permission.domain.PermissionClient.valueOf(user.clientType().name()),code);
     }
-
     public boolean hasOrganizationAccess(AuthenticatedUser user, String code) {
-        return hasOrganizationPermission(user, code) || user != null
-                && user.clientType() == com.lingdong.learning.auth.domain.AuthClientType.MINIAPP
-                && user.roleCodes().contains("ORG_ADMIN") && !user.roleCodes().contains("SYS_AUDITOR");
+        return hasOrganizationPermission(user,code);
     }
 
     public boolean canReadOrganizationProgress(AuthenticatedUser user, LearningTask task) {
@@ -299,14 +339,15 @@ public class LearningTaskScopeService {
                 && organizationDataScopeService.canAccess(user.userId(), task.sourceOrganizationId());
     }
 
-    private boolean hasAnyTaskPermission(AuthenticatedUser user) {
-        return java.util.List.of("LEARNING_TASK_READ_MANAGED", "LEARNING_TASK_CREATE", "LEARNING_TASK_PUBLISH",
-                "LEARNING_TASK_PROGRESS_READ").stream().anyMatch(code -> hasOrganizationPermission(user, code));
+    public void requireAnyPermission(AuthenticatedUser user, java.util.List<String> codes) {
+        if (user == null || user.clientType()==null || codes.stream().noneMatch(code -> permissions.isAllowed(
+                user.userId(), com.lingdong.learning.permission.domain.PermissionClient.valueOf(user.clientType().name()),code)))
+            throw new SystemOperationAccessDeniedException("当前账号无候选查询对应操作权限");
     }
-
     public void requireWebPermission(AuthenticatedUser user, String code) {
-        if (user == null || user.clientType() == com.lingdong.learning.auth.domain.AuthClientType.WEB
-                && !hasOrganizationPermission(user, code)) throw new SystemOperationAccessDeniedException("当前账号无操作权限：" + code);
+        if (user == null || user.clientType() == null || !permissions.isAllowed(user.userId(),
+                com.lingdong.learning.permission.domain.PermissionClient.valueOf(user.clientType().name()),code))
+            throw new SystemOperationAccessDeniedException("当前账号无操作权限："+code);
     }
 
     public com.lingdong.learning.datascope.application.OrganizationDataScope organizationScope(AuthenticatedUser user) {
@@ -317,4 +358,7 @@ public class LearningTaskScopeService {
         return new ResourceNotFoundException("任务资源不存在或不可访问");
     }
 }
+
+
+
 

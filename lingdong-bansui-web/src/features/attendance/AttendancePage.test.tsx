@@ -25,7 +25,7 @@ describe('考勤台账', () => {
     vi.resetAllMocks();
     vi.mocked(authApi.currentUser).mockResolvedValue(user);
     vi.mocked(capabilityApi.web).mockResolvedValue({ attendanceManagementEnabled: true } as ClientCapabilities);
-    vi.mocked(attendanceApi.list).mockResolvedValue({ items: [record], page: 1, pageSize: 20, total: 21 });
+    vi.mocked(attendanceApi.list).mockResolvedValue({ items: [record], page: 1, pageSize: 10, total: 21 });
     vi.mocked(attendanceApi.classes).mockImplementation(async (operational) => [{ classOrganizationId: record.classOrganizationId, className: operational ? '可点名一班' : '历史一班' }]);
     vi.mocked(attendanceApi.roster).mockResolvedValue([{ studentId: record.studentId, studentName: record.studentName, record }, { studentId: '1874244142494647202', studentName: '小红', record: null }]);
     vi.mocked(attendanceApi.batch).mockResolvedValue([record]);
@@ -49,12 +49,12 @@ describe('考勤台账', () => {
     fireEvent.change(screen.getByLabelText('开始日期'), { target: { value: '2026-09-01' } });
     fireEvent.change(screen.getByLabelText('结束日期'), { target: { value: '2026-09-07' } });
     fireEvent.click(screen.getByRole('button', { name: '查询' }));
-    const query = { classOrganizationId: record.classOrganizationId, keyword: '小明', status: 'LATE', dateFrom: '2026-09-01', dateTo: '2026-09-07', page: 1, pageSize: 20 };
+    const query = { classOrganizationId: record.classOrganizationId, keyword: '小明', status: 'LATE', dateFrom: '2026-09-01', dateTo: '2026-09-07', page: 1, pageSize: 10 };
     await waitFor(() => expect(attendanceApi.list).toHaveBeenLastCalledWith(query));
     fireEvent.click(screen.getByTitle('2'));
     await waitFor(() => expect(attendanceApi.list).toHaveBeenLastCalledWith({ ...query, page: 2 }));
     fireEvent.click(screen.getByRole('button', { name: '重置' }));
-    await waitFor(() => expect(attendanceApi.list).toHaveBeenLastCalledWith({ page: 1, pageSize: 20 }));
+    await waitFor(() => expect(attendanceApi.list).toHaveBeenLastCalledWith({ page: 1, pageSize: 10 }));
   });
   it('名单不默认勾选已有记录，显式选择后单请求携带版本', async () => {
     mount(); await screen.findByText('小明');
@@ -91,7 +91,7 @@ describe('考勤台账', () => {
     mount(); await screen.findByRole('heading', { name: '考勤台账' });
     fireEvent.click(screen.getByRole('button', { name: '查询' }));
     await screen.findByText('小明');
-    await act(async () => resolveOld({ items: [{ ...record, studentName: '旧数据' }], total: 1, page: 1, pageSize: 20 }));
+    await act(async () => resolveOld({ items: [{ ...record, studentName: '旧数据' }], total: 1, page: 1, pageSize: 10 }));
     expect(screen.queryByText('旧数据')).not.toBeInTheDocument();
     vi.mocked(capabilityApi.web).mockResolvedValue({ attendanceManagementEnabled: false } as ClientCapabilities);
     fireEvent.focus(window);

@@ -1,0 +1,87 @@
+{
+  "ATTACHMENT_UPLOAD": [
+    "com\\lingdong\\learning\\attachment\\web\\TaskAttachmentController.java",
+    "com\\lingdong\\learning\\attachment\\web\\TaskAttachmentController.java"
+  ],
+  "ATTACHMENT_READ": [
+    "com\\lingdong\\learning\\attachment\\web\\TaskAttachmentController.java",
+    "com\\lingdong\\learning\\attachment\\web\\TaskAttachmentController.java",
+    "com\\lingdong\\learning\\attachment\\web\\TaskAttachmentController.java"
+  ],
+  "GROWTH_POINT_READ_SELF": [
+    "com\\lingdong\\learning\\growthpoint\\web\\GrowthPointQueryController.java",
+    "com\\lingdong\\learning\\growthpoint\\web\\GrowthPointQueryController.java"
+  ],
+  "GROWTH_REVIEW_READ_SELF": [
+    "com\\lingdong\\learning\\growthpoint\\web\\GrowthReviewController.java",
+    "com\\lingdong\\learning\\growthpoint\\web\\GrowthReviewController.java"
+  ],
+  "GROWTH_REVIEW_SUPPLEMENT_SELF": [
+    "com\\lingdong\\learning\\growthpoint\\web\\GrowthReviewController.java"
+  ],
+  "REWARD_EXCHANGE_SELF": [
+    "com\\lingdong\\learning\\growthpoint\\web\\GrowthRewardController.java",
+    "com\\lingdong\\learning\\growthpoint\\web\\GrowthRewardController.java",
+    "com\\lingdong\\learning\\growthpoint\\web\\GrowthRewardExchangeController.java",
+    "com\\lingdong\\learning\\growthpoint\\web\\GrowthRewardExchangeController.java"
+  ],
+  "MINIAPP_REWARD_MANAGE_CHILD": [
+    "com\\lingdong\\learning\\growthpoint\\web\\ParentRewardController.java",
+    "com\\lingdong\\learning\\growthpoint\\web\\ParentRewardController.java",
+    "com\\lingdong\\learning\\growthpoint\\web\\ParentRewardController.java",
+    "com\\lingdong\\learning\\growthpoint\\web\\ParentRewardController.java",
+    "com\\lingdong\\learning\\growthpoint\\web\\ParentRewardController.java"
+  ],
+  "MINIAPP_REWARD_EXCHANGE_REVIEW_CHILD": [
+    "com\\lingdong\\learning\\growthpoint\\web\\ParentRewardController.java",
+    "com\\lingdong\\learning\\growthpoint\\web\\ParentRewardExchangeController.java",
+    "com\\lingdong\\learning\\growthpoint\\web\\ParentRewardExchangeController.java",
+    "com\\lingdong\\learning\\growthpoint\\web\\ParentRewardExchangeController.java",
+    "com\\lingdong\\learning\\growthpoint\\web\\ParentRewardExchangeController.java"
+  ],
+  "IAM_DATA_SCOPE_CONFIGURE": [
+    "com\\lingdong\\learning\\iam\\web\\DataScopeManagementController.java",
+    "com\\lingdong\\learning\\iam\\web\\RoleManagementController.java"
+  ],
+  "IAM_PERMISSION_READ": [
+    "com\\lingdong\\learning\\iam\\web\\PermissionManagementController.java"
+  ],
+  "IAM_USER_READ": [
+    "com\\lingdong\\learning\\iam\\web\\UserManagementController.java"
+  ],
+  "TASK_ASSIGNMENT_EXEMPT": [
+    "com\\lingdong\\learning\\learningtask\\web\\ManagedTaskAssignmentController.java"
+  ],
+  "TASK_ASSIGNMENT_READ_SELF": [
+    "com\\lingdong\\learning\\learningtask\\web\\StudentTaskAssignmentController.java",
+    "com\\lingdong\\learning\\learningtask\\web\\StudentTaskAssignmentController.java"
+  ],
+  "TASK_ASSIGNMENT_EXECUTE_SELF": [
+    "com\\lingdong\\learning\\learningtask\\web\\StudentTaskAssignmentController.java",
+    "com\\lingdong\\learning\\learningtask\\web\\StudentTaskAssignmentController.java",
+    "com\\lingdong\\learning\\learningtask\\web\\StudentTaskAssignmentController.java",
+    "com\\lingdong\\learning\\learningtask\\web\\StudentTaskAssignmentController.java",
+    "com\\lingdong\\learning\\learningtask\\web\\StudentTaskAssignmentController.java"
+  ],
+  "STUDENT_PARENT_INVITE_RESPOND": [
+    "com\\lingdong\\learning\\student\\web\\ParentBindingInvitationController.java",
+    "com\\lingdong\\learning\\student\\web\\ParentBindingInvitationController.java"
+  ],
+  "STUDENT_CREATE": [
+    "com\\lingdong\\learning\\student\\web\\StudentManagementController.java"
+  ],
+  "STUDENT_CREDENTIAL_INITIALIZE": [
+    "com\\lingdong\\learning\\student\\web\\StudentManagementController.java"
+  ],
+  "STUDENT_LOGIN_CODE_RESET": [
+    "com\\lingdong\\learning\\student\\web\\StudentManagementController.java"
+  ],
+  "STUDENT_PARENT_INVITE_CREATE": [
+    "com\\lingdong\\learning\\student\\web\\StudentManagementController.java"
+  ],
+  "STUDENT_IMPORT_RESULT_READ": [
+    "com\\lingdong\\learning\\studentimport\\web\\StudentImportController.java",
+    "com\\lingdong\\learning\\studentimport\\web\\StudentImportController.java",
+    "com\\lingdong\\learning\\studentimport\\web\\StudentImportController.java"
+  ]
+}

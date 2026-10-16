@@ -27,7 +27,7 @@ import java.util.regex.Pattern;
 @Service
 public class StudentCodeLoginApplicationService {
     private static final String FEATURE_CODE = "STUDENT_CODE_LOGIN";
-    private static final Pattern ACCOUNT_PATTERN = Pattern.compile("\\d{8}");
+    private static final Pattern ACCOUNT_PATTERN = Pattern.compile("[A-Za-z0-9_.@-]{1,64}");
     private static final Pattern CODE_PATTERN = Pattern.compile("\\d{4}");
 
     private final UserMapper userMapper;

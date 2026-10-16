@@ -44,10 +44,17 @@ public class StudentManagementAccessService {
         return user != null && scopes.canAccess(user.userId(), organizationId);
     }
 
+    /** Sensitive institution-only operations require active enrollment, not merely a managed family record. */
+    public boolean schoolStudentAllowed(AuthenticatedUser user, Long studentId) {
+        if(user==null)return false;
+        var scope=scopes.resolve(user.userId());
+        return relationships.findActiveEnrollmentOrganizationIds(studentId).stream()
+                .anyMatch(id -> relationships.existsActiveEnrollmentInScope(studentId,id,scope));
+    }
     public boolean studentAllowed(AuthenticatedUser user, Long studentId) {
         if (user == null) return false;
-        return relationships.findActiveEnrollmentOrganizationIds(studentId).stream()
-                .anyMatch(id -> scopes.canAccess(user.userId(), id)
-                        && relationships.existsActiveByStudentAndOrganization(studentId, id));
+        return relationships.existsManagedFamilyStudent(studentId,user.userId(),scopes.resolve(user.userId())) || relationships.findActiveEnrollmentOrganizationIds(studentId).stream()
+                .anyMatch(id -> relationships.existsActiveEnrollmentInScope(studentId, id, scopes.resolve(user.userId())));
     }
 }
+

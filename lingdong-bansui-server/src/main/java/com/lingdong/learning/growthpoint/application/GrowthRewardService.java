@@ -1,6 +1,7 @@
 package com.lingdong.learning.growthpoint.application;
 
 import com.lingdong.learning.auth.application.AuthenticatedUser;
+import com.lingdong.learning.auth.application.ParentActorAccessService;
 import com.lingdong.learning.auth.domain.AuthClientType;
 import com.lingdong.learning.common.id.IdGenerator;
 import com.lingdong.learning.common.security.SystemOperationAccessDeniedException;
@@ -34,6 +35,8 @@ public class GrowthRewardService {
     private final IdGenerator idGenerator;
     private final Clock clock;
 
+    private final ParentActorAccessService parentActors;
+
     public GrowthRewardService(
             GrowthRewardMapper rewardMapper,
             GrowthPointQueryMapper growthPointQueryMapper,
@@ -41,8 +44,10 @@ public class GrowthRewardService {
             CurrentStudentAccessService currentStudentAccessService,
             FeatureAccessService featureAccessService,
             IdGenerator idGenerator,
-            Clock clock
+            Clock clock,
+            ParentActorAccessService parentActors
     ) {
+        this.parentActors = parentActors;
         this.rewardMapper = rewardMapper;
         this.growthPointQueryMapper = growthPointQueryMapper;
         this.parentStudentMapper = parentStudentMapper;
@@ -183,11 +188,10 @@ public class GrowthRewardService {
     }
 
     private void requireParent(AuthenticatedUser currentUser) {
+        parentActors.require(currentUser);
         if (currentUser == null || (currentUser.clientType() != AuthClientType.WEB
-                && currentUser.clientType() != AuthClientType.MINIAPP)
-                || !currentUser.roleCodes().contains("PARENT")
-                || currentUser.roleCodes().contains("SYS_AUDITOR")) {
-            throw new SystemOperationAccessDeniedException("仅家长可访问家庭奖励，审核员不能参与业务操作");
+                && currentUser.clientType() != AuthClientType.MINIAPP)) {
+            throw new SystemOperationAccessDeniedException("仅家长可访问家庭奖励");
         }
     }
 

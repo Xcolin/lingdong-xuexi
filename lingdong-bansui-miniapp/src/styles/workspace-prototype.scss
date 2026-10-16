@@ -1,0 +1,42 @@
+/* Shared visual contract: forest green, warm white, grouped mobile workspaces. */
+.prototype-workspace {background:#F6F8F5;padding:28rpx;color:#193e32;}
+.prototype-workspace .ld-topbar {background:#184F40;color:white;border-radius:24rpx;padding:30rpx;box-shadow:none;}
+.prototype-workspace .ld-topbar-name {color:white;font-size:32rpx;}
+.prototype-workspace .ld-topbar-meta {color:#bdd1c5;}
+.prototype-workspace .ld-topbar-logo {background:#ffffff18;color:white;border:1rpx solid #ffffff30;}
+.prototype-workspace .ld-logout {background:#ffffff14;color:#d7e4dc;border-radius:14rpx;}
+.prototype-workspace .ld-heading {margin:32rpx 4rpx 20rpx;}
+.prototype-workspace .ld-heading-title {font-size:34rpx;color:#193e32;}
+.prototype-workspace .ld-heading-sub {font-size:24rpx;color:#819487;margin-top:8rpx;}
+.prototype-workspace .ld-card,.prototype-workspace .ld-group {border:1rpx solid #e1e9e2;background:#fffefa;border-radius:24rpx;box-shadow:0 8rpx 24rpx rgba(24,79,64,.025);}
+.prototype-workspace .ld-cell {background:#fffefa;min-height:126rpx;padding:24rpx;}
+.prototype-workspace .ld-cell-title {color:#213f33;font-weight:600;font-size:28rpx;}
+.prototype-workspace .ld-cell-sub {font-size:23rpx;color:#829388;line-height:1.5;}
+.prototype-workspace .ld-cell-icon {background:#eaf2eb;color:#184F40;border-radius:18rpx;}
+.prototype-workspace .review-card {background:#eaf2eb;border-color:#dae7dd;margin-top:24rpx;}
+.prototype-workspace .review-button {background:#184F40;color:white;border-radius:14rpx;}
+.workspace-intro {padding:32rpx 4rpx 12rpx;}
+.workspace-intro-title {display:block;font-size:36rpx;font-weight:700;color:#193e32;}
+.workspace-intro-caption {display:block;font-size:24rpx;color:#809486;margin-top:10rpx;}
+.workspace-shortcuts {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16rpx;margin:22rpx 0;}
+.workspace-shortcut {background:#fffefa;border:1rpx solid #dce7de;border-radius:20rpx;min-height:116rpx;text-align:left;padding:24rpx;color:#184F40;font-size:28rpx;line-height:1.6;}
+.workspace-shortcut::after {border:0;}
+.workspace-shortcut text {display:block;font-size:22rpx;color:#8c9d91;}
+
+/* Lists and field groups follow the same visual hierarchy across secondary pages. */
+.prototype-workspace .card,.prototype-workspace .task-card,.prototype-workspace .teacher-row,.prototype-workspace .reward-card,.prototype-workspace .review-card,.prototype-workspace .class-row {background:#fffefa;border:1rpx solid #e0e8e1;border-radius:22rpx;padding:26rpx;margin-bottom:18rpx;box-shadow:none;}
+.prototype-workspace .search-band,.prototype-workspace .form-band,.prototype-workspace .form-card,.prototype-workspace .summary-card {background:#fffefa;border:1rpx solid #e0e8e1;border-radius:24rpx;padding:28rpx;margin-bottom:24rpx;}
+.prototype-workspace input,.prototype-workspace .picker-value,.prototype-workspace .picker-field,.prototype-workspace .field {box-sizing:border-box;min-height:84rpx;border:1rpx solid #d8e4db;background:#fcfdfb;border-radius:14rpx;padding:18rpx 22rpx;font-size:26rpx;color:#294b3a;}
+.prototype-workspace textarea {box-sizing:border-box;border:1rpx solid #d8e4db;border-radius:16rpx;padding:22rpx;background:#fcfdfb;font-size:26rpx;}
+.prototype-workspace .primary-button,.prototype-workspace .submit-button,.prototype-workspace .create-button,.prototype-workspace .confirm-button {background:#184F40;color:white;border:0;border-radius:18rpx;min-height:84rpx;font-size:28rpx;}
+.prototype-workspace .secondary-button,.prototype-workspace .row-button {background:#f0f5f1;color:#184F40;border:1rpx solid #d4e3d9;border-radius:14rpx;}
+.prototype-workspace .danger {color:#b65a4d;background:#fff3f0;}
+.prototype-workspace .warning {color:#aa8038;background:#fff8e9;}
+.prototype-workspace .field-label {font-size:25rpx;color:#637f6d;margin-top:24rpx;}
+.prototype-workspace .page-title,.prototype-workspace .title {font-size:36rpx;font-weight:700;color:#193e32;}
+.prototype-workspace .page-subtitle,.prototype-workspace .meta,.prototype-workspace .task-meta {color:#809486;font-size:23rpx;}
+.prototype-workspace .state-text,.prototype-workspace .ld-empty {padding:40rpx 24rpx;color:#87998b;font-size:26rpx;}
+
+.prototype-workspace .ld-topbar-logo{position:relative;font-size:0;}
+.prototype-workspace .ld-topbar-logo::before{content:'';width:34rpx;height:48rpx;border-radius:90% 0 90% 0;transform:rotate(18deg);background:#fffefa;}
+.prototype-workspace .ld-topbar-logo::after{content:'';position:absolute;width:40rpx;height:4rpx;background:#184F40;transform:rotate(-30deg);}

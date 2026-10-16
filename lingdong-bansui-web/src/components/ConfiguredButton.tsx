@@ -1,6 +1,7 @@
+import { isAuxiliaryAction } from '../app/auxiliaryActions';
 import { forwardRef } from 'react';
 import { Button, type ButtonProps } from 'antd';
-import { useMenuConfiguration } from '../app/MenuConfiguration';
+import { configuredAccess, useMenuConfiguration } from '../app/MenuConfiguration';
 import { menuActionCatalog } from '../app/menuCatalog';
 import { Check, Eye, Link, LockKeyhole, Pencil, Plus, Power, Save, ShieldCheck, Trash2, X } from 'lucide-react';
 
@@ -20,15 +21,17 @@ function actionAppearance(name: string) {
 }
 
 /** Configuration only narrows visible actions; existing business guards still authorize execution. */
-export const ConfiguredButton = forwardRef<HTMLAnchorElement | HTMLButtonElement, ButtonProps & { actionKey: string }>(function ConfiguredButton({ actionKey, children, ...props }, ref) {
+export const ConfiguredButton = forwardRef<HTMLAnchorElement | HTMLButtonElement, ButtonProps & { actionKey: string; preserveLabel?: boolean }>(function ConfiguredButton({ actionKey, children, preserveLabel = false, ...props }, ref) {
   const configuration = useMenuConfiguration();
-  const node = configuration?.nodes.find(item => item.type === 'BUTTON' && item.code === actionKey);
-  const hidden = configuration !== null && (!node || node.status !== 'ENABLED');
-  if (hidden) return <span className="configured-action" data-menu-code={actionKey} hidden />;
-  const original = menuActionCatalog.find(item => item.code === actionKey)?.name;
-  const renamed = node && node.name !== original;
-  const appearance = actionAppearance(original ?? (typeof children === 'string' ? children : ''));
+  const node = configuration?.nodes.find(item => item.type !== 'DIRECTORY' && (item.code === actionKey || item.permissionCode === actionKey));
+  const auxiliary = isAuxiliaryAction(actionKey);
+  const hidden = !auxiliary && !configuredAccess(configuration, actionKey);
+  if (hidden) return <span className="configured-action" data-menu-code={auxiliary ? undefined : actionKey} hidden />;
+  const definition = menuActionCatalog.find(item => item.code === actionKey);
+  const original = definition?.name;
+  const renamed = !preserveLabel && !auxiliary && node?.type === 'BUTTON' && !node.name.includes(' · ') && node.name !== original && node.name !== definition?.label;
+  const appearance = actionAppearance(definition?.label ?? original ?? (typeof children === 'string' ? children : ''));
   const Icon = appearance?.Icon;
-  return <Button {...props} icon={props.icon ?? (Icon ? <Icon size={14} aria-hidden="true" /> : undefined)} ref={ref} className={['configured-action', appearance && `action-tone-${appearance.tone}`, props.className].filter(Boolean).join(' ')} data-menu-code={actionKey}
-    aria-label={renamed ? node.name : props['aria-label']}>{renamed ? node.name : children}</Button>;
+  return <Button {...props} icon={props.icon ?? (Icon ? <Icon size={14} aria-hidden="true" /> : undefined)} ref={ref} className={['configured-action', appearance && `action-tone-${appearance.tone}`, props.className].filter(Boolean).join(' ')} data-menu-code={auxiliary ? undefined : actionKey}
+    aria-label={renamed ? node.name : props['aria-label'] ?? (auxiliary && typeof children === 'string' ? children : undefined)}>{renamed ? node.name : children}</Button>;
 });

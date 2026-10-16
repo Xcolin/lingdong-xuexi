@@ -14,7 +14,7 @@ vi.mock('../../api/import-jobs', () => ({
 vi.mock('../../api/student-imports', () => ({
   studentImportApi: { list: vi.fn(), create: vi.fn(), rows: vi.fn(), retryFailures: vi.fn(), downloadCredentials: vi.fn() }
 }));
-vi.mock('../../api/classes', () => ({ classApi: { listClasses: vi.fn() } }));
+vi.mock('../../api/classes', () => ({ classApi: { lookup: vi.fn() } }));
 
 const job = {
   id: '1874244142494647901', jobCode: 'IMP-20260901-000001',
@@ -35,7 +35,7 @@ const options = {
 describe('导入校验作业页面', () => {
   beforeEach(() => {
     vi.mocked(importJobApi.options).mockResolvedValue(options);
-    vi.mocked(importJobApi.list).mockResolvedValue({ items: [job], page: 1, pageSize: 20, total: 1 });
+    vi.mocked(importJobApi.list).mockResolvedValue({ items: [job], page: 1, pageSize: 10, total: 1 });
     vi.mocked(importJobApi.create).mockResolvedValue(job);
     vi.mocked(importJobApi.detail).mockResolvedValue({
       job,
@@ -45,12 +45,12 @@ describe('导入校验作业页面', () => {
     vi.mocked(importJobApi.errors).mockResolvedValue({
       items: [{ id: '1874244142494647911', rowNumber: 2, status: 'INVALID',
         errorSummary: '学生姓名不能为空', createdAt: '2026-09-01T10:00:02' }],
-      page: 1, pageSize: 20, total: 1
+      page: 1, pageSize: 10, total: 1
     });
     vi.mocked(importJobApi.downloadError).mockResolvedValue(new Blob(['error']));
     vi.mocked(studentImportApi.list).mockResolvedValue({ items: [], page: 1, pageSize: 100, total: 0 });
-    vi.mocked(studentImportApi.rows).mockResolvedValue({ items: [], page: 1, pageSize: 20, total: 0 });
-    vi.mocked(classApi.listClasses).mockResolvedValue([]);
+    vi.mocked(studentImportApi.rows).mockResolvedValue({ items: [], page: 1, pageSize: 10, total: 0 });
+    vi.mocked(classApi.lookup).mockResolvedValue([]);
   });
 
   it('加载作业台账并按创建权限显示上传命令', async () => {
@@ -74,7 +74,7 @@ describe('导入校验作业页面', () => {
     await user.click(screen.getByRole('button', { name: `详情-${job.jobCode}` }));
     const drawer = await screen.findByRole('dialog', { name: '作业详情' });
     expect(importJobApi.detail).toHaveBeenCalledWith(job.id);
-    expect(importJobApi.errors).toHaveBeenCalledWith(job.id, 1, 20);
+    expect(importJobApi.errors).toHaveBeenCalledWith(job.id, 1, 10);
     expect(within(drawer).getByText('学生姓名')).toBeInTheDocument();
     expect(within(drawer).getByText('学生姓名不能为空')).toBeInTheDocument();
     expect(within(drawer).getByText('第 2 行')).toBeInTheDocument();
@@ -118,7 +118,7 @@ describe('导入校验作业页面', () => {
       credentialExpiresAt: null, credentialDownloadedAt: null,
       queuedAt: validated.queuedAt, startedAt: null, completedAt: null, createdAt: validated.createdAt
     };
-    vi.mocked(importJobApi.list).mockResolvedValue({ items: [validated], page: 1, pageSize: 20, total: 1 });
+    vi.mocked(importJobApi.list).mockResolvedValue({ items: [validated], page: 1, pageSize: 10, total: 1 });
     vi.mocked(importJobApi.detail).mockResolvedValue({ job: validated, fields: [{
       fieldCode: 'STUDENT_NAME', columnName: '学生姓名', dataType: 'TEXT', required: true,
       maxLength: 64, dictionaryValues: [], sortOrder: 10 }] });
@@ -131,7 +131,7 @@ describe('导入校验作业页面', () => {
     await user.click(screen.getByRole('button', { name: `详情-${validated.jobCode}` }));
     const drawer = await screen.findByRole('dialog', { name: '作业详情' });
     await user.click(within(drawer).getByRole('button', { name: '执行学员导入' }));
-    await waitFor(() => expect(classApi.listClasses).toHaveBeenCalled());
+    await waitFor(() => expect(classApi.lookup).toHaveBeenCalledWith('STUDENT_IMPORT_EXECUTE','CLASS'));
     const modalTitle = await screen.findByText('执行学员导入', { selector: '.ant-modal-title' });
     const dialog = modalTitle.closest('[role="dialog"]');
     if (!(dialog instanceof HTMLElement)) throw new Error('未找到学员导入执行弹窗');

@@ -1,3 +1,12 @@
+registration:
+  mail:
+    enabled: ${REGISTRATION_MAIL_ENABLED:false}
+    from: ${REGISTRATION_MAIL_FROM:}
+  smsbao:
+    username: ${REGISTRATION_SMSBAO_USERNAME:}
+    password-md5: ${REGISTRATION_SMSBAO_PASSWORD_MD5:}
+    signature: ${REGISTRATION_SMSBAO_SIGNATURE:重庆灵动递能}
+
 spring:
   application:
     name: lingdong-bansui-server

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act,fireEvent,render,screen,waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { studentLoginApi } from './api';
 import { StudentLoginManagementPage } from './StudentLoginManagementPage';
@@ -19,7 +19,7 @@ describe('学生登录管理页', () => {
         id: '1874244142494646540', studentName: '林小满', gradeCode: 'G3', status: 'ENABLED',
         createdAt: '2026-08-08T10:00:00', updatedAt: '2026-08-08T10:00:00'
       }],
-      page: 1, pageSize: 20, total: 1
+      page: 1, pageSize: 10, total: 1
     });
     vi.mocked(studentLoginApi.issueQrTicket).mockResolvedValue({
       ticketId: '1874244142494646541',
@@ -78,4 +78,9 @@ describe('学生登录管理页', () => {
     expect(studentLoginApi.listWechatBindings).not.toHaveBeenCalled();
     expect(screen.queryByText('微信绑定')).not.toBeInTheDocument();
   });
+});
+
+it('用户入口创建学生后已打开学生目录刷新一次',async()=>{
+ vi.mocked(studentLoginApi.list).mockClear();vi.mocked(studentLoginApi.list).mockResolvedValue({items:[],page:1,pageSize:10,total:0});render(<StudentLoginManagementPage/>);
+ await waitFor(()=>expect(studentLoginApi.list).toHaveBeenCalledTimes(1));const {notifyStudentProfileChanged}=await import('../users/studentProfileChanged');act(()=>notifyStudentProfileChanged());await waitFor(()=>expect(studentLoginApi.list).toHaveBeenCalledTimes(2));
 });

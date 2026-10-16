@@ -4,7 +4,7 @@ export interface RankClass { classId: string; className: string }
 export interface RankPreference { enabled: boolean; version: number }
 export interface RankRow { rank: number; points: number }
 export interface RankWithdrawal { studentId: string; classId: string; version: number }
-export interface RankUser { roleCodes: string[]; permissionCodes: string[]; clientType: string }
+export interface RankUser { parentProfile?:boolean;userType?:string; roleCodes: string[]; permissionCodes: string[]; clientType: string }
 const header = (token: string) => ({ Authorization: `Bearer ${token}` });
 const base = '/anonymous-ranks/students';
 const path = (student: string, classroom: string) => `${base}/${encodeURIComponent(student)}/classes/${encodeURIComponent(classroom)}`;

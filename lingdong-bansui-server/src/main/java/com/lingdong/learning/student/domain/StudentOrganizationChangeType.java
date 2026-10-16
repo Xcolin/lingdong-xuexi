@@ -4,5 +4,7 @@ package com.lingdong.learning.student.domain;
 public enum StudentOrganizationChangeType {
     CLASS_ASSIGN,
     CLASS_TRANSFER,
+    CLASS_DEACTIVATE,
     ENROLLMENT_DEACTIVATE
 }
+

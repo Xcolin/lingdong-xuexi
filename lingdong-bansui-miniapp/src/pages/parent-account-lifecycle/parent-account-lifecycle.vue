@@ -1,5 +1,6 @@
 <template>
-  <view class="page-shell">
+  <view class="prototype-workspace page-shell">
+    <PrototypePageHeader :title="cancellationFlowOpen?'账号注销申请':'账号与手机号'" icon="phone"/>
     <view v-if="loading && !state" class="state-view">加载中</view>
     <view v-else-if="errorMessage" class="state-view error-state">
       <text>{{ errorMessage }}</text>
@@ -60,6 +61,8 @@
 </template>
 
 <script setup lang="ts">
+import PrototypePageHeader from '@/components/PrototypePageHeader.vue';
+import PrototypeIcon from '@/components/PrototypeIcon.vue';
 import { computed, ref } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { getMiniappCapabilities } from '@/api/capability';
@@ -244,8 +247,15 @@ function toMessage(error: unknown): string {
 }
 </script>
 
+
+
+
+
+
+
 <style lang="scss" scoped>
-.page-shell { min-height: 100vh; background: #f4f7f5; color: #1c2b28; }
+
+.page-shell { min-height: calc(100vh - var(--window-top,0px)); background: #f4f7f5; color: #1c2b28; }
 /* #ifdef H5 */
 .page-shell { min-height: calc(100vh - 44px); }
 /* #endif */
@@ -269,4 +279,22 @@ function toMessage(error: unknown): string {
 .cancel-command { align-self: center; color: #708078; }
 button::after { border: 0; }
 button[disabled] { opacity: 0.45; }
+
+@import "@/styles/workspace-prototype.scss";
+
+.prototype-workspace{background:#f4faf7!important;padding:0 28rpx 48rpx!important;min-height:calc(100vh - var(--window-top,0px));box-sizing:border-box;color:#172d27;}
+.prototype-workspace.has-tabbar{padding-bottom:160rpx!important;}
+.prototype-header{margin:0 -28rpx 28rpx;padding:32rpx 32rpx 48rpx;display:flex;align-items:center;gap:18rpx;background:linear-gradient(115deg,#226d5c,#07573f);color:#fff;border-radius:0 0 30rpx 30rpx;}
+.prototype-header-title{font-size:34rpx;font-weight:700;letter-spacing:1rpx;}
+.card,.section-band,.summary-band,.action-band,.heading-band{background:#fff!important;border:1rpx solid #e2eee7!important;border-radius:24rpx!important;box-shadow:none!important;margin-bottom:22rpx;padding:24rpx!important;}
+input,textarea,.field{background:#fbfcfb!important;border:1rpx solid #dce5df!important;border-radius:14rpx!important;padding:18rpx!important;box-sizing:border-box;font-size:26rpx!important;}
+input{min-height:76rpx;}textarea{width:100%;}
+button{border-radius:18rpx!important;font-size:26rpx!important;}button::after{border:0;}
+.heading,.section-title,.row-title,.task-title{color:#162b24;font-weight:650;font-size:28rpx;}
+.row-meta,.task-meta,.hint{color:#78847e;font-size:24rpx;line-height:1.65;}
+.list-row,.relationship-row,.task-row{border-bottom:1rpx solid #edf1ee;padding:24rpx 0;}
+.current-tag,.read-tag,.source-badge{background:#e7f7e9;color:#168450;border-radius:10rpx;padding:6rpx 12rpx;font-size:22rpx;}
+
+.secondary-page,.prototype-workspace{background:#f5f9f5!important;padding:24rpx 28rpx 70rpx!important;color:#1a382a;}
+.summary-band,.action-band,.danger-band{background:white;border:0;border-radius:26rpx;padding:28rpx;margin-bottom:24rpx;}.field-input{background:#fafcfb;border:1rpx solid #dfe7e1;border-radius:16rpx;min-height:88rpx;font-size:26rpx;padding:16rpx 24rpx;box-sizing:border-box;}.field-note{background:#fff2df;color:#986539;border-radius:20rpx;padding:24rpx;line-height:1.7;font-size:25rpx;}.primary-command,.danger-command{border-radius:18rpx;padding:22rpx;font-size:29rpx;}.primary-command{background:#11674f;}.danger-command{background:#fae0df;color:#c15148;}.section-title{font-size:29rpx;}.summary-row{padding:18rpx 0;font-size:26rpx;}
 </style>

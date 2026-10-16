@@ -9,9 +9,8 @@ export function canAccessAttendance(user: CurrentUser, enabled?: boolean): boole
   return enabled === true && user.permissionCodes.includes('ATTENDANCE_READ');
 }
 export function canRecordAttendance(user: CurrentUser): boolean {
-  const organizationIdentity = user.roleCodes.some(role => ['ORG_ADMIN', 'TEACHER'].includes(role));
-  const personalIdentity = user.roleCodes.some(role => ['PARENT', 'STUDENT'].includes(role));
-  return (organizationIdentity || !personalIdentity) && user.permissionCodes.includes('ATTENDANCE_RECORD');
+  // Effective action codes already apply account identity and organization scope on the server.
+  return user.permissionCodes.includes('ATTENDANCE_RECORD');
 }
 export function shanghaiToday(): string {
   const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date());

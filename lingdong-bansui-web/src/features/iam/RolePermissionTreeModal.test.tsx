@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { RolePermissionTreeModal } from './RolePermissionTreeModal';
 import { ApiRequestError } from '../../api/http';
 vi.mock('antd',async importOriginal=>({...await importOriginal<typeof import('antd')>(),message:{success:vi.fn(),error:vi.fn(),destroy:vi.fn()}}));
-const api = vi.hoisted(() => ({ listRolePermissions: vi.fn(), batchRolePermissions: vi.fn(), listRolePermissionMenus: vi.fn() }));
+const api = vi.hoisted(() => ({ rolePermissionCatalog: vi.fn(), listRolePermissions: vi.fn(), batchRolePermissions: vi.fn(), listRolePermissionMenus: vi.fn() }));
 const menus = vi.hoisted(() => ({ list: vi.fn() }));
 vi.mock('../../api/iam', () => ({ iamApi: api }));
 vi.mock('../../api/menus', () => ({ menuApi: menus }));
@@ -14,6 +14,7 @@ beforeEach(() => {
   vi.resetAllMocks();
   menus.list.mockResolvedValue([{ id: 'd', name: '管理目录', type: 'DIRECTORY', parentId: null }, { id: 'p', name: '管理页面', type: 'PAGE', parentId: 'd', permissionCode: 'READ', grantable: true }, { id: 'b', name: '编辑按钮', type: 'BUTTON', parentId: 'p', permissionCode: 'EDIT', grantable: true }]);
   api.listRolePermissions.mockResolvedValue([]);
+  api.rolePermissionCatalog.mockResolvedValue(permissions);
   api.batchRolePermissions.mockResolvedValue(undefined);
 });
 it('目录级联一次保存页面和按钮，角色授权不出现单条效果选择', async () => {
@@ -46,7 +47,7 @@ it('晚到的旧角色响应不覆盖新角色', async () => {
 it('菜单读取故障禁用保存，403通过IAM受控端点完整读取后才能保存', async () => {
   const user = userEvent.setup();
   menus.list.mockRejectedValueOnce(new Error('菜单加载故障')).mockRejectedValueOnce(new ApiRequestError(403, 'ACCESS_DENIED', '缺少菜单管理查询权限'));
-  api.listRolePermissionMenus.mockResolvedValue([]);
+  api.listRolePermissionMenus.mockResolvedValue([{id:'d',name:'管理目录',type:'DIRECTORY',parentId:null},{id:'p',name:'管理页面',type:'PAGE',parentId:'d',permissionCode:'READ',grantable:true}]);
   render(<RolePermissionTreeModal open roles={roles} permissions={permissions} onClose={() => {}} />);
   await user.click(screen.getByLabelText('角色'));
   await user.click(screen.getByText('角色一（R1）'));
@@ -54,7 +55,7 @@ it('菜单读取故障禁用保存，403通过IAM受控端点完整读取后才�
   expect(screen.getByRole('button', { name: '保存角色权限' })).toBeDisabled();
   expect(api.listRolePermissionMenus).not.toHaveBeenCalled();
   await user.click(screen.getByRole('button', { name: '重新加载' }));
-  await screen.findByText('其他权限');
+  await screen.findByText('管理目录');
   expect(api.listRolePermissionMenus).toHaveBeenCalledTimes(1);
   expect(screen.getByRole('button', { name: '保存角色权限' })).not.toBeDisabled();
 });
@@ -75,4 +76,19 @@ it('保存中禁止角色切换和重复提交，保存失败保留勾选便于�
   expect(title.closest('.ant-tree-treenode')!.querySelector('.ant-tree-checkbox')).toHaveClass('ant-tree-checkbox-checked');
   await user.click(screen.getByRole('button', { name: '保存角色权限' }));
   await waitFor(() => expect(api.batchRolePermissions).toHaveBeenCalledTimes(2));
+});
+
+it('选择角色加载其适用目录，不可用权限标原因且不随目录提交', async () => {
+ api.rolePermissionCatalog.mockResolvedValue([{...permissions[0]}, {...permissions[1],available:false,unavailableReason:'该角色缺少机构范围'}]);
+ const user=userEvent.setup();
+ render(<RolePermissionTreeModal open roles={roles} permissions={permissions} onClose={()=>{}} />);
+ await user.click(screen.getByLabelText('角色'));
+ await user.click(screen.getByText('角色一（R1）'));
+ await user.click((await screen.findByText('管理目录')).closest('.ant-tree-treenode')!.querySelector('.ant-tree-switcher')!);
+ await user.click((await screen.findByText('管理页面')).closest('.ant-tree-treenode')!.querySelector('.ant-tree-switcher')!);
+ expect(await screen.findByText('编辑按钮（该角色缺少机构范围）')).toBeInTheDocument();
+ expect(api.rolePermissionCatalog).toHaveBeenCalledWith('r1');
+ await user.click(screen.getByText('管理目录').closest('.ant-tree-treenode')!.querySelector('.ant-tree-checkbox')!);
+ await user.click(screen.getByRole('button',{name:'保存角色权限'}));
+ await waitFor(()=>expect(api.batchRolePermissions).toHaveBeenCalledWith('r1',expect.objectContaining({permissionIds:['p1'],managedPermissionIds:['p1']})));
 });

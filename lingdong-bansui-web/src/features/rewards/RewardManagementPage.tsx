@@ -1,3 +1,6 @@
+import { Button as PlainButton } from 'antd';
+import { useMenuConfiguration } from '../../app/MenuConfiguration';
+import { ConfiguredModal } from '../../components/ConfiguredModal';
 import { ConfiguredButton as Button } from '../../components/ConfiguredButton';
 import { ViewportTable as Table } from '../../components/ViewportTable';
 import { useEffect, useMemo, useState } from 'react';
@@ -45,13 +48,27 @@ const exchangeStatusColors: Record<GrowthRewardExchangeStatus, string> = {
   VERIFIED: 'success'
 };
 
-export function RewardManagementPage() {
+export interface RewardManagementPageProps {
+  permissionCodes?: string[];
+  canReadRewards?: boolean; canCreate?: boolean; canUpdate?: boolean; canDelete?: boolean;
+  canReadExchanges?: boolean; canReview?: boolean;
+}
+export function RewardManagementPage(props: RewardManagementPageProps = {}) {
+  const configuration = useMenuConfiguration();
+  const effectivePermissions = props.permissionCodes ?? configuration?.permissionCodes;
+  const has = (code: string) => effectivePermissions ? effectivePermissions.includes(code) : true;
+  const canReadRewards = props.canReadRewards ?? has('REWARD_READ');
+  const canCreate = props.canCreate ?? has('REWARD_CREATE');
+  const canUpdate = props.canUpdate ?? has('REWARD_UPDATE');
+  const canDelete = props.canDelete ?? has('REWARD_DELETE');
+  const canReadExchanges = props.canReadExchanges ?? has('REWARD_EXCHANGE_READ');
+  const canReview = props.canReview ?? has('REWARD_EXCHANGE_REVIEW');
   const { message: messageApi, modal } = AntdApp.useApp();
   const [students, setStudents] = useState<RewardStudent[]>([]);
   const [selectedStudentId, setSelectedStudentId] = useState<string>();
   const [rewards, setRewards] = useState<GrowthReward[]>([]);
   const [exchanges, setExchanges] = useState<GrowthRewardExchange[]>([]);
-  const [activeTab, setActiveTab] = useState('rewards');
+  const [activeTab, setActiveTab] = useState(canReadRewards ? 'rewards' : 'exchanges');
   const [exchangeStatus, setExchangeStatus] = useState<GrowthRewardExchangeStatus | 'ALL'>('ALL');
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -69,9 +86,17 @@ export function RewardManagementPage() {
 
   useEffect(() => {
     void loadInitial();
-  }, []);
+  }, [canReadRewards, canReadExchanges]);
+
+  useEffect(() => {
+    if (activeTab === 'rewards' && !canReadRewards && canReadExchanges) setActiveTab('exchanges');
+    if (activeTab === 'exchanges' && !canReadExchanges && canReadRewards) setActiveTab('rewards');
+    if (editingReward && (editingReward === 'NEW' ? !canCreate : !canUpdate)) setEditingReward(null);
+    if (rejectingExchange && !canReview) setRejectingExchange(null);
+  }, [activeTab, canReadRewards, canReadExchanges, canCreate, canUpdate, canReview, editingReward, rejectingExchange]);
 
   async function loadInitial(): Promise<void> {
+    if (!canReadRewards && !canReadExchanges) { setStudents([]); setRewards([]); setExchanges([]); setLoading(false); return; }
     setLoading(true);
     setErrorMessage(null);
     try {
@@ -100,8 +125,8 @@ export function RewardManagementPage() {
     setErrorMessage(null);
     try {
       const [nextRewards, nextExchanges] = await Promise.all([
-        rewardApi.listRewards(studentId),
-        rewardApi.listExchanges(studentId)
+        canReadRewards ? rewardApi.listRewards(studentId) : Promise.resolve([]),
+        canReadExchanges ? rewardApi.listExchanges(studentId) : Promise.resolve([])
       ]);
       setRewards(nextRewards);
       setExchanges(nextExchanges);
@@ -115,12 +140,12 @@ export function RewardManagementPage() {
   }
 
   async function reloadRewards(): Promise<void> {
-    if (!selectedStudentId) return;
+    if (!selectedStudentId || !canReadRewards) return;
     setRewards(await rewardApi.listRewards(selectedStudentId));
   }
 
   async function reloadExchanges(): Promise<void> {
-    if (!selectedStudentId) return;
+    if (!selectedStudentId || !canReadExchanges) return;
     setExchanges(await rewardApi.listExchanges(selectedStudentId));
   }
 
@@ -133,7 +158,7 @@ export function RewardManagementPage() {
   }
 
   async function saveReward(values: RewardFormValues): Promise<void> {
-    if (!selectedStudentId || !editingReward) return;
+    if (!selectedStudentId || !editingReward || (editingReward === 'NEW' ? !canCreate : !canUpdate)) return;
     const input: SaveGrowthRewardInput = {
       rewardName: values.rewardName.trim(),
       requiredPoints: values.requiredPoints,
@@ -160,8 +185,9 @@ export function RewardManagementPage() {
   }
 
   function toggleReward(reward: GrowthReward): void {
+    if (!canUpdate) return;
     const nextStatus: GrowthRewardStatus = reward.status === 'ONLINE' ? 'OFFLINE' : 'ONLINE';
-    modal.confirm({
+    ConfiguredModal.confirm({ actionPrefix: 'REWARD_UPDATE',
       title: nextStatus === 'ONLINE' ? '确认上架奖励' : '确认下架奖励',
       content: nextStatus === 'OFFLINE' ? '下架后学生端将不再显示此奖励。' : '上架后学生可申请兑换此奖励。',
       okText: nextStatus === 'ONLINE' ? '确认上架' : '确认下架',
@@ -181,7 +207,8 @@ export function RewardManagementPage() {
   }
 
   function removeReward(reward: GrowthReward): void {
-    modal.confirm({
+    if (!canDelete) return;
+    ConfiguredModal.confirm({ actionPrefix: 'REWARD_DELETE',
       title: '确认删除奖励',
       content: `删除后“${reward.rewardName}”将不再展示，历史兑换记录仍会保留。`,
       okText: '确认删除',
@@ -196,7 +223,8 @@ export function RewardManagementPage() {
   }
 
   function approveExchange(exchange: GrowthRewardExchange): void {
-    modal.confirm({
+    if (!canReview) return;
+    ConfiguredModal.confirm({ actionPrefix: 'REWARD_EXCHANGE_REVIEW',
       title: '同意奖励兑换',
       content: `确认同意“${exchange.rewardName}”，系统将扣减 ${exchange.requiredPoints} 可用积分。`,
       okText: '确认同意',
@@ -210,7 +238,7 @@ export function RewardManagementPage() {
   }
 
   async function rejectExchange(values: RejectFormValues): Promise<void> {
-    if (!rejectingExchange) return;
+    if (!rejectingExchange || !canReview) return;
     setExchangeSubmitting(true);
     try {
       await rewardApi.rejectExchange(rejectingExchange.id, values.rejectReason.trim());
@@ -225,7 +253,8 @@ export function RewardManagementPage() {
   }
 
   function verifyExchange(exchange: GrowthRewardExchange): void {
-    modal.confirm({
+    if (!canReview) return;
+    ConfiguredModal.confirm({ actionPrefix: 'REWARD_EXCHANGE_REVIEW',
       title: '确认奖励已兑现',
       content: `确认“${exchange.rewardName}”已实际交付给孩子。`,
       okText: '确认核销',
@@ -253,7 +282,7 @@ export function RewardManagementPage() {
             options={students.map((student) => ({ value: student.id, label: student.studentName }))}
             onChange={changeStudent}
           />
-          <Button actionKey="rewards.reward-management-page.2"
+          <Button actionKey="REWARD_CREATE" hidden={!canCreate}
             type="primary"
             icon={<Plus size={16} />}
             disabled={!selectedStudentId}
@@ -267,7 +296,7 @@ export function RewardManagementPage() {
           type="error"
           showIcon
           message={errorMessage}
-          action={<Button actionKey="rewards.reward-management-page.3" size="small" onClick={() => void loadInitial()}>重试</Button>}
+          action={<PlainButton  size="small" onClick={() => void loadInitial()}>重试</PlainButton>}
         />
       )}
 
@@ -317,7 +346,7 @@ export function RewardManagementPage() {
                         render: (_, reward) => (
                           <Space size={4}>
                             <Tooltip title="编辑奖励">
-                              <Button actionKey="rewards.reward-management-page.4"
+                              <Button actionKey="REWARD_UPDATE" hidden={!canUpdate}
                                 type="text"
                                 aria-label={`编辑奖励 ${reward.rewardName}`}
                                 icon={<Pencil size={16} />}
@@ -325,7 +354,7 @@ export function RewardManagementPage() {
                               />
                             </Tooltip>
                             <Tooltip title={reward.status === 'ONLINE' ? '下架奖励' : '上架奖励'}>
-                              <Button actionKey="rewards.reward-management-page.5"
+                              <Button actionKey="REWARD_UPDATE" hidden={!canUpdate}
                                 type="text"
                                 aria-label={`${reward.status === 'ONLINE' ? '下架' : '上架'}奖励 ${reward.rewardName}`}
                                 icon={reward.status === 'ONLINE' ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -333,7 +362,7 @@ export function RewardManagementPage() {
                               />
                             </Tooltip>
                             <Tooltip title="删除奖励">
-                              <Button actionKey="rewards.reward-management-page.6"
+                              <Button actionKey="REWARD_DELETE" hidden={!canDelete}
                                 type="text"
                                 danger
                                 aria-label={`删除奖励 ${reward.rewardName}`}
@@ -370,7 +399,7 @@ export function RewardManagementPage() {
                       dataSource={filteredExchanges}
                       locale={{ emptyText: '暂无兑换记录' }}
                       scroll={{ x: 1050 }}
-                      pagination={{ pageSize: 20, showSizeChanger: false }}
+                      pagination={{}}
                       columns={[
                         { title: '奖励名称', dataIndex: 'rewardName', key: 'rewardName', width: 170 },
                         {
@@ -397,7 +426,7 @@ export function RewardManagementPage() {
                         },
                         {
                           title: '操作', key: 'actions', width: 190, fixed: 'right',
-                          render: (_, exchange) => exchange.status === 'PENDING_APPROVAL' ? (
+                          render: (_, exchange) => !canReview ? '-' : exchange.status === 'PENDING_APPROVAL' ? (
                             <Space size={4}>
                               <Button actionKey="REWARD_EXCHANGE_REVIEW"
                                 type="link"
@@ -406,7 +435,7 @@ export function RewardManagementPage() {
                                 aria-label={`同意兑换 ${exchange.rewardName}`}
                                 onClick={() => approveExchange(exchange)}
                               >同意</Button>
-                              <Button actionKey="rewards.reward-management-page.8"
+                              <Button actionKey="REWARD_EXCHANGE_REVIEW"
                                 type="link"
                                 danger
                                 size="small"
@@ -416,7 +445,7 @@ export function RewardManagementPage() {
                               >驳回</Button>
                             </Space>
                           ) : exchange.status === 'PENDING_VERIFICATION' ? (
-                            <Button actionKey="rewards.reward-management-page.9"
+                            <Button actionKey="REWARD_EXCHANGE_REVIEW"
                               type="link"
                               size="small"
                               icon={<Check size={15} />}
@@ -430,14 +459,14 @@ export function RewardManagementPage() {
                   </>
                 )
               }
-            ]}
+            ].filter(item => item.key === 'rewards' ? canReadRewards : canReadExchanges)}
           />
         </ProCard>
       )}
 
       <Modal
         title={editingReward === 'NEW' ? '新建奖励' : '编辑奖励'}
-        open={editingReward !== null}
+        open={editingReward !== null && (editingReward === 'NEW' ? canCreate : canUpdate)}
         footer={null}
         width="min(880px, 92vw)"
         styles={{ body: { maxHeight: 'calc(100vh - 220px)', overflowY: 'auto' } }}
@@ -491,8 +520,8 @@ export function RewardManagementPage() {
               ]} />
             </Form.Item>
             <div className="form-actions">
-              <Button actionKey="rewards.reward-management-page.10" disabled={rewardSubmitting} onClick={() => setEditingReward(null)}>取消</Button>
-              <Button actionKey="rewards.reward-management-page.11" type="primary" htmlType="submit" loading={rewardSubmitting}>保存奖励</Button>
+              <PlainButton  disabled={rewardSubmitting} onClick={() => setEditingReward(null)}>取消</PlainButton>
+              <Button actionKey={editingReward === 'NEW' ? 'REWARD_CREATE' : 'REWARD_UPDATE'} type="primary" htmlType="submit" loading={rewardSubmitting}>保存奖励</Button>
             </div>
           </Form>
         )}
@@ -500,7 +529,7 @@ export function RewardManagementPage() {
 
       <Modal
         title="驳回奖励兑换"
-        open={rejectingExchange !== null}
+        open={rejectingExchange !== null && canReview}
         footer={null}
         width="min(520px, 92vw)"
         destroyOnHidden
@@ -519,8 +548,8 @@ export function RewardManagementPage() {
             <Input.TextArea rows={4} maxLength={500} showCount placeholder="说明本次不能兑换的原因" />
           </Form.Item>
           <div className="form-actions">
-            <Button actionKey="rewards.reward-management-page.12" disabled={exchangeSubmitting} onClick={() => setRejectingExchange(null)}>取消</Button>
-            <Button actionKey="rewards.reward-management-page.13" type="primary" danger htmlType="submit" loading={exchangeSubmitting}>确认驳回</Button>
+            <PlainButton  disabled={exchangeSubmitting} onClick={() => setRejectingExchange(null)}>取消</PlainButton>
+            <Button actionKey="REWARD_EXCHANGE_REVIEW" type="primary" danger htmlType="submit" loading={exchangeSubmitting}>确认驳回</Button>
           </div>
         </Form>
       </Modal>

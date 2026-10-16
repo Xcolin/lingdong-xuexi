@@ -1,0 +1,7 @@
+const fs=require('fs'),vm=require('vm'),ts=require('typescript'),assert=require('node:assert/strict'),out={};
+vm.runInNewContext(ts.transpileModule(fs.readFileSync('src/models/hierarchy-tree.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}}).outputText,{exports:out});
+const nodes=[{id:'s',parentId:null,name:'学校',typeCode:'SCHOOL'},{id:'t',parentId:null,name:'培训',typeCode:'TRAINING_INSTITUTION'},{id:'p',parentId:'t',name:'校区',typeCode:'CAMPUS'},{id:'g',parentId:'p',name:'分类',typeCode:'GRADE'},{id:'c',parentId:'g',name:'课程班',typeCode:'CLASS'},{id:'sg',parentId:'s',name:'一年级',typeCode:'GRADE'},{id:'sc',parentId:'sg',name:'一班',typeCode:'CLASS'}];
+assert.equal(out.hierarchyNodeLabel(nodes,nodes[3]),'课程分类');assert.equal(out.hierarchyNodeLabel(nodes,nodes[4]),'课程班');assert.equal(out.hierarchyNodeLabel(nodes,nodes[5]),'年级');assert.equal(out.hierarchyNodeLabel(nodes,nodes[6]),'班级');
+assert.equal(out.hierarchyNodeSummary(nodes,nodes[1]),'1 个课程分类 · 1 个课程班');assert.equal(out.hierarchyNodeSummary(nodes,nodes[0]),'1 个年级 · 1 个班级');assert.equal(out.hierarchyNodeSummary(nodes,nodes[3]),'1 个课程班');
+assert.equal(out.hierarchyNodeLabel([{id:'x',parentId:'y',typeCode:'GRADE'},{id:'y',parentId:'x',typeCode:'CAMPUS'}],{id:'x',parentId:'y',typeCode:'GRADE'}),'年级');
+console.log('PASS each tree node uses its own actual institution type, with safe cyclic ancestry');

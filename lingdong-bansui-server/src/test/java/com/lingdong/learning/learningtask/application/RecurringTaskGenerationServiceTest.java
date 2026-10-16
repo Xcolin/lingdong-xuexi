@@ -110,4 +110,48 @@ class RecurringTaskGenerationServiceTest {
                 .isEqualTo(new RecurringTaskGenerationResult(11L, 0, 0, false));
         verify(taskMapper, never()).findById(22L);
     }
+
+    @Test
+    void weeklyServiceCatchesUpSelectedDatesAndRepeatDoesNotInsert() {
+        assertWeekdayGeneration("WEEKLY", List.of(3),
+                List.of(LocalDate.of(2026, 10, 21), LocalDate.of(2026, 10, 28)),
+                LocalDate.of(2026, 11, 4));
+    }
+
+    @Test
+    void customServiceCatchesUpSelectedDatesAndRepeatDoesNotInsert() {
+        assertWeekdayGeneration("CUSTOM", List.of(3, 5),
+                List.of(LocalDate.of(2026, 10, 16), LocalDate.of(2026, 10, 21),
+                        LocalDate.of(2026, 10, 23), LocalDate.of(2026, 10, 28)),
+                LocalDate.of(2026, 10, 30));
+    }
+
+    private void assertWeekdayGeneration(String frequency, List<Integer> days,
+                                         List<LocalDate> expectedDates, LocalDate expectedNext) {
+        LocalDate start = LocalDate.of(2026, 10, 14);
+        LocalDate businessDate = LocalDate.of(2026, 10, 28);
+        var plan = LearningTaskRecurrence.active(11L, 22L, start, null, frequency, days);
+        var advanced = new LearningTaskRecurrence(11L, 22L, frequency, start, null,
+                expectedNext, LearningTaskRecurrenceStatus.ACTIVE, null, null, 1,
+                null, null, days);
+        when(recurrenceMapper.findByIdForUpdate(11L)).thenReturn(plan, advanced);
+        when(recurrenceMapper.advanceGeneration(11L, expectedNext,
+                LearningTaskRecurrenceStatus.ACTIVE, 0)).thenReturn(1);
+        when(expansionService.expand(targets)).thenReturn(List.of(101L));
+        for (LocalDate date : expectedDates) {
+            when(assignmentMapper.findStudentIdsByTaskAndDate(22L, date)).thenReturn(List.of());
+        }
+
+        assertThat(service.generate(11L, businessDate)).isEqualTo(
+                new RecurringTaskGenerationResult(11L, expectedDates.size(), expectedDates.size(), false));
+        assertThat(service.generate(11L, businessDate)).isEqualTo(
+                new RecurringTaskGenerationResult(11L, 0, 0, false));
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<LearningTaskAssignment>> captor = ArgumentCaptor.forClass(List.class);
+        verify(assignmentMapper, times(expectedDates.size())).insertBatch(captor.capture());
+        assertThat(captor.getAllValues().stream().flatMap(List::stream)
+                .map(LearningTaskAssignment::scheduledDate).toList()).containsExactlyElementsOf(expectedDates);
+        verify(recurrenceMapper).advanceGeneration(11L, expectedNext,
+                LearningTaskRecurrenceStatus.ACTIVE, 0);
+    }
 }

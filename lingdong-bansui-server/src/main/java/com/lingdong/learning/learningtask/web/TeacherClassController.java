@@ -25,6 +25,21 @@ public class TeacherClassController {
         this.teacherClassAssignmentService = teacherClassAssignmentService;
     }
 
+    public record ClassChanges(
+            @jakarta.validation.constraints.NotNull @jakarta.validation.constraints.Size(max=100)
+            List<@jakarta.validation.constraints.NotNull @jakarta.validation.constraints.Positive Long> additions,
+            @jakarta.validation.constraints.NotNull @jakarta.validation.constraints.Size(max=100)
+            List<@jakarta.validation.constraints.NotNull @jakarta.validation.constraints.Positive Long> removals) {}
+
+    @RequirePermission("TEACHER_CLASS_ASSIGN")
+    @PutMapping("/changes")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void changeClasses(@AuthenticationPrincipal AuthenticatedUser currentUser,
+                              @PathVariable Long teacherUserId,
+                              @jakarta.validation.Valid @org.springframework.web.bind.annotation.RequestBody ClassChanges changes) {
+        teacherClassAssignmentService.changeClasses(currentUser, teacherUserId, changes.additions(), changes.removals());
+    }
+
     @RequirePermission("TEACHER_CLASS_ASSIGN")
     @PutMapping("/{classId}")
     public TeacherClassResponse assign(
@@ -47,13 +62,14 @@ public class TeacherClassController {
         teacherClassAssignmentService.remove(currentUser, teacherUserId, classId);
     }
 
-    @RequirePermission("LEARNING_TASK_CREATE")
+    @RequirePermission(anyOf={"LEARNING_TASK_CREATE","TEACHER_CLASS_ASSIGN"})
     @GetMapping
     public List<TeacherClassResponse> list(
             @AuthenticationPrincipal AuthenticatedUser currentUser,
-            @PathVariable Long teacherUserId
+            @PathVariable Long teacherUserId,
+            @org.springframework.web.bind.annotation.RequestParam(defaultValue="LEARNING_TASK_CREATE")String permission
     ) {
-        return teacherClassAssignmentService.list(currentUser, teacherUserId).stream()
+        return teacherClassAssignmentService.list(currentUser, teacherUserId,permission).stream()
                 .map(TeacherClassResponse::from)
                 .toList();
     }

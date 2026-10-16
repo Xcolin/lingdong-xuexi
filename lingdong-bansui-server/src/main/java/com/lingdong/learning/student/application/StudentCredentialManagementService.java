@@ -21,6 +21,7 @@ import java.util.Objects;
 @Service
 public class StudentCredentialManagementService {
     private final StudentManagementAccessService managementAccess;
+    private final StudentActorIdentityService actors;
     private static final String PARENT_ROLE = "PARENT";
     private static final String ORGANIZATION_ADMIN_ROLE = "ORG_ADMIN";
 
@@ -37,9 +38,10 @@ public class StudentCredentialManagementService {
             StudentOrganizationMapper studentOrganizationMapper,
             StudentIdentityProvisioningService identityProvisioningService,
             AuthenticationApplicationService authenticationApplicationService,
-            UserMapper userMapper, StudentManagementAccessService managementAccess
+            UserMapper userMapper, StudentManagementAccessService managementAccess, StudentActorIdentityService actors
     ) {
         this.managementAccess = managementAccess;
+        this.actors=actors;
         this.studentMapper = studentMapper;
         this.parentStudentMapper = parentStudentMapper;
         this.studentOrganizationMapper = studentOrganizationMapper;
@@ -94,13 +96,11 @@ public class StudentCredentialManagementService {
     }
 
     private boolean hasObjectScope(AuthenticatedUser currentUser, Long studentId) {
-        boolean primaryParent = currentUser.roleCodes().contains(PARENT_ROLE)
-                && parentStudentMapper.existsActivePrimaryByParentAndStudent(currentUser.userId(), studentId);
-        boolean directOrganizationAdministrator = managementAccess.webAllowed(currentUser, "STUDENT_CREDENTIAL_INITIALIZE") || managementAccess.webAllowed(currentUser, "STUDENT_LOGIN_CODE_RESET")
-                ? managementAccess.studentAllowed(currentUser, studentId)
-                : currentUser.roleCodes().contains(ORGANIZATION_ADMIN_ROLE)
-                && studentOrganizationMapper.existsActiveByOrganizationAdministratorAndStudent(
-                currentUser.userId(), studentId);
-        return primaryParent || directOrganizationAdministrator;
+        boolean primaryParent = actors.isParent(currentUser)
+                && parentStudentMapper.existsActivePrimaryByParentAndStudent(currentUser.userId(),studentId);
+        boolean directOrganizationAdministrator = actors.isInstitutionOperator(currentUser)
+                && managementAccess.studentAllowed(currentUser,studentId);
+        return primaryParent || directOrganizationAdministrator || (actors.isParent(currentUser)
+                && studentOrganizationMapper.existsFamilyAdministratorForStudent(studentId,currentUser.userId()));
     }
 }

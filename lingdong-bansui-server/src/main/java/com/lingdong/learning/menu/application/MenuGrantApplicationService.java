@@ -27,6 +27,7 @@ import java.util.*;
 /** 菜单树勾选式授权：视图仅含页面与权限按钮，保存按差量增删 sys_role_permission（只动菜单来源授权）。 */
 @Service
 public class MenuGrantApplicationService {
+    @org.springframework.beans.factory.annotation.Autowired private com.lingdong.learning.permission.application.PermissionAvailabilityService availability;
     private final com.lingdong.learning.permission.application.PermissionDecisionService decisions;
     private final MenuMapper menus;
     private final RoleMapper roleMapper;
@@ -76,6 +77,9 @@ public class MenuGrantApplicationService {
         for(String code:submitted) {
             Permission p=permissions.findByCode(code);
             if(p==null) throw new IllegalStateException("权限不存在："+code);
+            String reason=availability.roleReason(p,roleId);
+            if(reason!=null) throw new IllegalArgumentException("权限不可授予："+code+"，"+reason);
+            if(current.get(p.id())==PermissionEffect.DENY) throw new IllegalArgumentException("已有禁止权限不能通过菜单授权修改："+code);
             if(p.status()!=PermissionStatus.ENABLED) throw new IllegalStateException("权限已停用，不能配置授权效果："+code);
             if(current.get(p.id())!=PermissionEffect.ALLOW) {
                 rolePermissions.insert(ids.nextId(),roleId,p.id(),PermissionEffect.ALLOW);

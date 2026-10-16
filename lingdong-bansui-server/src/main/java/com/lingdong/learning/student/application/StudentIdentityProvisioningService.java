@@ -92,6 +92,29 @@ public class StudentIdentityProvisioningService {
         return plainLoginCode;
     }
 
+    /** Completes an existing identity without allocating another user or rotating credentials. */
+    @Transactional
+    public String ensureExistingUserIdentity(User user) {
+        if (user == null || user.type() != UserType.STUDENT) throw new IllegalArgumentException("用户不是学生");
+        user = userMapper.findByIdForUpdate(user.id());
+        if (user == null || user.type() != UserType.STUDENT) throw new IllegalArgumentException("用户不是学生");
+        if (user.status() != com.lingdong.learning.user.domain.UserStatus.ENABLED)
+            throw new IllegalStateException("学生用户已停用、锁定或注销");
+        Role role = roleMapper.findByCode(STUDENT_ROLE_CODE);
+        if (role == null || role.status() != RoleStatus.ENABLED) throw new IllegalStateException("内置学生角色不可用");
+        if (!userRoleMapper.hasRoleCode(user.id(), STUDENT_ROLE_CODE)
+                && userRoleMapper.insert(idGenerator.nextId(), user.id(), role.id(), null, GLOBAL_SCOPE_KEY) != 1)
+            throw new IllegalStateException("学生角色授权失败");
+        if (credentialMapper.findByStudentUserIdForUpdate(user.id()) == null) {
+            String initialLoginCode = loginCodeGenerator.generate();
+            StudentCredential credential = StudentCredential.initial(idGenerator.nextId(), user.id(),
+                    loginCodeHasher.hash(initialLoginCode));
+            if (credentialMapper.insert(credential) != 1) throw new IllegalStateException("学生登录凭证创建失败");
+            return initialLoginCode;
+        }
+        return null;
+    }
+
     private String normalizeStudentName(String studentName) {
         if (studentName == null || studentName.trim().isEmpty()) {
             throw new IllegalArgumentException("学生姓名不能为空");

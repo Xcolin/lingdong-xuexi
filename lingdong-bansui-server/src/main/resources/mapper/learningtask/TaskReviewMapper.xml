@@ -82,6 +82,7 @@
         SELECT <include refid="reviewColumns"/>
         <include refid="reviewJoins"/>
         WHERE assignment.current_reviewer_id = #{reviewerUserId}
+        <include refid="com.lingdong.learning.student.infrastructure.persistence.ParentStudentMapper.selectedStudentScope"><property name="studentIdColumn" value="assignment.student_id"/></include>
           AND assignment.current_status = 'PENDING_REVIEW'
           AND checkin.status = 'SUBMITTED'
         ORDER BY checkin.submitted_at ASC, assignment.id ASC
@@ -92,6 +93,7 @@
         SELECT COUNT(1)
         <include refid="reviewJoins"/>
         WHERE assignment.current_reviewer_id = #{reviewerUserId}
+        <include refid="com.lingdong.learning.student.infrastructure.persistence.ParentStudentMapper.selectedStudentScope"><property name="studentIdColumn" value="assignment.student_id"/></include>
           AND assignment.current_status = 'PENDING_REVIEW'
           AND checkin.status = 'SUBMITTED'
     </select>
@@ -101,6 +103,7 @@
         <include refid="reviewJoins"/>
         WHERE assignment.id = #{assignmentId}
           AND assignment.current_reviewer_id = #{reviewerUserId}
+        <include refid="com.lingdong.learning.student.infrastructure.persistence.ParentStudentMapper.selectedStudentScope"><property name="studentIdColumn" value="assignment.student_id"/></include>
           AND assignment.current_status = 'PENDING_REVIEW'
           AND checkin.status = 'SUBMITTED'
     </select>
@@ -114,6 +117,7 @@
         JOIN learn_task task ON task.id = assignment.task_id
         WHERE assignment.id = #{assignmentId}
           AND assignment.current_reviewer_id = #{reviewerUserId}
+        <include refid="com.lingdong.learning.student.infrastructure.persistence.ParentStudentMapper.selectedStudentScope"><property name="studentIdColumn" value="assignment.student_id"/></include>
         FOR UPDATE
     </select>
 
@@ -129,6 +133,7 @@
         FROM learn_task_assignment assignment
         JOIN learn_task task ON task.id = assignment.task_id
         WHERE assignment.current_reviewer_id = #{reviewerUserId}
+        <include refid="com.lingdong.learning.student.infrastructure.persistence.ParentStudentMapper.selectedStudentScope"><property name="studentIdColumn" value="assignment.student_id"/></include>
           AND assignment.current_status = 'PENDING_REVIEW'
         ORDER BY assignment.id
         FOR UPDATE
@@ -139,6 +144,7 @@
         FROM learn_task_assignment assignment
         JOIN learn_task task ON task.id = assignment.task_id
         WHERE assignment.current_reviewer_id = #{reviewerUserId}
+        <include refid="com.lingdong.learning.student.infrastructure.persistence.ParentStudentMapper.selectedStudentScope"><property name="studentIdColumn" value="assignment.student_id"/></include>
           AND assignment.current_status = 'PENDING_REVIEW'
           AND EXISTS (
               SELECT 1 FROM edu_student_organization student_class
@@ -174,3 +180,4 @@
           AND current_reviewer_id = #{fromReviewerUserId}
     </update>
 </mapper>
+

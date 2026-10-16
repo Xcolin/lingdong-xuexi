@@ -38,6 +38,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @Transactional
 class TeacherManagementApplicationServiceTest {
     @Autowired private TeacherManagementApplicationService service;
+    @Autowired private com.lingdong.learning.auth.application.InitialPasswordStateService initialPasswords;
     @Autowired private OrganizationApplicationService organizationApplicationService;
     @Autowired private UserAccessApplicationService userAccessApplicationService;
     @Autowired private OrganizationAdminMapper organizationAdminMapper;
@@ -45,6 +46,19 @@ class TeacherManagementApplicationServiceTest {
     @Autowired private IdGenerator idGenerator;
     @Autowired private JdbcTemplate jdbcTemplate;
     @Autowired private PasswordEncoder passwordEncoder;
+    @org.junit.jupiter.api.BeforeEach void initializeCurrentIdentityStateFixture() {
+        jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS auth_initial_password_state(user_id BIGINT PRIMARY KEY,change_required BOOLEAN NOT NULL,updated_at TIMESTAMP NOT NULL)");
+        jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS edu_teacher_profile(user_id BIGINT PRIMARY KEY,status VARCHAR(16) DEFAULT 'ENABLED',created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
+    }
+
+
+    @Test void teacherInitialPasswordRequiresRotationBeforeClassAssignment() {
+        Fixture fixture=createFixture("teacher_initial_state");
+        TeacherAccount account=service.create(fixture.currentUser(),new CreateTeacherCommand(
+                "teacher_initial_without_class","待分班教师",null,"Password123",fixture.school().id(),List.of()));
+        assertThat(initialPasswords.required(account.id())).isTrue();
+        assertThat(account.classOrganizationIds()).isEmpty();
+    }
 
     @Test
     void createsOrganizationTeacherWithSchoolRolePasswordAndClassesAtomically() {
@@ -57,6 +71,7 @@ class TeacherManagementApplicationServiceTest {
                 fixture.school().id(), List.of(firstClass.id(), secondClass.id())
         ));
 
+        assertThat(initialPasswords.required(created.id())).isTrue();
         assertThat(created.username()).isEqualTo("teacher_create_account");
         assertThat(created.displayName()).isEqualTo("创建教师");
         assertThat(created.schoolId()).isEqualTo(fixture.school().id());
@@ -180,6 +195,7 @@ class TeacherManagementApplicationServiceTest {
                 LocalDateTime.now().plusDays(1), LocalDateTime.now());
 
         service.resetPassword(fixture.currentUser(), teacher.id(), "NewPassword123");
+        assertThat(initialPasswords.required(teacher.id())).isTrue();
 
         String passwordHash = jdbcTemplate.queryForObject(
                 "select password_hash from sys_user where id = ?", String.class, teacher.id());
@@ -286,8 +302,10 @@ class TeacherManagementApplicationServiceTest {
     }
 
     private Organization createClass(Organization school, String code, String name) {
+        Organization grade = organizationApplicationService.createOrganization(
+                new CreateOrganizationCommand(code + "_GRADE", name + "年级", "GRADE", school.id(), 10));
         return organizationApplicationService.createOrganization(
-                new CreateOrganizationCommand(code, name, "CLASS", school.id(), 10));
+                new CreateOrganizationCommand(code, name, "CLASS", grade.id(), 10));
     }
 
     private record Fixture(
@@ -297,3 +315,4 @@ class TeacherManagementApplicationServiceTest {
     ) {
     }
 }
+

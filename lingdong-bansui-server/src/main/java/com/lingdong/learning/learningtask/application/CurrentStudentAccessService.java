@@ -18,7 +18,7 @@ public class CurrentStudentAccessService {
     }
 
     public Student require(AuthenticatedUser currentUser) {
-        if (currentUser == null || !currentUser.roleCodes().contains("STUDENT")) {
+        if (currentUser == null || currentUser.userId() == null) {
             throw new SystemOperationAccessDeniedException("仅学生可操作本人任务");
         }
         Student student = studentMapper.findByStudentUserId(currentUser.userId());

@@ -1,12 +1,13 @@
 <template>
-  <view class="page-shell">
-    <view v-if="loading" class="state-view">正在加载</view>
+  <view class="prototype-workspace page-shell">
+    <view class="prototype-header"><PrototypeIcon name="people" tone="white" :size="26" /><text class="prototype-header-title">亲子关系列表</text></view>
+    <button v-if="enabled" @tap="scannerVisible=!scannerVisible">扫一扫或填写邀请编号</button><view v-if="enabled&&scannerVisible" class="command-band"><button :disabled="submitting" @tap="scanInvitation">扫一扫陪伴邀请</button><input v-model="manualInvitationId" class="field-input" placeholder="或填写邀请编号" maxlength="19"/><button :disabled="submitting" @tap="openManualInvitation">打开邀请</button></view><view v-if="issuedInvitation" class="dialog-surface"><text class="dialog-title">陪伴关系邀请</text><InvitationQrCode :value="encodeParentInvitation(issuedInvitation.invitationId)"/><text class="member-mobile">受邀手机号：{{issuedInvitation.maskedMobile}}</text><text class="member-mobile">有效期至 {{issuedInvitation.expiresAt.replace('T',' ')}}</text><text selectable class="member-name">{{issuedInvitation.invitationId}}</text><button @tap="copyInvitation">复制邀请编号</button><text class="member-mobile">请在灵动伴随内扫一扫，受邀人仍需验证手机号。</text></view><view v-if="loading" class="state-view">正在加载</view>
     <view v-else-if="!enabled" class="state-view disabled-state">
       <text>家长关系功能未启用</text>
       <button class="return-button" @tap="returnHome">返回家长端</button>
     </view>
     <template v-else>
-      <view class="heading-band">
+      <view v-if="!invitationMode" class="heading-band">
         <text class="heading-title">家长关系</text>
         <picker v-if="students.length" :range="studentNames" :value="selectedIndex" @change="changeStudent">
           <view class="student-picker">{{ selectedStudent?.studentName || '选择学生' }}<text>⌄</text></view>
@@ -18,9 +19,9 @@
         副家长只读
       </view>
 
-      <view v-if="relationship" class="relationship-list">
+      <view v-if="relationship && !invitationMode" class="relationship-list">
         <view v-for="member in members" :key="member.userId" class="relationship-row">
-          <view class="member-main">
+          <!-- 通用默认陪伴者插画，不代表真实头像 --><image class="member-avatar" src="/static/pixel/default-companion-avatar.png" mode="aspectFill"/><view class="member-main">
             <text class="member-name">{{ member.displayName || '家长' }}</text>
             <text class="member-mobile">{{ member.mobileMasked || '-' }}</text>
           </view>
@@ -33,15 +34,15 @@
       </view>
       <view v-else-if="!errorMessage" class="state-view">暂无家长关系</view>
 
-      <view v-if="canManage" class="command-band">
+      <view v-if="canManage && !invitationMode" class="command-band">
         <button class="primary-command" :disabled="Boolean(relationship?.secondaryParent)"
                 @tap="openInvitation('SECONDARY')">邀请副家长</button>
         <button class="plain-command" @tap="openInvitation('TRANSFER')">转移监护权</button>
         <button class="danger-command" @tap="confirmUnbindPrimary">解除我的主家长关系</button>
       </view>
 
-      <view v-if="invitationMode" class="dialog-mask" @tap="closeInvitation">
-        <view class="dialog-surface" @tap.stop>
+      <view v-if="invitationMode" class="invitation-step">
+        <view class="dialog-surface">
           <text class="dialog-title">{{ invitationMode === 'SECONDARY' ? '邀请副家长' : '转移监护权' }}</text>
           <text class="field-label">目标家长手机号</text>
           <input v-model="targetMobile" class="field-input" type="number" maxlength="11"
@@ -60,8 +61,12 @@
 </template>
 
 <script setup lang="ts">
+import InvitationQrCode from '@/components/InvitationQrCode.vue';
+import {encodeParentInvitation,parseParentInvitation,invitationRoute} from '@/models/parent-invitation-qr';
+import type {ParentRelationshipInvitation} from '@/api/parent-relationship';
+import PrototypeIcon from '@/components/PrototypeIcon.vue';
 import { computed, ref } from 'vue';
-import { onShow } from '@dcloudio/uni-app';
+import { onShow, onHide } from '@dcloudio/uni-app';
 import { getMiniappCapabilities } from '@/api/capability';
 import {
   createPrimaryParentTransferInvitation,
@@ -76,6 +81,11 @@ import {
 } from '@/api/parent-relationship';
 import { getParentSession } from '@/session/parent-session';
 
+const scannerVisible=ref(false);
+const issuedInvitation=ref<ParentRelationshipInvitation|null>(null),manualInvitationId=ref('');
+function copyInvitation(){if(issuedInvitation.value)uni.setClipboardData({data:issuedInvitation.value.invitationId});}
+function openManualInvitation(){try{uni.navigateTo({url:invitationRoute(manualInvitationId.value.trim())});}catch(e){errorMessage.value=toMessage(e);}}
+function scanInvitation(){uni.scanCode({onlyFromCamera:false,scanType:['qrCode'],success:r=>{try{uni.navigateTo({url:invitationRoute(parseParentInvitation(r.result))});}catch(e){errorMessage.value=toMessage(e);}},fail:()=>{errorMessage.value='扫描未完成，可填写邀请编号';}});}
 const enabled = ref(false);
 const loading = ref(true);
 const errorMessage = ref('');
@@ -95,7 +105,8 @@ const members = computed(() => relationship.value
   : []);
 const canManage = computed(() => selectedStudent.value?.relationshipRole === 'PRIMARY_GUARDIAN');
 
-onShow(() => void initialize());
+onHide(()=>{issuedInvitation.value=null;manualInvitationId.value='';});
+onShow(() => {issuedInvitation.value=null;void initialize();});
 
 async function initialize(): Promise<void> {
   loading.value = true;
@@ -168,8 +179,9 @@ async function submitInvitation(): Promise<void> {
         selectedStudent.value.studentId, targetMobile.value, session.accessToken)
       : await createPrimaryParentTransferInvitation(
         selectedStudent.value.studentId, targetMobile.value, session.accessToken);
+    if(getParentSession()?.accessToken!==session.accessToken)return;
     closeInvitationAfterSubmit();
-    await showMessage('邀请已发送', `目标手机号 ${result.maskedMobile}，请在5分钟内完成确认。`);
+    issuedInvitation.value=result;
   } catch (error) {
     dialogError.value = toMessage(error);
   } finally {
@@ -248,47 +260,6 @@ function toMessage(error: unknown): string {
 }
 </script>
 
-<style lang="scss" scoped>
-.page-shell { min-height: 100vh; padding: 36rpx 32rpx 64rpx; box-sizing: border-box; background: #f4f7f5; }
-/* #ifdef H5 */
-.page-shell { min-height: calc(100vh - 44px); }
-/* #endif */
-.heading-band { display: flex; align-items: center; justify-content: space-between; gap: 24rpx; margin-bottom: 28rpx; }
-.heading-title { color: #1c2b28; font-size: 40rpx; font-weight: 700; }
-.student-picker { min-width: 240rpx; height: 72rpx; display: flex; align-items: center; justify-content: space-between; gap: 18rpx; padding: 0 22rpx; border: 2rpx solid #cdd8d3; border-radius: 10rpx; box-sizing: border-box; background: #ffffff; color: #253730; font-size: 27rpx; }
-.state-view { min-height: 360rpx; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28rpx; color: #71817a; font-size: 28rpx; }
-.disabled-state { color: #9a4b38; }
-.return-button { height: 72rpx; margin: 0; padding: 0 28rpx; background: #ffffff; color: #1d6f55; font-size: 27rpx; }
-.error-band, .readonly-band { margin-bottom: 20rpx; padding: 20rpx 24rpx; border-left: 6rpx solid #b54734; background: #fff3ef; color: #8d3c2d; font-size: 26rpx; }
-.readonly-band { border-left-color: #367ca5; background: #eef7fb; color: #2d688a; }
-.relationship-list { border-top: 2rpx solid #d9e2de; background: #ffffff; }
-.relationship-row { min-height: 128rpx; display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 18rpx; padding: 20rpx 24rpx; border-bottom: 2rpx solid #e2e8e5; box-sizing: border-box; }
-.member-main { min-width: 0; }
-.member-name, .member-mobile { display: block; }
-.member-name { color: #1c2b28; font-size: 29rpx; font-weight: 600; }
-.member-mobile { margin-top: 8rpx; color: #71817a; font-size: 24rpx; }
-.role-label { padding: 8rpx 14rpx; border-radius: 8rpx; font-size: 23rpx; }
-.role-label.primary { background: #e6f4ee; color: #146c4e; }
-.role-label.secondary { background: #eaf2f7; color: #326d90; }
-.row-command { min-width: 92rpx; height: 60rpx; margin: 0; padding: 0 16rpx; background: transparent; font-size: 24rpx; }
-.row-command::after { border: 0; }
-.row-command.danger { color: #a34332; }
-.command-band { display: grid; gap: 18rpx; margin-top: 32rpx; }
-.primary-command, .plain-command, .danger-command { width: 100%; height: 84rpx; margin: 0; border-radius: 10rpx; font-size: 28rpx; }
-.primary-command { background: #167c5a; color: #ffffff; }
-.plain-command { background: #ffffff; color: #1d6f55; }
-.danger-command { background: #ffffff; color: #a34332; }
-.primary-command::after, .plain-command::after, .danger-command::after { border: 0; }
-.primary-command[disabled] { background: #aebdb7; color: #ffffff; }
-.dialog-mask { position: fixed; inset: 0; z-index: 20; display: flex; align-items: flex-end; background: rgba(21, 34, 29, 0.48); }
-.dialog-surface { width: 100%; padding: 36rpx 32rpx calc(36rpx + env(safe-area-inset-bottom)); border-radius: 16rpx 16rpx 0 0; box-sizing: border-box; background: #ffffff; }
-.dialog-title { display: block; margin-bottom: 32rpx; color: #1c2b28; font-size: 34rpx; font-weight: 700; }
-.field-label { display: block; margin-bottom: 12rpx; color: #455a52; font-size: 25rpx; }
-.field-input { width: 100%; height: 84rpx; padding: 0 22rpx; border: 2rpx solid #cdd8d3; border-radius: 10rpx; box-sizing: border-box; font-size: 29rpx; }
-.dialog-error { display: block; margin-top: 16rpx; color: #a34332; font-size: 24rpx; }
-.dialog-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 18rpx; margin-top: 32rpx; }
-.cancel-command, .submit-command { height: 80rpx; margin: 0; font-size: 27rpx; }
-.cancel-command { background: #eef2f0; color: #52675f; }
-.submit-command { background: #167c5a; color: #ffffff; }
-.cancel-command::after, .submit-command::after { border: 0; }
+<style scoped>
+.page-shell{padding:24rpx 28rpx 60rpx;background:#f6f9f5;min-height:100vh;box-sizing:border-box;color:#18372a}.prototype-header{display:flex;gap:14rpx;align-items:center;justify-content:center;background:#175e47;color:#fff;padding:28rpx;margin:-24rpx -28rpx 26rpx}.prototype-header-title{font-size:32rpx;font-weight:650}.heading-band,.relationship-list,.command-band,.dialog-surface{padding:26rpx;background:#fff;border-radius:24rpx;margin-bottom:22rpx}.heading-title,.dialog-title{display:block;font-size:32rpx;font-weight:650;margin-bottom:22rpx}.student-picker{display:flex;justify-content:space-between;background:#f6f9f3;padding:20rpx;border-radius:16rpx}.relationship-row{display:flex;align-items:center;gap:18rpx;padding:24rpx 0;border-bottom:1rpx solid #e6eee3}.member-avatar{width:80rpx;height:80rpx;border-radius:50%;flex-shrink:0}.member-main{flex:1}.member-name{display:block;font-size:30rpx;font-weight:650}.member-mobile{display:block;font-size:24rpx;color:#7c847e;margin-top:8rpx}.role-label{font-size:23rpx;background:#e6f4e4;color:#147c51;border-radius:14rpx;padding:8rpx}.field-label{display:block;font-size:26rpx;margin:24rpx 0 12rpx}.field-input{background:#f7faf5;border:1rpx solid #dfe8dc;border-radius:16rpx;padding:20rpx;font-size:28rpx}.dialog-actions{display:flex;gap:16rpx;margin-top:30rpx}.dialog-actions button{flex:1}button{font-size:26rpx;padding:18rpx;line-height:1.5;background:#e9f2e6;color:#225a40;border-radius:18rpx;margin-top:16rpx}button::after{border:0}.submit-command,.primary-command{background:#176f50;color:white}.danger-command,.danger,.dialog-error,.error-band{color:#a44d40}.state-view,.readonly-band{padding:30rpx;color:#7b847d;font-size:26rpx}
 </style>

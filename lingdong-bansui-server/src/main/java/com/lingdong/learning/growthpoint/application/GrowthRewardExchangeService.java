@@ -1,6 +1,7 @@
 package com.lingdong.learning.growthpoint.application;
 
 import com.lingdong.learning.auth.application.AuthenticatedUser;
+import com.lingdong.learning.auth.application.ParentActorAccessService;
 import com.lingdong.learning.auth.domain.AuthClientType;
 import com.lingdong.learning.common.id.IdGenerator;
 import com.lingdong.learning.common.security.SystemOperationAccessDeniedException;
@@ -42,6 +43,8 @@ public class GrowthRewardExchangeService {
     private final IdGenerator idGenerator;
     private final Clock clock;
 
+    private final ParentActorAccessService parentActors;
+
     public GrowthRewardExchangeService(
             GrowthRewardExchangeMapper exchangeMapper,
             GrowthRewardMapper rewardMapper,
@@ -51,8 +54,10 @@ public class GrowthRewardExchangeService {
             CurrentStudentAccessService currentStudentAccessService,
             FeatureAccessService featureAccessService,
             IdGenerator idGenerator,
-            Clock clock
+            Clock clock,
+            ParentActorAccessService parentActors
     ) {
+        this.parentActors = parentActors;
         this.exchangeMapper = exchangeMapper;
         this.rewardMapper = rewardMapper;
         this.accountMapper = accountMapper;
@@ -110,6 +115,13 @@ public class GrowthRewardExchangeService {
         return exchangePage(studentId, requirePage(page, pageSize));
     }
 
+    public record PendingSummary(long pendingApprovalCount, long pendingVerificationCount) { }
+    @Transactional(readOnly = true)
+    public PendingSummary pendingSummary(AuthenticatedUser currentUser) {
+        featureAccessService.requireEnabled(FEATURE_CODE, null);
+        requireParent(currentUser);
+        return new PendingSummary(exchangeMapper.countPendingByParent(currentUser.userId(), "PENDING_APPROVAL"), exchangeMapper.countPendingByParent(currentUser.userId(), "PENDING_VERIFICATION"));
+    }
     @Transactional
     public GrowthRewardExchange approve(AuthenticatedUser currentUser, Long exchangeId) {
         featureAccessService.requireEnabled(FEATURE_CODE, null);
@@ -202,11 +214,10 @@ public class GrowthRewardExchangeService {
     }
 
     private void requireParent(AuthenticatedUser currentUser) {
+        parentActors.require(currentUser);
         if (currentUser == null || (currentUser.clientType() != AuthClientType.WEB
-                && currentUser.clientType() != AuthClientType.MINIAPP)
-                || !currentUser.roleCodes().contains("PARENT")
-                || currentUser.roleCodes().contains("SYS_AUDITOR")) {
-            throw new SystemOperationAccessDeniedException("仅家长可访问奖励兑换，审核员不能参与业务操作");
+                && currentUser.clientType() != AuthClientType.MINIAPP)) {
+            throw new SystemOperationAccessDeniedException("仅家长可访问奖励兑换");
         }
     }
 

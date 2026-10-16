@@ -8,5 +8,5 @@ export function formatDateTime(value: string | null | undefined): string {
   const [date, time] = value.replace('T', ' ').split(' ');
   if (!time) return date;
   const [hour = '00', minute = '00', second = '00'] = time.split(':');
-  return `${date} ${hour}:${minute}:${second}`;
+  return `${date} ${hour}:${minute}:${second.split('.')[0]}`;
 }

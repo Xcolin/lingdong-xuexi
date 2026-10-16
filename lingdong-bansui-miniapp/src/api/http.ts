@@ -14,6 +14,7 @@ export function apiUrl(path: string): string {
 }
 
 export interface MiniappRequestOptions {
+  timeoutMs?: number;
   method?: UniApp.RequestOptions['method'];
   data?: UniApp.RequestOptions['data'];
   header?: Record<string, string>;
@@ -51,13 +52,20 @@ const REQUEST_TIMEOUT_MS = 15000;
  * 小程序会话由调用方显式传入，不复用 Web 端存储和路由状态。
  */
 export function request<T>(path: string, options: MiniappRequestOptions = {}): Promise<T> {
+  const header = { ...options.header };
+  const selection = uni.getStorageSync('lingdong.selected-organization') as { accessToken?: string; organizationId?: string } | undefined;
+  const prerequisite = /^\/(?:api\/v1\/)?(?:auth|organization-onboarding|parent-onboarding|public)(?:\/|$)/.test(path);
+  if (!prerequisite && selection?.organizationId && selection.accessToken
+      && header.Authorization === `Bearer ${selection.accessToken}`) {
+    header['X-Organization-Id'] = selection.organizationId;
+  }
   return new Promise((resolve, reject) => {
     uni.request({
       url: apiUrl(path),
       method: options.method ?? 'GET',
       data: options.data,
-      header: options.header,
-      timeout: REQUEST_TIMEOUT_MS,
+      header,
+      timeout: options.timeoutMs ?? REQUEST_TIMEOUT_MS,
       success: (response) => {
         if (response.statusCode >= 200 && response.statusCode < 300) {
           resolve(response.data as T);

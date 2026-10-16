@@ -1,0 +1,10 @@
+package com.lingdong.learning.organization.onboarding.application;
+import org.springframework.stereotype.Service;import org.springframework.transaction.annotation.Transactional;
+@Service public class OrganizationOwnerGuard {
+ @org.springframework.beans.factory.annotation.Autowired private com.lingdong.learning.feature.application.FeatureAccessService features;
+ private final OrganizationOwnerMapper mapper;public OrganizationOwnerGuard(OrganizationOwnerMapper mapper){this.mapper=mapper;}
+ @Transactional public void requireRemovable(Long user,Long org){if(org==null)return;mapper.lockOrganization(org);Long owner=mapper.lockOwner(org);if(user.equals(owner))throw new IllegalStateException("请先转交组织负责人后再移除管理员或停用账号");if(mapper.isAdministrator(user,org)&&mapper.activeAdministrators(org)<=1)throw new IllegalStateException("不能移除最后一名有效管理员，请先转交管理权限");}
+ @Transactional public void requireAccountAvailable(Long user){for(Long org:mapper.organizations(user))requireRemovable(user,org);}
+ @Transactional public void transfer(Long actor,Long org,Long target){if(features!=null)features.requireEnabled("ORGANIZATION_MANAGEMENT",null);mapper.lockOrganization(org);if(!actor.equals(mapper.lockOwner(org)))throw new com.lingdong.learning.common.security.SystemOperationAccessDeniedException("仅当前组织负责人可转交");if(!mapper.isAdministrator(target,org)||mapper.administratorOptions(org).stream().noneMatch(x->target.toString().equals(x.get("id").toString())))throw new IllegalArgumentException("目标必须为本组织有效管理员");if(actor.equals(target))throw new IllegalArgumentException("请选择其他管理员");if(mapper.transfer(org,actor,target)!=1)throw new IllegalStateException("负责人已变更，请刷新重试");}
+ @Transactional public java.util.List<java.util.Map<String,String>> options(Long actor,Long org){if(!actor.equals(mapper.lockOwner(org)))throw new com.lingdong.learning.common.security.SystemOperationAccessDeniedException("仅当前负责人可查看转交候选人");return mapper.administratorOptions(org).stream().map(x->java.util.Map.of("id",x.get("id").toString(),"name",x.get("name").toString())).toList();}
+}
