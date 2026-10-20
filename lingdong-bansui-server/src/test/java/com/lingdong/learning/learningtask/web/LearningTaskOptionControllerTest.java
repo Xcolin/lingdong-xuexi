@@ -87,6 +87,12 @@ class LearningTaskOptionControllerTest {
         setPassword(systemAdministrator, secondaryParent);
         setPassword(systemAdministrator, organizationAdministrator);
         setPassword(systemAdministrator, teacher);
+        // V135 后教师职业身份独立持久化：需机构账号类型与启用教师档案，否则分班被判非启用教师
+        makeTeacher("task_option_teacher");
+
+        // V118 后家长需为 FAMILY 身份且持有家长档案，否则 service 层 requireParent 拒绝建学生
+        makeFamilyParent("task_option_parent");
+        makeFamilyParent("task_option_secondary_parent");
 
         String parentToken = loginAccessToken("task_option_parent");
         String secondaryParentToken = loginAccessToken("task_option_secondary_parent");
@@ -115,7 +121,8 @@ class LearningTaskOptionControllerTest {
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].id").value(familyStudentId.toString()))
                 .andExpect(jsonPath("$[0].relationshipRole").value("PRIMARY_GUARDIAN"))
-                .andExpect(jsonPath("$[0].studentAccountMasked").value("26****01"))
+                // 学号序列随库环境变化（H2/MySQL 起始序列不同），仅断言掩码格式不泄露完整账号
+                .andExpect(jsonPath("$[0].studentAccountMasked").value(org.hamcrest.Matchers.matchesPattern("^26\\*{4}\\d{2}$")))
                 .andExpect(jsonPath("$[0].studentAccount").doesNotExist())
                 .andExpect(jsonPath("$[0].mobile").doesNotExist())
                 .andExpect(jsonPath("$[0].passwordHash").doesNotExist());
@@ -167,8 +174,9 @@ class LearningTaskOptionControllerTest {
         mockMvc.perform(get("/api/v1/learning-task-options/students")
                         .param("sourceType", "ORGANIZATION")
                         .header("Authorization", "Bearer " + parentToken))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(0));
+                // V118 后任务来源与角色强绑定：家长无 ORG_ADMIN 身份，请求机构学生选项直接 403
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
 
         jdbcTemplate.update(
                 "update sys_organization set effective_status = 'DISABLED' where id in (?, ?, ?)",
@@ -188,8 +196,8 @@ class LearningTaskOptionControllerTest {
         mockMvc.perform(get("/api/v1/learning-task-options/students")
                         .param("sourceType", "TEACHER")
                         .header("Authorization", "Bearer " + teacherToken))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(0));
+                // V135 后教师任务来源身份要求带班组织运营：机构停用后教师选项直接 403，不再返回空列表
+                .andExpect(status().isForbidden());
         mockMvc.perform(get("/api/v1/learning-task-options/teachers")
                         .header("Authorization", "Bearer " + administratorToken))
                 .andExpect(status().isOk())
@@ -228,6 +236,31 @@ class LearningTaskOptionControllerTest {
     private void setPassword(User systemAdministrator, User targetUser) {
         authenticationApplicationService.setPlatformUserPassword(new SetPlatformUserPasswordCommand(
                 systemAdministrator.id(), targetUser.id(), "Password123"));
+        // bf34c6a 管理员设密后要求首登改密，业务测试直接清除首登改密标记
+        jdbcTemplate.update("UPDATE auth_initial_password_state SET change_required=false WHERE user_id=?", targetUser.id());
+    }
+
+    /** V135 后教师职业身份独立持久化：机构账号类型 + edu_teacher_profile 启用记录。 */
+    private void makeTeacher(String username) {
+        Long id = jdbcTemplate.queryForObject("SELECT id FROM sys_user WHERE username=?", Long.class, username);
+        jdbcTemplate.update("UPDATE sys_user SET user_type='ORGANIZATION' WHERE id=?", id);
+        jdbcTemplate.update("INSERT INTO edu_teacher_profile(user_id,status) SELECT ?,'ENABLED' "
+                + "WHERE NOT EXISTS(SELECT 1 FROM edu_teacher_profile WHERE user_id=?)", id, id);
+        sqlSession.clearCache();
+    }
+
+    /** V118 后家长账号需为 FAMILY 身份且持有家长档案；WEB 会话仅保留学生档案等家庭基础能力。 */
+    private void makeFamilyParent(String username) {
+        Long id = jdbcTemplate.queryForObject("SELECT id FROM sys_user WHERE username=?", Long.class, username);
+        jdbcTemplate.update("UPDATE sys_user SET user_type='FAMILY' WHERE id=?", id);
+        jdbcTemplate.update("INSERT INTO auth_parent_profile(id,user_id,onboarding_status,first_login_at,onboarding_completed_at) "
+                + "VALUES(?,?,'COMPLETED',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP) "
+                + "ON DUPLICATE KEY UPDATE onboarding_status = VALUES(onboarding_status)", id, id);
+        jdbcTemplate.update("INSERT INTO auth_user_agreement_acceptance(id,user_id,agreement_type,agreement_version,client_type,accepted_at) "
+                + "SELECT ?,?,'PARENT_USER_AGREEMENT',config_value,'WEB',CURRENT_TIMESTAMP FROM sys_config "
+                + "WHERE config_key='auth.parent-agreement.current-version' AND status='ENABLED' "
+                + "ON DUPLICATE KEY UPDATE agreement_version = VALUES(agreement_version)", id, id);
+        sqlSession.clearCache();
     }
 
     private String loginAccessToken(String username) throws Exception {

@@ -36,24 +36,38 @@ public record StudentTaskAssignmentRow(
         TaskPauseType activePauseType,
         LocalDateTime pauseStartedAt,
         LocalDateTime pauseExpiresAt,
+        String pauseAdjustMethod,
+        String pauseReasonNote,
         Long latestCheckInId,
         Integer latestSubmissionNo,
         String latestCheckInContent,
         String latestCheckInStatus,
         LocalDateTime latestSubmittedAt,
-        String latestReviewComment
+        String latestReviewComment,
+        String latestCheckInCompletion,
+        String description,
+        List<String> requirementItems,
+        List<Long> exampleFileIds,
+        LocalDate lastDeferredToDate
 ) {
+    public StudentTaskAssignmentRow {
+        requirementItems = requirementItems == null ? List.of() : List.copyOf(requirementItems);
+        exampleFileIds = exampleFileIds == null ? List.of() : List.copyOf(exampleFileIds);
+    }
+
     public StudentTaskAssignmentView toView(List<String> tagCodes) {
         ActiveTaskPauseView activePause = activePauseId == null ? null : new ActiveTaskPauseView(
-                activePauseId, activePauseType, pauseStartedAt, pauseExpiresAt);
+                activePauseId, activePauseType, pauseStartedAt, pauseExpiresAt,
+                pauseAdjustMethod, pauseReasonNote);
         TaskCheckInView latestCheckIn = latestCheckInId == null ? null : new TaskCheckInView(
                 latestCheckInId, latestSubmissionNo, latestCheckInContent, latestCheckInStatus,
-                latestSubmittedAt, latestReviewComment);
+                latestSubmittedAt, latestReviewComment, List.of(), latestCheckInCompletion);
         return new StudentTaskAssignmentView(
                 id, taskId, sourceType, sourceOrganizationId, sourceOrganizationName, title,
                 difficultyLevel, basePoints, durationMinutes, scheduledDate, dueAt, categoryCode, remark,
                 currentStatus, effectiveStatus, currentReviewerId, reviewerDisplayName,
                 lastDeferType, Boolean.TRUE.equals(overnightMigrated),
-                activePause, latestCheckIn, tagCodes);
+                activePause, latestCheckIn, tagCodes,
+                description, requirementItems, exampleFileIds, lastDeferredToDate, List.of(), null);
     }
 }

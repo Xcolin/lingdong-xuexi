@@ -145,6 +145,12 @@ class StudentImportApiIntegrationTest {
                     .formatted(studentOwnerIds));
             jdbcTemplate.update("DELETE FROM sys_user_role WHERE user_id IN (%s)"
                     .formatted(studentOwnerIds));
+            // 学生账号由导入流程绑定了机构成员关联，MySQL 外键要求先删 sys_user_organization 再删用户
+            jdbcTemplate.update("DELETE FROM sys_user_organization WHERE user_id IN (%s)"
+                    .formatted(studentOwnerIds));
+            // 导入账号的初始密码状态表外键同样阻挡 sys_user 删除
+            jdbcTemplate.update("DELETE FROM auth_initial_password_state WHERE user_id IN (%s)"
+                    .formatted(studentOwnerIds));
             jdbcTemplate.update("DELETE FROM sys_user WHERE id IN (%s)".formatted(studentOwnerIds));
         }
         if (!userIds.isEmpty()) {
@@ -158,6 +164,8 @@ class StudentImportApiIntegrationTest {
             jdbcTemplate.update("DELETE FROM sys_user_organization WHERE user_id IN (%s)"
                     .formatted(ownerIds));
             jdbcTemplate.update("DELETE FROM sys_organization_admin WHERE user_id IN (%s)"
+                    .formatted(ownerIds));
+            jdbcTemplate.update("DELETE FROM auth_initial_password_state WHERE user_id IN (%s)"
                     .formatted(ownerIds));
             jdbcTemplate.update("DELETE FROM sys_user WHERE id IN (%s)".formatted(ownerIds));
         }
@@ -427,7 +435,7 @@ class StudentImportApiIntegrationTest {
         insertOrganization(SCHOOL_ID, null, "STU_SCHOOL", "导入学校", "SCHOOL", "/STU_SCHOOL/", "ENABLED");
         insertOrganization(CLASS_A_ID, SCHOOL_ID, "STU_CLASS_A", "导入班级甲", "CLASS", "/STU_SCHOOL/STU_CLASS_A/", "ENABLED");
         insertOrganization(OUTSIDE_SCHOOL_ID, null, "STU_OUT_SCHOOL", "范围外导入学校", "SCHOOL", "/STU_OUT_SCHOOL/", "ENABLED");
-        insertOrganization(OUTSIDE_CLASS_ID, OUTSIDE_SCHOOL_ID, "STU_OUT_CLASS", "范围外班级", "CLASS", "/STU_OUT_SCHOOL/STU_OUT_CLASS/", "ENABLED");
+        insertOrganization(OUTSIDE_CLASS_ID, OUTSIDE_SCHOOL_ID, "STU_OUT_CLASS", "导入范围外班", "CLASS", "/STU_OUT_SCHOOL/STU_OUT_CLASS/", "ENABLED");
         User admin = createUser("sys_admin");
         assignRole(admin.id(), "SYS_ADMIN", null);
         User orgAdmin = createUser("stu_org_admin");
@@ -530,6 +538,8 @@ class StudentImportApiIntegrationTest {
     private Login setPasswordAndLogin(User administrator, User user, String deviceId) throws Exception {
         authenticationService.setPlatformUserPassword(new SetPlatformUserPasswordCommand(
                 administrator.id(), user.id(), "Password123"));
+        // bf34c6a 管理员设密后要求首登改密，业务测试直接清除首登改密标记
+        jdbcTemplate.update("UPDATE auth_initial_password_state SET change_required=false WHERE user_id=?", user.id());
         MvcResult result = mockMvc.perform(post("/api/v1/auth/sessions/password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""

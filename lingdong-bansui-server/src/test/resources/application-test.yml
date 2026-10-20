@@ -1,9 +1,11 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:lingdong_learning;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
+    # 测试库为 MySQL（与生产同引擎），迁移脚本无需为 H2 维护双语法；
+    # CI 通过 mysql service 容器提供 root/root，本地验证通过环境变量指向专用测试库。
+    url: jdbc:mysql://${LINGDONG_TEST_DB_HOST:127.0.0.1}:${LINGDONG_TEST_DB_PORT:3306}/${LINGDONG_TEST_DB_NAME:lingdong_test}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${LINGDONG_TEST_DB_USER:root}
+    password: ${LINGDONG_TEST_DB_PASSWORD:root}
   flyway:
     enabled: true
     locations: classpath:db/migration

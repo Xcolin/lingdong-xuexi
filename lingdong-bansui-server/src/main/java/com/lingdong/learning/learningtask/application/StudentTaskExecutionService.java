@@ -30,6 +30,10 @@ public class StudentTaskExecutionService {
     private static final int MAX_PAUSE_MINUTES = 120;
     private static final int MAX_CHECKIN_CONTENT_LENGTH = 1_000;
     private static final int MAX_REASON_LENGTH = 500;
+    private static final int MAX_ADJUST_METHOD_LENGTH = 32;
+    private static final int MAX_PAUSE_NOTE_LENGTH = 50;
+    private static final String ABANDON_TYPE_NORMAL = "NORMAL";
+    private static final String ABANDON_TYPE_EXEMPT_REQUEST = "EXEMPT_REQUEST";
 
     private final LearningTaskAssignmentMapper assignmentMapper;
     private final TaskPauseMapper pauseMapper;
@@ -92,7 +96,9 @@ public class StudentTaskExecutionService {
         TaskPause pause = new TaskPause(
                 idGenerator.nextId(), context.state().id(), command.pauseType(),
                 currentUser.userId(), context.now(),
-                context.now().plusMinutes(command.durationMinutes()), null, null);
+                context.now().plusMinutes(command.durationMinutes()), null, null,
+                normalizeOptional(command.adjustMethod(), MAX_ADJUST_METHOD_LENGTH),
+                normalizeOptional(command.reasonNote(), MAX_PAUSE_NOTE_LENGTH));
         requireSingleWrite(pauseMapper.insert(pause));
         transition(context, TaskAssignmentStatus.IN_PROGRESS, TaskAssignmentEventType.PAUSED,
                 command.pauseType().name(), null);
@@ -119,12 +125,35 @@ public class StudentTaskExecutionService {
             AuthenticatedUser currentUser, Long assignmentId, AbandonTaskCommand command
     ) {
         String reason = normalizeOptional(command == null ? null : command.reason(), MAX_REASON_LENGTH);
+        String abandonType = normalizeAbandonType(command == null ? null : command.abandonType());
         ExecutionContext context = lockOwnedAssignment(currentUser, assignmentId);
         requireStatus(context.state(), TaskAssignmentStatus.IN_PROGRESS);
         pauseMapper.terminateActive(context.state().id(), context.now());
         transition(context, TaskAssignmentStatus.NEEDS_IMPROVEMENT,
-                TaskAssignmentEventType.ABANDONED, reason, null);
+                TaskAssignmentEventType.ABANDONED, reason, null, abandonType);
         return assignmentQueryService.findById(currentUser, assignmentId);
+    }
+
+    private String normalizeCompletion(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        String normalized = value.trim().toUpperCase(java.util.Locale.ROOT);
+        if (!"FULL".equals(normalized) && !"PARTIAL".equals(normalized)) {
+            throw new IllegalArgumentException("完成情况不合法");
+        }
+        return normalized;
+    }
+
+    private String normalizeAbandonType(String value) {
+        if (value == null || value.isBlank()) {
+            return ABANDON_TYPE_NORMAL;
+        }
+        String normalized = value.trim().toUpperCase(java.util.Locale.ROOT);
+        if (!ABANDON_TYPE_NORMAL.equals(normalized) && !ABANDON_TYPE_EXEMPT_REQUEST.equals(normalized)) {
+            throw new IllegalArgumentException("放弃类型不合法");
+        }
+        return normalized;
     }
 
     @Transactional
@@ -135,6 +164,7 @@ public class StudentTaskExecutionService {
                 command == null ? null : command.content(), MAX_CHECKIN_CONTENT_LENGTH);
         List<Long> fileIds = command == null || command.fileIds() == null
                 ? List.of() : List.copyOf(command.fileIds());
+        String completion = normalizeCompletion(command == null ? null : command.completion());
         if (content == null && fileIds.isEmpty()) {
             throw new IllegalArgumentException("打卡文字和图片至少提交一项");
         }
@@ -150,7 +180,7 @@ public class StudentTaskExecutionService {
         TaskCheckIn checkIn = new TaskCheckIn(
                 idGenerator.nextId(), context.state().id(),
                 checkInMapper.nextSubmissionNo(context.state().id()), content, "SUBMITTED",
-                currentUser.userId(), context.now(), null, null, null);
+                currentUser.userId(), context.now(), null, null, null, completion);
         requireSingleWrite(checkInMapper.insert(checkIn));
         attachmentService.attachToCheckIn(currentUser.userId(), fileIds, checkIn.id());
         transition(context, TaskAssignmentStatus.PENDING_REVIEW,
@@ -179,6 +209,17 @@ public class StudentTaskExecutionService {
             String reason,
             LocalDateTime claimedAt
     ) {
+        transition(context, nextStatus, eventType, reason, claimedAt, null);
+    }
+
+    private void transition(
+            ExecutionContext context,
+            TaskAssignmentStatus nextStatus,
+            TaskAssignmentEventType eventType,
+            String reason,
+            LocalDateTime claimedAt,
+            String eventDetails
+    ) {
         TaskAssignmentStatus previousStatus = context.state().currentStatus();
         int updated = assignmentMapper.transitionStatus(
                 context.state().id(), previousStatus.name(), nextStatus.name(),
@@ -187,7 +228,7 @@ public class StudentTaskExecutionService {
         TaskAssignmentEvent event = new TaskAssignmentEvent(
                 idGenerator.nextId(), context.state().id(), eventType,
                 context.currentUser().userId(), previousStatus, nextStatus,
-                reason, null, context.now());
+                reason, eventDetails, context.now());
         requireSingleWrite(eventMapper.insert(event));
     }
 

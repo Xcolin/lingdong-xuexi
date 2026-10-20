@@ -135,6 +135,8 @@ class AuthenticationControllerTest {
                 administrator.id(), owner.id(), "Password123"));
         authenticationApplicationService.setPlatformUserPassword(new SetPlatformUserPasswordCommand(
                 administrator.id(), other.id(), "Password123"));
+        // bf34c6a 管理员设密后要求首登改密，业务测试直接清除首登改密标记（security-events 不在首登改密豁免端点内）
+        jdbcTemplate.update("UPDATE auth_initial_password_state SET change_required=false WHERE user_id IN (?, ?)", owner.id(), other.id());
 
         JsonNode firstLogin = login("auth_security_api_owner", "security-web-1", "办公浏览器");
         JsonNode currentLogin = login("auth_security_api_owner", "security-web-2", "家庭浏览器");

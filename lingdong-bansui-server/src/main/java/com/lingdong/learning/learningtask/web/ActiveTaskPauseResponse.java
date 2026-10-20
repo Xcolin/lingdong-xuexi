@@ -12,10 +12,13 @@ public record ActiveTaskPauseResponse(
         @JsonSerialize(using = ToStringSerializer.class) Long id,
         TaskPauseType pauseType,
         LocalDateTime startedAt,
-        LocalDateTime expiresAt
+        LocalDateTime expiresAt,
+        String adjustMethod,
+        String reasonNote
 ) {
     static ActiveTaskPauseResponse from(ActiveTaskPauseView view) {
         return view == null ? null : new ActiveTaskPauseResponse(
-                view.id(), view.pauseType(), view.startedAt(), view.expiresAt());
+                view.id(), view.pauseType(), view.startedAt(), view.expiresAt(),
+                view.adjustMethod(), view.reasonNote());
     }
 }

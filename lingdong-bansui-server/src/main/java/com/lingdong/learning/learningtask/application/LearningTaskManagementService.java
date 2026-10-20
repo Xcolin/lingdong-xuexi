@@ -141,6 +141,44 @@ public class LearningTaskManagementService {
                 taskMapper.findPage(query), validatedPage, validatedPageSize, taskMapper.count(query));
     }
 
+    /** 家长任务列表卡片聚合（02-02）：执行态 Tab + 类型/孩子筛选 + 进度 N/M。 */
+    @Transactional(readOnly = true)
+    public FamilyTaskOverviewPage findFamilyOverview(
+            AuthenticatedUser currentUser, String executionTab, String taskType,
+            Long studentId, int page, int pageSize
+    ) {
+        requireManagementRole(currentUser);
+        featureAccessService.requireEnabled(FEATURE_CODE, null);
+        String normalizedTab = executionTab == null || executionTab.isBlank()
+                ? "ALL" : executionTab.trim().toUpperCase(java.util.Locale.ROOT);
+        if (!List.of("ALL", "IN_PROGRESS", "PENDING_REVIEW", "COMPLETED").contains(normalizedTab)) {
+            throw new IllegalArgumentException("任务状态筛选不合法");
+        }
+        String normalizedType = taskType == null || taskType.isBlank()
+                ? null : taskType.trim().toUpperCase(java.util.Locale.ROOT);
+        if (normalizedType != null && !List.of("STUDY", "LIFE", "SPORT", "HOBBY", "CHORE", "OTHER").contains(normalizedType)) {
+            throw new IllegalArgumentException("任务类型筛选不合法");
+        }
+        if (studentId != null && studentId <= 0) {
+            throw new IllegalArgumentException("孩子筛选不合法");
+        }
+        int validatedPage = requireRange(page, "页码", 1, Integer.MAX_VALUE);
+        int validatedPageSize = requireRange(pageSize, "每页数量", 1, 100);
+        LearningTaskQuery query = new LearningTaskQuery(
+                currentUser.userId(), scopeService.isParent(currentUser),
+                scopeService.hasOrganizationPermission(currentUser, "LEARNING_TASK_READ_MANAGED")
+                        || scopeService.isOrganizationOperator(currentUser),
+                scopeService.isTeacher(currentUser), LearningTaskSourceType.FAMILY, null,
+                null, null,
+                Math.multiplyExact(validatedPage - 1, validatedPageSize), validatedPageSize,
+                scopeService.organizationScope(currentUser).allOrganizations(),
+                scopeService.organizationScope(currentUser).rootPaths(),
+                normalizedTab, normalizedType, studentId);
+        return new FamilyTaskOverviewPage(
+                taskMapper.findFamilyOverviewPage(query), validatedPage, validatedPageSize,
+                taskMapper.countFamilyOverview(query));
+    }
+
     LearningTaskDetails requireDetails(Long taskId) {
         LearningTask task = taskMapper.findById(taskId);
         if (task == null) {

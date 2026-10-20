@@ -154,7 +154,8 @@ public class StudentOrganizationLifecycleService {
         if (relationshipMapper.activateExistingClass(normalizedStudentId, classOrganizationId) == 0) {
             relationshipMapper.insertClass(idGenerator.nextId(), normalizedStudentId, classOrganizationId);
         }
-        if (memberships != null) {
+        // 历史学生无关联账号（student_user_id 为空），不维护小程序端会员组织关系
+        if (memberships != null && student.studentUserId() != null) {
             if (institution != null && "SCHOOL".equals(institution.typeCode())) activeClassIds.forEach(id -> memberships.delete(student.studentUserId(),id));
             if (!memberships.exists(student.studentUserId(),classOrganizationId)) memberships.insert(idGenerator.nextId(),student.studentUserId(),classOrganizationId);
         }

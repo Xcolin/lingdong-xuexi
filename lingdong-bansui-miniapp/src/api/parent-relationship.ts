@@ -7,6 +7,25 @@ export interface ParentRelationshipStudent {
   studentId: string;
   studentName: string;
   relationshipRole: ParentRelationshipRole;
+  /** 关系建立日期（YYYY-MM-DD，数据可得时返回）。 */
+  boundAt?: string | null;
+}
+
+export interface ParentReceivedInvitation {
+  invitationId: string;
+  studentName: string;
+  inviterName: string | null;
+  invitationType: 'SECONDARY_BIND' | 'PRIMARY_TRANSFER';
+  createdAt: string | null;
+  expiresAt: string | null;
+}
+
+export interface ParentInactiveRelationship {
+  studentId: string;
+  studentName: string;
+  relationshipRole: ParentRelationshipRole;
+  boundAt: string | null;
+  unboundAt: string | null;
 }
 
 export interface ParentRelationshipMember {
@@ -44,6 +63,16 @@ export function listParentRelationshipStudents(
   accessToken: string
 ): Promise<ParentRelationshipStudent[]> {
   return parentRequest('/parent-relationships/students', accessToken);
+}
+
+/** 我收到的待处理关系邀请。 */
+export function listReceivedInvitations(accessToken: string): Promise<ParentReceivedInvitation[]> {
+  return parentRequest('/parent-relationships/received-invitations', accessToken);
+}
+
+/** 已失效的历史关系。 */
+export function listInactiveRelationships(accessToken: string): Promise<ParentInactiveRelationship[]> {
+  return parentRequest('/parent-relationships/inactive', accessToken);
 }
 
 export function getParentRelationships(

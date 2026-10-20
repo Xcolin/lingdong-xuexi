@@ -11,12 +11,14 @@
             <arg column="expires_at" javaType="java.time.LocalDateTime"/>
             <arg column="resumed_at" javaType="java.time.LocalDateTime"/>
             <arg column="close_type" javaType="java.lang.String"/>
+            <arg column="adjust_method" javaType="java.lang.String"/>
+            <arg column="reason_note" javaType="java.lang.String"/>
         </constructor>
     </resultMap>
 
     <select id="findActive" resultMap="TaskPauseMap">
         SELECT id, assignment_id, pause_type, started_by_user_id, started_at,
-               expires_at, resumed_at, close_type
+               expires_at, resumed_at, close_type, adjust_method, reason_note
         FROM learn_task_pause
         WHERE assignment_id = #{assignmentId}
           AND resumed_at IS NULL
@@ -35,10 +37,12 @@
 
     <insert id="insert">
         INSERT INTO learn_task_pause (
-            id, assignment_id, pause_type, started_by_user_id, started_at, expires_at
+            id, assignment_id, pause_type, started_by_user_id, started_at, expires_at,
+            adjust_method, reason_note
         ) VALUES (
             #{pause.id}, #{pause.assignmentId}, #{pause.pauseType}, #{pause.startedByUserId},
-            #{pause.startedAt}, #{pause.expiresAt}
+            #{pause.startedAt}, #{pause.expiresAt},
+            #{pause.adjustMethod, jdbcType=VARCHAR}, #{pause.reasonNote, jdbcType=VARCHAR}
         )
     </insert>
 

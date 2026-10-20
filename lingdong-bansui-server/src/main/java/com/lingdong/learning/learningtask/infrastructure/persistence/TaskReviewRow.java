@@ -2,6 +2,7 @@ package com.lingdong.learning.learningtask.infrastructure.persistence;
 
 import com.lingdong.learning.learningtask.domain.LearningTaskSourceType;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /** 当前审核人的待审核任务联表查询行。 */
@@ -23,6 +24,9 @@ public record TaskReviewRow(
         String checkInContent,
         String checkInStatus,
         LocalDateTime submittedAt,
-        String reviewComment
+        String reviewComment,
+        LocalDate scheduledDate,
+        String currentClassName,
+        String taskType
 ) {
 }

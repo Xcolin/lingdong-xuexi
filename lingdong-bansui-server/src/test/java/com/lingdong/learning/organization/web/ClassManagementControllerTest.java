@@ -128,11 +128,15 @@ class ClassManagementControllerTest {
     void enforcesDynamicPermissionAndAllowsGrantedWebAdministrator() throws Exception {
         Fixture fixture = createFixture("class_api_permission");
         String organizationToken = loginWeb(fixture.administrator(), "class-api-permission");
+        // V118 后动作权限的 impliedReads 会自动恢复读权限，除 CLASS_ 族外
+        // TEACHER_CLASS_ASSIGN 的 impliedReads 也含 CLASS_READ，需一并撤销
         jdbcTemplate.update("""
                 DELETE FROM sys_role_permission
                 WHERE role_id = (SELECT id FROM sys_role WHERE role_code = 'ORG_ADMIN')
-                  AND permission_id = (
-                    SELECT id FROM sys_permission WHERE permission_code = 'CLASS_READ'
+                  AND permission_id IN (
+                    SELECT id FROM sys_permission
+                    WHERE permission_code LIKE 'CLASS_%'
+                       OR permission_code = 'TEACHER_CLASS_ASSIGN'
                   )
                 """);
 
@@ -229,8 +233,9 @@ class ClassManagementControllerTest {
 
         mockMvc.perform(get("/api/v1/classes")
                         .header("Authorization", bearer(token)))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.code").value("FEATURE_DISABLED"));
+                // V118 后功能停用在权限层先行拒绝
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
         mockMvc.perform(get("/api/v1/public/capabilities").param("client", "WEB"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.classManagementEnabled").value(false));

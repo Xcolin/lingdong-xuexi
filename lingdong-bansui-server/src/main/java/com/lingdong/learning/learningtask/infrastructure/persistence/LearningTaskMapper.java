@@ -16,8 +16,12 @@ public interface LearningTaskMapper {
     LearningTask findByIdForUpdate(@Param("id") Long id);
 
     List<LearningTask> findPage(@Param("query") LearningTaskQuery query);
-
+    
     long count(@Param("query") LearningTaskQuery query);
+    
+    List<FamilyTaskOverviewRow> findFamilyOverviewPage(@Param("query") LearningTaskQuery query);
+    
+    long countFamilyOverview(@Param("query") LearningTaskQuery query);
 
     int insert(@Param("task") LearningTask task);
 

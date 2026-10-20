@@ -31,9 +31,10 @@ class OrganizationAdminDivisionTest {
     @BeforeEach
     void setUpOperator() {
         jdbcTemplate.update("""
-                MERGE INTO sys_user (
+                INSERT INTO sys_user (
                     id, username, display_name, user_type, status
-                ) KEY (id) VALUES (?, 'admin_division_operator', '区划编辑测试员', 'PLATFORM', 'ENABLED')
+                ) VALUES (?, 'admin_division_operator', '区划编辑测试员', 'PLATFORM', 'ENABLED')
+                ON DUPLICATE KEY UPDATE display_name = VALUES(display_name)
                 """, OPERATOR_ID);
     }
 

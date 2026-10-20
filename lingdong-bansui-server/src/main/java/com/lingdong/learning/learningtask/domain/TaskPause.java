@@ -11,6 +11,8 @@ public record TaskPause(
         LocalDateTime startedAt,
         LocalDateTime expiresAt,
         LocalDateTime resumedAt,
-        String closeType
+        String closeType,
+        String adjustMethod,
+        String reasonNote
 ) {
 }

@@ -67,6 +67,18 @@ public class InstitutionEnrollmentService {
         requests.insertInvitation(new InstitutionEnrollmentMapper.Invitation(id,hash(code),institution.id(),classId,actor.userId(),expiry,"ACTIVE",100,0));
         return new CreatedInvitation(id,code,institution.id(),institution.name(),classId,classroom.name(),expiry);
     }
+    public record InvitationExpiryUpdated(@com.fasterxml.jackson.databind.annotation.JsonSerialize(using=com.fasterxml.jackson.databind.ser.std.ToStringSerializer.class) Long id,LocalDateTime expiresAt) {}
+    /** 管理员对已生成邀请码设置有效期（1-30 天），仅 ACTIVE 邀请码且授权范围内可更新。 */
+    @Transactional public InvitationExpiryUpdated updateInvitationExpiry(AuthenticatedUser actor,Long invitationId,Integer validDays) {
+        requirePermission(actor,"STUDENT_ENROLLMENT_INVITE_CREATE");
+        if(validDays==null||validDays<1||validDays>30)throw new IllegalArgumentException("邀请码有效天数必须为1至30");
+        InstitutionEnrollmentMapper.Invitation invite=requests.lockInvitationById(invitationId);
+        if(invite==null||!"ACTIVE".equals(invite.status()))throw new InstitutionEnrollmentStateException("邀请码不存在或已失效");
+        requireScope(actor,invite.classOrganizationId());
+        LocalDateTime expiry=LocalDateTime.now(clock).plusDays(validDays);
+        if(requests.updateInvitationExpiry(invitationId,expiry)!=1)throw new InstitutionEnrollmentStateException("邀请码已失效");
+        return new InvitationExpiryUpdated(invitationId,expiry);
+    }
     @Transactional public ResolvedInvitation resolve(AuthenticatedUser actor,String code) {
         requireActor(actor);limitResolve(actor.userId());
         var invite=requireInvitation(code);var classroom=requireClass(invite.classOrganizationId());var institution=requireInstitution(invite.institutionOrganizationId());

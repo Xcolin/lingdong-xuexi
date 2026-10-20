@@ -53,6 +53,7 @@ class TeacherClassControllerTest {
     @Autowired private OrganizationAdminMapper organizationAdminMapper;
     @Autowired private JdbcTemplate jdbcTemplate;
     @Autowired private IdGenerator idGenerator;
+    @Autowired private org.apache.ibatis.session.SqlSession sqlSession;
 
     @Test
     void bindsListsDeactivatesAndReactivatesTeacherClassRelations() throws Exception {
@@ -86,6 +87,8 @@ class TeacherClassControllerTest {
         setPassword(systemAdministrator, systemAdministrator);
         setPassword(systemAdministrator, organizationAdministrator);
         setPassword(systemAdministrator, teacher);
+        // V135 后教师职业身份独立持久化：需机构账号类型与启用教师档案，否则教师分班被判非启用教师
+        makeTeacher("teacher_class_teacher");
         String administratorToken = loginAccessToken("teacher_class_org_admin");
         String teacherToken = loginAccessToken("teacher_class_teacher");
 
@@ -210,6 +213,8 @@ class TeacherClassControllerTest {
         assignRole(teacher, "TEACHER", b.id());
         setPassword(system, system);
         setPassword(system, campusAdmin);
+        // V135 后教师职业身份独立持久化：需机构账号类型与启用教师档案，否则分班被判非启用教师
+        makeTeacher("source_scope_teacher");
         String campusToken = loginAccessToken(campusAdmin.username());
         String systemToken = loginAccessToken(system.username());
         mockMvc.perform(get("/api/v1/learning-task-options/teachers").param("classId", clazz.id().toString()).header("Authorization", "Bearer " + campusToken))
@@ -244,6 +249,18 @@ class TeacherClassControllerTest {
     private void setPassword(User systemAdministrator, User targetUser) {
         authenticationApplicationService.setPlatformUserPassword(new SetPlatformUserPasswordCommand(
                 systemAdministrator.id(), targetUser.id(), "Password123"));
+        // bf34c6a 管理员设密后要求首登改密，业务测试直接清除首登改密标记
+        jdbcTemplate.update("UPDATE auth_initial_password_state SET change_required=false WHERE user_id=?", targetUser.id());
+    }
+
+    /** V135 后教师职业身份独立持久化：机构账号类型 + edu_teacher_profile 启用记录。 */
+    private void makeTeacher(String username) {
+        Long id = jdbcTemplate.queryForObject("SELECT id FROM sys_user WHERE username=?", Long.class, username);
+        jdbcTemplate.update("UPDATE sys_user SET user_type='ORGANIZATION' WHERE id=?", id);
+        jdbcTemplate.update("INSERT INTO edu_teacher_profile(user_id,status) SELECT ?,'ENABLED' "
+                + "WHERE NOT EXISTS(SELECT 1 FROM edu_teacher_profile WHERE user_id=?)", id, id);
+        // 测试事务跨越多个 HTTP 请求，清除 JDBC 夹具变更前的 MyBatis 一级缓存
+        sqlSession.clearCache();
     }
 
     private String loginAccessToken(String username) throws Exception {

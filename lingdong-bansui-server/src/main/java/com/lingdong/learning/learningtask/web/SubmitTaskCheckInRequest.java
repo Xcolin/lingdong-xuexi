@@ -10,9 +10,11 @@ import java.util.List;
 /** 学生文字和图片打卡请求。 */
 public record SubmitTaskCheckInRequest(
         @Size(max = 1000) String content,
-        @Valid @Size(max = 9) List<@Positive Long> fileIds
+        @Valid @Size(max = 9) List<@Positive Long> fileIds,
+        String completion
 ) {
     SubmitTaskCheckInCommand toCommand() {
-        return new SubmitTaskCheckInCommand(content, fileIds == null ? List.of() : List.copyOf(fileIds));
+        return new SubmitTaskCheckInCommand(
+                content, fileIds == null ? List.of() : List.copyOf(fileIds), completion);
     }
 }

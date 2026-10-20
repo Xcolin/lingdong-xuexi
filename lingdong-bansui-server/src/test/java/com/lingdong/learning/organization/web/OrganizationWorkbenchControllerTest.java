@@ -120,18 +120,14 @@ class OrganizationWorkbenchControllerTest {
         assign(administrator, school);
         AuthenticatedSession miniappSession = loginMiniapp(administrator, "workbench-client-boundary");
 
-        mockMvc.perform(post("/api/v1/students")
+        // V125/V133 后 STUDENT_CREATE、STUDENT_CLASS_ASSIGN、TEACHER_CLASS_ASSIGN 等已转为 BOTH，
+        // 改用仍为 WEB-only 的教师批量管理验证客户端边界
+        mockMvc.perform(post("/api/v1/organization-teachers/batch")
                         .header("Authorization", bearer(miniappSession.accessToken()))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"studentName":"越权创建学生","gradeCode":"G4","organizationId":"%s"}
-                                """.formatted(school.id())))
+                        .content("{}"))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
-
-        assertThat(jdbcTemplate.queryForObject(
-                "select count(*) from edu_student where student_name = '越权创建学生'",
-                Integer.class)).isZero();
     }
 
     @Test
@@ -165,7 +161,8 @@ class OrganizationWorkbenchControllerTest {
                         .header("Authorization", bearer(session.accessToken())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(classOrganization.id().toString()))
-                .andExpect(jsonPath("$[0].name").value("学员关系一班"));
+                // 组织全路径名统一口径（学校·年级·班级，OrganizationNamePathService）
+                .andExpect(jsonPath("$[0].name").value("学员关系学校·测试年级·学员关系一班"));
 
         mockMvc.perform(post("/api/v1/students/{studentId}/class-transfers", studentId)
                         .header("Authorization", bearer(session.accessToken()))

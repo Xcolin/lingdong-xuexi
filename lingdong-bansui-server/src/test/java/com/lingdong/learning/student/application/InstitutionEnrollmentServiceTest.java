@@ -46,7 +46,7 @@ class InstitutionEnrollmentServiceTest {
         when(ids.nextId()).thenReturn(100L,101L,102L,103L);
     }
     Organization org(Long id,Long parent,String type,String path){return Organization.create(id,parent,"PARENT","ORG"+id,type,type,path,0,null);}
-    InstitutionEnrollmentMapper.Request request(){return new InstitutionEnrollmentMapper.Request(80L,20L,21L,"学生",10L,"培训",11L,"课程",30L,1L,"PENDING",LocalDateTime.now(clock),null,null);}
+    InstitutionEnrollmentMapper.Request request(){return new InstitutionEnrollmentMapper.Request(80L,20L,21L,"学生",10L,"培训",11L,"课程",30L,1L,"张三","13800000000","PENDING",LocalDateTime.now(clock),null,null);}
     @Test void sharedFamilyMembershipDoesNotCreateParentAuthority(){
         when(permissions.isAllowed(1L,PermissionClient.WEB,"STUDENT_ENROLLMENT_REQUEST_CREATE")).thenReturn(true);
         when(requests.familyMember(1L,30L)).thenReturn(true);

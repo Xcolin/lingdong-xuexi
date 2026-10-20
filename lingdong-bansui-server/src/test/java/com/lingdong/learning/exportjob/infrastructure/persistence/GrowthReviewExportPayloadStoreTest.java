@@ -65,6 +65,8 @@ class GrowthReviewExportPayloadStoreTest {
                 insert into sys_user_role(id,user_id,role_id,organization_scope_key)
                 select ?, ?, id, 'GLOBAL' from sys_role where role_code='PARENT'
                 """, USER + 30, USER);
+        // V118 家长身份：FAMILY 账号需持有 COMPLETED 家长档案，否则 ParentActorAccessService 拒绝
+        jdbc.update("insert into auth_parent_profile(id,user_id,onboarding_status,first_login_at,onboarding_completed_at) values(?,?,'COMPLETED',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP) on duplicate key update onboarding_status=values(onboarding_status)", USER, USER);
         jdbc.update("""
                 insert into edu_parent_student(id,parent_user_id,student_id,relation_role,status,primary_scope_key)
                 values (?, ?, ?, 'SECONDARY_GUARDIAN', 'ACTIVE', 'SECONDARY')
@@ -266,10 +268,14 @@ class GrowthReviewExportPayloadStoreTest {
     }
 
     @Test void databaseRejectsPdfJobWithoutStudentOrWithSensitiveFlag() {
+        // MySQL 将 CHECK 约束违规（错误 3819）包装为 UncategorizedSQLException，H2 则为 DataIntegrityViolationException，
+        // 统一按数据访问异常且堆栈含约束名断言，兼容两种方言。
         assertThatThrownBy(() -> jdbc.update("update sys_export_job set student_id=null where id=?", JOB))
-                .isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);
+                .isInstanceOf(org.springframework.dao.DataAccessException.class)
+                .hasStackTraceContaining("ck_sys_export_job_review_scope");
         assertThatThrownBy(() -> jdbc.update("update sys_export_job set sensitive_flag=1 where id=?", JOB))
-                .isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);
+                .isInstanceOf(org.springframework.dao.DataAccessException.class)
+                .hasStackTraceContaining("ck_sys_export_job_review_scope");
     }
 
     @Test void detectsCorruptStoredContent() {

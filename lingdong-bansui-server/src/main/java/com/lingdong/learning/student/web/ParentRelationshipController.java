@@ -57,6 +57,26 @@ public class ParentRelationshipController {
                 .toList();
     }
 
+    @GetMapping("/parent-relationships/received-invitations")
+    @RequirePermission("PARENT_RELATIONSHIP_READ")
+    public List<ParentReceivedInvitationResponse> getReceivedInvitations(
+            @AuthenticationPrincipal AuthenticatedUser currentUser
+    ) {
+        return service.getReceivedInvitations(currentUser.userId()).stream()
+                .map(ParentReceivedInvitationResponse::from)
+                .toList();
+    }
+
+    @GetMapping("/parent-relationships/inactive")
+    @RequirePermission("PARENT_RELATIONSHIP_READ")
+    public List<ParentInactiveRelationshipResponse> getInactiveRelationships(
+            @AuthenticationPrincipal AuthenticatedUser currentUser
+    ) {
+        return service.getInactiveRelationships(currentUser.userId()).stream()
+                .map(ParentInactiveRelationshipResponse::from)
+                .toList();
+    }
+
     @PostMapping("/students/{studentId}/secondary-parent-invitations")
     @ResponseStatus(HttpStatus.CREATED)
     @RequirePermission("SECONDARY_PARENT_INVITE_CREATE")

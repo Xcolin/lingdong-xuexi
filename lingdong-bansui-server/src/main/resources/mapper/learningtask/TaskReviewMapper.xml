@@ -22,6 +22,9 @@
             <arg column="checkin_status" javaType="java.lang.String"/>
             <arg column="submitted_at" javaType="java.time.LocalDateTime"/>
             <arg column="review_comment" javaType="java.lang.String"/>
+            <arg column="scheduled_date" javaType="java.time.LocalDate"/>
+            <arg column="current_class_name" javaType="java.lang.String"/>
+            <arg column="task_type" javaType="java.lang.String"/>
         </constructor>
     </resultMap>
 
@@ -59,7 +62,13 @@
         checkin.content AS checkin_content,
         checkin.status AS checkin_status,
         checkin.submitted_at,
-        checkin.review_comment
+        checkin.review_comment,
+        assignment.scheduled_date,
+        (SELECT cls_org.organization_name FROM edu_student_organization cls
+           JOIN sys_organization cls_org ON cls_org.id = cls.organization_id
+          WHERE cls.student_id = student.id AND cls.relation_type = 'CLASS' AND cls.status = 'ACTIVE'
+          ORDER BY cls.id LIMIT 1) AS current_class_name,
+        task.task_type
     </sql>
 
     <sql id="reviewJoins">
@@ -83,19 +92,29 @@
         <include refid="reviewJoins"/>
         WHERE assignment.current_reviewer_id = #{reviewerUserId}
         <include refid="com.lingdong.learning.student.infrastructure.persistence.ParentStudentMapper.selectedStudentScope"><property name="studentIdColumn" value="assignment.student_id"/></include>
+        <choose>
+            <when test="statusTab == 'APPROVED'">
+          AND checkin.status = 'APPROVED'
+            </when>
+            <when test="statusTab == 'REJECTED'">
+          AND checkin.status = 'REJECTED'
+            </when>
+            <when test="statusTab != 'ALL'">
           AND assignment.current_status = 'PENDING_REVIEW'
           AND checkin.status = 'SUBMITTED'
+            </when>
+        </choose>
         ORDER BY checkin.submitted_at ASC, assignment.id ASC
         LIMIT #{limit} OFFSET #{offset}
     </select>
 
-    <select id="count" resultType="long">
-        SELECT COUNT(1)
+    <select id="countByStatus" resultType="com.lingdong.learning.learningtask.infrastructure.persistence.TaskReviewStatusCountRow">
+        SELECT checkin.status AS checkin_status, COUNT(1) AS cnt
         <include refid="reviewJoins"/>
         WHERE assignment.current_reviewer_id = #{reviewerUserId}
         <include refid="com.lingdong.learning.student.infrastructure.persistence.ParentStudentMapper.selectedStudentScope"><property name="studentIdColumn" value="assignment.student_id"/></include>
-          AND assignment.current_status = 'PENDING_REVIEW'
-          AND checkin.status = 'SUBMITTED'
+          AND checkin.status IN ('SUBMITTED', 'APPROVED', 'REJECTED')
+        GROUP BY checkin.status
     </select>
 
     <select id="findByAssignmentIdAndReviewer" resultMap="TaskReviewRowMap">
@@ -104,8 +123,6 @@
         WHERE assignment.id = #{assignmentId}
           AND assignment.current_reviewer_id = #{reviewerUserId}
         <include refid="com.lingdong.learning.student.infrastructure.persistence.ParentStudentMapper.selectedStudentScope"><property name="studentIdColumn" value="assignment.student_id"/></include>
-          AND assignment.current_status = 'PENDING_REVIEW'
-          AND checkin.status = 'SUBMITTED'
     </select>
 
     <select id="findStateForUpdate" resultMap="TaskReviewStateRowMap">

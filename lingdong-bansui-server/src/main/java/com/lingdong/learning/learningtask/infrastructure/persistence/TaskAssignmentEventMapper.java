@@ -8,4 +8,7 @@ import org.apache.ibatis.annotations.Param;
 @Mapper
 public interface TaskAssignmentEventMapper {
     int insert(@Param("event") TaskAssignmentEvent event);
+
+    java.util.List<com.lingdong.learning.learningtask.application.TaskTimelineNodeView>
+            findTimelineByAssignmentId(@Param("assignmentId") Long assignmentId);
 }

@@ -134,8 +134,9 @@ class CacheManagementControllerTest {
                 """);
         mockMvc.perform(get("/api/v1/cache-management/operations")
                         .header("Authorization", bearer(administratorToken)))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.code").value("FEATURE_DISABLED"));
+                // V118 后 feature 先行拒绝：开关关闭时权限链直接 403，不再到达业务层的 409 FEATURE_DISABLED
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
     }
 
     @Test
@@ -177,6 +178,8 @@ class CacheManagementControllerTest {
         }
         authenticationApplicationService.setPlatformUserPassword(
                 new SetPlatformUserPasswordCommand(passwordAdministrator.id(), user.id(), "Password123"));
+        // 本类非首登改密场景：重置密码会标记 change_required，业务请求会被首登拦截，先清除标记
+        jdbcTemplate.update("UPDATE auth_initial_password_state SET change_required=false WHERE user_id=?", user.id());
         MvcResult result = mockMvc.perform(post("/api/v1/auth/sessions/password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""

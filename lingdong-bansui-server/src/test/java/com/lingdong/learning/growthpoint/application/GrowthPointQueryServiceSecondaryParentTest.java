@@ -43,7 +43,7 @@ class GrowthPointQueryServiceSecondaryParentTest {
         when(parentStudentMapper.existsActivePrimaryByParentAndStudent(parentId, studentId)).thenReturn(false);
         when(queryMapper.findAccountByStudentId(studentId)).thenReturn(
                 new GrowthPointAccountViewRow(
-                        studentId, "学生", 100L, 80L, LocalDateTime.of(2026, 8, 9, 14, 0)));
+                        studentId, "学生", "三年级2班", 100L, 80L, LocalDateTime.of(2026, 8, 9, 14, 0)));
 
         GrowthPointAccountView result = service.findChildAccount(secondaryParent, studentId);
 

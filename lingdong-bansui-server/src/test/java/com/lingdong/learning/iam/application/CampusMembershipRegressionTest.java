@@ -28,6 +28,7 @@ class CampusMembershipRegressionTest {
  @Autowired RoleMapper roles;
  @Autowired PermissionMapper permissions;
  @Autowired JdbcTemplate jdbc;
+ @Autowired org.mybatis.spring.SqlSessionTemplate session;
  @Autowired com.lingdong.learning.teacher.application.TeacherManagementApplicationService teachers;
  @Autowired com.lingdong.learning.student.application.StudentOrganizationLifecycleService studentLifecycle;
  private User user(String name){return users.createUser(new CreateUserCommand(name,name,null,UserType.ORGANIZATION));}
@@ -78,7 +79,8 @@ class CampusMembershipRegressionTest {
   var role=com.lingdong.learning.iam.domain.Role.custom(90008101L,"CUSTOM_ALL_MEMBER_MANAGER","Manager",null,com.lingdong.learning.iam.domain.RoleDataScope.ALL);roles.insert(role);
   users.assignRole(new AssignRoleToUserCommand(operator.id(),role.id(),null));
   long permissionId=90008110L;
-  for(String code:List.of("IAM_USER_LIST","IAM_USER_ORGANIZATION_ASSIGN","IAM_DATA_SCOPE_CONFIGURE"))jdbc.update("insert into sys_user_permission(id,user_id,permission_id,effect) values(?,?,?,'ALLOW')",permissionId++,operator.id(),permissions.findByCode(code).id());
+  // V118 规范化后 IAM_USER_ORGANIZATION_ASSIGN 已由 ORG_MEMBER_ASSOCIATE 取代
+  for(String code:List.of("IAM_USER_LIST","ORG_MEMBER_ASSOCIATE","IAM_DATA_SCOPE_CONFIGURE"))jdbc.update("insert into sys_user_permission(id,user_id,permission_id,effect) values(?,?,?,'ALLOW')",permissionId++,operator.id(),permissions.findByCode(code).id());
   assertThatThrownBy(()->members.picker(operator.id(),school.id(),null,null,false,"CANDIDATES",null,"UNBOUND",null,1,20)).isInstanceOf(SystemOperationAccessDeniedException.class);
   assertThat(members.picker(operator.id(),school.id(),null,null,false,"CANDIDATES",null,"SCHOOL",null,1,20).items()).isEmpty();
   Organization campus=campus(school,"CUSTOM_ALL_CAMPUS",0);join(target,campus);
@@ -121,7 +123,8 @@ class CampusMembershipRegressionTest {
   assertThatThrownBy(()->users.assignAuthorizedRole(new AssignRoleToUserCommand(foreign.id(),role.id(),school.id(),operator.id()))).isInstanceOf(IllegalStateException.class);
  }
  @Test void exactRoleRemovalPreservesOtherOrganizationBindingAndInvalidBatchIsAtomic() {
-  User operator=admin("role_operator"),target=user("role_target");Organization one=school("ROLE_ONE"),two=school("ROLE_TWO");join(target,one);join(target,two);Long role=roles.findByCode("PARENT").id();
+  User operator=admin("role_operator"),target=user("role_target");Organization one=school("ROLE_ONE"),two=school("ROLE_TWO");join(target,one);join(target,two);Long role=roles.findByCode("ORG_MEMBER").id();
+  // V118 后 PARENT 角色仅适用于 FAMILY 身份，组织账号改用 ORG_MEMBER 角色验证批量授予/移除
   users.assignRole(new AssignRoleToUserCommand(target.id(),role,one.id()));users.assignRole(new AssignRoleToUserCommand(target.id(),role,two.id()));
   var linked=members.picker(operator.id(),null,role,null,false,"LINKED",null,null,"role_target",1,1);
   assertThat(linked.total()).isEqualTo(2);assertThat(linked.items()).hasSize(1);assertThat(linked.items().get(0).assignments()).hasSize(1);
@@ -163,7 +166,11 @@ class CampusMembershipRegressionTest {
   User created=users.createManagedUserResult(new CreateUserCommand("auto_class_teacher","班级教师",null,UserType.ORGANIZATION,operator.id()),classroom.id(),"Password123",null,null,"TEACHER").user();
   assertThat(jdbc.queryForObject("select count(*) from edu_teacher_class where teacher_user_id=? and class_organization_id=? and status='ACTIVE'",Integer.class,created.id(),classroom.id())).isEqualTo(1);
   assertThat(jdbc.queryForObject("select count(*) from edu_teacher_class_change_log where teacher_user_id=? and class_organization_id=?",Integer.class,created.id(),classroom.id())).isEqualTo(1);
-  jdbc.update("update sys_user_permission set effect='DENY' where user_id=? and permission_id=?",operator.id(),permissions.findByCode("TEACHER_CLASS_ASSIGN").id());
+  // V118 后初始班级安置为创建原子副作用（assignCreatedTeacher 检查 IAM_USER_CREATE）；用户级 DENY 需新插入行（角色级 ALLOW 无法 update）
+  jdbc.update("insert into sys_user_permission(id,user_id,permission_id,effect) values(?,?,?,'DENY')",permissionRow++,operator.id(),permissions.findByCode("IAM_USER_CREATE").id());
+  // jdbc 直插不清 MyBatis 一级缓存，ServletTestExecutionListener 绑定的请求上下文也固化了权限快照，两处都要重置
+  session.clearCache();
+  org.springframework.web.context.request.RequestContextHolder.resetRequestAttributes();
   assertThatThrownBy(()->users.createManagedUserResult(new CreateUserCommand("denied_class_teacher","不应创建",null,UserType.ORGANIZATION,operator.id()),classroom.id(),"Password123",null,null,"TEACHER")).isInstanceOf(SystemOperationAccessDeniedException.class);
   assertThat(jdbc.queryForObject("select count(*) from sys_user where username='denied_class_teacher'",Integer.class)).isZero();
  }

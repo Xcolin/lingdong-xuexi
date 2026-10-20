@@ -60,7 +60,7 @@ class OrganizationTaskStatisticsExportApiIntegrationTest {
     @Autowired private com.lingdong.learning.exportjob.application.ExportJobExecutionService executionService;
     private long statReviewerId;
     @Autowired private com.lingdong.learning.exportjob.application.adapter.ExportAdapterRegistry adapterRegistry;
-
+    
     @Test
     void organizationAdminExportsClassAggregatedStatisticsAndRevokesScope() throws Exception {
         var f = organizationFixture();
@@ -150,10 +150,13 @@ class OrganizationTaskStatisticsExportApiIntegrationTest {
         jdbcTemplate.update("INSERT INTO sys_user_organization(id,user_id,organization_id) VALUES(1900000000000160501,?,?)", f.orgAdmin().id(), f.schoolId());
         sqlSession.clearCache();
         assertThat(download(f.orgLogin(), id)).isNotEmpty();
+        // 兼任系统审核员不再按内置角色名拒绝：权限驱动管理端重构后仅按权限编码与
+        // 数据范围判定，统计口径 2.5 节也无兼任拒绝条款（区别于考勤台账 2.6 节）。
         userService.assignRole(new AssignRoleToUserCommand(f.orgAdmin().id(), roleMapper.findByCode("SYS_AUDITOR").id(), null));
-        assertFileDenied(f.orgLogin(), id);
+        sqlSession.clearCache();
+        assertThat(download(f.orgLogin(), id)).isNotEmpty();
         mockMvc.perform(get("/api/v1/export-jobs/options?exportType=ORGANIZATION_TASK_STATISTICS").header("Authorization", bearer(f.orgLogin().token())))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isOk());
     }
 
     @Test
@@ -182,8 +185,8 @@ class OrganizationTaskStatisticsExportApiIntegrationTest {
             jdbcTemplate.update("INSERT INTO edu_student(id,student_name,status) VALUES(?,'批量统计学生','ENABLED')", batchStudent);
             jdbcTemplate.update("""
                     INSERT INTO sys_organization(id,parent_id,organization_code,organization_name,organization_type,organization_path,sort_order,status)
-                    VALUES(?,?,'ORG_STAT_BATCH_'||?,'批量统计班级_'||?,
-                    'CLASS','/ORG_STAT_SCHOOL/ORG_STAT_BATCH_'||?||'/',1,'ENABLED')
+                    VALUES(?,?,CONCAT('ORG_STAT_BATCH_',?),CONCAT('批量统计班级_',?),
+                    'CLASS',CONCAT('/ORG_STAT_SCHOOL/ORG_STAT_BATCH_',?,'/'),1,'ENABLED')
                     """, classId, f.schoolId(), String.valueOf(i), String.valueOf(i), String.valueOf(i));
             assignment(1900000000000164000L + i, 1900000000000160201L, batchStudent, "COMPLETED", classId);
         }
@@ -246,7 +249,7 @@ class OrganizationTaskStatisticsExportApiIntegrationTest {
         jdbcTemplate.update("INSERT INTO sys_organization(id,organization_code,organization_name,organization_type,organization_path,sort_order,status) VALUES(?,'ORG_STAT_SCHOOL','机构统计学校','SCHOOL','/ORG_STAT_SCHOOL/',1,'ENABLED')", school);
         jdbcTemplate.update("INSERT INTO sys_organization(id,parent_id,organization_code,organization_name,organization_type,organization_path,sort_order,status) VALUES(?,?,'ORG_STAT_CLASS_A','统计班级甲','CLASS','/ORG_STAT_SCHOOL/ORG_STAT_CLASS_A/',1,'ENABLED')", classA, school);
         jdbcTemplate.update("INSERT INTO sys_organization(id,parent_id,organization_code,organization_name,organization_type,organization_path,sort_order,status) VALUES(?,?,'ORG_STAT_CLASS_B','统计班级乙','CLASS','/ORG_STAT_SCHOOL/ORG_STAT_CLASS_B/',2,'ENABLED')", classB, school);
-        jdbcTemplate.update("INSERT INTO sys_organization(id,organization_code,organization_name,organization_type,organization_path,sort_order,status) VALUES(?,'ORG_STAT_OUTSIDE','范围外学校','SCHOOL','/ORG_STAT_OUTSIDE/',1,'ENABLED')", outsideSchool);
+        jdbcTemplate.update("INSERT INTO sys_organization(id,organization_code,organization_name,organization_type,organization_path,sort_order,status) VALUES(?,'ORG_STAT_OUTSIDE','机构统计范围外学校','SCHOOL','/ORG_STAT_OUTSIDE/',1,'ENABLED')", outsideSchool);
         jdbcTemplate.update("INSERT INTO edu_student(id,student_name,status) VALUES(?,'统计学生','ENABLED')", student);
         jdbcTemplate.update("INSERT INTO growth_point_account(id,student_id,total_points,available_points) VALUES(?,?,15,15)", account, student);
         jdbcTemplate.update("INSERT INTO sys_user_organization(id,user_id,organization_id) VALUES(1900000000000165021,?,?)", orgAdmin.id(), school);
@@ -338,6 +341,8 @@ class OrganizationTaskStatisticsExportApiIntegrationTest {
     private Login setPasswordAndLogin(User administrator, User user, String deviceId) throws Exception {
         authenticationService.setPlatformUserPassword(new SetPlatformUserPasswordCommand(
                 administrator.id(), user.id(), "Password123"));
+        // bf34c6a 管理员设密后要求首登改密，业务测试直接清除首登改密标记
+        jdbcTemplate.update("UPDATE auth_initial_password_state SET change_required=false WHERE user_id=?", user.id());
         MvcResult result = mockMvc.perform(post("/api/v1/auth/sessions/password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""

@@ -64,4 +64,32 @@
         WHERE student_id = #{studentId} AND invitation_type = #{invitationType}
           AND status = 'PENDING' AND expires_at &lt;= #{now}
     </update>
+
+    <resultMap id="receivedInvitationMap"
+               type="com.lingdong.learning.student.application.ParentReceivedInvitationView">
+        <constructor>
+            <idArg column="invitation_id" javaType="java.lang.Long"/>
+            <arg column="student_name" javaType="java.lang.String"/>
+            <arg column="inviter_name" javaType="java.lang.String"/>
+            <arg column="invitation_type"
+                 javaType="com.lingdong.learning.student.domain.ParentRelationshipInvitationType"/>
+            <arg column="created_at" javaType="java.time.LocalDateTime"/>
+            <arg column="expires_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <!-- 家长收到的待处理关系邀请：本人用户号或受邀手机号任一命中。 -->
+    <select id="findReceivedPending" resultMap="receivedInvitationMap">
+        SELECT i.id AS invitation_id, s.student_name AS student_name,
+               COALESCE(NULLIF(u.display_name, ''), u.username) AS inviter_name,
+               i.invitation_type AS invitation_type,
+               i.created_at AS created_at, i.expires_at AS expires_at
+        FROM edu_parent_relationship_invitation i
+        JOIN edu_student s ON s.id = i.student_id
+        LEFT JOIN sys_user u ON u.id = i.inviter_user_id
+        WHERE i.status = 'PENDING' AND i.expires_at &gt; NOW()
+          AND (i.invitee_user_id = #{userId}
+               OR (#{mobile} IS NOT NULL AND i.invitee_mobile = #{mobile}))
+        ORDER BY i.created_at DESC
+    </select>
 </mapper>

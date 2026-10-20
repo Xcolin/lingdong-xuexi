@@ -3,6 +3,7 @@ package com.lingdong.learning.growthpoint.web;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.lingdong.learning.growthpoint.domain.GrowthReward;
+import com.lingdong.learning.growthpoint.domain.GrowthRewardCategory;
 import com.lingdong.learning.growthpoint.domain.GrowthRewardStatus;
 
 import java.time.LocalDateTime;
@@ -13,6 +14,9 @@ public record GrowthRewardResponse(
         @JsonSerialize(using = ToStringSerializer.class) Long studentId,
         String rewardName,
         long requiredPoints,
+        GrowthRewardCategory category,
+        int stockQuantity,
+        String imageUrl,
         String description,
         LocalDateTime expiresAt,
         GrowthRewardStatus status,
@@ -22,7 +26,8 @@ public record GrowthRewardResponse(
     static GrowthRewardResponse from(GrowthReward reward) {
         return new GrowthRewardResponse(
                 reward.id(), reward.studentId(), reward.rewardName(), reward.requiredPoints(),
-                reward.description(), reward.expiresAt(), reward.status(),
+                reward.category(), reward.stockQuantity() == null ? 0 : reward.stockQuantity(),
+                reward.imageUrl(), reward.description(), reward.expiresAt(), reward.status(),
                 reward.createdAt(), reward.updatedAt());
     }
 }

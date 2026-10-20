@@ -9,6 +9,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
@@ -29,7 +30,13 @@ public record LearningTaskRequest(
         @NotEmpty List<@Valid LearningTaskTargetRequest> targets,
         Boolean recurrenceEnabled,
         LocalDate recurrenceEndDate,
-        String recurrenceFrequency, java.util.List<Integer> recurrenceWeekdays
+        String recurrenceFrequency, java.util.List<Integer> recurrenceWeekdays,
+        @Size(max = 500) String description,
+        @Size(max = 5) List<@Size(max = 100) String> requirementItems,
+        @Size(max = 9) List<@NotNull @Positive Long> exampleFileIds,
+        @Size(max = 16) String taskType,
+        LocalDate endDate,
+        @Size(max = 32) String visibility
 ) {
     public LearningTaskRequest(
         LearningTaskSourceType sourceType,
@@ -45,7 +52,7 @@ public record LearningTaskRequest(
         List<LearningTaskTargetRequest> targets,
         Boolean recurrenceEnabled,
         LocalDate recurrenceEndDate
-) { this(sourceType, sourceOrganizationId, title, difficultyLevel, durationMinutes, scheduledDate, categoryCode, tagCodes, remark, reviewerUserId, targets, recurrenceEnabled, recurrenceEndDate, "DAILY", java.util.List.of()); }
+) { this(sourceType, sourceOrganizationId, title, difficultyLevel, durationMinutes, scheduledDate, categoryCode, tagCodes, remark, reviewerUserId, targets, recurrenceEnabled, recurrenceEndDate, "DAILY", java.util.List.of(), null, java.util.List.of(), java.util.List.of(), null, null, null); }
 
     CreateLearningTaskCommand toCommand() {
         return new CreateLearningTaskCommand(
@@ -53,6 +60,7 @@ public record LearningTaskRequest(
                 new LearningTaskDraftInput(
                         title, difficultyLevel, durationMinutes, scheduledDate, categoryCode,
                         tagCodes, remark, targets.stream().map(LearningTaskTargetRequest::toInput).toList(),
-                        Boolean.TRUE.equals(recurrenceEnabled), recurrenceEndDate, recurrenceFrequency, recurrenceWeekdays));
+                        Boolean.TRUE.equals(recurrenceEnabled), recurrenceEndDate, recurrenceFrequency, recurrenceWeekdays,
+                        description, requirementItems, exampleFileIds, taskType, endDate, visibility));
     }
 }

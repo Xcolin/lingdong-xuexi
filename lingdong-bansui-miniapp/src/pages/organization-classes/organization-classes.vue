@@ -37,16 +37,19 @@
       </view>
 
       <view v-if="!formVisible" class="list-band"><text class="class-meta">共 {{classes.length}} 个班级</text>
-        <view v-for="item in classes" :key="item.id" class="class-row">
-          <view class="class-badge"><PrototypeIcon name="people" :size="28"/></view><view class="class-main" @tap="openDetail(item)">
-            <text class="class-name">{{ item.name }}</text>
-            <text class="class-meta">{{ item.schoolName || schoolName(item.schoolOrganizationId || item.parentId) }} · {{ item.gradeName || '待归属年级' }} · 排序 {{ item.sortOrder }}</text>
-            <text class="class-code">{{ item.code }}</text>
-          </view>
-          <view class="row-actions">
-            <text :class="['status-text', item.status === 'ENABLED' ? 'enabled' : 'disabled']">
-              {{ item.status === 'ENABLED' ? '启用' : '停用' }}
+        <view v-for="item in classes" :key="item.id" class="class-card">
+          <view class="class-card-top">
+            <view class="class-badge"><PrototypeIcon name="people" :size="28"/></view>
+            <view class="class-main" @tap="openDetail(item)">
+              <text class="class-name">{{ item.name }}</text>
+              <text class="class-meta">{{ memberSummary(item) }}</text>
+              <text class="class-code">{{ item.schoolName || schoolName(item.schoolOrganizationId || item.parentId) }} · {{ item.gradeName || '待归属年级' }}</text>
+            </view>
+            <text :class="['status-badge', item.status === 'ENABLED' ? 'normal' : 'off']">
+              {{ item.status === 'ENABLED' ? '正常' : '停用' }}
             </text>
+          </view>
+          <view class="card-actions">
             <button class="row-button" @tap="openEdit(item)">编辑</button>
             <button
               :class="['row-button', item.status === 'ENABLED' ? 'danger' : 'enable']"
@@ -88,6 +91,8 @@ import {
   bindOrganizationTeacher,
   changeManagedClassStatus,
   createManagedClass,
+  listClassHeadTeachers,
+  listClassStudentCounts,
   listManageableSchools,
   listManageableGrades,
   listManagedClasses,
@@ -118,6 +123,14 @@ const className = ref('');
 const sortOrderText = ref('100');
 const teacherClassIndex = ref(-1);
 const teacherIndex = ref(-1);
+// 班级卡字段（对照原型 03-06）：有效学员数与班主任名，加载失败回退空展示
+const classCounts = ref<Record<string, number>>({});
+const headTeacherNames = ref<Record<string, string | null>>({});
+function memberSummary(item: OrganizationClass): string {
+  const count = classCounts.value[item.id] ?? 0;
+  const teacher = headTeacherNames.value[item.id];
+  return `${count} 名成长小主人 ｜ 班主任：${teacher || '未设置'}`;
+}
 
 const schoolLabels = computed(() => schools.value.map((item) => `${item.name}（${item.code}）`));
 const selectedSchool = computed(() => schools.value[schoolIndex.value] || null);
@@ -304,9 +317,18 @@ async function updateTeacher(active: boolean): Promise<void> {
 }
 
 async function loadClasses(accessToken: string): Promise<void> {
-  [schools.value, grades.value, classes.value] = await Promise.all([
-    listManageableSchools(accessToken), listManageableGrades(accessToken), listManagedClasses(accessToken)
+  const [schoolList, gradeList, classList, counts, headTeachers] = await Promise.all([
+    listManageableSchools(accessToken), listManageableGrades(accessToken), listManagedClasses(accessToken),
+    listClassStudentCounts(accessToken).catch(() => [] as { organizationId: string; memberCount: number }[]),
+    listClassHeadTeachers(accessToken).catch(() => [] as { organizationId: string; headTeacherName: string | null }[])
   ]);
+  schools.value = schoolList;grades.value = gradeList;classes.value = classList;
+  const countMap: Record<string, number> = {};
+  for (const entry of counts) countMap[entry.organizationId] = entry.memberCount;
+  classCounts.value = countMap;
+  const nameMap: Record<string, string | null> = {};
+  for (const entry of headTeachers) nameMap[entry.organizationId] = entry.headTeacherName;
+  headTeacherNames.value = nameMap;
 }
 
 function schoolName(parentId: string | null): string {
@@ -345,4 +367,16 @@ function showConfirm(
 
 <style scoped>
 .prototype-workspace{min-height:calc(100vh - var(--window-top,0px));box-sizing:border-box;background:#f5f8f4;color:#182d26;padding:20rpx 28rpx 150rpx}.page-shell{padding-bottom:48rpx}.ld-topbar{display:flex;align-items:center;gap:18rpx;background:linear-gradient(120deg,#21664f,#0b4b3d);margin:-24rpx -24rpx 28rpx;padding:28rpx 26rpx 50rpx;color:white;border-radius:24rpx 24rpx 0 0}.ld-topbar-brand{display:flex;align-items:center;gap:18rpx;flex:1}.ld-topbar-name{display:block;font-size:32rpx;font-weight:650}.ld-topbar-meta{display:block;font-size:23rpx;opacity:.8;margin-top:8rpx}.ld-topbar-logo,.profile-avatar{width:80rpx;height:80rpx;border-radius:50%;background:#ffffff25;display:flex;align-items:center;justify-content:center}.profile-copy{flex:1}.ld-card,.ld-group,.form-band,.band,.search-band{background:#fff;border:1rpx solid #e5ece5;border-radius:24rpx;padding:24rpx;margin-bottom:20rpx}.workspace-intro{background:#fff;border-radius:24rpx;padding:30rpx 24rpx;margin-bottom:20rpx}.workspace-intro-title{display:block;font-size:34rpx;font-weight:700}.workspace-intro-caption{display:block;font-size:24rpx;color:#778078;margin-top:10rpx}.workspace-shortcuts{display:flex;flex-direction:column;gap:16rpx;margin-bottom:16rpx}.workspace-shortcut{display:flex;align-items:center;flex-wrap:wrap;text-align:left;background:#fff;border-radius:24rpx;padding:22rpx 26rpx;font-size:30rpx;font-weight:600;color:#182d26;min-height:120rpx}.workspace-shortcut>text{width:100%;padding-left:80rpx;font-size:23rpx;font-weight:400;color:#7b837d}.shortcut-symbol,.ld-cell-icon,.class-badge{width:64rpx;height:64rpx;border-radius:14rpx;background:#138655;display:flex;align-items:center;justify-content:center;margin-right:18rpx}.ld-heading{margin:28rpx 0 18rpx}.ld-heading-title,.form-title,.section-title{display:block;font-size:30rpx;font-weight:650}.ld-heading-sub{display:block;font-size:23rpx;color:#7b837d;margin-top:8rpx}.ld-cell,.class-row,.teacher-row,.organization-row{display:flex;align-items:center;padding:20rpx 0;border-bottom:1rpx solid #edf1eb;text-align:left;background:#fff;color:#182d26}.ld-cell:last-child,.class-row:last-child,.teacher-row:last-child{border-bottom:0}.ld-cell-body,.class-main,.organization-main{flex:1}.ld-cell-title,.class-name,.organization-name{display:block;font-size:29rpx;font-weight:600}.ld-cell-sub,.school-name,.organization-type{display:block;font-size:23rpx;color:#7d847e;margin-top:8rpx}.ld-cell-arrow{font-size:34rpx;color:#65726a}.prototype-section-header{display:flex;align-items:center;justify-content:center;font-size:32rpx;font-weight:700;margin-bottom:20rpx;gap:12rpx}.prototype-section-header>.prototype-icon{display:none}.mode-control,.search-band,.action-band,.form-actions,.paging{display:flex;gap:14rpx;align-items:center;flex-wrap:wrap;margin-bottom:24rpx}.mode-control button{flex:1}.active{background:#e1f3e4;color:#0c7748}.field-label{display:block;margin:24rpx 0 12rpx;font-size:26rpx}.text-input,.search-input,.picker-value{background:#f8faf7;border:1rpx solid #e0e7df;border-radius:16rpx;padding:18rpx;min-height:72rpx;box-sizing:border-box;font-size:26rpx}.search-input{flex:1;min-width:180rpx}.check-row{display:flex;align-items:center;gap:12rpx;padding:16rpx 0}.state-text{font-size:26rpx;color:#7a837c;padding:24rpx}.review-card{display:flex;align-items:center;gap:20rpx}.review-info{flex:1}.ld-card-title{display:block;font-size:30rpx;font-weight:650}.review-count{display:block;margin-top:12rpx;font-size:24rpx;color:#718077}button{margin:0;font-size:25rpx;line-height:1.5;background:#eaf2e9;color:#21563e;padding:14rpx 20rpx;border-radius:16rpx}button::after{border:0}.primary-button,.save-button,.submit-button,.create-button{background:#137c53;color:white}.logout-button{margin-top:30rpx;color:#b65c50}.ld-logout,.space-switch{font-size:23rpx;flex-shrink:0}.org-badge{margin-right:18rpx;background:#e4f2e4;border-radius:14rpx;padding:16rpx}.error{color:#a43b31}.check-list{margin:18rpx 0}
+/* 班级卡布局（对照原型 03-06）：主体信息与操作分行，操作按钮不再与文本争宽度溢出屏幕 */
+.class-card{background:#fff;border:1rpx solid #e5ece5;border-radius:20rpx;padding:20rpx;margin-bottom:16rpx}
+.class-card-top{display:flex;align-items:center;gap:16rpx}
+.class-card-top .class-main{min-width:0;flex:1}
+.class-card .class-name,.class-card .class-meta,.class-card .class-code{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.status-badge{flex-shrink:0;font-size:22rpx;padding:8rpx 18rpx;border-radius:999rpx;white-space:nowrap}
+.status-badge.normal{background:#e1f3e4;color:#137c53}
+.status-badge.off{background:#fdeada;color:#b06c51}
+.card-actions{display:flex;justify-content:flex-end;gap:12rpx;margin-top:14rpx;padding-top:14rpx;border-top:1rpx solid #f0f4ee}
+.row-button{font-size:22rpx;padding:10rpx 16rpx;white-space:nowrap}
+.row-button.danger{background:#b42318;color:#fff}
+.row-button.enable{background:#167c5a;color:#fff}
 </style>

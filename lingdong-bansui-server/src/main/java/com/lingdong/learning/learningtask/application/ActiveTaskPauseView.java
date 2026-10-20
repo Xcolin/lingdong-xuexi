@@ -9,6 +9,8 @@ public record ActiveTaskPauseView(
         Long id,
         TaskPauseType pauseType,
         LocalDateTime startedAt,
-        LocalDateTime expiresAt
+        LocalDateTime expiresAt,
+        String adjustMethod,
+        String reasonNote
 ) {
 }

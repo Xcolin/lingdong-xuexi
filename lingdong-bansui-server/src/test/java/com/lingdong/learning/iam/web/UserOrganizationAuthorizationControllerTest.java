@@ -17,6 +17,7 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.transaction.annotation.Transactional;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -32,6 +33,15 @@ class UserOrganizationAuthorizationControllerTest {
  @Autowired OrganizationApplicationService organizations;
  @Autowired AuthenticationApplicationService auth;
  @Autowired JdbcTemplate jdbc;
+
+ @org.junit.jupiter.api.BeforeEach void cleanFixedIdResidue() {
+  // 非 @Transactional：上轮运行的固定主键残留会使插入冲突并污染全库不变量断言（如 FlywayMigrationTest）。
+  jdbc.update("delete from sys_role_permission where id between 990000000000000000 and 990000000000000099 or role_id in (990000000000000011,990000000000000031)");
+  jdbc.update("delete from sys_user_permission where id between 990000000000000000 and 990000000000000099");
+  jdbc.update("delete from sys_user_role where role_id in (990000000000000011,990000000000000031)");
+  jdbc.update("delete from auth_parent_profile where id between 990000000000000000 and 990000000000000099");
+  jdbc.update("delete from sys_role where id in (990000000000000011,990000000000000031)");
+ }
 
  @Test @Transactional void studentHttpCreationAndRepairPreserveAccountAndHideCredentials() throws Exception {
   String token=admin("unified_http_admin");
@@ -116,15 +126,20 @@ class UserOrganizationAuthorizationControllerTest {
  @Test void organizationMemberOperationsHonorExplicitPermissionsAcrossMixedRolesAndRejectIneffectiveOrganizations() throws Exception {
   String token=admin("member_security_admin");Organization org=org("MEMBER_SECURITY");User target=user("member_security_target");
   Long operator=jdbc.queryForObject("select id from sys_user where username='member_security_admin'",Long.class);
-  Long pid=permissions.findByCode("IAM_DATA_SCOPE_CONFIGURE").id();
+  // V118 权限驱动后成员添加（administrator=true）校验 ORG_ADMIN_ASSIGN，不再用 IAM_DATA_SCOPE_CONFIGURE
+  Long pid=permissions.findByCode("ORG_ADMIN_ASSIGN").id();
   jdbc.update("insert into sys_user_permission(id,user_id,permission_id,effect) values(?,?,?,'DENY')",990000000000000020L,operator,pid);
   String body="{\"userIds\":[\"%s\"],\"administrator\":true}".formatted(target.id());
   mvc.perform(post("/api/v1/organizations/{id}/members:batch",org.id()).header("Authorization","Bearer "+token).contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isForbidden());
   assertThat(jdbc.queryForObject("select count(*) from sys_user_organization where organization_id=?",Integer.class,org.id())).isZero();
   jdbc.update("delete from sys_user_permission where user_id=? and permission_id=?",operator,pid);
   users.assignRole(new AssignRoleToUserCommand(operator,roles.findByCode("SYS_AUDITOR").id(),null));
+  // V118 后成员添加（administrator=false）校验 ORG_MEMBER_ASSOCIATE：给兼任审核员补角色级授权（幂等：先清固定主键残留）
+  jdbc.update("delete from sys_role_permission where id=? or (role_id=? and permission_id=?)",990000000000000022L,roles.findByCode("SYS_AUDITOR").id(),permissions.findByCode("ORG_MEMBER_ASSOCIATE").id());
+  jdbc.update("insert into sys_role_permission(id,role_id,permission_id,effect) values(?,?,?,'ALLOW')",990000000000000022L,roles.findByCode("SYS_AUDITOR").id(),permissions.findByCode("ORG_MEMBER_ASSOCIATE").id());
   mvc.perform(post("/api/v1/organizations/{id}/members:batch",org.id()).header("Authorization","Bearer "+token).contentType(MediaType.APPLICATION_JSON).content(body.replace("true","false"))).andExpect(status().isNoContent());
-  Long memberPermission=permissions.findByCode("IAM_USER_ORGANIZATION_ASSIGN").id();
+  // IAM_USER_ORGANIZATION_ASSIGN 已被 V118 删除，由 ORG_MEMBER_ASSOCIATE 取代
+  Long memberPermission=permissions.findByCode("ORG_MEMBER_ASSOCIATE").id();
   jdbc.update("insert into sys_user_permission(id,user_id,permission_id,effect) values(?,?,?,'DENY')",990000000000000021L,operator,memberPermission);
   mvc.perform(post("/api/v1/organizations/{id}/members:batch",org.id()).header("Authorization","Bearer "+token).contentType(MediaType.APPLICATION_JSON).content(body.replace("true","false"))).andExpect(status().isForbidden());
   jdbc.update("delete from sys_user_permission where user_id=? and permission_id=?",operator,memberPermission);
@@ -153,16 +168,23 @@ class UserOrganizationAuthorizationControllerTest {
   mvc.perform(get("/api/v1/organizations/{id}/member-relations",org.id()).header("Authorization","Bearer "+token).param("userIds",member.id()+","+member.id())).andExpect(status().isBadRequest());
   String tooMany=java.util.stream.LongStream.range(1,102).mapToObj(Long::toString).collect(java.util.stream.Collectors.joining(","));
   mvc.perform(get("/api/v1/organizations/{id}/member-relations",org.id()).header("Authorization","Bearer "+token).param("userIds",tooMany)).andExpect(status().isBadRequest());
+  // V118 后 member-relations（administrator=false）校验 ORG_MEMBER_ASSOCIATE，不再用 IAM_USER_LIST
   Role reader=Role.custom(990000000000000031L,"RELATION_READER","成员查看角色",null,RoleDataScope.ALL);roles.insert(reader);
-  jdbc.update("insert into sys_role_permission(id,role_id,permission_id,effect) values(?,?,?,'ALLOW')",990000000000000032L,reader.id(),permissions.findByCode("IAM_USER_LIST").id());
+  jdbc.update("insert into sys_role_permission(id,role_id,permission_id,effect) values(?,?,?,'ALLOW')",990000000000000032L,reader.id(),permissions.findByCode("ORG_MEMBER_ASSOCIATE").id());
   users.assignRole(new AssignRoleToUserCommand(absent.id(),reader.id(),null));
   Long adminId=jdbc.queryForObject("select id from sys_user where username='relations_admin'",Long.class);
   auth.setPlatformUserPassword(new SetPlatformUserPasswordCommand(adminId,absent.id(),"Password123"));
-  String ordinary=json.readTree(mvc.perform(post("/api/v1/auth/sessions/password").contentType(MediaType.APPLICATION_JSON)
+  // bf34c6a 起 setPlatformUserPassword 为初始密码语义：首次登录须先完成改密才能访问业务端点
+  String bootstrap=json.readTree(mvc.perform(post("/api/v1/auth/sessions/password").contentType(MediaType.APPLICATION_JSON)
    .content("{\"username\":\"relations_absent\",\"password\":\"Password123\",\"deviceId\":\"relations-absent-device\",\"deviceName\":\"test\"}"))
    .andExpect(status().isOk()).andReturn().getResponse().getContentAsString()).path("accessToken").asText();
+  mvc.perform(post("/api/v1/auth/password").header("Authorization","Bearer "+bootstrap).contentType(MediaType.APPLICATION_JSON)
+   .content("{\"oldPassword\":\"Password123\",\"newPassword\":\"Password456\"}")).andExpect(status().isNoContent());
+  String ordinary=json.readTree(mvc.perform(post("/api/v1/auth/sessions/password").contentType(MediaType.APPLICATION_JSON)
+   .content("{\"username\":\"relations_absent\",\"password\":\"Password456\",\"deviceId\":\"relations-absent-device\",\"deviceName\":\"test\"}"))
+   .andExpect(status().isOk()).andReturn().getResponse().getContentAsString()).path("accessToken").asText();
   mvc.perform(get("/api/v1/organizations/{id}/member-relations",org.id()).header("Authorization","Bearer "+ordinary).param("userIds",ids)).andExpect(status().isOk());
-  jdbc.update("insert into sys_user_permission(id,user_id,permission_id,effect) values(?,?,?,'DENY')",990000000000000033L,absent.id(),permissions.findByCode("IAM_USER_LIST").id());
+  jdbc.update("insert into sys_user_permission(id,user_id,permission_id,effect) values(?,?,?,'DENY')",990000000000000033L,absent.id(),permissions.findByCode("ORG_MEMBER_ASSOCIATE").id());
   mvc.perform(get("/api/v1/organizations/{id}/member-relations",org.id()).header("Authorization","Bearer "+ordinary).param("userIds",ids)).andExpect(status().isForbidden());
  }
  @Test void managedPasswordCreationResetAndOrganizationFilter() throws Exception {
@@ -214,6 +236,7 @@ class UserOrganizationAuthorizationControllerTest {
  }
  private User user(String name){return users.createUser(new CreateUserCommand(name,name,null,UserType.PLATFORM));}
  private Organization org(String code){return organizations.createOrganization(new CreateOrganizationCommand(code,code,"REGION",null,0));}
- private String admin(String name)throws Exception{User u=user(name);users.assignRole(new AssignRoleToUserCommand(u.id(),roles.findByCode("SYS_ADMIN").id(),null));auth.setPlatformUserPassword(new SetPlatformUserPasswordCommand(u.id(),u.id(),"Password123"));return json.readTree(mvc.perform(post("/api/v1/auth/sessions/password").contentType(MediaType.APPLICATION_JSON).content("{\"username\":\"%s\",\"password\":\"Password123\",\"deviceId\":\"%s-device\",\"deviceName\":\"test\"}".formatted(name,name))).andExpect(status().isOk()).andReturn().getResponse().getContentAsString()).path("accessToken").asText();}
+ private String admin(String name)throws Exception{User u=user(name);users.assignRole(new AssignRoleToUserCommand(u.id(),roles.findByCode("SYS_ADMIN").id(),null));auth.setPlatformUserPassword(new SetPlatformUserPasswordCommand(u.id(),u.id(),"Bootstrap123"));String bootstrap=json.readTree(mvc.perform(post("/api/v1/auth/sessions/password").contentType(MediaType.APPLICATION_JSON).content("{\"username\":\"%s\",\"password\":\"Bootstrap123\",\"deviceId\":\"%s-device\",\"deviceName\":\"test\"}".formatted(name,name))).andExpect(status().isOk()).andReturn().getResponse().getContentAsString()).path("accessToken").asText();// bf34c6a 起首次登录需自行改密，先 bootstrap 改密再建立业务会话
+ mvc.perform(post("/api/v1/auth/password").header("Authorization","Bearer "+bootstrap).contentType(MediaType.APPLICATION_JSON).content("{\"oldPassword\":\"Bootstrap123\",\"newPassword\":\"Password123\"}")).andExpect(status().isNoContent());return json.readTree(mvc.perform(post("/api/v1/auth/sessions/password").contentType(MediaType.APPLICATION_JSON).content("{\"username\":\"%s\",\"password\":\"Password123\",\"deviceId\":\"%s-device\",\"deviceName\":\"test\"}".formatted(name,name))).andExpect(status().isOk()).andReturn().getResponse().getContentAsString()).path("accessToken").asText();}
 }
 

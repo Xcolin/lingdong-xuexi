@@ -81,7 +81,9 @@ public class LearningTaskPublishService {
                 task.title(), task.difficultyLevel(), task.durationMinutes(), task.scheduledDate(),
                 task.categoryCode(), tagCodes, task.remark(), targets.stream()
                 .map(target -> new LearningTaskTargetInput(target.targetType(), target.targetId()))
-                .toList(), Boolean.TRUE.equals(task.recurrenceEnabled()), task.recurrenceEndDate(), task.recurrenceFrequency(), task.recurrenceWeekdays()));
+                .toList(), Boolean.TRUE.equals(task.recurrenceEnabled()), task.recurrenceEndDate(), task.recurrenceFrequency(), task.recurrenceWeekdays(),
+                task.description(), task.requirementItems(), task.exampleFileIds(),
+                task.taskType(), task.endDate(), task.visibility()));
         Long reviewerUserId = scopeService.validateAndResolveReviewer(
                 currentUser, task.sourceType(), task.sourceOrganizationId(),
                 task.reviewerUserId(), validatedDraft);

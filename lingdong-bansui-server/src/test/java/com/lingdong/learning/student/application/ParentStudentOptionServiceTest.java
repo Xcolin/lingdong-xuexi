@@ -28,7 +28,7 @@ class ParentStudentOptionServiceTest {
     @Test void onlyCreateGrantProvidesOnlyOwnRelatedEnabledChildrenWithoutStudentReadOrRelationshipFeature() {
         grant();
         when(relations.findActiveStudentsByParent(1L)).thenReturn(List.of(
-                new ParentRelationshipStudentView(3L,"own child",ParentRelationshipRole.SECONDARY_GUARDIAN)));
+                new ParentRelationshipStudentView(3L,"own child",ParentRelationshipRole.SECONDARY_GUARDIAN,null)));
         when(students.findById(3L)).thenReturn(Student.create(3L,"own child","G3",4L));
         when(enrollments.findActiveEnrollmentOrganizationIds(3L)).thenReturn(List.of(5L));
         assertThat(service.find(parent)).containsExactly(new ParentStudentOptionService.Option(

@@ -27,6 +27,12 @@
             <arg column="recurrence_status" javaType="com.lingdong.learning.learningtask.domain.LearningTaskRecurrenceStatus"/>
             <arg column="recurrence_frequency" javaType="java.lang.String"/>
             <arg column="recurrence_weekdays" javaType="java.util.List" typeHandler="com.lingdong.learning.learningtask.infrastructure.persistence.TaskWeekdaysTypeHandler"/>
+            <arg column="description" javaType="java.lang.String"/>
+            <arg column="requirement_items" javaType="java.util.List" typeHandler="com.lingdong.learning.learningtask.infrastructure.persistence.TaskStringListTypeHandler"/>
+            <arg column="example_file_ids" javaType="java.util.List" typeHandler="com.lingdong.learning.learningtask.infrastructure.persistence.TaskFileIdListTypeHandler"/>
+            <arg column="task_type" javaType="java.lang.String"/>
+            <arg column="end_date" javaType="java.time.LocalDate"/>
+            <arg column="visibility" javaType="java.lang.String"/>
         </constructor>
     </resultMap>
 
@@ -36,7 +42,9 @@
         review_timeout_hours, recurrence_enabled, recurrence_end_date,
         status, published_at, created_at, updated_at,
         (SELECT recurrence.status FROM learn_task_recurrence recurrence
-         WHERE recurrence.task_id = learn_task.id) AS recurrence_status, recurrence_frequency, recurrence_weekdays
+         WHERE recurrence.task_id = learn_task.id) AS recurrence_status, recurrence_frequency, recurrence_weekdays,
+        description, requirement_items, example_file_ids,
+        task_type, end_date, visibility
     </sql>
 
     <sql id="managedFilters">
@@ -120,17 +128,112 @@
         SELECT COUNT(1) FROM learn_task <include refid="managedFilters"/>
     </select>
 
+    <!-- 家长任务列表卡片聚合（02-02）：执行进度 N/M / 待审计数 / 成员名 -->
+    <resultMap id="FamilyOverviewMap" type="com.lingdong.learning.learningtask.infrastructure.persistence.FamilyTaskOverviewRow">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="title" javaType="java.lang.String"/>
+            <arg column="task_type" javaType="java.lang.String"/>
+            <arg column="scheduled_date" javaType="java.time.LocalDate"/>
+            <arg column="end_date" javaType="java.time.LocalDate"/>
+            <arg column="visibility" javaType="java.lang.String"/>
+            <arg column="status" javaType="com.lingdong.learning.learningtask.domain.LearningTaskStatus"/>
+            <arg column="recurrence_enabled" javaType="_boolean"/>
+            <arg column="recurrence_frequency" javaType="java.lang.String"/>
+            <arg column="member_names" javaType="java.lang.String"/>
+            <arg column="assignment_total" javaType="_long"/>
+            <arg column="assignment_completed" javaType="_long"/>
+            <arg column="assignment_pending_review" javaType="_long"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="familyOverviewAggregates">
+        (SELECT COUNT(*) FROM learn_task_assignment overview_assignment
+          WHERE overview_assignment.task_id = learn_task.id
+            AND overview_assignment.current_status &lt;&gt; 'INVALIDATED') AS assignment_total,
+        (SELECT COUNT(*) FROM learn_task_assignment overview_assignment
+          WHERE overview_assignment.task_id = learn_task.id
+            AND overview_assignment.current_status = 'COMPLETED') AS assignment_completed,
+        (SELECT COUNT(*) FROM learn_task_assignment overview_assignment
+          WHERE overview_assignment.task_id = learn_task.id
+            AND overview_assignment.current_status = 'PENDING_REVIEW') AS assignment_pending_review,
+        (SELECT GROUP_CONCAT(DISTINCT overview_student.student_name ORDER BY overview_student.id SEPARATOR '、')
+          FROM learn_task_assignment overview_assignment
+          JOIN edu_student overview_student ON overview_student.id = overview_assignment.student_id
+          WHERE overview_assignment.task_id = learn_task.id
+            AND overview_assignment.current_status &lt;&gt; 'INVALIDATED') AS member_names
+    </sql>
+
+    <sql id="familyOverviewFilters">
+        <if test="query.taskType != null and query.taskType != ''">
+            AND learn_task.task_type = #{query.taskType}
+        </if>
+        <if test="query.studentId != null">
+            AND EXISTS (SELECT 1 FROM learn_task_assignment overview_filter_assignment
+              WHERE overview_filter_assignment.task_id = learn_task.id
+                AND overview_filter_assignment.student_id = #{query.studentId}
+                AND overview_filter_assignment.current_status &lt;&gt; 'INVALIDATED')
+        </if>
+        <choose>
+            <when test="query.executionTab == 'PENDING_REVIEW'">
+                AND EXISTS (SELECT 1 FROM learn_task_assignment overview_tab_assignment
+                  WHERE overview_tab_assignment.task_id = learn_task.id
+                    AND overview_tab_assignment.current_status = 'PENDING_REVIEW')
+            </when>
+            <when test="query.executionTab == 'COMPLETED'">
+                AND EXISTS (SELECT 1 FROM learn_task_assignment overview_tab_any
+                  WHERE overview_tab_any.task_id = learn_task.id
+                    AND overview_tab_any.current_status &lt;&gt; 'INVALIDATED')
+                AND NOT EXISTS (SELECT 1 FROM learn_task_assignment overview_tab_open
+                  WHERE overview_tab_open.task_id = learn_task.id
+                    AND overview_tab_open.current_status NOT IN ('COMPLETED', 'INVALIDATED', 'EXEMPT'))
+            </when>
+            <when test="query.executionTab == 'IN_PROGRESS'">
+                AND learn_task.status = 'PUBLISHED'
+                AND EXISTS (SELECT 1 FROM learn_task_assignment overview_tab_active
+                  WHERE overview_tab_active.task_id = learn_task.id
+                    AND overview_tab_active.current_status IN ('PENDING_CLAIM', 'IN_PROGRESS', 'NEEDS_IMPROVEMENT'))
+                AND NOT EXISTS (SELECT 1 FROM learn_task_assignment overview_tab_review
+                  WHERE overview_tab_review.task_id = learn_task.id
+                    AND overview_tab_review.current_status = 'PENDING_REVIEW')
+            </when>
+            <otherwise/>
+        </choose>
+    </sql>
+
+    <select id="findFamilyOverviewPage" resultMap="FamilyOverviewMap">
+        SELECT learn_task.id, learn_task.title, learn_task.task_type, learn_task.scheduled_date, learn_task.end_date,
+            learn_task.visibility, learn_task.status, learn_task.recurrence_enabled, learn_task.recurrence_frequency,
+            <include refid="familyOverviewAggregates"/>
+        FROM learn_task
+        <include refid="managedFilters"/>
+        <include refid="familyOverviewFilters"/>
+        ORDER BY scheduled_date DESC, created_at DESC, id DESC
+        LIMIT #{query.limit} OFFSET #{query.offset}
+    </select>
+
+    <select id="countFamilyOverview" resultType="long">
+        SELECT COUNT(1) FROM learn_task
+        <include refid="managedFilters"/>
+        <include refid="familyOverviewFilters"/>
+    </select>
+
     <insert id="insert">
         INSERT INTO learn_task (
             id, source_type, source_organization_id, creator_user_id, title, difficulty_level,
             base_points, duration_minutes, scheduled_date, category_code, remark, reviewer_user_id,
-            review_timeout_hours, recurrence_enabled, recurrence_end_date, status, recurrence_frequency, recurrence_weekdays
+            review_timeout_hours, recurrence_enabled, recurrence_end_date, status, recurrence_frequency, recurrence_weekdays,
+            description, requirement_items, example_file_ids, task_type, end_date, visibility
         ) VALUES (
             #{task.id}, #{task.sourceType}, #{task.sourceOrganizationId, jdbcType=BIGINT},
             #{task.creatorUserId}, #{task.title}, #{task.difficultyLevel}, #{task.basePoints},
             #{task.durationMinutes}, #{task.scheduledDate}, #{task.categoryCode, jdbcType=VARCHAR},
             #{task.remark, jdbcType=VARCHAR}, #{task.reviewerUserId}, #{task.reviewTimeoutHours},
-            #{task.recurrenceEnabled}, #{task.recurrenceEndDate, jdbcType=DATE}, #{task.status}, #{task.recurrenceFrequency}, #{task.recurrenceWeekdays, jdbcType=VARCHAR, typeHandler=com.lingdong.learning.learningtask.infrastructure.persistence.TaskWeekdaysTypeHandler}
+            #{task.recurrenceEnabled}, #{task.recurrenceEndDate, jdbcType=DATE}, #{task.status}, #{task.recurrenceFrequency}, #{task.recurrenceWeekdays, jdbcType=VARCHAR, typeHandler=com.lingdong.learning.learningtask.infrastructure.persistence.TaskWeekdaysTypeHandler},
+            #{task.description, jdbcType=VARCHAR},
+            #{task.requirementItems, jdbcType=VARCHAR, typeHandler=com.lingdong.learning.learningtask.infrastructure.persistence.TaskStringListTypeHandler},
+            #{task.exampleFileIds, jdbcType=VARCHAR, typeHandler=com.lingdong.learning.learningtask.infrastructure.persistence.TaskFileIdListTypeHandler},
+            #{task.taskType, jdbcType=VARCHAR}, #{task.endDate, jdbcType=DATE}, #{task.visibility, jdbcType=VARCHAR}
         )
     </insert>
 
@@ -143,6 +246,12 @@
             recurrence_enabled = #{task.recurrenceEnabled},
             recurrence_end_date = #{task.recurrenceEndDate, jdbcType=DATE},
             recurrence_frequency = #{task.recurrenceFrequency}, recurrence_weekdays = #{task.recurrenceWeekdays, jdbcType=VARCHAR, typeHandler=com.lingdong.learning.learningtask.infrastructure.persistence.TaskWeekdaysTypeHandler},
+            description = #{task.description, jdbcType=VARCHAR},
+            requirement_items = #{task.requirementItems, jdbcType=VARCHAR, typeHandler=com.lingdong.learning.learningtask.infrastructure.persistence.TaskStringListTypeHandler},
+            example_file_ids = #{task.exampleFileIds, jdbcType=VARCHAR, typeHandler=com.lingdong.learning.learningtask.infrastructure.persistence.TaskFileIdListTypeHandler},
+            task_type = #{task.taskType, jdbcType=VARCHAR},
+            end_date = #{task.endDate, jdbcType=DATE},
+            visibility = #{task.visibility, jdbcType=VARCHAR},
             updated_at = CURRENT_TIMESTAMP
         WHERE id = #{task.id} AND status = 'DRAFT'
     </update>
@@ -158,12 +267,14 @@
             id, source_type, source_organization_id, creator_user_id, title, difficulty_level,
             base_points, duration_minutes, scheduled_date, category_code, remark, reviewer_user_id,
             review_timeout_hours, recurrence_enabled, recurrence_end_date, status, published_at,
-            generation_type, origin_task_id
+            generation_type, origin_task_id, description, requirement_items, example_file_ids,
+            task_type, end_date, visibility
         )
         SELECT #{targetTaskId}, source_type, source_organization_id, creator_user_id,
                title, difficulty_level, base_points, duration_minutes, #{targetDate},
                category_code, remark, reviewer_user_id, review_timeout_hours,
-               0, NULL, 'PUBLISHED', CURRENT_TIMESTAMP, 'DEFERRED', COALESCE(origin_task_id, id)
+               0, NULL, 'PUBLISHED', CURRENT_TIMESTAMP, 'DEFERRED', COALESCE(origin_task_id, id),
+               description, requirement_items, example_file_ids, task_type, end_date, visibility
         FROM learn_task
         WHERE id = #{sourceTaskId}
           AND status = 'PUBLISHED'
@@ -174,12 +285,14 @@
             id, source_type, source_organization_id, creator_user_id, title, difficulty_level,
             base_points, duration_minutes, scheduled_date, category_code, remark, reviewer_user_id,
             review_timeout_hours, recurrence_enabled, recurrence_end_date, status, published_at,
-            generation_type, origin_task_id
+            generation_type, origin_task_id, description, requirement_items, example_file_ids,
+            task_type, end_date, visibility
         )
         SELECT #{targetTaskId}, 'FAMILY', NULL, #{parentUserId}, title, difficulty_level,
                base_points, duration_minutes, #{targetDate}, category_code, remark, #{parentUserId},
                review_timeout_hours, 0, NULL, 'PUBLISHED', CURRENT_TIMESTAMP,
-               'COPIED', COALESCE(origin_task_id, id)
+               'COPIED', COALESCE(origin_task_id, id),
+               description, requirement_items, example_file_ids, task_type, end_date, visibility
         FROM learn_task
         WHERE id = #{sourceTaskId}
           AND source_type = 'FAMILY'

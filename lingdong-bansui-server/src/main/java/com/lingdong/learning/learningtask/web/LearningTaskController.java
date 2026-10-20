@@ -2,6 +2,7 @@ package com.lingdong.learning.learningtask.web;
 
 import com.lingdong.learning.auth.application.AuthenticatedUser;
 import com.lingdong.learning.common.security.RequirePermission;
+import com.lingdong.learning.learningtask.application.FamilyTaskCheckInRecordService;
 import com.lingdong.learning.learningtask.application.LearningTaskBatchPublishService;
 import com.lingdong.learning.learningtask.application.LearningTaskManagementService;
 import com.lingdong.learning.learningtask.application.LearningTaskPublishService;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
+import java.util.List;
 
 /** Web 端学习任务草稿、查询和发布入口。 */
 @RestController
@@ -34,19 +36,36 @@ public class LearningTaskController {
     private final LearningTaskBatchPublishService batchPublishService;
     private final RecurringTaskManagementService recurringTaskManagementService;
     private final ManagedTaskProgressService progressService;
+    private final FamilyTaskCheckInRecordService checkInRecordService;
 
     public LearningTaskController(
             LearningTaskManagementService managementService,
             LearningTaskPublishService publishService,
             LearningTaskBatchPublishService batchPublishService,
             RecurringTaskManagementService recurringTaskManagementService,
-            ManagedTaskProgressService progressService
+            ManagedTaskProgressService progressService,
+            FamilyTaskCheckInRecordService checkInRecordService
     ) {
         this.managementService = managementService;
         this.publishService = publishService;
         this.batchPublishService = batchPublishService;
         this.recurringTaskManagementService = recurringTaskManagementService;
         this.progressService = progressService;
+        this.checkInRecordService = checkInRecordService;
+    }
+
+    /** 家长任务列表卡片聚合（02-02 四状态 Tab + 筛选组 + 任务卡）。 */
+    @GetMapping("/family-overview")
+    public FamilyTaskOverviewPageResponse familyOverview(
+            @AuthenticationPrincipal AuthenticatedUser currentUser,
+            @RequestParam(defaultValue = "ALL") String statusTab,
+            @RequestParam(required = false) String taskType,
+            @RequestParam(required = false) Long studentId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int pageSize
+    ) {
+        return FamilyTaskOverviewPageResponse.from(managementService.findFamilyOverview(
+                currentUser, statusTab, taskType, studentId, page, pageSize));
     }
 
     @RequirePermission("LEARNING_TASK_CREATE")
@@ -139,5 +158,17 @@ public class LearningTaskController {
     ) {
         return ManagedTaskProgressResponse.from(
                 progressService.findPage(currentUser, id, page, pageSize));
+    }
+
+    /** 家长任务详情打卡记录流（02-06）。 */
+    @RequirePermission("LEARNING_TASK_READ_MANAGED")
+    @GetMapping("/{id}/checkins")
+    public List<FamilyTaskCheckInRecordResponse> checkInRecords(
+            @AuthenticationPrincipal AuthenticatedUser currentUser,
+            @PathVariable Long id
+    ) {
+        managementService.findById(currentUser, id);
+        return checkInRecordService.findRecords(id).stream()
+                .map(FamilyTaskCheckInRecordResponse::from).toList();
     }
 }

@@ -75,7 +75,14 @@ public class GrowthReviewController {
     @PostMapping("/me/{reviewId}/daily-reflection")
     @ResponseStatus(HttpStatus.CREATED)
     public java.util.List<GrowthReviewSupplementResponse> saveMyDailyReflection(@AuthenticationPrincipal AuthenticatedUser currentUser,@PathVariable Long reviewId,@Valid @RequestBody SaveDailyReflectionRequest request) {
-        return queryService.saveMyDailyReflection(currentUser,reviewId,request.toCommands()).stream().map(GrowthReviewSupplementResponse::from).toList();
+        return queryService.saveMyDailyReflection(currentUser,reviewId,request.toCommands()).stream().map(GrowthReviewSupplementResponse::from).toList();       
+    }
+    
+    @RequirePermission("GROWTH_REVIEW_SUPPLEMENT_SELF")
+    @PostMapping("/me/daily-reflection")
+    @ResponseStatus(HttpStatus.CREATED)
+    public java.util.List<GrowthReviewSupplementResponse> saveMyDailyReflectionForToday(@AuthenticationPrincipal AuthenticatedUser currentUser,@Valid @RequestBody SaveDailyReflectionRequest request) {
+        return queryService.saveMyDailyReflectionForToday(currentUser,request.toCommands()).stream().map(GrowthReviewSupplementResponse::from).toList();
     }
 
     @RequirePermission("GROWTH_REVIEW_SUPPLEMENT_SELF")

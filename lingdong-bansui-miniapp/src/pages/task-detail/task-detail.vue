@@ -34,6 +34,60 @@
         <text class="remark-text">{{ task.remark }}</text>
       </view>
 
+      <view v-if="task.description" class="detail-band">
+        <text class="section-title">任务内容</text>
+        <text class="remark-text">{{ task.description }}</text>
+      </view>
+
+      <view v-if="task.requirementItems.length" class="detail-band requirement-band">
+        <text class="section-title">任务要求</text>
+        <view class="requirement-list">
+          <view v-for="(item, index) in task.requirementItems" :key="index" class="requirement-item">
+            <view class="requirement-check"><PrototypeIcon name="check" tone="green" :size="24"/></view>
+            <text class="requirement-text">{{ item }}</text>
+          </view>
+        </view>
+      </view>
+
+      <view v-if="examplePreviewList.length" class="detail-band example-band">
+        <text class="section-title">参考示例</text>
+        <view class="history-image-grid">
+          <view
+            v-for="(preview, index) in examplePreviewList"
+            :key="preview.fileId"
+            class="history-image-item"
+            @tap="previewExampleImage(index)"
+          >
+            <image :src="preview.path" mode="aspectFill" />
+          </view>
+        </view>
+      </view>
+
+      <view v-if="timelineSteps.length" class="detail-band timeline-band">
+        <text class="section-title">执行时间线</text>
+        <view class="timeline-list">
+          <view
+            v-for="(step, index) in timelineSteps"
+            :key="step.label"
+            class="timeline-node"
+            :class="`is-${step.state}`"
+          >
+            <view class="timeline-rail">
+              <view class="timeline-dot"><PrototypeIcon v-if="step.state === 'done'" name="check" tone="white" :size="22"/></view>
+              <view v-if="index < timelineSteps.length - 1" class="timeline-line"/>
+            </view>
+            <view class="timeline-copy">
+              <view class="timeline-head">
+                <text class="timeline-label">{{ step.label }}</text>
+                <text v-if="step.state === 'active'" class="timeline-active-badge">进行中</text>
+              </view>
+              <text v-if="step.time" class="timeline-time">{{ step.time }}</text>
+              <text class="timeline-desc">{{ step.desc }}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
       <view v-if="task.latestCheckIn" class="detail-band checkin-history">
         <view class="section-heading">
           <text class="section-title">最近打卡</text>
@@ -70,6 +124,17 @@
         >认领任务</button>
 
         <template v-else-if="task.effectiveStatus === 'IN_PROGRESS'">
+          <text class="form-heading">完成情况</text>
+          <view class="completion-options">
+            <view class="completion-option" @tap="checkInCompletion = 'FULL'">
+              <view class="radio-dot" :class="{ on: checkInCompletion === 'FULL' }"/>
+              <text class="completion-label">已完成</text>
+            </view>
+            <view class="completion-option" @tap="checkInCompletion = 'PARTIAL'">
+              <view class="radio-dot" :class="{ on: checkInCompletion === 'PARTIAL' }"/>
+              <text class="completion-label">部分完成</text>
+            </view>
+          </view>
           <text class="form-heading">文字记录</text>
           <textarea
             v-model="checkInContent"
@@ -96,13 +161,13 @@
                 >×</button>
               </view>
               <button
-                v-if="pendingImages.length < 9"
+                v-if="pendingImages.length < 3"
                 class="add-image"
                 :disabled="working"
                 @tap="chooseImages"
               ><PrototypeIcon name="plus" :size="24" /><text>添加图片</text></button>
             </view>
-            <text class="upload-hint">支持 JPG、PNG，最多 9 张，单张不超过 10MB</text>
+            <text class="upload-hint">支持 JPG、PNG，最多 3 张，单张不超过 10MB</text>
           </view>
           <view class="input-counter">{{ checkInContent.length }}/1000</view>
           <button
@@ -121,15 +186,18 @@
             <view class="duration-picker">暂停时长：{{ selectedPauseDuration.label }}</view>
           </picker>
           <view class="secondary-actions">
-            <button :disabled="working" @tap="pauseTask('EMOTION')">情绪暂停</button>
-            <button :disabled="working" @tap="pauseTask('DIFFICULTY')">难题搁置</button>
+            <button :disabled="working" @tap="openPauseGuide('EMOTION')">情绪暂停</button>
+            <button :disabled="working" @tap="openPauseGuide('DIFFICULTY')">难题搁置</button>
           </view>
-          <button class="danger-action" :disabled="working" @tap="confirmAbandon">放弃任务</button>
+          <view class="secondary-actions">
+            <button :disabled="working" @tap="openDeferPage">任务顺延</button>
+          </view>
+          <button class="danger-action" :disabled="working" @tap="openAbandonPage">放弃任务</button>
         </template>
 
         <template v-else-if="task.effectiveStatus === 'PAUSED'">
           <view v-if="task.activePause" class="pause-summary">
-            <text>{{ pauseTypeLabel(task.activePause.pauseType) }}</text>
+            <text>{{ pauseTypeLabel(task.activePause.pauseType) }}{{ task.activePause.adjustMethod ? '：' + task.activePause.adjustMethod : '' }}{{ task.activePause.reasonNote ? '（' + task.activePause.reasonNote + '）' : '' }}</text>
             <text>至 {{ formatTime(task.activePause.expiresAt) }}</text>
           </view>
           <button
@@ -153,15 +221,14 @@ import { computed, ref } from 'vue';
 import { onLoad, onShow, onHide, onUnload } from '@dcloudio/uni-app';
 import { getMiniappCapabilities } from '@/api/capability';
 import {
-  abandonStudentTask,
   claimStudentTask,
   getStudentTaskAssignment,
-  pauseStudentTask,
   resumeStudentTask,
   submitStudentTaskCheckIn,
   type LearningTaskSourceType,
   type StudentTaskAssignment,
   type TaskAssignmentEffectiveStatus,
+  type TaskCheckInCompletion,
   type TaskPauseType
 } from '@/api/learning-task';
 import { getStudentSession } from '@/session/student-session';
@@ -192,8 +259,10 @@ const learningTaskEnabled = ref(false);
 const attachmentServiceEnabled = ref(true);
 const errorMessage = ref('');
 const checkInContent = ref('');
+const checkInCompletion = ref<TaskCheckInCompletion>('FULL');
 const pendingImages = ref<PendingImage[]>([]);
 const historyPreviewPaths = ref<Record<string, string>>({});
+const examplePreviewList = ref<{ fileId: string; path: string }[]>([]);
 const pauseDurationIndex = ref(0);
 const selectedPauseDuration = computed(() => pauseDurations[pauseDurationIndex.value]);
 const uploadedFileIds = computed(() => pendingImages.value
@@ -201,12 +270,61 @@ const uploadedFileIds = computed(() => pendingImages.value
   .map((item) => item.fileId as string));
 const hasUploading = computed(() => pendingImages.value.some((item) => item.status === 'UPLOADING'));
 
+interface TimelineStep {
+  label: string;
+  desc: string;
+  state: 'done' | 'active' | 'pending';
+  time: string;
+}
+const timelineSteps = computed<TimelineStep[]>(() => {
+  const assignment = task.value;
+  if (!assignment) return [];
+  const status = assignment.effectiveStatus;
+  if (status === 'PENDING_CLAIM') return [];
+  const nodes = assignment.timeline ?? [];
+  // 重认领/多次打卡场景取最近一次事件时间。
+  const eventOf = (type: string) => [...nodes].reverse().find((node) => node.eventType === type);
+  const claimed = eventOf('CLAIMED');
+  const checkedIn = eventOf('CHECKED_IN');
+  const claimedTime = claimed ? formatTime(claimed.occurredAt) : '';
+  const checkInStage: TimelineStep['state'] =
+    status === 'PENDING_REVIEW' || status === 'COMPLETED' || status === 'EXEMPT' ? 'done'
+      : status === 'IN_PROGRESS' || status === 'PAUSED' || status === 'NEEDS_IMPROVEMENT' ? 'active'
+        : 'pending';
+  return [
+    {
+      label: '任务已认领',
+      desc: '我已认领，准备开始啦！',
+      state: claimed ? 'done' : 'pending',
+      time: claimedTime
+    },
+    {
+      label: '开始执行',
+      desc: '按任务要求完成执行。',
+      state: claimed ? 'done' : 'pending',
+      time: claimedTime
+    },
+    {
+      label: '提交打卡',
+      desc: '拍照或文字记录完成情况。',
+      state: checkInStage,
+      time: checkInStage === 'done' && checkedIn ? formatTime(checkedIn.occurredAt) : ''
+    },
+    {
+      label: '完成审核',
+      desc: '等待成长伙伴确认。',
+      state: status === 'COMPLETED' ? 'done' : status === 'PENDING_REVIEW' ? 'active' : 'pending',
+      time: ''
+    }
+  ];
+});
+
 let epoch = 0;
 let nativePickerOpen = false;
 let pickerReturnPending = false;
 let pickerToken = '';
 const current = (n: number, token: string) => n === epoch && getStudentSession()?.accessToken === token;
-function invalidate() { epoch++; task.value = null; pendingImages.value = []; historyPreviewPaths.value = {}; checkInContent.value = ''; working.value = false; learningTaskEnabled.value = false; errorMessage.value = ''; }
+function invalidate() { epoch++; task.value = null; pendingImages.value = []; historyPreviewPaths.value = {}; examplePreviewList.value = []; checkInContent.value = ''; working.value = false; learningTaskEnabled.value = false; errorMessage.value = ''; }
 onHide(() => { if (nativePickerOpen) pickerReturnPending = true; else invalidate(); });
 onUnload(invalidate);
 
@@ -240,6 +358,7 @@ async function initialize(): Promise<void> {
     if (!current(n, token)) return;
     task.value = result;
     await prepareHistoryPreviews();
+    await prepareExamplePreviews();
   } catch (error) {
     if (token && current(n, token)) errorMessage.value = toMessage(error);
   } finally {
@@ -247,16 +366,41 @@ async function initialize(): Promise<void> {
   }
 }
 
-function claimTask(): void {
-  void execute(() => claimStudentTask(assignmentId.value));
+async function prepareExamplePreviews(): Promise<void> {
+  const n = epoch, token = getStudentSession()?.accessToken;
+  if (!token) return;
+  const files = task.value?.exampleFiles ?? [];
+  examplePreviewList.value = [];
+  if (!attachmentServiceEnabled.value || !files.length) return;
+  await Promise.all(files.map(async (file) => {
+    try {
+      const path = await downloadTaskAttachment(file.contentUrl);
+      if (current(n, token)) {
+        examplePreviewList.value = [...examplePreviewList.value, { fileId: file.id, path }]
+          .sort((a, b) => files.findIndex((f) => f.id === a.fileId) - files.findIndex((f) => f.id === b.fileId));
+      }
+    } catch {
+      // 示例图读取失败不影响其余任务内容展示。
+    }
+  }));
 }
 
-function pauseTask(pauseType: TaskPauseType): void {
-  void execute(() => pauseStudentTask(
-    assignmentId.value,
-    pauseType,
-    selectedPauseDuration.value.value
-  ));
+function previewExampleImage(index: number): void {
+  if (!attachmentServiceEnabled.value) return;
+  const urls = examplePreviewList.value.map((item) => item.path);
+  if (urls.length) uni.previewImage({ current: urls[index], urls });
+}
+
+function claimTask(): void {
+  if (working.value || !learningTaskEnabled.value || !getStudentSession()) return;
+  uni.navigateTo({ url: '/pages/task-claim-confirm/task-claim-confirm?id=' + assignmentId.value });
+}
+
+function openPauseGuide(pauseType: TaskPauseType): void {
+  if (working.value || !learningTaskEnabled.value || !getStudentSession()) return;
+  uni.navigateTo({
+    url: `/pages/task-pause-guide/task-pause-guide?id=${assignmentId.value}&mode=${pauseType}&duration=${selectedPauseDuration.value.value}`
+  });
 }
 
 function resumeTask(): void {
@@ -269,18 +413,19 @@ function submitCheckIn(): void {
   void execute(() => submitStudentTaskCheckIn(
     assignmentId.value,
     content,
-    uploadedFileIds.value
+    uploadedFileIds.value,
+    checkInCompletion.value
   ), true);
 }
 
 function chooseImages(): void {
-  if (!attachmentServiceEnabled.value || working.value || pendingImages.value.length >= 9) return;
+  if (!attachmentServiceEnabled.value || working.value || pendingImages.value.length >= 3) return;
   const n = epoch, token = getStudentSession()?.accessToken;
   if (!token) return;
   nativePickerOpen = true;
   pickerToken = token;
   uni.chooseImage({
-    count: 9 - pendingImages.value.length,
+    count: 3 - pendingImages.value.length,
     sizeType: ['compressed'],
     sourceType: ['album', 'camera'],
     complete: () => { nativePickerOpen = false; },
@@ -377,20 +522,18 @@ async function prepareHistoryPreviews(): Promise<void> {
   }));
 }
 
-function confirmAbandon(): void {
+// 顺延与放弃均经独立确认页（原型 05-09/05-10），替代原生弹窗。
+function openDeferPage(): void {
   if (working.value) return;
-  const n = epoch, token = getStudentSession()?.accessToken;
-  if (!token) return;
-  uni.showModal({
-    title: '确认放弃任务',
-    content: '任务将转为待优化，不会扣分。',
-    confirmText: '确认放弃',
-    confirmColor: '#b54732',
-    success: (result) => {
-      if (result.confirm && current(n, token)) {
-        void execute(() => abandonStudentTask(assignmentId.value, '学生主动放弃'));
-      }
-    }
+  uni.navigateTo({
+    url: `/pages/task-defer/task-defer?id=${encodeURIComponent(assignmentId.value)}`
+  });
+}
+
+function openAbandonPage(): void {
+  if (working.value) return;
+  uni.navigateTo({
+    url: `/pages/task-abandon/task-abandon?id=${encodeURIComponent(assignmentId.value)}`
   });
 }
 
@@ -494,6 +637,31 @@ function toMessage(error: unknown): string {
 .section-title { display: block; padding: 20rpx 0 8rpx; color: #536760; font-size: 26rpx; font-weight: 650; }
 .submission-number { color: #708078; font-size: 24rpx; }
 .tag-band { padding-bottom: 28rpx; }
+.requirement-band { padding-bottom: 28rpx; }
+.requirement-list { display: flex; flex-direction: column; gap: 16rpx; padding-top: 12rpx; }
+.requirement-item { display: flex; align-items: center; gap: 16rpx; }
+.requirement-check { width: 44rpx; height: 44rpx; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: #e9f7f5; border-radius: 50%; }
+.requirement-text { color: #1c2b28; font-size: 27rpx; line-height: 1.6; }
+.example-band { padding-bottom: 28rpx; }
+.timeline-band { padding-bottom: 30rpx; }
+.timeline-list { display: flex; flex-direction: column; padding-top: 12rpx; }
+.timeline-node { display: flex; align-items: stretch; gap: 20rpx; }
+.timeline-rail { width: 34rpx; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; }
+.timeline-dot { width: 36rpx; height: 36rpx; margin-top: 4rpx; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: #cdd9d2; }
+.timeline-line { flex: 1; width: 4rpx; min-height: 40rpx; background: #cdd9d2; }
+.timeline-copy { display: flex; flex-direction: column; gap: 4rpx; padding-bottom: 30rpx; }
+.timeline-head { display: flex; align-items: center; gap: 12rpx; }
+.timeline-active-badge { padding: 2rpx 12rpx; border-radius: 999rpx; background: #fff0d7; color: #b0731a; font-size: 20rpx; }
+.timeline-desc { color: #8a9981; font-size: 23rpx; line-height: 1.5; }
+.timeline-label { color: #8a9981; font-size: 27rpx; }
+.timeline-time { color: #a8b5ae; font-size: 23rpx; }
+.timeline-node.is-done .timeline-dot { background: #167c5a; }
+.timeline-node.is-done .timeline-line { background: #167c5a; }
+.timeline-node.is-done .timeline-label { color: #147069; }
+.timeline-node.is-done .timeline-time { color: #5c7a6e; }
+.timeline-node.is-active .timeline-dot { background: #eea12a; box-shadow: 0 0 0 8rpx #fff0d7; }
+.timeline-node.is-active .timeline-label { color: #b0731a; font-weight: 650; }
+.timeline-node.is-active .timeline-time { color: #d5a04a; }
 .tag-list { display: flex; flex-wrap: wrap; gap: 12rpx; padding-top: 12rpx; }
 .task-tag { background: #edf2f0; color: #536760; }
 .remark-text { display: block; padding: 12rpx 0 28rpx; color: #1c2b28; font-size: 28rpx; line-height: 1.75; white-space: pre-wrap; }
@@ -545,7 +713,12 @@ function toMessage(error: unknown): string {
 .title-band{background:#fff!important;border-radius:26rpx!important;padding:28rpx!important;}
 .detail-symbol{width:76rpx;height:76rpx;background:#e5f3ed;border-radius:20rpx;display:flex;align-items:center;justify-content:center;color:#0e6547;margin-bottom:18rpx;}
 
-.page-shell{padding-bottom:160rpx!important;}.action-band{background:white!important;border-radius:26rpx;padding:28rpx!important;margin-top:24rpx;}.form-heading{display:block;font-size:27rpx;font-weight:650;margin:24rpx 0 14rpx;color:#203e32;}.checkin-input{background:#fcfdfb!important;border:1rpx solid #d9e3dc!important;border-radius:18rpx!important;padding:22rpx!important;box-sizing:border-box;}.primary-action{position:fixed!important;bottom:calc(24rpx + env(safe-area-inset-bottom));left:32rpx;right:32rpx;z-index:20;color:white!important;box-shadow:0 8rpx 24rpx #184c3420;}.secondary-actions{margin-top:24rpx!important;gap:18rpx!important;}.secondary-actions button{background:#edf6ee!important;color:#185b41!important;border-radius:18rpx!important;}.duration-picker{background:#f4f7f2;padding:22rpx;border-radius:16rpx;margin-top:24rpx;}.terminal-state,.pause-summary{padding:26rpx!important;background:#eef6ed;border-radius:22rpx!important;}.add-image{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10rpx;}
+.page-shell{padding-bottom:160rpx!important;}.action-band{background:white!important;border-radius:26rpx;padding:28rpx!important;margin-top:24rpx;}.form-heading{display:block;font-size:27rpx;font-weight:650;margin:24rpx 0 14rpx;color:#203e32;}
+.completion-options{display:flex;align-items:center;gap:56rpx;padding:6rpx 0 4rpx;}
+.completion-option{display:flex;align-items:center;gap:14rpx;}
+.completion-label{color:#1c2b28;font-size:27rpx;}
+.radio-dot{width:34rpx;height:34rpx;flex-shrink:0;border-radius:50%;border:4rpx solid #c4d2cb;background:#ffffff;box-sizing:border-box;}
+.radio-dot.on{border-width:11rpx;border-color:#167c5a;}.checkin-input{background:#fcfdfb!important;border:1rpx solid #d9e3dc!important;border-radius:18rpx!important;padding:22rpx!important;box-sizing:border-box;}.primary-action{position:fixed!important;bottom:calc(24rpx + env(safe-area-inset-bottom));left:32rpx;right:32rpx;z-index:20;color:white!important;box-shadow:0 8rpx 24rpx #184c3420;}.secondary-actions{margin-top:24rpx!important;gap:18rpx!important;}.secondary-actions button{background:#edf6ee!important;color:#185b41!important;border-radius:18rpx!important;}.duration-picker{background:#f4f7f2;padding:22rpx;border-radius:16rpx;margin-top:24rpx;}.terminal-state,.pause-summary{padding:26rpx!important;background:#eef6ed;border-radius:22rpx!important;}.add-image{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10rpx;}
 .title-band{display:flex;align-items:flex-start;gap:22rpx;}.detail-symbol{flex-shrink:0;margin:0!important;}.title-copy{flex:1;min-width:0;}.task-title{display:block;line-height:1.5;}.title-meta{margin-top:12rpx;}.source-name{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:23rpx;}.metadata-band{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28rpx 30rpx;padding:28rpx!important;}.metadata-band .detail-row{display:flex;flex-direction:column;align-items:flex-start;gap:8rpx;padding:0;border:0;font-size:26rpx;}.metadata-band .detail-label{font-size:22rpx;color:#8a9981;}.primary-action{width:auto!important;margin:0!important;box-sizing:border-box;background:linear-gradient(120deg,#184f40,#256b50)!important;}.awaiting-claim{background:transparent!important;border:0!important;padding:0!important;margin:0!important;}
 .prototype-workspace{background:#f7faf6!important;color:#172b25}.task-symbol{border-radius:50%!important;background:#e7f6ed!important}.task-card,.task-list-card{border:0!important;border-radius:22rpx!important;box-shadow:none!important}.task-title{font-size:30rpx!important}.primary-action{border-radius:44rpx!important}.prototype-header{background:#fff!important;color:#172b25!important;justify-content:center;border-radius:0!important;padding:28rpx!important}.prototype-header-title{font-size:34rpx}.publish-actions{position:fixed!important;bottom:0;left:0;right:0;padding:20rpx 24rpx calc(20rpx + env(safe-area-inset-bottom));box-sizing:border-box}.page>.task-editor{padding-bottom:180rpx!important}.task-list-card>.heading{display:block;margin-bottom:12rpx}.task-list-card>text:not(.heading){font-size:24rpx;color:#7c8981}.task-list-card button{display:inline-flex;margin:18rpx 12rpx 0 0;line-height:58rpx;padding:0 22rpx}.page-shell{padding:24rpx 28rpx 170rpx!important;box-sizing:border-box}.metadata-band .detail-row{min-height:0}.detail-symbol{background:#fff0d7!important;color:#eea12a!important}.action-band{border:0!important}.checkin-input{height:180rpx}.ld-heading{text-align:center;background:white;margin:0 -32rpx;padding:28rpx}.source-filter-inner{display:flex;width:100%;gap:0;background:#eff3ee;border-radius:24rpx}.source-button{flex:1;min-width:0;padding:0;box-shadow:none;background:transparent}.source-button.active{background:transparent!important;color:#075e43!important;border-bottom:4rpx solid #075e43}.task-row-top{justify-content:space-between}.task-meta{font-size:23rpx}.task-list-card{min-height:148rpx}
 </style>

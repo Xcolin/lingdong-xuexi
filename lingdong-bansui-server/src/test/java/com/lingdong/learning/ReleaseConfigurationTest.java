@@ -38,11 +38,12 @@ class ReleaseConfigurationTest {
         });
     }
 
-    @Test void testProfileUsesOnlyEmbeddedDatabaseConfiguration() {
+    @Test void testProfileUsesOnlyExternalMysqlDatabaseConfiguration() {
         runner.withUserConfiguration(Keys.class).withPropertyValues("spring.profiles.active=test").run(context -> {
             assertThat(context).hasNotFailed();
-            assertThat(context.getEnvironment().getProperty("spring.datasource.url")).startsWith("jdbc:h2:mem:");
-            assertThat(context.getEnvironment().getProperty("spring.datasource.driver-class-name")).isEqualTo("org.h2.Driver");
+            // 9.1a 后 test profile 已切换 MySQL（createDatabaseIfNotExist 支持干净库自建），不再使用 H2 嵌入式库
+            assertThat(context.getEnvironment().getProperty("spring.datasource.url")).startsWith("jdbc:mysql://");
+            assertThat(context.getEnvironment().getProperty("spring.datasource.driver-class-name")).isEqualTo("com.mysql.cj.jdbc.Driver");
             assertThat(context.getEnvironment().getProperty("spring.config.import")).isNull();
         });
     }

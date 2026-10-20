@@ -16,6 +16,16 @@ export interface OrganizationClass {
   versionNo: number;
 }
 
+export interface ClassHeadTeacher {
+  organizationId: string;
+  headTeacherName: string | null;
+}
+
+export interface ClassStudentCount {
+  organizationId: string;
+  memberCount: number;
+}
+
 export interface OrganizationTeacherOption {
   userId: string;
   displayName: string;
@@ -41,6 +51,20 @@ export function listManageableSchools(accessToken: string): Promise<Organization
 
 export function listManagedClasses(accessToken: string): Promise<OrganizationClass[]> {
   return request<OrganizationClass[]>('/classes', {
+    header: authorization(accessToken)
+  });
+}
+
+/** 授权范围内各班级的班主任姓名，未设置时 headTeacherName 为 null。 */
+export function listClassHeadTeachers(accessToken: string): Promise<ClassHeadTeacher[]> {
+  return request<ClassHeadTeacher[]>('/classes/head-teachers', {
+    header: authorization(accessToken)
+  });
+}
+
+/** 授权范围内各班级的有效学员计数。 */
+export function listClassStudentCounts(accessToken: string): Promise<ClassStudentCount[]> {
+  return request<ClassStudentCount[]>('/classes/student-counts', {
     header: authorization(accessToken)
   });
 }

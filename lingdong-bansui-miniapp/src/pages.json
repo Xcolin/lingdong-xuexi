@@ -117,6 +117,14 @@
       }
     },
     {
+      "path": "pages/family-task-detail/family-task-detail",
+      "style": {
+        "navigationBarTitleText": "任务详情",
+        "navigationBarBackgroundColor": "#F6F8F5",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/parent-rewards/parent-rewards",
       "style": {
         "navigationBarTitleText": "家庭奖励与兑换"
@@ -179,6 +187,13 @@
       "path": "pages/organization-home/organization-home",
       "style": {
         "navigationBarTitleText": "机构工作台",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/organization-statistics/organization-statistics",
+      "style": {
+        "navigationBarTitleText": "数据概览",
         "navigationStyle": "custom"
       }
     },
@@ -273,6 +288,12 @@
       }
     },
     {
+      "path": "pages/parent-cancel-form/parent-cancel-form",
+      "style": {
+        "navigationBarTitleText": "账号注销申请"
+      }
+    },
+    {
       "path": "pages/task-list/task-list",
       "style": {
         "navigationBarTitleText": "我的任务",
@@ -284,6 +305,34 @@
       "path": "pages/task-detail/task-detail",
       "style": {
         "navigationBarTitleText": "任务详情",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/task-claim-confirm/task-claim-confirm",
+      "style": {
+        "navigationBarTitleText": "确认认领",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/task-pause-guide/task-pause-guide",
+      "style": {
+        "navigationBarTitleText": "任务暂停",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/task-defer/task-defer",
+      "style": {
+        "navigationBarTitleText": "申请任务顺延",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/task-abandon/task-abandon",
+      "style": {
+        "navigationBarTitleText": "放弃任务",
         "navigationStyle": "custom"
       }
     },

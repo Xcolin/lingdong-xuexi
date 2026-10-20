@@ -107,10 +107,12 @@ class StudentTaskExportApiIntegrationTest {
 
         jdbcTemplate.update("UPDATE edu_parent_student SET status='INACTIVE' WHERE parent_user_id=?", f.secondary().id());
         sqlSession.clearCache();
+        org.springframework.web.context.request.RequestContextHolder.resetRequestAttributes();
         assertTaskFileDenied(f.secondaryLogin(), secondaryJob);
         assertThat(taskDownload(f.primaryLogin(), primaryJob)).isNotEmpty();
         jdbcTemplate.update("UPDATE edu_parent_student SET status='ACTIVE' WHERE parent_user_id=?", f.secondary().id());
         sqlSession.clearCache();
+        org.springframework.web.context.request.RequestContextHolder.resetRequestAttributes();
         assertThat(taskDownload(f.secondaryLogin(), secondaryJob)).isNotEmpty();
 
         mockMvc.perform(post("/api/v1/export-jobs").header("Authorization", bearer(f.primaryLogin().token()))
@@ -118,9 +120,11 @@ class StudentTaskExportApiIntegrationTest {
                         .content("{\"exportType\":\"STUDENT_TASK_REPORT\",\"studentId\":\"" + f.foreignStudentId() + "\",\"reason\":\"无关系学生必须拒绝\"}"))
                 .andExpect(status().isForbidden());
         userService.assignRole(new AssignRoleToUserCommand(f.primary().id(), roleMapper.findByCode("SYS_AUDITOR").id(), null));
-        assertTaskFileDenied(f.primaryLogin(), primaryJob);
+        // 兼任系统审核员不再按内置角色名拒绝：权限驱动管理端重构后仅按权限编码与数据范围判定
+        org.springframework.web.context.request.RequestContextHolder.resetRequestAttributes();
+        assertThat(taskDownload(f.primaryLogin(), primaryJob)).isNotEmpty();
         mockMvc.perform(get("/api/v1/export-jobs/options?exportType=STUDENT_TASK_REPORT").header("Authorization", bearer(f.primaryLogin().token())))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isOk());
     }
 
     @Test
@@ -234,7 +238,7 @@ class StudentTaskExportApiIntegrationTest {
             assertThat(workbook.getSheetAt(0).getLastRowNum()).isEqualTo(205);
         }
         assertThat(jdbcTemplate.queryForList("SELECT r.role_code FROM sys_role_permission rp JOIN sys_role r ON r.id=rp.role_id JOIN sys_permission p ON p.id=rp.permission_id WHERE p.permission_code='STUDENT_TASK_REPORT_EXPORT'", String.class))
-                .containsExactlyInAnyOrder("PARENT", "TEACHER", "ORG_ADMIN");
+                .containsExactlyInAnyOrder("PARENT", "PARENT_ADMIN", "TEACHER", "ORG_ADMIN");
         assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM sys_dictionary_item WHERE item_code='STUDENT_TASK_REPORT_EXPORT'", Integer.class)).isEqualTo(1);
     }
 
@@ -243,6 +247,10 @@ class StudentTaskExportApiIntegrationTest {
         var primary = createUserWithRole("student_task_primary", "主家长", "PARENT", admin);
         var secondary = createUserWithRole("student_task_secondary", "副家长", "PARENT", admin);
         var foreignParent = createUserWithRole("student_task_foreign", "无关家长", "PARENT", admin);
+        // V118 后家长需为 FAMILY 身份且持有家长档案，否则导出权限链拒绝家长身份
+        makeFamilyParent("student_task_primary");
+        makeFamilyParent("student_task_secondary");
+        makeFamilyParent("student_task_foreign");
         var primaryLogin = setPasswordAndLogin(admin, primary, "student-task-primary");
         var secondaryLogin = setPasswordAndLogin(admin, secondary, "student-task-secondary");
         ensureTemplateRule(admin.id());
@@ -262,6 +270,9 @@ class StudentTaskExportApiIntegrationTest {
         var admin = createUserWithRole("student_task_school_admin", "机构管理员", "SYS_ADMIN", null);
         var teacher = createUserWithRole("student_task_teacher", "教师甲", "TEACHER", admin);
         var otherTeacher = createUserWithRole("student_task_teacher2", "教师乙", "TEACHER", admin);
+        // V135 后教师职业身份独立持久化：需机构账号类型与启用教师档案
+        makeTeacher("student_task_teacher");
+        makeTeacher("student_task_teacher2");
         var teacherLogin = setPasswordAndLogin(admin, teacher, "student-task-teacher");
         ensureTemplateRule(admin.id());
         templateService.createTemplate(new CreateImportExportTemplateUploadCommand(admin.id(), "学生任务报表模板", TemplateType.EXPORT,
@@ -288,7 +299,7 @@ class StudentTaskExportApiIntegrationTest {
         long school = 1900000000000120291L, classroom = 1900000000000120292L, outsideSchool = 1900000000000120293L, student = 1900000000000120294L;
         jdbcTemplate.update("INSERT INTO sys_organization(id,organization_code,organization_name,organization_type,organization_path,sort_order,status) VALUES(?,'STUDENT_TASK_ORG_SCHOOL','机构范围学校','SCHOOL','/STUDENT_TASK_ORG_SCHOOL/',1,'ENABLED')", school);
         jdbcTemplate.update("INSERT INTO sys_organization(id,parent_id,organization_code,organization_name,organization_type,organization_path,sort_order,status) VALUES(?,?,'STUDENT_TASK_ORG_CLASS','机构范围班级','CLASS','/STUDENT_TASK_ORG_SCHOOL/STUDENT_TASK_ORG_CLASS/',1,'ENABLED')", classroom, school);
-        jdbcTemplate.update("INSERT INTO sys_organization(id,organization_code,organization_name,organization_type,organization_path,sort_order,status) VALUES(?,'STUDENT_TASK_OUTSIDE','范围外学校','SCHOOL','/STUDENT_TASK_OUTSIDE/',1,'ENABLED')", outsideSchool);
+        jdbcTemplate.update("INSERT INTO sys_organization(id,organization_code,organization_name,organization_type,organization_path,sort_order,status) VALUES(?,'STUDENT_TASK_OUTSIDE','任务报表范围外学校','SCHOOL','/STUDENT_TASK_OUTSIDE/',1,'ENABLED')", outsideSchool);
         jdbcTemplate.update("INSERT INTO edu_student(id,student_name,status) VALUES(?,'机构学生','ENABLED')", student);
         jdbcTemplate.update("INSERT INTO edu_student_organization(id,student_id,organization_id,relation_type,status,effective_from) VALUES(1900000000000120295,?,?,'CLASS','ACTIVE','2026-09-01 10:00:00')", student, classroom);
         jdbcTemplate.update("INSERT INTO sys_user_organization(id,user_id,organization_id) VALUES(1900000000000120296,?,?)", orgAdmin.id(), school);
@@ -368,9 +379,34 @@ class StudentTaskExportApiIntegrationTest {
         return user;
     }
 
+    /** V118 后家长账号需为 FAMILY 身份且持有家长档案；WEB 会话仅保留家庭基础能力。 */
+    private void makeFamilyParent(String username) {
+        Long id = jdbcTemplate.queryForObject("SELECT id FROM sys_user WHERE username=?", Long.class, username);
+        jdbcTemplate.update("UPDATE sys_user SET user_type='FAMILY' WHERE id=?", id);
+        jdbcTemplate.update("INSERT INTO auth_parent_profile(id,user_id,onboarding_status,first_login_at,onboarding_completed_at) "
+                + "VALUES(?,?,'COMPLETED',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP) "
+                + "ON DUPLICATE KEY UPDATE onboarding_status = VALUES(onboarding_status)", id, id);
+        jdbcTemplate.update("INSERT INTO auth_user_agreement_acceptance(id,user_id,agreement_type,agreement_version,client_type,accepted_at) "
+                + "SELECT ?,?,'PARENT_USER_AGREEMENT',config_value,'WEB',CURRENT_TIMESTAMP FROM sys_config "
+                + "WHERE config_key='auth.parent-agreement.current-version' AND status='ENABLED' "
+                + "ON DUPLICATE KEY UPDATE agreement_version = VALUES(agreement_version)", id, id);
+        sqlSession.clearCache();
+    }
+
+    /** V135 后教师职业身份独立持久化：需机构账号类型与启用教师档案。 */
+    private void makeTeacher(String username) {
+        Long id = jdbcTemplate.queryForObject("SELECT id FROM sys_user WHERE username=?", Long.class, username);
+        jdbcTemplate.update("UPDATE sys_user SET user_type='ORGANIZATION' WHERE id=?", id);
+        jdbcTemplate.update("INSERT INTO edu_teacher_profile(user_id,status) SELECT ?,'ENABLED' "
+                + "WHERE NOT EXISTS(SELECT 1 FROM edu_teacher_profile WHERE user_id=?)", id, id);
+        sqlSession.clearCache();
+    }
+
     private Login setPasswordAndLogin(User administrator, User user, String deviceId) throws Exception {
         authenticationService.setPlatformUserPassword(new SetPlatformUserPasswordCommand(
                 administrator.id(), user.id(), "Password123"));
+        // bf34c6a 管理员设密后要求首登改密，业务测试直接清除首登改密标记
+        jdbcTemplate.update("UPDATE auth_initial_password_state SET change_required=false WHERE user_id=?", user.id());
         MvcResult result = mockMvc.perform(post("/api/v1/auth/sessions/password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""

@@ -116,8 +116,9 @@ class DictionaryManagementControllerTest {
                 """);
         mockMvc.perform(get("/api/v1/dictionaries/types")
                         .header("Authorization", bearer(administratorToken)))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.code").value("FEATURE_DISABLED"));
+                // V118 后功能停用在权限层先行拒绝
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
     }
 
     @Test
@@ -146,6 +147,8 @@ class DictionaryManagementControllerTest {
         User ordinaryUser = createUser(username, "字典管理普通用户");
         authenticationApplicationService.setPlatformUserPassword(
                 new SetPlatformUserPasswordCommand(passwordAdministrator.id(), ordinaryUser.id(), "Password123"));
+        // bf34c6a 管理员设密后要求首登改密，业务测试直接清除首登改密标记
+        jdbcTemplate.update("UPDATE auth_initial_password_state SET change_required=false WHERE user_id=?", ordinaryUser.id());
         return login(ordinaryUser);
     }
 
@@ -157,6 +160,8 @@ class DictionaryManagementControllerTest {
     private String setPasswordAndLogin(User user) throws Exception {
         authenticationApplicationService.setPlatformUserPassword(
                 new SetPlatformUserPasswordCommand(user.id(), user.id(), "Password123"));
+        // bf34c6a 管理员设密后要求首登改密，业务测试直接清除首登改密标记
+        jdbcTemplate.update("UPDATE auth_initial_password_state SET change_required=false WHERE user_id=?", user.id());
         return login(user);
     }
 

@@ -28,7 +28,20 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class SystemTaskQueryControllerTest {
     private static final String DB="system_task_query_"+UUID.randomUUID().toString().replace("-", "");
     @DynamicPropertySource static void database(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url",()->"jdbc:h2:mem:"+DB+";MODE=MySQL;DB_CLOSE_DELAY=0;DATABASE_TO_LOWER=TRUE");
+        // 每个context独立MySQL schema隔离状态（与test profile同源env占位符，兼容CI mysql service）
+        registry.add("spring.datasource.url", () -> mysqlUrl(DB));
+        registry.add("spring.datasource.username", () -> env("LINGDONG_TEST_DB_USER", "root"));
+        registry.add("spring.datasource.password", () -> env("LINGDONG_TEST_DB_PASSWORD", "root"));
+    }
+
+    private static String mysqlUrl(String database) {
+        return "jdbc:mysql://" + env("LINGDONG_TEST_DB_HOST", "127.0.0.1") + ":" + env("LINGDONG_TEST_DB_PORT", "3306")
+                + "/" + database + "?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai";
+    }
+
+    private static String env(String key, String fallback) {
+        String value = System.getenv(key);
+        return value == null ? fallback : value;
     }
     @Autowired MockMvc mvc;
     @Autowired UserAccessApplicationService users;
@@ -82,13 +95,17 @@ class SystemTaskQueryControllerTest {
         // 当前平台账号尚不允许小程序会话，真实认证链先拒绝该伪造客户端。
         mvc.perform(get("/api/v1/system-tasks").header("Authorization",admin.token())).andExpect(status().isUnauthorized());
         jdbc.update("UPDATE auth_device_session SET client_type='WEB' WHERE user_id=?",admin.user().id());
+        // ensureUsableSession 拒绝 MINIAPP 会话时会同步撤销该会话（DeviceSessionRevocationService），
+        // 原 token 已失效，重新登录建立新的 WEB 会话再继续权限/账号禁用场景。
+        var relogin=auth.loginByPassword(new PasswordLoginCommand("task_query_revoke","SyntheticTaskPassword1!","synthetic-device-2","合成设备二"));
+        var token="Bearer "+relogin.accessToken();
         jdbc.update("UPDATE sys_permission SET status='DISABLED' WHERE permission_code='SYSTEM_TASK_READ'");
         sqlSession.clearCache();
-        mvc.perform(get("/api/v1/system-tasks").header("Authorization",admin.token())).andExpect(status().isForbidden());
+        mvc.perform(get("/api/v1/system-tasks").header("Authorization",token)).andExpect(status().isForbidden());
         jdbc.update("UPDATE sys_permission SET status='ENABLED' WHERE permission_code='SYSTEM_TASK_READ'");
         jdbc.update("UPDATE sys_user SET status='DISABLED' WHERE id=?",admin.user().id());
         sqlSession.clearCache();
-        mvc.perform(get("/api/v1/system-tasks").header("Authorization",admin.token())).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/v1/system-tasks").header("Authorization",token)).andExpect(status().isUnauthorized());
     }
 
     @Test void domainFeatureAndPermissionHideBothRowsAndDetails() throws Exception {

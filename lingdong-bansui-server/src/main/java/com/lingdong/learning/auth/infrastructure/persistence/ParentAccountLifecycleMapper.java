@@ -17,7 +17,10 @@ public interface ParentAccountLifecycleMapper {
 
     ParentAccountCancellationRecord findActiveCancellationForUpdate(@Param("userId") Long userId);
 
-    int insertCancellation(@Param("record") ParentAccountCancellationRecord record);
+    int insertCancellation(
+            @Param("record") ParentAccountCancellationRecord record,
+            @Param("reason") String reason,
+            @Param("reasonNote") String reasonNote);
 
     int revokeCancellation(
             @Param("id") Long id,

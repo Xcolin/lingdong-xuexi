@@ -69,6 +69,8 @@ class StudentManagementControllerTest {
         setPassword(systemAdministrator, organizationAdministrator);
         setPassword(systemAdministrator, ordinaryUser);
         setPassword(systemAdministrator, systemAdministrator);
+        // V118 后家长需为 FAMILY 身份且持有家长档案，否则 service 层 requireParent 拒绝建学生
+        makeFamilyParent("student_scope_parent");
 
         MvcResult familyStudentResult = mockMvc.perform(post("/api/v1/students")
                         .header("Authorization", "Bearer " + loginAccessToken("student_scope_parent"))
@@ -218,7 +220,7 @@ class StudentManagementControllerTest {
                 where student_id = ? and relation_type = 'CLASS' and status = 'ACTIVE'
                 """, Integer.class, studentId);
         String activeClassId = jdbcTemplate.queryForObject("""
-                select cast(organization_id as varchar) from edu_student_organization
+                select cast(organization_id as char) from edu_student_organization
                 where student_id = ? and relation_type = 'CLASS' and status = 'ACTIVE'
                 """, String.class, studentId);
         assertThat(activeClassCount).isEqualTo(1);
@@ -341,10 +343,11 @@ class StudentManagementControllerTest {
 
         featureToggleMapper.updateGlobalStatus(
                 "STUDENT_ORGANIZATION_RELATIONSHIP", FeatureStatus.DISABLED);
+        // V118 后 feature 先行拒绝：开关关闭时权限链直接 403，不再到达业务层的 409 FEATURE_DISABLED
         mockMvc.perform(get("/api/v1/students/organization-relationships")
                         .header("Authorization", "Bearer " + accessToken))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.code").value("FEATURE_DISABLED"));
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
         featureToggleMapper.updateGlobalStatus(
                 "STUDENT_ORGANIZATION_RELATIONSHIP", FeatureStatus.ENABLED);
 
@@ -391,6 +394,21 @@ class StudentManagementControllerTest {
         authenticationApplicationService.setPlatformUserPassword(new SetPlatformUserPasswordCommand(
                 systemAdministrator.id(), targetUser.id(), "Password123"
         ));
+        // bf34c6a 管理员设密后要求首登改密，业务测试直接清除首登改密标记
+        jdbcTemplate.update("UPDATE auth_initial_password_state SET change_required=false WHERE user_id=?", targetUser.id());
+    }
+
+    /** V118 后家长账号需为 FAMILY 身份且持有家长档案；WEB 会话仅保留学生档案等家庭基础能力。 */
+    private void makeFamilyParent(String username) {
+        Long id = jdbcTemplate.queryForObject("SELECT id FROM sys_user WHERE username=?", Long.class, username);
+        jdbcTemplate.update("UPDATE sys_user SET user_type='FAMILY' WHERE id=?", id);
+        jdbcTemplate.update("INSERT INTO auth_parent_profile(id,user_id,onboarding_status,first_login_at,onboarding_completed_at) "
+                + "VALUES(?,?,'COMPLETED',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP) "
+                + "ON DUPLICATE KEY UPDATE onboarding_status = VALUES(onboarding_status)", id, id);
+        jdbcTemplate.update("INSERT INTO auth_user_agreement_acceptance(id,user_id,agreement_type,agreement_version,client_type,accepted_at) "
+                + "SELECT ?,?,'PARENT_USER_AGREEMENT',config_value,'WEB',CURRENT_TIMESTAMP FROM sys_config "
+                + "WHERE config_key='auth.parent-agreement.current-version' AND status='ENABLED' "
+                + "ON DUPLICATE KEY UPDATE agreement_version = VALUES(agreement_version)", id, id);
     }
 
     private String loginAccessToken(String username) throws Exception {

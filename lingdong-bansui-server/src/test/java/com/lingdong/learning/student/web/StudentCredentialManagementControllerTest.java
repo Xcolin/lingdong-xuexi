@@ -55,6 +55,9 @@ class StudentCredentialManagementControllerTest {
         User unrelatedParent = createUserWithRole("credential_other_parent", "凭证测试其他家长", "PARENT");
         setPassword(systemAdministrator, primaryParent);
         setPassword(systemAdministrator, unrelatedParent);
+        // V118 后家长需为 FAMILY 身份且持有家长档案，否则家长对象范围判定失效
+        makeFamilyParent("credential_parent");
+        makeFamilyParent("credential_other_parent");
         createHistoricalStudent(primaryParent.id());
 
         mockMvc.perform(post("/api/v1/students/{id}/credentials/initialize", HISTORICAL_STUDENT_ID)
@@ -116,6 +119,21 @@ class StudentCredentialManagementControllerTest {
     private void setPassword(User systemAdministrator, User targetUser) {
         authenticationApplicationService.setPlatformUserPassword(new SetPlatformUserPasswordCommand(
                 systemAdministrator.id(), targetUser.id(), "Password123"));
+        // bf34c6a 管理员设密后要求首登改密，业务测试直接清除首登改密标记
+        jdbcTemplate.update("UPDATE auth_initial_password_state SET change_required=false WHERE user_id=?", targetUser.id());
+    }
+
+    /** V118 后家长账号需为 FAMILY 身份且持有家长档案；WEB 会话仅保留学生档案等家庭基础能力。 */
+    private void makeFamilyParent(String username) {
+        Long id = jdbcTemplate.queryForObject("SELECT id FROM sys_user WHERE username=?", Long.class, username);
+        jdbcTemplate.update("UPDATE sys_user SET user_type='FAMILY' WHERE id=?", id);
+        jdbcTemplate.update("INSERT INTO auth_parent_profile(id,user_id,onboarding_status,first_login_at,onboarding_completed_at) "
+                + "VALUES(?,?,'COMPLETED',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP) "
+                + "ON DUPLICATE KEY UPDATE onboarding_status = VALUES(onboarding_status)", id, id);
+        jdbcTemplate.update("INSERT INTO auth_user_agreement_acceptance(id,user_id,agreement_type,agreement_version,client_type,accepted_at) "
+                + "SELECT ?,?,'PARENT_USER_AGREEMENT',config_value,'WEB',CURRENT_TIMESTAMP FROM sys_config "
+                + "WHERE config_key='auth.parent-agreement.current-version' AND status='ENABLED' "
+                + "ON DUPLICATE KEY UPDATE agreement_version = VALUES(agreement_version)", id, id);
     }
 
     private void createHistoricalStudent(Long primaryParentId) {

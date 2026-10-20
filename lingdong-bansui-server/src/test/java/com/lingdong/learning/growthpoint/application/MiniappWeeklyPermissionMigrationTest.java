@@ -17,12 +17,13 @@ class MiniappWeeklyPermissionMigrationTest {
                 select client_type from sys_permission
                 where permission_code='MINIAPP_GROWTH_REVIEW_READ_CHILD' and status='ENABLED'
                 """, String.class)).containsExactly("MINIAPP");
+        // V118 后家庭管理员（PARENT_ADMIN）共享家庭只读能力，周报权限归属家长侧角色而非扩散到管理端角色
         assertThat(jdbc.queryForList("""
                 select r.role_code from sys_role r
                 join sys_role_permission rp on rp.role_id=r.id
                 join sys_permission p on p.id=rp.permission_id
                 where p.permission_code='MINIAPP_GROWTH_REVIEW_READ_CHILD'
-                """, String.class)).containsExactly("PARENT");
+                """, String.class)).containsExactlyInAnyOrder("PARENT", "PARENT_ADMIN");
         assertThat(jdbc.queryForObject("""
                 select client_type from sys_permission where permission_code='GROWTH_REVIEW_READ_CHILD'
                 """, String.class)).isEqualTo("WEB");

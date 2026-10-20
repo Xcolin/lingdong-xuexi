@@ -27,6 +27,7 @@ public class OrganizationMembershipService {
  @org.springframework.beans.factory.annotation.Autowired private com.lingdong.learning.organization.application.OrganizationNamePathService namePaths;
  @org.springframework.beans.factory.annotation.Autowired private com.lingdong.learning.organization.onboarding.application.OrganizationOwnerMapper owners;
  @org.springframework.beans.factory.annotation.Autowired private com.lingdong.learning.organization.onboarding.application.OrganizationOwnerGuard ownerGuard;
+ @org.springframework.beans.factory.annotation.Autowired private com.lingdong.learning.iam.infrastructure.persistence.OrganizationAdminListStore adminListStore;
  private final UserMapper users;
  private final OrganizationMapper organizations;
  private final UserRoleMapper userRoles;
@@ -43,6 +44,17 @@ public class OrganizationMembershipService {
   this.administrators=administrators;this.roles=roles;this.access=access;this.scopes=scopes;this.decisions=decisions;
  }
  static boolean familyAdministratorEligible(UserType type,boolean parentProfile){return type!=UserType.STUDENT && (type==UserType.FAMILY || parentProfile);}
+ /** 组织管理员专属列表：直接管理员与负责人，供小程序组织管理员设置视图。 */
+ public record AdministratorEntry(com.lingdong.learning.iam.infrastructure.persistence.OrganizationAdminListStore.AdminRow user, java.util.List<String> organizationNames) { }
+ @Transactional(readOnly=true)
+ public List<AdministratorEntry> administrators(Long operatorId,Long organizationId) {
+  requireAdministrator(operatorId,false);
+  requirePermission(operatorId,"ORG_MEMBER_READ");
+  memberScopes.requireTargetIgnoringSelection(operatorId,organizationId);
+  var rows=adminListStore.findAdministrators(organizationId);
+  var names=adminListStore.findManagedOrganizationNames(rows.stream().map(com.lingdong.learning.iam.infrastructure.persistence.OrganizationAdminListStore.AdminRow::userId).toList());
+  return rows.stream().map(row->new AdministratorEntry(row,names.getOrDefault(row.userId(),List.of()))).toList();
+ }
  public record Member(User user, boolean administrator, boolean owner) { }
  public record PickerMember(User user,boolean administrator,List<String> organizationNames,List<RoleUserAssignment> assignments) { }
  public record PickerPage(List<PickerMember> items,int page,int pageSize,long total,boolean allowedUnbound) { }
@@ -172,7 +184,8 @@ public class OrganizationMembershipService {
   if(administrator&&role==null)throw new IllegalStateException("组织管理员角色不可用");
   List<Long> ordered=userIds.stream().sorted().toList();
   for(Long id:ordered){User user=users.findByIdForUpdate(id);if(user==null)throw new ResourceNotFoundException("用户不存在："+id);
-   if(ownerGuard!=null)ownerGuard.requireRemovable(id,organizationId);
+   // 仅除名分支做最后管理员防护；取消管理员（administrator=true）是可逆操作且除名内部 dissociate 仍有同款防护
+   if(ownerGuard!=null&&!administrator)ownerGuard.requireRemovable(id,organizationId);
    if(!memberships.exists(id,organizationId)&&!administrators.exists(id,organizationId))throw new IllegalStateException("用户未关联所选组织");}
   for(Long id:ordered){
    if(administrator){

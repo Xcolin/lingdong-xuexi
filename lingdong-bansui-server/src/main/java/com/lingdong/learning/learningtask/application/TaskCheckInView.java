@@ -13,7 +13,8 @@ public record TaskCheckInView(
         String status,
         LocalDateTime submittedAt,
         String reviewComment,
-        List<TaskAttachmentView> attachments
+        List<TaskAttachmentView> attachments,
+        String completion
 ) {
     public TaskCheckInView {
         attachments = attachments == null ? List.of() : List.copyOf(attachments);
@@ -23,11 +24,11 @@ public record TaskCheckInView(
             Long id, Integer submissionNo, String content, String status,
             LocalDateTime submittedAt, String reviewComment
     ) {
-        this(id, submissionNo, content, status, submittedAt, reviewComment, List.of());
+        this(id, submissionNo, content, status, submittedAt, reviewComment, List.of(), null);
     }
 
     public TaskCheckInView withAttachments(List<TaskAttachmentView> values) {
         return new TaskCheckInView(
-                id, submissionNo, content, status, submittedAt, reviewComment, values);
+                id, submissionNo, content, status, submittedAt, reviewComment, values, completion);
     }
 }

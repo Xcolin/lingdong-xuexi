@@ -12,11 +12,12 @@ public record StudentOptionResponse(
         String studentAccountMasked,
         @JsonSerialize(using = ToStringSerializer.class) Long currentClassId,
         String currentClassName,
-        ParentRelationshipRole relationshipRole
+        ParentRelationshipRole relationshipRole,
+        String schoolName
 ) {
     static StudentOptionResponse from(StudentOption option) {
         return new StudentOptionResponse(
                 option.id(), option.studentName(), option.studentAccountMasked(),
-                option.currentClassId(), option.currentClassName(), option.relationshipRole());
+                option.currentClassId(), option.currentClassName(), option.relationshipRole(), option.schoolName());
     }
 }

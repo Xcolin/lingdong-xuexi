@@ -186,8 +186,9 @@ class RoleMatrixAccessIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.rewardExchangeEnabled").value(false));
         mockMvc.perform(get(studentPath).header("Authorization", bearer(parentToken)))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.code").value("FEATURE_DISABLED"));
+                // V118 后 feature 先行拒绝：开关关闭时权限链直接 403，不再到达业务层的 409 FEATURE_DISABLED
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
 
         // 功能恢复后入口与 API 同步恢复。
         jdbcTemplate.update(
@@ -219,7 +220,23 @@ class RoleMatrixAccessIntegrationTest {
                 orgAdmin.id() + 20, SCHOOL_A_ID, orgAdmin.id());
         jdbcTemplate.update("INSERT INTO sys_organization_admin(id,organization_id,user_id) VALUES (?,?,?)",
                 orgAdmin.id() + 21, SCHOOL_B_ID, orgAdmin.id());
+        // 数据范围按角色 scope、用户组织与授权组织三方交集判定：跨校访问需 B 校角色 scope；
+        // 另设第二管理员（admin 加 ORG_ADMIN 角色行，activeAdministrators 按
+        // sys_organization_admin JOIN sys_user_role.organization_id 计数）避免停用账号时
+        // 触发“最后一名管理员”守卫（409 STATE_CONFLICT）。
+        jdbcTemplate.update("INSERT INTO sys_organization_admin(id,organization_id,user_id) VALUES (?,?,?)",
+                orgAdmin.id() + 22, SCHOOL_A_ID, admin.id());
+        jdbcTemplate.update("INSERT INTO sys_organization_admin(id,organization_id,user_id) VALUES (?,?,?)",
+                orgAdmin.id() + 23, SCHOOL_B_ID, admin.id());
+        // 授予组织范围角色前需先建立用户组织关联（resolveScopeKey 校验）
+        jdbcTemplate.update("INSERT INTO sys_user_organization(id,user_id,organization_id) VALUES (?,?,?)",
+                orgAdmin.id() + 24, admin.id(), SCHOOL_A_ID);
+        jdbcTemplate.update("INSERT INTO sys_user_organization(id,user_id,organization_id) VALUES (?,?,?)",
+                orgAdmin.id() + 25, admin.id(), SCHOOL_B_ID);
         assignRole(orgAdmin.id(), "ORG_ADMIN", SCHOOL_A_ID);
+        assignRole(orgAdmin.id(), "ORG_ADMIN", SCHOOL_B_ID);
+        assignRole(admin.id(), "ORG_ADMIN", SCHOOL_A_ID);
+        assignRole(admin.id(), "ORG_ADMIN", SCHOOL_B_ID);
         Login adminLogin = setPasswordAndLogin(admin, admin, "matrix-admin-device");
         Login orgLogin = setPasswordAndLogin(admin, orgAdmin, "matrix-org-device");
         return new Fixture(admin, orgAdmin, adminLogin, orgLogin);
@@ -269,6 +286,8 @@ class RoleMatrixAccessIntegrationTest {
     private Login setPasswordAndLogin(User administrator, User user, String deviceId) {
         authenticationService.setPlatformUserPassword(new SetPlatformUserPasswordCommand(
                 administrator.id(), user.id(), "Password123"));
+        // bf34c6a 管理员设密后要求首登改密，业务测试直接清除首登改密标记
+        jdbcTemplate.update("UPDATE auth_initial_password_state SET change_required=false WHERE user_id=?", user.id());
         return login(user.username());
     }
 

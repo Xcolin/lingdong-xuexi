@@ -36,6 +36,29 @@ class UserAccessApplicationServiceTest {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    @org.junit.jupiter.api.BeforeEach
+    void cleanFixedDataResidue() {
+        // 非 @Transactional：上轮运行留下的固定用户/组织会污染其他测试类的关键字与唯一性断言。
+        String[] users = {"teacher_zhang", "teacher_wang", "teacher_ineffective_role", "teacher_ineffective_relation", "parent_liu", "parent_cancel_guard"};
+        String userIn = String.join(",", java.util.Arrays.stream(users).map(u -> "'" + u + "'").toArray(String[]::new));
+        jdbcTemplate.update("delete from auth_initial_password_state where user_id in (select id from sys_user where username in (" + userIn + "))");
+        jdbcTemplate.update("delete from auth_security_event where session_id in (select id from auth_device_session where user_id in (select id from sys_user where username in (" + userIn + ")))");
+        jdbcTemplate.update("delete from auth_device_session where user_id in (select id from sys_user where username in (" + userIn + "))");
+        jdbcTemplate.update("delete from sys_user_role where user_id in (select id from sys_user where username in (" + userIn + "))");
+        jdbcTemplate.update("delete from sys_user_permission where user_id in (select id from sys_user where username in (" + userIn + "))");
+        jdbcTemplate.update("delete from sys_user_organization where user_id in (select id from sys_user where username in (" + userIn + "))");
+        jdbcTemplate.update("delete from sys_organization_admin where user_id in (select id from sys_user where username in (" + userIn + "))");
+        jdbcTemplate.update("delete from sys_user where username in (" + userIn + ")");
+        String[] orgCodes = {"REGION_USER_A", "SCHOOL_USER_A", "REGION_USER_B", "SCHOOL_USER_B", "REGION_USER_INEFFECTIVE", "SCHOOL_USER_INEFFECTIVE"};
+        String orgIn = String.join(",", java.util.Arrays.stream(orgCodes).map(o -> "'" + o + "'").toArray(String[]::new));
+        jdbcTemplate.update("delete from sys_role_data_scope where organization_id in (select id from sys_organization where organization_code in (" + orgIn + "))");
+        jdbcTemplate.update("delete from sys_user_role where organization_id in (select id from sys_organization where organization_code in (" + orgIn + "))");
+        jdbcTemplate.update("delete from sys_user_organization where organization_id in (select id from sys_organization where organization_code in (" + orgIn + "))");
+        jdbcTemplate.update("delete from sys_organization_admin where organization_id in (select id from sys_organization where organization_code in (" + orgIn + "))");
+        jdbcTemplate.update("delete from sys_organization_owner where organization_id in (select id from sys_organization where organization_code in (" + orgIn + "))");
+        jdbcTemplate.update("delete from sys_organization where organization_code in (" + orgIn + ")");
+    }
+
     @Test
     void associatesUserBeforeGrantingOrganizationScopedRole() {
         User user = userAccessApplicationService.createUser(

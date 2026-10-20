@@ -25,7 +25,7 @@ class GrowthReviewMiniappFamilyReadTest {
  private final ParentActorAccessService actors=mock(ParentActorAccessService.class);
  private final GrowthReviewQueryService service=new GrowthReviewQueryService(reviews,
    mock(CurrentStudentAccessService.class),children,mock(FeatureAccessService.class),
-   mock(IdGenerator.class),Clock.systemUTC(),grants,mock(UserRoleMapper.class),actors);
+   mock(IdGenerator.class),Clock.systemUTC(),grants,mock(UserRoleMapper.class),actors,mock(GrowthReviewGenerationService.class));
  private final AuthenticatedUser mini=new AuthenticatedUser(1L,2L,"parent","parent",AuthClientType.MINIAPP,List.of("PARENT"));
  @Test void grantAndActorAreRequiredBeforeFamilyScopeQuery() {
   assertThatThrownBy(()->service.findMiniappChildren(mini)).isInstanceOf(SystemOperationAccessDeniedException.class);

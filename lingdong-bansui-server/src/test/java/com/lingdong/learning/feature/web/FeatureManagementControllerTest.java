@@ -37,7 +37,20 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class FeatureManagementControllerTest {
     private static final String DB = "feature_management_" + java.util.UUID.randomUUID().toString().replace("-", "");
     @DynamicPropertySource static void database(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", () -> "jdbc:h2:mem:" + DB + ";MODE=MySQL;DB_CLOSE_DELAY=0;DATABASE_TO_LOWER=TRUE");
+        // 每个context独立MySQL schema隔离状态（与test profile同源env占位符，兼容CI mysql service）
+        registry.add("spring.datasource.url", () -> mysqlUrl(DB));
+        registry.add("spring.datasource.username", () -> env("LINGDONG_TEST_DB_USER", "root"));
+        registry.add("spring.datasource.password", () -> env("LINGDONG_TEST_DB_PASSWORD", "root"));
+    }
+
+    private static String mysqlUrl(String database) {
+        return "jdbc:mysql://" + env("LINGDONG_TEST_DB_HOST", "127.0.0.1") + ":" + env("LINGDONG_TEST_DB_PORT", "3306")
+                + "/" + database + "?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai";
+    }
+
+    private static String env(String key, String fallback) {
+        String value = System.getenv(key);
+        return value == null ? fallback : value;
     }
     @Autowired private MockMvc mockMvc;
     @Autowired private ObjectMapper objectMapper;
@@ -89,7 +102,9 @@ class FeatureManagementControllerTest {
     @Test
     void deniesReadAfterDynamicPermissionRevoked() throws Exception {
         String token=tokenWithRole("ft_revoke","SYS_ADMIN");
-        jdbcTemplate.update("delete from sys_role_permission where permission_id=(select id from sys_permission where permission_code='FEATURE_TOGGLE_READ')");
+        // V118 后 FEATURE_TOGGLE_MANAGE 等动作权限的 impliedReads 会自动恢复 READ；需撤销整族权限才能让读取被拒
+        jdbcTemplate.update("delete from sys_role_permission where permission_id in "
+                + "(select id from sys_permission where permission_code like 'FEATURE_TOGGLE%')");
         mockMvc.perform(get("/api/v1/feature-management/toggles").header("Authorization",bearer(token))).andExpect(status().isForbidden());
     }
     @Test
@@ -141,8 +156,22 @@ class FeatureManagementControllerTest {
         if (!"SYS_ADMIN".equals(roleCode)) {
             assignRole(user, roleCode);
         }
+        // bf34c6a 起管理员设置密码后要求首次登录自行改密：临时密码登录 → 改密 → 重新建立业务会话
         authenticationApplicationService.setPlatformUserPassword(
-                new SetPlatformUserPasswordCommand(passwordAdministrator.id(), user.id(), "Password123"));
+                new SetPlatformUserPasswordCommand(passwordAdministrator.id(), user.id(), "Bootstrap123"));
+        MvcResult bootstrap = mockMvc.perform(post("/api/v1/auth/sessions/password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"username":"%s","password":"Bootstrap123","deviceId":"%s-device",
+                                 "deviceName":"缓存管理测试浏览器"}
+                                """.formatted(user.username(), user.username())))
+                .andExpect(status().isOk())
+                .andReturn();
+        mockMvc.perform(post("/api/v1/auth/password")
+                        .header("Authorization", bearer(body(bootstrap).path("accessToken").asText()))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"oldPassword\":\"Bootstrap123\",\"newPassword\":\"Password123\"}"))
+                .andExpect(status().isNoContent());
         MvcResult result = mockMvc.perform(post("/api/v1/auth/sessions/password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""

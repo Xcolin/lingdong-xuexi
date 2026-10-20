@@ -131,7 +131,7 @@ public class LearningTaskOptionService {
             int c=first==null ? (second==null?0:1) : second==null?-1:order.compare(first,second);
             if(c==0)c=a.studentName().compareTo(b.studentName());
             return c==0?a.id().compareTo(b.id()):c;
-        }).map(row -> new StudentOption(row.id(),row.studentName(),maskStudentAccount(row.studentAccount()),row.currentClassId(),namePaths.getOrDefault(row.currentClassId(),row.currentClassName()),row.relationshipRole())).toList();
+        }).map(row -> new StudentOption(row.id(),row.studentName(),maskStudentAccount(row.studentAccount()),row.currentClassId(),namePaths.getOrDefault(row.currentClassId(),row.currentClassName()),row.relationshipRole(),schoolNameOf(byId,row.currentClassId()))).toList();
     }
 
     public List<TeacherOption> teachers(
@@ -186,7 +186,14 @@ public class LearningTaskOptionService {
     private StudentOption toStudentOption(StudentOptionRow row) {
         return new StudentOption(
                 row.id(), row.studentName(), maskStudentAccount(row.studentAccount()),
-                row.currentClassId(), row.currentClassName(), row.relationshipRole());
+                row.currentClassId(), row.currentClassName(), row.relationshipRole(), null);
+    }
+
+    /** 从预加载的组织树派生学生班级所属学校（含培训机构根），无班级时为 null。 */
+    private String schoolNameOf(Map<Long,Organization> byId, Long classId) {
+        Organization school = classId == null ? null
+                : com.lingdong.learning.organization.application.OrganizationHierarchy.schoolOf(byId.get(classId), organizationMapper);
+        return school == null ? null : school.name();
     }
 
     private String maskStudentAccount(String account) {

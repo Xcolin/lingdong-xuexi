@@ -45,6 +45,12 @@ public class OrganizationMembershipController {
  @GetMapping("/organizations/{organizationId}/member-relations")
  public List<OrganizationMembershipService.MemberRelation> memberRelations(@AuthenticationPrincipal AuthenticatedUser current,
   @PathVariable Long organizationId,@RequestParam List<Long> userIds,@RequestParam(defaultValue="false")boolean administrator){requireMemberClient(current);return service.memberRelations(current.userId(),organizationId,userIds,administrator);}
+ @GetMapping("/organizations/{organizationId}/administrators") @RequirePermission("ORG_MEMBER_READ")
+ public List<AdminResponse> administrators(@AuthenticationPrincipal AuthenticatedUser current,@PathVariable Long organizationId){
+  requireMemberClient(current);
+  return service.administrators(current.userId(),organizationId).stream().map(entry->{var row=entry.user();return new AdminResponse(String.valueOf(row.userId()),row.username(),row.displayName(),row.mobile(),row.status(),row.owner(),row.administrator(),entry.organizationNames());}).toList();
+ }
+ public record AdminResponse(String id,String username,String displayName,String mobile,String status,boolean owner,boolean administrator,List<String> organizationNames) { }
  @GetMapping("/organizations/{organizationId}/members") @RequirePermission("ORG_MEMBER_READ")
  public MemberPageResponse members(@AuthenticationPrincipal AuthenticatedUser current,@PathVariable Long organizationId,
   @RequestParam(required=false)String keyword,@RequestParam(defaultValue="1")int page,@RequestParam(defaultValue="20")int pageSize){

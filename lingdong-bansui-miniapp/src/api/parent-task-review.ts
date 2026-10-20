@@ -4,17 +4,21 @@ import type { ReviewIdentity } from '@/models/parent-task-reviews';
 export interface ParentTaskReview {
   assignmentId: string; taskId: string; title: string; studentId: string; studentName: string; basePoints: number;
   sourceType: 'FAMILY' | 'TEACHER' | 'ORGANIZATION'; sourceOrganizationId: string | null; sourceOrganizationName: string | null;
-  latestCheckIn: { id: string; content: string | null; submittedAt: string; attachments: TaskAttachment[] } | null;
+  scheduledDate: string | null; currentClassName: string | null; taskType: string | null;
+  latestCheckIn: { id: string; content: string | null; submittedAt: string; status: string; reviewComment: string | null; attachments: TaskAttachment[] } | null;
 }
-export interface ParentReviewPage { items: ParentTaskReview[]; page: number; pageSize: number; total: number }
+export type ReviewStatusTab = 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED' | 'ALL';
+export interface ParentReviewPage { items: ParentTaskReview[]; page: number; pageSize: number; total: number; statusCounts: Record<string, number> }
 const header = (token: string) => ({ Authorization: `Bearer ${token}` });
 const path = (id: string) => `/task-reviews/${encodeURIComponent(id)}`;
 /** 始终使用独立家长令牌，不借用学生或机构会话。 */
 export const parentReviewApi = {
   me: (token: string) => request<ReviewIdentity>('/auth/me', { header: header(token) }),
-  list: (token: string, page = 1) => request<ParentReviewPage>(`/task-reviews?page=${page}&pageSize=20`, { header: header(token) }),
+  list: (token: string, page = 1, statusTab: ReviewStatusTab = 'PENDING_REVIEW') =>
+    request<ParentReviewPage>(`/task-reviews?page=${page}&pageSize=20&statusTab=${statusTab}`, { header: header(token) }),
   detail: (token: string, id: string) => request<ParentTaskReview>(path(id), { header: header(token) }),
-  approve: (token: string, id: string, expectedCheckInId: string) => request<void>(`${path(id)}/approve`, { method: 'POST', header: header(token), data: { expectedCheckInId } }),
+  approve: (token: string, id: string, expectedCheckInId: string, reviewComment?: string) =>
+    request<void>(`${path(id)}/approve`, { method: 'POST', header: header(token), data: { expectedCheckInId, reviewComment: reviewComment || undefined } }),
   reject: (token: string, id: string, reviewComment: string, expectedCheckInId: string) => request<void>(`${path(id)}/reject`, { method: 'POST', header: header(token), data: { reviewComment, expectedCheckInId } }),
   download: (token: string, url: string) => new Promise<string>((resolve, reject) => uni.downloadFile({
     url: apiUrl(url), header: header(token),

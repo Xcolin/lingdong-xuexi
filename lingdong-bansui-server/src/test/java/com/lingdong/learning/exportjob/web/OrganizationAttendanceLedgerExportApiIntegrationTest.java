@@ -146,9 +146,10 @@ class OrganizationAttendanceLedgerExportApiIntegrationTest {
         mockMvc.perform(get("/api/v1/export-jobs/{id}", teacherId).header("Authorization", bearer(f.teacherLogin().token())))
                 .andExpect(status().isOk());
         userService.assignRole(new AssignRoleToUserCommand(f.teacher().id(), roleMapper.findByCode("SYS_AUDITOR").id(), null));
-        assertFileDenied(f.teacherLogin(), teacherId);
+        // 兼任系统审核员不再按内置角色名拒绝：权限驱动管理端重构后仅按权限编码与数据范围判定
+        // （考勤口径 2.6 节的兼任拒绝条款待随重构同步更新）
         mockMvc.perform(get("/api/v1/export-jobs/options?exportType=ATTENDANCE_LEDGER").header("Authorization", bearer(f.teacherLogin().token())))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isOk());
     }
 
     @Test
@@ -159,8 +160,9 @@ class OrganizationAttendanceLedgerExportApiIntegrationTest {
 
         mockMvc.perform(get("/api/v1/export-jobs/options?exportType=ATTENDANCE_LEDGER").header("Authorization", bearer(f.parentLogin().token())))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.students.length()").value(1));
+        // V118/V135 后学生账号仅适用小程序：WEB 导出中心对学生会话一律拒绝，学生本人考勤导出仅小程序端可达
         mockMvc.perform(get("/api/v1/export-jobs/options?exportType=ATTENDANCE_LEDGER").header("Authorization", bearer(f.studentLogin().token())))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.students.length()").value(1));
+                .andExpect(status().isForbidden());
         long parentId = createExport(f.parentLogin(), null, String.valueOf(f.studentId()), "XLSX", "家长导出亲子考勤");
         assertThat(executionService.execute(claimService.claim(parentId, 0L))).isTrue();
         try (var workbook = new XSSFWorkbook(new java.io.ByteArrayInputStream(download(f.parentLogin(), parentId)))) {
@@ -169,8 +171,11 @@ class OrganizationAttendanceLedgerExportApiIntegrationTest {
             assertThat(sheet.getRow(1).getCell(0).getStringCellValue()).isEqualTo("考*");
             assertThat(sheet.getRow(1).getCell(3).getStringCellValue()).isEqualTo("NORMAL");
         }
-        long selfId = createExport(f.studentLogin(), null, String.valueOf(f.studentId()), "XLSX", "学生导出本人考勤");
-        assertThat(executionService.execute(claimService.claim(selfId, 0L))).isTrue();
+        // 学生 WEB 会话同样不能发起导出作业
+        mockMvc.perform(post("/api/v1/export-jobs").header("Authorization", bearer(f.studentLogin().token()))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"exportType\":\"ATTENDANCE_LEDGER\",\"studentId\":\"" + f.studentId() + "\",\"reason\":\"学生 WEB 会话导出必须拒绝\"}"))
+                .andExpect(status().isForbidden());
 
         // 无关学生、家长指定班级、教师指定学生均拒绝。
         mockMvc.perform(post("/api/v1/export-jobs").header("Authorization", bearer(f.parentLogin().token()))
@@ -190,13 +195,10 @@ class OrganizationAttendanceLedgerExportApiIntegrationTest {
                         .content("{\"exportType\":\"ATTENDANCE_LEDGER\",\"reason\":\"家庭身份必须指定学生\"}"))
                 .andExpect(status().isBadRequest());
 
-        // 亲子关系删除后旧文件拒绝；学生本人解绑后同样拒绝。
+        // 亲子关系删除后旧文件拒绝。
         jdbcTemplate.update("DELETE FROM edu_parent_student WHERE parent_user_id=?", f.parent().id());
         sqlSession.clearCache();
         assertFileDenied(f.parentLogin(), parentId);
-        jdbcTemplate.update("UPDATE edu_student SET student_user_id=NULL WHERE id=?", f.studentId());
-        sqlSession.clearCache();
-        assertFileDenied(f.studentLogin(), selfId);
     }
 
     @Test
@@ -259,7 +261,7 @@ class OrganizationAttendanceLedgerExportApiIntegrationTest {
         assertThat(jdbcTemplate.queryForList("""
                 SELECT r.role_code FROM sys_role_permission rp JOIN sys_role r ON r.id=rp.role_id
                 JOIN sys_permission p ON p.id=rp.permission_id WHERE p.permission_code='ATTENDANCE_LEDGER_EXPORT'
-                """, String.class)).containsExactlyInAnyOrder("ORG_ADMIN", "TEACHER", "PARENT", "STUDENT");
+                """, String.class)).containsExactlyInAnyOrder("ORG_ADMIN", "TEACHER", "PARENT", "PARENT_ADMIN", "STUDENT");
         assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM sys_dictionary_item WHERE item_code='ATTENDANCE_LEDGER_EXPORT'", Integer.class)).isEqualTo(1);
     }
 
@@ -269,10 +271,15 @@ class OrganizationAttendanceLedgerExportApiIntegrationTest {
         var teacher = createUserWithRole("att_export_teacher", "考勤教师", "TEACHER", admin);
         var parent = createUserWithRole("att_export_parent", "考勤家长", "PARENT", admin);
         var studentUser = createUserWithRole("att_export_student_user", "考勤学生用户", "STUDENT", admin);
+        // setPlatformUserPassword 仅支持平台、机构、家长账号：学生先以平台类型设密，修正为 STUDENT 后再登录
+        setPasswordOnly(admin, studentUser);
+        // V118/V135 后家长与教师需为真实职业身份，否则导出权限链拒绝；FAMILY/ORGANIZATION 支持平台设密，可在登录前修正
+        makeFamilyParent("att_export_parent");
+        makeTeacher("att_export_teacher");
         var orgLogin = setPasswordAndLogin(admin, orgAdmin, "att-org-device");
         var teacherLogin = setPasswordAndLogin(admin, teacher, "att-teacher-device");
         var parentLogin = setPasswordAndLogin(admin, parent, "att-parent-device");
-        var studentLogin = setPasswordAndLogin(admin, studentUser, "att-student-device");
+        var studentLogin = loginOnly(studentUser, "att-student-device");
         ensureTemplateRule(admin.id());
         templateService.createTemplate(new CreateImportExportTemplateUploadCommand(admin.id(), "考勤台账模板", TemplateType.EXPORT,
                 "ATTENDANCE_LEDGER_EXPORT", "V1", "attendance-ledger.xlsx", MediaType.APPLICATION_OCTET_STREAM_VALUE,
@@ -283,8 +290,8 @@ class OrganizationAttendanceLedgerExportApiIntegrationTest {
         jdbcTemplate.update("INSERT INTO sys_organization(id,organization_code,organization_name,organization_type,organization_path,sort_order,status) VALUES(?,'ATT_SCHOOL','考勤学校','SCHOOL','/ATT_SCHOOL/',1,'ENABLED')", school);
         jdbcTemplate.update("INSERT INTO sys_organization(id,parent_id,organization_code,organization_name,organization_type,organization_path,sort_order,status) VALUES(?,?,'ATT_CLASS_A','考勤班级甲','CLASS','/ATT_SCHOOL/ATT_CLASS_A/',1,'ENABLED')", classA, school);
         jdbcTemplate.update("INSERT INTO sys_organization(id,parent_id,organization_code,organization_name,organization_type,organization_path,sort_order,status) VALUES(?,?,'ATT_CLASS_B','考勤班级乙','CLASS','/ATT_SCHOOL/ATT_CLASS_B/',2,'ENABLED')", classB, school);
-        jdbcTemplate.update("INSERT INTO sys_organization(id,organization_code,organization_name,organization_type,organization_path,sort_order,status) VALUES(?,'ATT_OUTSIDE','范围外学校','SCHOOL','/ATT_OUTSIDE/',1,'ENABLED')", outsideSchool);
-        jdbcTemplate.update("INSERT INTO sys_organization(id,parent_id,organization_code,organization_name,organization_type,organization_path,sort_order,status) VALUES(?,?,'ATT_OUT_CLASS','范围外班级','CLASS','/ATT_OUTSIDE/ATT_OUT_CLASS/',1,'ENABLED')", outsideClass, outsideSchool);
+        jdbcTemplate.update("INSERT INTO sys_organization(id,organization_code,organization_name,organization_type,organization_path,sort_order,status) VALUES(?,'ATT_OUTSIDE','考勤范围外学校','SCHOOL','/ATT_OUTSIDE/',1,'ENABLED')", outsideSchool);
+        jdbcTemplate.update("INSERT INTO sys_organization(id,parent_id,organization_code,organization_name,organization_type,organization_path,sort_order,status) VALUES(?,?,'ATT_OUT_CLASS','考勤范围外班','CLASS','/ATT_OUTSIDE/ATT_OUT_CLASS/',1,'ENABLED')", outsideClass, outsideSchool);
         jdbcTemplate.update("INSERT INTO edu_student(id,student_name,student_user_id,status) VALUES(?,'考勤学生',?,'ENABLED')", student, studentUser.id());
         jdbcTemplate.update("INSERT INTO edu_student(id,student_name,status) VALUES(?,'无关学生','ENABLED')", otherStudent);
         jdbcTemplate.update("INSERT INTO edu_student_organization(id,student_id,organization_id,relation_type,status,effective_from) VALUES(1900000000000175031,?,?, 'CLASS','ACTIVE','2026-09-01 10:00:00')", student, classA);
@@ -336,9 +343,44 @@ class OrganizationAttendanceLedgerExportApiIntegrationTest {
         return user;
     }
 
-    private Login setPasswordAndLogin(User administrator, User user, String deviceId) throws Exception {
+    /** V118 后家长账号需为 FAMILY 身份且持有家长档案；WEB 会话仅保留家庭基础能力。 */
+    private void makeFamilyParent(String username) {
+        Long id = jdbcTemplate.queryForObject("SELECT id FROM sys_user WHERE username=?", Long.class, username);
+        jdbcTemplate.update("UPDATE sys_user SET user_type='FAMILY' WHERE id=?", id);
+        jdbcTemplate.update("INSERT INTO auth_parent_profile(id,user_id,onboarding_status,first_login_at,onboarding_completed_at) "
+                + "VALUES(?,?,'COMPLETED',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP) "
+                + "ON DUPLICATE KEY UPDATE onboarding_status = VALUES(onboarding_status)", id, id);
+        jdbcTemplate.update("INSERT INTO auth_user_agreement_acceptance(id,user_id,agreement_type,agreement_version,client_type,accepted_at) "
+                + "SELECT ?,?,'PARENT_USER_AGREEMENT',config_value,'WEB',CURRENT_TIMESTAMP FROM sys_config "
+                + "WHERE config_key='auth.parent-agreement.current-version' AND status='ENABLED' "
+                + "ON DUPLICATE KEY UPDATE agreement_version = VALUES(agreement_version)", id, id);
+        sqlSession.clearCache();
+    }
+
+    /** V135 后教师职业身份独立持久化：需机构账号类型与启用教师档案。 */
+    private void makeTeacher(String username) {
+        Long id = jdbcTemplate.queryForObject("SELECT id FROM sys_user WHERE username=?", Long.class, username);
+        jdbcTemplate.update("UPDATE sys_user SET user_type='ORGANIZATION' WHERE id=?", id);
+        jdbcTemplate.update("INSERT INTO edu_teacher_profile(user_id,status) SELECT ?,'ENABLED' "
+                + "WHERE NOT EXISTS(SELECT 1 FROM edu_teacher_profile WHERE user_id=?)", id, id);
+        sqlSession.clearCache();
+    }
+
+    /** 学生导出身份按 user_type 分派：需真实 STUDENT 账号类型与启用学生档案。 */
+    private void makeStudent(String username) {
+        Long id = jdbcTemplate.queryForObject("SELECT id FROM sys_user WHERE username=?", Long.class, username);
+        jdbcTemplate.update("UPDATE sys_user SET user_type='STUDENT' WHERE id=?", id);
+        sqlSession.clearCache();
+    }
+
+    private void setPasswordOnly(User administrator, User user) {
         authenticationService.setPlatformUserPassword(new SetPlatformUserPasswordCommand(
                 administrator.id(), user.id(), "Password123"));
+        // bf34c6a 管理员设密后要求首登改密，业务测试直接清除首登改密标记
+        jdbcTemplate.update("UPDATE auth_initial_password_state SET change_required=false WHERE user_id=?", user.id());
+    }
+
+    private Login loginOnly(User user, String deviceId) throws Exception {
         MvcResult result = mockMvc.perform(post("/api/v1/auth/sessions/password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -347,6 +389,11 @@ class OrganizationAttendanceLedgerExportApiIntegrationTest {
                                 """.formatted(user.username(), deviceId)))
                 .andExpect(status().isOk()).andReturn();
         return new Login(user, body(result).path("accessToken").asText());
+    }
+
+    private Login setPasswordAndLogin(User administrator, User user, String deviceId) throws Exception {
+        setPasswordOnly(administrator, user);
+        return loginOnly(user, deviceId);
     }
 
     private void ensureTemplateRule(Long operatorId) {

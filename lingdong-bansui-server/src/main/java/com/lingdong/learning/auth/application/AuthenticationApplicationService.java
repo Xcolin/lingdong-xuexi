@@ -215,7 +215,8 @@ public class AuthenticationApplicationService {
     }
 
     /** 使用刷新凭证轮换两类原始令牌，旧令牌在成功刷新后立即失效。 */
-    @Transactional
+    // 不能加 @Transactional：外层事务会吸收 revokeIfActive（已改为 REQUIRED 避免行锁自锁），
+    // 使随后的 AuthenticationFailedException 回滚撤销、已吊销会话被复活；无外层事务时各写入独立提交。
     public AuthenticatedSession refreshSession(RefreshSessionCommand command) {
         Objects.requireNonNull(command, "刷新会话请求不能为空");
         String refreshTokenHash = safeTokenHash(command.refreshToken());
@@ -389,7 +390,10 @@ public class AuthenticationApplicationService {
         if(clientType==AuthClientType.WEB) return true;
         if(clientType!=AuthClientType.MINIAPP) return false;
         if(user.type()==UserType.PLATFORM) return isUsableForClient(user,clientType);
-        if(user.type()==UserType.ORGANIZATION) return featureAccessService.isEnabled(ORGANIZATION_MINIAPP_AUTH_FEATURE,null);
+        // 机构账号在移动端的会话持续有效性需实时校验职业身份：角色启用且存在启用的管理组织/带班教师，否则吊销会话
+        if(user.type()==UserType.ORGANIZATION)
+            return featureAccessService.isEnabled(ORGANIZATION_MINIAPP_AUTH_FEATURE,null)
+                    && isEnabledOrganizationMiniappOperator(user);
         return user.type()==UserType.FAMILY || user.type()==UserType.PERSONAL;
     }
     private boolean isUsableForClient(User user, AuthClientType clientType) {

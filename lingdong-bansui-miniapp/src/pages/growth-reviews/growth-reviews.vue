@@ -1,6 +1,6 @@
 <template>
   <view class="prototype-workspace page-shell has-tabbar">
-    <PrototypePageHeader :title="period==='WEEK'?'成长周报详情':editing?'每日成长复盘':'成长复盘'" icon="growth"/>
+    <PrototypePageHeader :title="period==='WEEK'?'成长周报详情':(editing||showTodayForm)?'每日成长复盘':'成长复盘'" icon="growth"/>
     <view v-if="capabilityLoading" class="state-view">正在检查功能状态</view>
     <template v-else-if="enabled">
       <view class="period-tabs"><button v-if="dailyAllowed" :disabled="loading||submitting" :class="{active:period==='DAY'}" @tap="choosePeriod('DAY')">每日复盘</button><button v-if="weeklyAllowed" :disabled="loading||submitting" :class="{active:period==='WEEK'}" @tap="choosePeriod('WEEK')">成长周报</button></view>
@@ -22,7 +22,7 @@
         <button class="retry-button" @tap="reload">重试</button>
       </view>
 
-      <view v-if="detail&&period==='WEEK'" class="weekly-detail"><text class="week-range">{{detail.periodStart}} — {{detail.periodEnd}}</text><view class="weekly-student"><PrototypeIcon name="user" :size="42"/><text>{{detail.studentName}}</text></view><view class="weekly-metrics"><view><text>{{detail.earnedPoints}}</text><text>本周获得积分</text></view><view><text>{{detail.completedCount}}</text><text>完成任务数</text></view><view><text>{{percent(detail.completionRate)}}</text><text>任务完成率</text></view></view><view class="weekly-section"><text class="section-title">本周任务分类</text><view v-for="category in detail.categories" :key="category.categoryCode" class="category-row"><text>{{category.categoryCode}}</text><text>{{category.completedCount}} / {{category.taskCount}}</text></view><text v-if="!detail.categories.length" class="empty-line">暂无分类统计</text></view><view class="weekly-section"><text class="section-title">每日成长记录</text><view v-for="day in detail.dailyTrends" :key="day.trendDate" class="weekly-trend"><text>{{day.trendDate}}</text><text>完成 {{day.completedCount}} 项 · {{day.earnedPoints}} 积分</text></view></view><view v-if="detail.supplements.length" class="weekly-section"><text class="section-title">补充记录</text><view v-for="item in detail.supplements" :key="item.id"><text>{{item.content}}</text></view></view></view>
+      <view v-if="detail&&period==='WEEK'" class="weekly-detail"><view class="week-nav"><text class="week-range">{{ weekTitle }}</text><text class="week-sub">{{ detail.periodStart }} - {{ detail.periodEnd }}</text></view><view class="weekly-student"><PrototypeIcon name="user" :size="42"/><text>{{detail.studentName}}</text></view><view class="weekly-metrics"><view><text>{{detail.earnedPoints}}</text><text>本周获得积分</text></view><view><text>{{detail.completedCount}}</text><text>完成任务数</text></view><view><text>{{percent(detail.completionRate)}}</text><text>任务完成率</text></view></view><view class="weekly-section"><text class="section-title">★ 本周亮点</text><view v-for="(line,index) in weeklyHighlights" :key="'h'+index" class="weekly-line"><text class="dot">★</text><text>{{ line }}</text></view><text v-if="!weeklyHighlights.length" class="empty-line">本周暂无亮点记录，下周继续加油</text></view><view class="weekly-section"><text class="section-title">◆ 需要继续努力</text><view v-for="(line,index) in weeklyImprovements" :key="'e'+index" class="weekly-line"><text class="dot effort">◆</text><text>{{ line }}</text></view><text v-if="!weeklyImprovements.length" class="empty-line">各项目标都已达成，保持下去！</text></view><view class="weekly-section"><text class="section-title">打卡完成情况</text><view v-for="day in detail.dailyTrends" :key="day.trendDate" class="weekly-trend"><text>{{ formatDate(day.trendDate) }}</text><text>完成 {{day.completedCount}} 项 · {{day.earnedPoints}} 积分</text></view><text v-if="!detail.dailyTrends.length" class="empty-line">暂无每日打卡数据</text></view><view class="weekly-section teacher-comment"><text class="section-title">老师评语</text><text class="comment-text">暂无老师评语，期待老师的本周点评。</text></view><view v-if="detail.supplements.length" class="weekly-section"><text class="section-title">补充记录</text><view v-for="item in detail.supplements" :key="item.id" class="weekly-trend"><text>{{ typeLabel(item.supplementType) }}</text><text>{{ item.content }}</text></view></view></view>
       <view v-else-if="detail" class="review-content">
         <view class="summary-band">
           <view class="summary-heading">
@@ -77,6 +77,13 @@
       </view>
 
       <view v-else-if="!loading && !errorMessage" class="state-view">{{period==='WEEK'?'暂无成长周报':'暂无成长复盘'}}</view>
+      <view v-if="showTodayForm" class="section-band today-form-band">
+        <view class="today-heading"><PrototypeIcon name="user" :size="42"/><view><text class="student-name">每日成长复盘</text><text class="review-date">{{ todayLabel }}</text></view></view>
+        <view class="supplement-form">
+          <view v-for="(label,index) in typeLabels" :key="label" class="daily-field"><text class="section-title">★ {{label}}</text><textarea v-model="reflectionFields[index]" class="content-input" maxlength="200" :disabled="submitting" :placeholder="['记录今天的收获','记录遇到的困难','记录明天的计划'][index]"/><text class="field-count">{{reflectionFields[index].length}}/200</text></view>
+          <button class="submit-button" :disabled="submitting||reflectionFields.some(value=>!value.trim())" @tap="submitTodayReflection">{{submitting?'正在提交':'提交复盘'}}</button>
+        </view>
+      </view>
       <view v-if="loading" class="loading-mask">正在加载</view>
     </template>
   <AppTabBar :items="STUDENT_TABS" :active="2" />
@@ -89,12 +96,13 @@ import PrototypePageHeader from "@/components/PrototypePageHeader.vue";
 import PrototypeIcon from '@/components/PrototypeIcon.vue';
 import AppTabBar from '@/components/AppTabBar.vue';
 import { STUDENT_TABS } from '@/config/tabbar';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { onPullDownRefresh, onShow, onHide, onUnload } from '@dcloudio/uni-app';
 import { getMiniappCapabilities } from '@/api/capability';
 import {
   addMyGrowthReviewSupplement,
   saveMyDailyReflection,
+  saveMyDailyReflectionForToday,
   getMyGrowthReview,
   listMyDailyGrowthReviews,
   listMyGrowthReviews,
@@ -124,6 +132,24 @@ const submitting = ref(false);
 const typeIndex = ref(0);
 const supplementContent = ref('');
 const reflectionFields=ref(['','','']);
+const showTodayForm = computed(() => period.value==='DAY' && dailyAllowed.value && reviews.value.length===0);
+const todayLabel = computed(() => { const d=new Date(); const week=['周日','周一','周二','周三','周四','周五','周六'][d.getDay()]; return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${week}`; });
+
+async function submitTodayReflection(): Promise<void> {
+  const values=reflectionFields.value.map(value=>value.trim());
+  if(period.value!=='DAY'||values.some(value=>!value)||submitting.value)return;
+  const token=getStudentSession()?.accessToken,n=revision,expected=period.value;
+  submitting.value=true;
+  try{
+    await saveMyDailyReflectionForToday(values[0],values[1],values[2]);
+    if(!valid(n,token)||period.value!==expected)return;
+    reflectionFields.value=['','',''];
+    submitting.value=false;
+    await loadReviews();
+    if(valid(n,token))uni.showToast({title:'复盘已提交',icon:'success'});
+  }catch(error){ if(valid(n,token)&&period.value===expected)uni.showToast({title:toMessage(error),icon:'none'}); }
+  finally{ if(valid(n,token))submitting.value=false; }
+}
 
 onShow(() => void initialize());
 onPullDownRefresh(async () => {
@@ -232,6 +258,38 @@ function categoryWidth(category: { taskCount: number; completedCount: number }):
 function typeLabel(type: GrowthReviewSupplementType): string {
   return typeLabels[supplementTypes.indexOf(type)] || type;
 }
+const weekTitle = computed(() => {
+  const d = detail.value;
+  if (!d || d.periodType !== 'WEEK') return '';
+  const start = new Date(`${d.periodStart}T00:00:00`);
+  const weekOfMonth = Math.floor((start.getDate() - 1) / 7) + 1;
+  return `${start.getFullYear()}年${start.getMonth() + 1}月·第${weekOfMonth}周`;
+});
+function shortDay(value: string): string { return value.slice(5).replace('-', '/'); }
+const weeklyHighlights = computed(() => {
+  const d = detail.value;
+  if (!d || d.periodType !== 'WEEK') return [] as string[];
+  const lines: string[] = [];
+  const fullDays = (d.dailyTrends || []).filter(day => day.taskTotalCount > 0 && day.completedCount >= day.taskTotalCount);
+  if (fullDays.length) lines.push(`${fullDays.map(day => shortDay(day.trendDate)).slice(0, 3).join('、')} 全部任务完成`);
+  const best = [...(d.dailyTrends || [])].sort((a, b) => b.earnedPoints - a.earnedPoints)[0];
+  if (best && best.earnedPoints > 0) lines.push(`${shortDay(best.trendDate)} 表现最佳，获得 ${best.earnedPoints} 积分`);
+  const doneDays = (d.dailyTrends || []).filter(day => day.completedCount > 0).length;
+  if (doneDays >= 2) lines.push(`本周共 ${doneDays} 天坚持完成任务`);
+  for (const category of d.categories || []) if (category.taskCount > 0 && category.completedCount >= category.taskCount) lines.push(`「${category.categoryCode}」任务全部完成`);
+  return lines;
+});
+const weeklyImprovements = computed(() => {
+  const d = detail.value;
+  if (!d || d.periodType !== 'WEEK') return [] as string[];
+  const lines: string[] = [];
+  for (const category of d.categories || []) {
+    if (category.taskCount > 0 && category.completedCount === 0) lines.push(`「${category.categoryCode}」本周尚未开始，试试安排一次`);
+    else if (category.completedCount < category.taskCount) lines.push(`「${category.categoryCode}」完成 ${category.completedCount}/${category.taskCount}，还有提升空间`);
+  }
+  for (const day of d.dailyTrends || []) if (day.completedCount === 0) lines.push(`${shortDay(day.trendDate)} 暂无完成记录，保持每日节奏`);
+  return lines;
+});
 function toMessage(error: unknown): string {
   return error instanceof Error ? error.message : '成长复盘加载失败';
 }
@@ -313,4 +371,12 @@ function toMessage(error: unknown): string {
 .summary-band,.section-band{background:white!important;border:0!important;border-radius:24rpx!important;padding:26rpx!important;}.student-name{font-size:30rpx;color:#143e34;}.review-date{font-size:24rpx;color:#828c86;}.completion-ring{border-color:#2b8062;background:#eff8ee;}.section-title{font-size:28rpx;color:#143e34;}.supplement-form{background:#f9fbf8;padding:20rpx;border-radius:20rpx;}.content-input{border:1rpx solid #dde5df;border-radius:18rpx;font-size:27rpx;line-height:1.6;min-height:160rpx;padding:20rpx;box-sizing:border-box;}.submit-button{background:#116a50;color:white;border-radius:24rpx;}.supplement-row{border-bottom:1rpx solid #edf0e8;padding:24rpx 0;}.supplement-type{color:#174d3b;font-weight:600;}.supplement-content{line-height:1.7;font-size:26rpx;color:#3e4944;}.date-option.active{background:#176c51;color:white;}
 .daily-field{position:relative;}.daily-field .content-input{margin-top:16rpx;padding-bottom:40rpx;}.field-count{display:block;text-align:right;color:#8b958e;font-size:22rpx;margin-top:-36rpx;padding-right:18rpx;position:relative;}
 .period-tabs{display:flex;gap:20rpx;margin-bottom:24rpx;}.period-tabs button{flex:1;background:#edf4ed;border-radius:26rpx;color:#176c51;font-size:26rpx;}.period-tabs button.active{background:#176c51;color:white;}.weekly-detail{background:white;border-radius:24rpx;padding:28rpx;}.week-range{display:block;text-align:center;color:#174a39;font-size:30rpx;font-weight:600;}.weekly-student{display:flex;align-items:center;gap:20rpx;margin:30rpx 0;font-size:29rpx;}.weekly-metrics{display:flex;gap:12rpx;}.weekly-metrics>view{flex:1;border:1rpx solid #e7eee8;border-radius:18rpx;padding:18rpx 10rpx;}.weekly-metrics text{display:block;text-align:center;font-size:22rpx;color:#818b85;}.weekly-metrics text:first-child{font-size:32rpx;color:#173e2e;font-weight:600;margin-bottom:10rpx;}.weekly-section{margin-top:28rpx;}.weekly-trend{display:flex;justify-content:space-between;gap:16rpx;padding:18rpx 0;border-bottom:1rpx solid #edf0e8;font-size:24rpx;}
+.today-form-band{margin-top:24rpx;}
+.today-heading{display:flex;align-items:center;gap:20rpx;padding-bottom:22rpx;border-bottom:1rpx solid #edf0e8;}
+.week-sub{display:block;text-align:center;margin-top:8rpx;color:#828c86;font-size:23rpx;}
+.weekly-line{display:flex;gap:14rpx;padding:14rpx 0;font-size:24rpx;color:#3e4944;line-height:1.6;}
+.weekly-line .dot{flex:0 0 auto;color:#e2a33c;font-size:22rpx;}
+.weekly-line .dot.effort{color:#5f8f7c;}
+.teacher-comment{background:#f2f8ef;border-radius:18rpx;padding:22rpx;}
+.comment-text{display:block;margin-top:12rpx;color:#5f7069;font-size:25rpx;line-height:1.7;}
 </style>

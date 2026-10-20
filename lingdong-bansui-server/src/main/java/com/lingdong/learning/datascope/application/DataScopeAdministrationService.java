@@ -114,7 +114,16 @@ public class DataScopeAdministrationService {
     @Transactional
     public void revokeScopedOrganizationAdministrator(Long operatorId,Long userId,Long organizationId) {
         requireScopedAdministratorOperation(operatorId,organizationId,true);
-        revokeAdministratorIdentity(operatorId,userId,organizationId);
+        // 组织成员管理抽屉的取消管理员是可逆操作，不做最后管理员防护（不同于系统管理员的直接撤销入口 revokeOrganizationAdministrator）
+        if (organizationAdminMapper.lockRelation(userId, organizationId) == null) {
+            throw new IllegalStateException("用户不是该组织管理员");
+        }
+        if (organizationAdminMapper.delete(organizationId, userId) != 1) {
+            throw new IllegalStateException("组织管理员撤销失败");
+        }
+        auditService.record(IamChangeAuditEventType.ORGANIZATION_ADMIN_REVOKE, operatorId,
+                IamChangeTargetType.ORGANIZATION_ADMIN, userId, organizationId, organizationId,
+                null, "REVOKED");
     }
     private void requireScopedAdministratorOperation(Long operatorId,Long organizationId,boolean revoke) {
         String code=revoke?"ORG_ADMIN_REVOKE":"ORG_ADMIN_ASSIGN";

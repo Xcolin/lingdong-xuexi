@@ -29,12 +29,19 @@
             <arg column="active_pause_type" javaType="com.lingdong.learning.learningtask.domain.TaskPauseType"/>
             <arg column="pause_started_at" javaType="java.time.LocalDateTime"/>
             <arg column="pause_expires_at" javaType="java.time.LocalDateTime"/>
+            <arg column="pause_adjust_method" javaType="java.lang.String"/>
+            <arg column="pause_reason_note" javaType="java.lang.String"/>
             <arg column="latest_checkin_id" javaType="java.lang.Long"/>
             <arg column="latest_submission_no" javaType="java.lang.Integer"/>
             <arg column="latest_checkin_content" javaType="java.lang.String"/>
             <arg column="latest_checkin_status" javaType="java.lang.String"/>
             <arg column="latest_submitted_at" javaType="java.time.LocalDateTime"/>
             <arg column="latest_review_comment" javaType="java.lang.String"/>
+            <arg column="latest_checkin_completion" javaType="java.lang.String"/>
+            <arg column="description" javaType="java.lang.String"/>
+            <arg column="requirement_items" javaType="java.util.List" typeHandler="com.lingdong.learning.learningtask.infrastructure.persistence.TaskStringListTypeHandler"/>
+            <arg column="example_file_ids" javaType="java.util.List" typeHandler="com.lingdong.learning.learningtask.infrastructure.persistence.TaskFileIdListTypeHandler"/>
+            <arg column="last_deferred_to_date" javaType="java.time.LocalDate"/>
         </constructor>
     </resultMap>
 
@@ -76,12 +83,21 @@
         active_pause.pause_type AS active_pause_type,
         active_pause.started_at AS pause_started_at,
         active_pause.expires_at AS pause_expires_at,
+        active_pause.adjust_method AS pause_adjust_method,
+        active_pause.reason_note AS pause_reason_note,
         latest_checkin.id AS latest_checkin_id,
         latest_checkin.submission_no AS latest_submission_no,
         latest_checkin.content AS latest_checkin_content,
         latest_checkin.status AS latest_checkin_status,
         latest_checkin.submitted_at AS latest_submitted_at,
-        latest_checkin.review_comment AS latest_review_comment
+        latest_checkin.review_comment AS latest_review_comment,
+        latest_checkin.completion AS latest_checkin_completion,
+        task.description,
+        task.requirement_items,
+        task.example_file_ids,
+        (SELECT MAX(defer_history.target_scheduled_date)
+         FROM learn_task_defer_history defer_history
+         WHERE defer_history.assignment_id = assignment.id) AS last_deferred_to_date
     </sql>
 
     <sql id="assignmentFromAndFilters">
@@ -275,6 +291,14 @@
          AND teacher_class.status = 'ACTIVE'
         WHERE assignment.task_id = #{taskId}
           AND teacher_class.teacher_user_id = #{teacherUserId})
+    </select>
+    <select id="findExampleFileJsonByStudentUserId" resultType="string">
+        SELECT task.example_file_ids
+        FROM learn_task_assignment assignment
+        JOIN learn_task task ON task.id = assignment.task_id
+        JOIN edu_student student ON student.id = assignment.student_id
+        WHERE student.student_user_id = #{studentUserId}
+          AND task.example_file_ids IS NOT NULL
     </select>
 </mapper>
 

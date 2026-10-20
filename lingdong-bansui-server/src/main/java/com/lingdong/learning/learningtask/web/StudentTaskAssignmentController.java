@@ -4,6 +4,7 @@ import com.lingdong.learning.auth.application.AuthenticatedUser;
 import com.lingdong.learning.common.security.RequirePermission;
 import com.lingdong.learning.learningtask.application.StudentTaskAssignmentService;
 import com.lingdong.learning.learningtask.application.StudentTaskExecutionService;
+import com.lingdong.learning.learningtask.application.TaskDeferService;
 import jakarta.validation.Valid;
 import com.lingdong.learning.learningtask.domain.LearningTaskSourceType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -23,13 +24,16 @@ import java.time.LocalDate;
 public class StudentTaskAssignmentController {
     private final StudentTaskAssignmentService assignmentService;
     private final StudentTaskExecutionService executionService;
+    private final TaskDeferService deferService;
 
     public StudentTaskAssignmentController(
             StudentTaskAssignmentService assignmentService,
-            StudentTaskExecutionService executionService
+            StudentTaskExecutionService executionService,
+            TaskDeferService deferService
     ) {
         this.assignmentService = assignmentService;
         this.executionService = executionService;
+        this.deferService = deferService;
     }
 
     @RequirePermission("TASK_ASSIGNMENT_READ_SELF")
@@ -81,13 +85,24 @@ public class StudentTaskAssignmentController {
     }
 
     @RequirePermission("TASK_ASSIGNMENT_EXECUTE_SELF")
+    @PostMapping("/{id}/defer")
+    public TaskDeferResponse defer(
+            @AuthenticationPrincipal AuthenticatedUser currentUser,
+            @PathVariable Long id,
+            @Valid @RequestBody StudentDeferTaskRequest request
+    ) {
+        return TaskDeferResponse.from(
+                deferService.deferManuallyByStudent(currentUser, id, request.targetDate(), request.reason()));
+    }
+
+    @RequirePermission("TASK_ASSIGNMENT_EXECUTE_SELF")
     @PostMapping("/{id}/abandon")
     public StudentTaskAssignmentResponse abandon(
             @AuthenticationPrincipal AuthenticatedUser currentUser,
             @PathVariable Long id,
             @Valid @RequestBody(required = false) AbandonTaskRequest request
     ) {
-        AbandonTaskRequest normalizedRequest = request == null ? new AbandonTaskRequest(null) : request;
+        AbandonTaskRequest normalizedRequest = request == null ? new AbandonTaskRequest(null, null) : request;
         return StudentTaskAssignmentResponse.from(
                 executionService.abandon(currentUser, id, normalizedRequest.toCommand()));
     }

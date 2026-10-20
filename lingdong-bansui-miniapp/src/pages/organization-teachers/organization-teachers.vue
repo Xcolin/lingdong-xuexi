@@ -12,9 +12,8 @@
     <text v-if="candidateError" class="candidate-error">{{candidateError}}</text>
     <view v-if="loading" class="state-text">正在加载</view>
     <template v-else>
+      <!-- 标题由顶部导航栏单行渲染，表单内不再重复输出 -->
       <view v-if="mode !== 'LIST'" class="teacher-form-band">
-        <text class="form-title">{{ formTitle }}</text>
-
         <template v-if="mode === 'CREATE'">
           <text class="field-label">教师账号</text>
           <input v-model="username" class="text-input" maxlength="64" placeholder="请输入教师账号" />

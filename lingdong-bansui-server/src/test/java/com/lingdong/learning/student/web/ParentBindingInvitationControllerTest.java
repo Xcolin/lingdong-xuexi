@@ -62,6 +62,9 @@ class ParentBindingInvitationControllerTest {
         configureOrganizationAdministrator(eastOrganizationAdministrator, eastSchool);
         configureOrganizationAdministrator(westOrganizationAdministrator, westSchool);
         setPassword(systemAdministrator, systemAdministrator, eastOrganizationAdministrator, westOrganizationAdministrator, parent, ordinaryUser);
+        // V38 将 PARENT_RELATIONSHIP_MANAGEMENT 初始置 DISABLED，邀请链权限依赖该开关；V118 后家长需为 FAMILY 身份且持有家长档案
+        enableParentRelationshipFeature();
+        makeFamilyParent("invite_scope_parent");
 
         Long studentId = createInstitutionStudent(eastOrganizationAdministrator, eastSchool, "邀请学生甲");
         String eastOrganizationAdministratorToken = loginAccessToken("invite_scope_east_org_admin");
@@ -163,6 +166,8 @@ class ParentBindingInvitationControllerTest {
         );
         configureOrganizationAdministrator(organizationAdministrator, school);
         setPassword(systemAdministrator, systemAdministrator, organizationAdministrator);
+        // V38 将 PARENT_RELATIONSHIP_MANAGEMENT 初始置 DISABLED，重新签发受其权限链影响
+        enableParentRelationshipFeature();
         Long studentId = createInstitutionStudent(organizationAdministrator, school, "过期邀请学生");
         String organizationAdministratorToken = loginAccessToken(organizationAdministrator.username());
 
@@ -174,7 +179,7 @@ class ParentBindingInvitationControllerTest {
                 .andReturn();
         Long expiredInvitationId = objectMapper.readTree(invitationResult.getResponse().getContentAsString()).path("id").asLong();
         jdbcTemplate.update(
-                "UPDATE edu_parent_binding_invitation SET expires_at = DATEADD('SECOND', -1, CURRENT_TIMESTAMP) WHERE id = ?",
+                "UPDATE edu_parent_binding_invitation SET expires_at = DATE_SUB(NOW(), INTERVAL 1 SECOND) WHERE id = ?",
                 expiredInvitationId
         );
 
@@ -232,7 +237,27 @@ class ParentBindingInvitationControllerTest {
             authenticationApplicationService.setPlatformUserPassword(new SetPlatformUserPasswordCommand(
                     systemAdministrator.id(), targetUser.id(), "Password123"
             ));
+            // bf34c6a 管理员设密后要求首登改密，业务测试直接清除首登改密标记
+            jdbcTemplate.update("UPDATE auth_initial_password_state SET change_required=false WHERE user_id=?", targetUser.id());
         }
+    }
+
+    /** V118 后家长账号需为 FAMILY 身份且持有家长档案；WEB 会话仅保留学生档案等家庭基础能力。 */
+    private void makeFamilyParent(String username) {
+        Long id = jdbcTemplate.queryForObject("SELECT id FROM sys_user WHERE username=?", Long.class, username);
+        jdbcTemplate.update("UPDATE sys_user SET user_type='FAMILY' WHERE id=?", id);
+        jdbcTemplate.update("INSERT INTO auth_parent_profile(id,user_id,onboarding_status,first_login_at,onboarding_completed_at) "
+                + "VALUES(?,?,'COMPLETED',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP) "
+                + "ON DUPLICATE KEY UPDATE onboarding_status = VALUES(onboarding_status)", id, id);
+        jdbcTemplate.update("INSERT INTO auth_user_agreement_acceptance(id,user_id,agreement_type,agreement_version,client_type,accepted_at) "
+                + "SELECT ?,?,'PARENT_USER_AGREEMENT',config_value,'WEB',CURRENT_TIMESTAMP FROM sys_config "
+                + "WHERE config_key='auth.parent-agreement.current-version' AND status='ENABLED' "
+                + "ON DUPLICATE KEY UPDATE agreement_version = VALUES(agreement_version)", id, id);
+    }
+
+    /** V38 将家长关系管理开关初始置 DISABLED，绑定邀请的创建/响应权限链依赖它启用。 */
+    private void enableParentRelationshipFeature() {
+        jdbcTemplate.update("UPDATE sys_feature_toggle SET status='ENABLED' WHERE feature_code='PARENT_RELATIONSHIP_MANAGEMENT'");
     }
 
     private String loginAccessToken(String username) throws Exception {

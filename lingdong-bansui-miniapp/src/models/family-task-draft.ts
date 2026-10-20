@@ -1,15 +1,26 @@
 import {isParentIdentity} from '@/models/parent-identity';
 export interface FamilyIdentity { parentProfile?:boolean;userType?:string;clientType: string; roleCodes: string[]; permissionCodes: string[] }
 export function canManageFamily(user: FamilyIdentity, permission: string) { return isParentIdentity(user) && user.permissionCodes.includes(permission); }
-export interface FamilyForm { title: string; difficultyLevel: number; durationMinutes: number; scheduledDate: string; remark: string; studentIds: string[]; recurrenceEnabled?: boolean; recurrenceEndDate?: string | null; recurrenceFrequency?: 'DAILY' | 'WEEKLY' | 'CUSTOM'; recurrenceWeekdays?: number[] }
+export interface FamilyForm { title: string; difficultyLevel: number; durationMinutes: number; scheduledDate: string; remark: string; studentIds: string[]; recurrenceEnabled?: boolean; recurrenceEndDate?: string | null; recurrenceFrequency?: 'DAILY' | 'WEEKLY' | 'CUSTOM'; recurrenceWeekdays?: number[]; description?: string; taskType?: string | null; endDate?: string | null; visibility?: string | null }
 export interface PreservedFields { categoryCode?: string | null; tagCodes?: string[]; recurrenceEnabled: boolean; recurrenceEndDate?: string | null; recurrenceFrequency?: 'DAILY' | 'WEEKLY' | 'CUSTOM'; recurrenceWeekdays?: number[] }
 /** 简化表单仍保留 Web 草稿的分类、标签、重复配置及所有学生目标。 */
 export function draftInput(form: FamilyForm, previous?: PreservedFields) {
   return { sourceType: 'FAMILY' as const, title: form.title.trim(), difficultyLevel: Number(form.difficultyLevel),
     durationMinutes: Number(form.durationMinutes), scheduledDate: form.scheduledDate, remark: form.remark,
+    description: form.description?.trim() || null,
+    taskType: form.taskType || null, endDate: form.endDate || null, visibility: form.visibility || null,
     categoryCode: previous?.categoryCode ?? null, tagCodes: previous?.tagCodes ?? [],
     ...recurrenceFields(form, previous),
     targets: form.studentIds.map(targetId => ({ targetType: 'STUDENT' as const, targetId })) };
+}
+
+/** 向导步骤 1 校验（02-03）：类型六选必选、起止区间、描述 100 字上限。 */
+export function step1Error(form: FamilyForm): string {
+  if (!form.title.trim()) return '请填写任务标题';
+  if (form.description && form.description.length > 100) return '任务描述不能超过 100 字';
+  if (!form.taskType) return '请选择任务类型';
+  if (form.endDate && form.endDate < form.scheduledDate) return '任务结束日期不能早于开始日期';
+  return '';
 }
 
 export function recurrenceError(form: FamilyForm, weekdayCapability?: boolean): string {

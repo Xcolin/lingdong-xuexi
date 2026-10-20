@@ -84,6 +84,8 @@ class ParentMobileManualRecoveryServiceTest {
         when(userMapper.findByIdForUpdate(PARENT_ID)).thenReturn(parent());
         when(studentMapper.findByIdForUpdate(STUDENT_ID)).thenReturn(student());
         when(relationshipMapper.findByParentAndStudentForUpdate(PARENT_ID, STUDENT_ID)).thenReturn(relationship());
+        // 显式表达“操作员对目标学生无组织范围”：未打桩时 Mockito 对 Long 包装类型返回 0L 而非 null，守卫不会触发
+        when(recoveryMapper.findAccessibleOrganizationId(OPERATOR_ID, STUDENT_ID)).thenReturn(null);
         assertThatThrownBy(() -> service.recover(operator(), recoveryCommand())).isInstanceOf(ResourceNotFoundException.class);
         verify(smsService, never()).verifyAndConsume(any(), any(), any(), any());
         verify(userMapper, never()).updateMobileIfExpected(any(), any(), any());

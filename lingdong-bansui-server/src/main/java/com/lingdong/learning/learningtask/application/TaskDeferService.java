@@ -8,12 +8,15 @@ import com.lingdong.learning.datascope.application.OrganizationDataScopeService;
 import com.lingdong.learning.feature.application.FeatureAccessService;
 import com.lingdong.learning.learningtask.domain.LearningTaskSourceType;
 import com.lingdong.learning.learningtask.domain.LearningTaskTag;
+import com.lingdong.learning.learningtask.domain.TaskAssignmentEvent;
+import com.lingdong.learning.learningtask.domain.TaskAssignmentEventType;
 import com.lingdong.learning.learningtask.domain.TaskAssignmentStatus;
 import com.lingdong.learning.learningtask.domain.TaskDeferHistory;
 import com.lingdong.learning.learningtask.domain.TaskDeferType;
 import com.lingdong.learning.learningtask.infrastructure.persistence.LearningTaskAssignmentMapper;
 import com.lingdong.learning.learningtask.infrastructure.persistence.LearningTaskMapper;
 import com.lingdong.learning.learningtask.infrastructure.persistence.LearningTaskTagMapper;
+import com.lingdong.learning.learningtask.infrastructure.persistence.TaskAssignmentEventMapper;
 import com.lingdong.learning.learningtask.infrastructure.persistence.TaskDeferHistoryMapper;
 import com.lingdong.learning.learningtask.infrastructure.persistence.TaskDeferMapper;
 import com.lingdong.learning.learningtask.infrastructure.persistence.TaskDeferStateRow;
@@ -40,7 +43,9 @@ public class TaskDeferService {
     private final LearningTaskTagMapper tagMapper;
     private final LearningTaskAssignmentMapper assignmentMapper;
     private final TaskDeferHistoryMapper historyMapper;
+    private final TaskAssignmentEventMapper eventMapper;
     private final ParentStudentMapper parentStudentMapper;
+    private final CurrentStudentAccessService currentStudentAccessService;
     private final OrganizationDataScopeService organizationDataScopeService;
     private final FeatureAccessService featureAccessService;
     private final IdGenerator idGenerator;
@@ -53,7 +58,9 @@ public class TaskDeferService {
             LearningTaskTagMapper tagMapper,
             LearningTaskAssignmentMapper assignmentMapper,
             TaskDeferHistoryMapper historyMapper,
+            TaskAssignmentEventMapper eventMapper,
             ParentStudentMapper parentStudentMapper,
+            CurrentStudentAccessService currentStudentAccessService,
             OrganizationDataScopeService organizationDataScopeService,
             FeatureAccessService featureAccessService,
             IdGenerator idGenerator,
@@ -64,7 +71,9 @@ public class TaskDeferService {
         this.tagMapper = tagMapper;
         this.assignmentMapper = assignmentMapper;
         this.historyMapper = historyMapper;
+        this.eventMapper = eventMapper;
         this.parentStudentMapper = parentStudentMapper;
+        this.currentStudentAccessService = currentStudentAccessService;
         this.organizationDataScopeService = organizationDataScopeService;
         this.featureAccessService = featureAccessService;
         this.idGenerator = idGenerator;
@@ -90,6 +99,38 @@ public class TaskDeferService {
             throw new IllegalStateException("任务当前状态不允许顺延");
         }
         return defer(state, targetDate, TaskDeferType.MANUAL, currentUser.userId());
+    }
+
+    /** 学生本人申请顺延（05-09）：仅限本人任务，顺延后写审计事件保留申请原因。 */
+    @Transactional
+    public TaskDeferResult deferManuallyByStudent(
+            AuthenticatedUser currentUser, Long assignmentId, LocalDate targetDate, String reason
+    ) {
+        featureAccessService.requireEnabled(FEATURE_CODE, null);
+        LocalDate today = LocalDate.now(clock.withZone(BUSINESS_ZONE));
+        validateManualTargetDate(targetDate, today);
+        TaskDeferStateRow state = deferMapper.findStateForUpdate(requireId(assignmentId));
+        Long studentId = currentStudentAccessService.require(currentUser).id();
+        if (state == null || !studentId.equals(state.studentId())) {
+            throw new ResourceNotFoundException("任务实例不存在或不可操作");
+        }
+        boolean canDefer = state.currentStatus() == TaskAssignmentStatus.IN_PROGRESS
+                || state.currentStatus() == TaskAssignmentStatus.NEEDS_IMPROVEMENT
+                || (state.currentStatus() == TaskAssignmentStatus.PENDING_CLAIM
+                && state.lastDeferType() == TaskDeferType.AUTO);
+        if (!canDefer) {
+            throw new IllegalStateException("任务当前状态不允许顺延");
+        }
+        TaskDeferResult result = defer(state, targetDate, TaskDeferType.MANUAL, currentUser.userId());
+        String normalizedReason = reason == null || reason.isBlank() ? null : reason.trim();
+        LocalDateTime occurredAt = LocalDateTime.now(clock.withZone(BUSINESS_ZONE));
+        if (eventMapper.insert(new TaskAssignmentEvent(
+                idGenerator.nextId(), state.assignmentId(), TaskAssignmentEventType.DEFERRED,
+                currentUser.userId(), state.currentStatus(), TaskAssignmentStatus.PENDING_CLAIM,
+                normalizedReason, targetDate.toString(), occurredAt)) != 1) {
+            throw new IllegalStateException("任务顺延事件写入失败");
+        }
+        return result;
     }
 
     @Transactional

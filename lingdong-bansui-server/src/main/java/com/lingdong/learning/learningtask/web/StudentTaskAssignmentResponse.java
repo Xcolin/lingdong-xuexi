@@ -2,7 +2,9 @@ package com.lingdong.learning.learningtask.web;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
+import com.lingdong.learning.attachment.web.TaskAttachmentResponse;
 import com.lingdong.learning.learningtask.application.StudentTaskAssignmentView;
+import com.lingdong.learning.learningtask.application.TaskTimelineNodeView;
 import com.lingdong.learning.learningtask.domain.LearningTaskSourceType;
 import com.lingdong.learning.learningtask.domain.TaskDeferType;
 
@@ -33,7 +35,13 @@ public record StudentTaskAssignmentResponse(
         boolean overnightMigrated,
         ActiveTaskPauseResponse activePause,
         TaskCheckInResponse latestCheckIn,
-        List<String> tagCodes
+        List<String> tagCodes,
+        String description,
+        List<String> requirementItems,
+        @JsonSerialize(contentUsing = ToStringSerializer.class) List<Long> exampleFileIds,
+        LocalDate lastDeferredToDate,
+        List<TaskTimelineNodeResponse> timeline,
+        List<TaskAttachmentResponse> exampleFiles
 ) {
     static StudentTaskAssignmentResponse from(StudentTaskAssignmentView view) {
         return new StudentTaskAssignmentResponse(
@@ -44,6 +52,9 @@ public record StudentTaskAssignmentResponse(
                 view.currentReviewerId(), view.reviewerDisplayName(),
                 view.lastDeferType(), view.overnightMigrated(),
                 ActiveTaskPauseResponse.from(view.activePause()),
-                TaskCheckInResponse.from(view.latestCheckIn()), view.tagCodes());
+                TaskCheckInResponse.from(view.latestCheckIn()), view.tagCodes(),
+                view.description(), view.requirementItems(), view.exampleFileIds(),
+                view.lastDeferredToDate(), TaskTimelineNodeResponse.from(view.timeline()),
+                view.exampleFiles().stream().map(TaskAttachmentResponse::from).toList());
     }
 }

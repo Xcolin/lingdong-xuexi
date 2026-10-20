@@ -104,7 +104,8 @@ class LearningTaskControllerTest {
         mockMvc.perform(get("/api/v1/learning-tasks").param("keyword", "自定义角色任务")
                 .header("Authorization", "Bearer " + token)).andExpect(status().isOk()).andExpect(jsonPath("$.total").value(0));
         mockMvc.perform(get("/api/v1/learning-tasks/{id}", taskId).header("Authorization", "Bearer " + token)).andExpect(status().isNotFound());
-        jdbcTemplate.update("DELETE FROM sys_role_permission WHERE role_id=? AND permission_id=(SELECT id FROM sys_permission WHERE permission_code='LEARNING_TASK_READ_MANAGED')", roleId);
+        // V118 后动作权限的 impliedReads 会自动恢复读权限，撤销单一 READ_MANAGED 无法拒绝读取，需撤销整族
+        jdbcTemplate.update("DELETE FROM sys_role_permission WHERE role_id=? AND permission_id IN (SELECT id FROM sys_permission WHERE permission_code LIKE 'LEARNING_TASK_%')", roleId);
         sqlSession.clearCache();
         mockMvc.perform(get("/api/v1/learning-tasks").header("Authorization", "Bearer " + token)).andExpect(status().isForbidden());
     }
@@ -241,6 +242,8 @@ class LearningTaskControllerTest {
         User secondaryParent = createUserWithRole(
                 "task_flow_secondary_parent", "任务闭环副家长", "PARENT", null);
         setPassword(fixture.systemAdministrator(), secondaryParent);
+        // 副家长同样需 FAMILY 身份与家长档案，发布后才能读取孩子任务
+        makeFamilyParent("task_flow_secondary_parent");
         String secondaryParentToken = platformLoginToken("task_flow_secondary_parent");
         parentStudentMapper.insertSecondary(
                 8_910_000_000_000_000_851L, secondaryParent.id(), fixture.familyStudent().id(),
@@ -396,10 +399,11 @@ class LearningTaskControllerTest {
                 .andExpect(status().isConflict());
 
         featureToggleMapper.updateGlobalStatus("LEARNING_TASK_MANAGEMENT", FeatureStatus.DISABLED);
+        // V118 后功能停用在权限层先行拒绝，不再到达 service 层的 409 FEATURE_DISABLED
         mockMvc.perform(post("/api/v1/learning-tasks/{id}/recurrence/stop", recurringTaskId)
                         .header("Authorization", "Bearer " + fixture.parentToken()))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.code").value("FEATURE_DISABLED"));
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
     }
 
     @Test
@@ -840,8 +844,8 @@ class LearningTaskControllerTest {
                         .content("""
                                 {"originalLedgerId":"%s","reason":"功能停用时不得纠错"}
                                 """.formatted(originalLedgerId)))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.code").value("FEATURE_DISABLED"));
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
         featureToggleMapper.updateGlobalStatus("GROWTH_POINT_CORRECTION", FeatureStatus.ENABLED);
 
         MvcResult correctionResult = mockMvc.perform(post(
@@ -1232,8 +1236,11 @@ class LearningTaskControllerTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.currentStatus").value("COMPLETED"))
                 .andExpect(jsonPath("$.checkInStatus").value("APPROVED"));
+        // 四状态 Tab 语义下 total=SUBMITTED+APPROVED+REJECTED 之和，完成后最新打卡计入 APPROVED
         mockMvc.perform(get("/api/v1/task-reviews").header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(0));
+                .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(1))
+                .andExpect(jsonPath("$.statusCounts.APPROVED").value(1))
+                .andExpect(jsonPath("$.statusCounts.PENDING_REVIEW").doesNotExist());
     }
 
     @Test
@@ -1317,15 +1324,17 @@ class LearningTaskControllerTest {
                 Integer.class, id)).isZero();
     }
 
-    /** 合成本地 H2 家长会话，仍走真实认证过滤器；不代表短信或微信登录验证。 */
+    /** 合成 MINIAPP 家长会话，仍走真实认证过滤器；不代表短信或微信登录验证。 */
     private void makeMiniappParentSession(User parent) {
         jdbcTemplate.update("UPDATE sys_user SET user_type='FAMILY' WHERE id=?", parent.id());
         jdbcTemplate.update("INSERT INTO auth_parent_profile(id,user_id,onboarding_status,first_login_at,onboarding_completed_at) "
-                + "VALUES(?,?,'COMPLETED',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)", parent.id(), parent.id());
+                + "VALUES(?,?,'COMPLETED',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP) "
+                + "ON DUPLICATE KEY UPDATE onboarding_status = VALUES(onboarding_status)", parent.id(), parent.id());
         jdbcTemplate.update("UPDATE auth_device_session SET client_type='MINIAPP' WHERE user_id=?", parent.id());
         jdbcTemplate.update("INSERT INTO auth_user_agreement_acceptance(id,user_id,agreement_type,agreement_version,client_type,accepted_at) "
                 + "SELECT ?,?,'PARENT_USER_AGREEMENT',config_value,'MINIAPP',CURRENT_TIMESTAMP FROM sys_config "
-                + "WHERE config_key='auth.parent-agreement.current-version' AND status='ENABLED'", parent.id(), parent.id());
+                + "WHERE config_key='auth.parent-agreement.current-version' AND status='ENABLED' "
+                + "ON DUPLICATE KEY UPDATE agreement_version = VALUES(agreement_version)", parent.id(), parent.id());
         // 测试事务跨越多个 HTTP 请求，清除 JDBC 夹具变更前的 MyBatis 一级缓存。
         sqlSession.clearCache();
     }
@@ -1367,10 +1376,15 @@ class LearningTaskControllerTest {
         assignRole(organizationAdministrator, "ORG_ADMIN", school.id());
         assignRole(teacher, "TEACHER", school.id());
         assignRole(backupTeacher, "TEACHER", school.id());
+        // V135 后教师职业身份独立持久化：需机构账号类型与启用教师档案，否则教师分班被判非启用教师
+        makeTeacher("task_flow_teacher");
+        makeTeacher("task_flow_backup_teacher");
         organizationAdminMapper.insert(
                 1_874_244_142_494_646_404L, organizationAdministrator.id(), school.id());
         setPassword(systemAdministrator, systemAdministrator);
         setPassword(systemAdministrator, parent);
+        // V118 后家长需为 FAMILY 身份且持有家长档案，否则 service 层 requireParent 拒绝建学生
+        makeFamilyParent("task_flow_parent");
         setPassword(systemAdministrator, organizationAdministrator);
         setPassword(systemAdministrator, teacher);
         setPassword(systemAdministrator, backupTeacher);
@@ -1503,10 +1517,46 @@ class LearningTaskControllerTest {
 
     private void setPassword(User systemAdministrator, User targetUser) {
         authenticationApplicationService.setPlatformUserPassword(new SetPlatformUserPasswordCommand(
-                systemAdministrator.id(), targetUser.id(), "Password123"));
+                systemAdministrator.id(), targetUser.id(), "Bootstrap123"));
+    }
+
+    /** V135 后教师职业身份独立持久化：机构账号类型 + edu_teacher_profile 启用记录。 */
+    private void makeTeacher(String username) {
+        Long id = jdbcTemplate.queryForObject("SELECT id FROM sys_user WHERE username=?", Long.class, username);
+        jdbcTemplate.update("UPDATE sys_user SET user_type='ORGANIZATION' WHERE id=?", id);
+        jdbcTemplate.update("INSERT INTO edu_teacher_profile(user_id,status) SELECT ?,'ENABLED' "
+                + "WHERE NOT EXISTS(SELECT 1 FROM edu_teacher_profile WHERE user_id=?)", id, id);
+        sqlSession.clearCache();
+    }
+
+    /** V118 后家长账号需为 FAMILY 身份且持有家长档案；WEB 会话仅保留学生档案等家庭基础能力。 */
+    private void makeFamilyParent(String username) {
+        Long id = jdbcTemplate.queryForObject("SELECT id FROM sys_user WHERE username=?", Long.class, username);
+        jdbcTemplate.update("UPDATE sys_user SET user_type='FAMILY' WHERE id=?", id);
+        jdbcTemplate.update("INSERT INTO auth_parent_profile(id,user_id,onboarding_status,first_login_at,onboarding_completed_at) "
+                + "VALUES(?,?,'COMPLETED',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP) "
+                + "ON DUPLICATE KEY UPDATE onboarding_status = VALUES(onboarding_status)", id, id);
+        jdbcTemplate.update("INSERT INTO auth_user_agreement_acceptance(id,user_id,agreement_type,agreement_version,client_type,accepted_at) "
+                + "SELECT ?,?,'PARENT_USER_AGREEMENT',config_value,'WEB',CURRENT_TIMESTAMP FROM sys_config "
+                + "WHERE config_key='auth.parent-agreement.current-version' AND status='ENABLED' "
+                + "ON DUPLICATE KEY UPDATE agreement_version = VALUES(agreement_version)", id, id);
+        sqlSession.clearCache();
     }
 
     private String platformLoginToken(String username) throws Exception {
+        // bf34c6a 起首次登录需自行改密，先 bootstrap 改密再建立业务会话
+        MvcResult bootstrap = mockMvc.perform(post("/api/v1/auth/sessions/password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"username":"%s","password":"Bootstrap123","deviceId":"%s-device","deviceName":"任务闭环测试浏览器"}
+                                """.formatted(username, username)))
+                .andExpect(status().isOk())
+                .andReturn();
+        mockMvc.perform(post("/api/v1/auth/password")
+                        .header("Authorization", "Bearer " + objectMapper.readTree(bootstrap.getResponse().getContentAsString()).path("accessToken").asText())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"oldPassword\":\"Bootstrap123\",\"newPassword\":\"Password123\"}"))
+                .andExpect(status().isNoContent());
         MvcResult result = mockMvc.perform(post("/api/v1/auth/sessions/password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""

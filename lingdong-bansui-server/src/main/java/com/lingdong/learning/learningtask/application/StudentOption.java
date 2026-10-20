@@ -9,6 +9,7 @@ public record StudentOption(
         String studentAccountMasked,
         Long currentClassId,
         String currentClassName,
-        ParentRelationshipRole relationshipRole
+        ParentRelationshipRole relationshipRole,
+        String schoolName
 ) {
 }

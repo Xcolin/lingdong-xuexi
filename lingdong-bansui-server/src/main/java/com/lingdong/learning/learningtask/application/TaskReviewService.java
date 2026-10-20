@@ -23,6 +23,7 @@ import com.lingdong.learning.learningtask.infrastructure.persistence.TaskCheckIn
 import com.lingdong.learning.learningtask.infrastructure.persistence.TaskReviewMapper;
 import com.lingdong.learning.learningtask.infrastructure.persistence.TaskReviewRow;
 import com.lingdong.learning.learningtask.infrastructure.persistence.TaskReviewStateRow;
+import com.lingdong.learning.learningtask.infrastructure.persistence.TaskReviewStatusCountRow;
 import com.lingdong.learning.learningtask.infrastructure.persistence.TaskReviewerMapper;
 import com.lingdong.learning.learningtask.infrastructure.persistence.ReviewerTransferMapper;
 import org.springframework.stereotype.Service;
@@ -39,6 +40,7 @@ public class TaskReviewService {
     private static final String FEATURE_CODE = "LEARNING_TASK_MANAGEMENT";
     private static final Set<String> REVIEW_ROLES = Set.of("PARENT", "TEACHER", "ORG_ADMIN");
     private static final Set<Integer> ALLOWED_BASE_POINTS = Set.of(10, 20, 30);
+    private static final Set<String> REVIEW_STATUS_TABS = Set.of("PENDING_REVIEW", "APPROVED", "REJECTED", "ALL");
 
     private final TaskReviewMapper reviewMapper;
     private final TaskCheckInMapper checkInMapper;
@@ -86,15 +88,27 @@ public class TaskReviewService {
     }
 
     @Transactional(readOnly = true)
-    public TaskReviewPage findPage(AuthenticatedUser currentUser, int page, int pageSize) {
+    public TaskReviewPage findPage(AuthenticatedUser currentUser, String statusTab, int page, int pageSize) {
         requireReviewer(currentUser);
+        String normalizedTab = statusTab == null || statusTab.isBlank() ? "PENDING_REVIEW" : statusTab.trim().toUpperCase();
+        if (!REVIEW_STATUS_TABS.contains(normalizedTab)) {
+            throw new IllegalArgumentException("审核状态筛选不合法");
+        }
         int normalizedPage = requireRange(page, "页码", 1, 1_000_000);
         int normalizedPageSize = requireRange(pageSize, "每页数量", 1, 100);
+        java.util.Map<String, Long> statusCounts = new java.util.LinkedHashMap<>();
+        for (TaskReviewStatusCountRow row : reviewMapper.countByStatus(currentUser.userId())) {
+            statusCounts.put(row.checkinStatus(), row.cnt());
+        }
         return new TaskReviewPage(
-                reviewMapper.findPage(currentUser.userId(),
+                reviewMapper.findPage(currentUser.userId(), normalizedTab,
                                 (normalizedPage - 1) * normalizedPageSize, normalizedPageSize)
                         .stream().map(this::toView).toList(),
-                normalizedPage, normalizedPageSize, reviewMapper.count(currentUser.userId()));
+                normalizedPage, normalizedPageSize,
+                statusCounts.getOrDefault("SUBMITTED", 0L)
+                        + statusCounts.getOrDefault("APPROVED", 0L)
+                        + statusCounts.getOrDefault("REJECTED", 0L),
+                statusCounts);
     }
 
     @Transactional(readOnly = true)
@@ -146,9 +160,11 @@ public class TaskReviewService {
 
     /** 审核通过、任务完成和积分奖励必须在同一事务中提交。 */
     @Transactional
-    public ApproveTaskReviewResult approve(AuthenticatedUser currentUser, Long assignmentId, Long expectedCheckInId) {
+    public ApproveTaskReviewResult approve(
+            AuthenticatedUser currentUser, Long assignmentId, Long expectedCheckInId, String reviewComment) {
         requireReviewer(currentUser);
         requireCheckInId(expectedCheckInId);
+        String comment = normalizeOptionalComment(reviewComment);
         TaskReviewStateRow state = reviewMapper.findStateForUpdate(
                 requireId(assignmentId), currentUser.userId());
         if (state == null) {
@@ -185,7 +201,7 @@ public class TaskReviewService {
         long availablePoints = Math.addExact(account.availablePoints(), awardedPoints);
         Long ledgerId = idGenerator.nextId();
 
-        requireSingleWrite(checkInMapper.approve(checkIn.id(), currentUser.userId(), now));
+        requireSingleWrite(checkInMapper.approve(checkIn.id(), currentUser.userId(), now, comment));
         requireSingleWrite(pointAccountMapper.addTaskReward(
                 account.id(), awardedPoints, account.versionNo(), now));
         requireSingleWrite(pointLedgerMapper.insert(GrowthPointLedger.taskReward(
@@ -272,12 +288,13 @@ public class TaskReviewService {
         TaskCheckInView checkIn = new TaskCheckInView(
                 row.checkInId(), row.submissionNo(), row.checkInContent(), row.checkInStatus(),
                 row.submittedAt(), row.reviewComment(),
-                attachmentService.findByCheckInId(row.checkInId()));
+                attachmentService.findByCheckInId(row.checkInId()), null);
         return new TaskReviewView(
                 row.assignmentId(), row.taskId(), row.title(), row.basePoints(),
                 row.studentId(), row.studentName(),
                 row.sourceType(), row.sourceOrganizationId(), row.sourceOrganizationName(),
-                row.currentStatus(), row.currentReviewerId(), row.reviewerDisplayName(), checkIn);
+                row.currentStatus(), row.currentReviewerId(), row.reviewerDisplayName(),
+                row.scheduledDate(), row.currentClassName(), row.taskType(), checkIn);
     }
 
     private Long requireCheckInId(Long value) {
@@ -311,6 +328,18 @@ public class TaskReviewService {
     private String normalizeComment(String value) {
         String normalized = value == null ? "" : value.trim();
         if (normalized.isEmpty() || normalized.length() > 500) {
+            throw new IllegalArgumentException("审核意见不合法");
+        }
+        return normalized;
+    }
+
+    /** 通过评语可选；填写时限制 500 字。 */
+    private String normalizeOptionalComment(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        String normalized = value.trim();
+        if (normalized.length() > 500) {
             throw new IllegalArgumentException("审核意见不合法");
         }
         return normalized;

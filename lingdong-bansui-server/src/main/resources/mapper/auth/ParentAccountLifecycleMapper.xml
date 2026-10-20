@@ -61,12 +61,13 @@
     <insert id="insertCancellation">
         INSERT INTO auth_parent_account_cancellation (
             id, user_id, status, active_scope_key, requested_at, cooling_ends_at,
-            revoked_at, finalized_at, next_finalize_at
+            revoked_at, finalized_at, next_finalize_at, reason, reason_note
         ) VALUES (
             #{record.id}, #{record.userId}, #{record.status}, #{record.activeScopeKey},
             #{record.requestedAt}, #{record.coolingEndsAt},
             #{record.revokedAt, jdbcType=TIMESTAMP}, #{record.finalizedAt, jdbcType=TIMESTAMP},
-            #{record.coolingEndsAt}
+            #{record.coolingEndsAt},
+            #{reason, jdbcType=VARCHAR}, #{reasonNote, jdbcType=VARCHAR}
         )
     </insert>
 

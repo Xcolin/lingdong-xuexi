@@ -55,7 +55,7 @@ class ParentRelationshipControllerTest {
                                 ParentRelationshipRole.SECONDARY_GUARDIAN)));
         when(service.getRelationshipStudents(PARENT_ID)).thenReturn(List.of(
                 new ParentRelationshipStudentView(
-                        STUDENT_ID, "小灵", ParentRelationshipRole.PRIMARY_GUARDIAN)));
+                        STUDENT_ID, "小灵", ParentRelationshipRole.PRIMARY_GUARDIAN, null)));
         when(service.createInvitation(any(CreateParentRelationshipInvitationCommand.class)))
                 .thenReturn(new ParentRelationshipInvitationView(
                         INVITATION_ID, "138****8000", LocalDateTime.of(2026, 8, 9, 13, 30)));

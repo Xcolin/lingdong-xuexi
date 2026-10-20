@@ -211,7 +211,8 @@ public class ParentAuthenticationController {
             @RequestBody ParentAccountCancellationRequest request
     ) {
         ParentAccountCancellationRecord record = accountLifecycleService.requestCancellation(
-                currentUser.userId(), currentUser.clientType(), request.code(), request.confirmation());
+                currentUser.userId(), currentUser.clientType(), request.code(), request.confirmation(),
+                request.reason(), request.note());
         return ParentAccountCancellationResponse.from(record);
     }
 

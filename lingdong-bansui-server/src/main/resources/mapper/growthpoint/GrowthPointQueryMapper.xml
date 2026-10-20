@@ -6,6 +6,7 @@
         <constructor>
             <idArg column="student_id" javaType="java.lang.Long"/>
             <arg column="student_name" javaType="java.lang.String"/>
+            <arg column="current_class_name" javaType="java.lang.String"/>
             <arg column="total_points" javaType="java.lang.Long"/>
             <arg column="available_points" javaType="java.lang.Long"/>
             <arg column="updated_at" javaType="java.time.LocalDateTime"/>
@@ -52,6 +53,12 @@
     <select id="findAccountByStudentId" resultMap="AccountViewMap">
         SELECT student.id AS student_id,
                student.student_name,
+               (SELECT cls_org.organization_name
+                  FROM edu_student_organization cls
+                  JOIN sys_organization cls_org ON cls_org.id = cls.organization_id
+                 WHERE cls.student_id = student.id AND cls.relation_type = 'CLASS'
+                   AND cls.status = 'ACTIVE'
+                 ORDER BY cls.id LIMIT 1) AS current_class_name,
                account.total_points,
                account.available_points,
                account.updated_at

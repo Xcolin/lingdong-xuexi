@@ -110,6 +110,21 @@ public class ParentRelationshipApplicationService {
                 invitationId, maskMobile(command.inviteeMobile()), expiresAt);
     }
 
+    /** 家长收到的待处理关系邀请（用户号或手机号任一命中）。 */
+    @Transactional(readOnly = true)
+    public List<ParentReceivedInvitationView> getReceivedInvitations(Long operatorUserId) {
+        featureAccessService.requireEnabled(FEATURE_CODE, null);
+        User user = userMapper.findById(operatorUserId);
+        return invitationMapper.findReceivedPending(operatorUserId, user == null ? null : user.mobile());
+    }
+
+    /** 家长视角的已失效历史关系（含解绑时间与原角色）。 */
+    @Transactional(readOnly = true)
+    public List<ParentInactiveRelationshipView> getInactiveRelationships(Long operatorUserId) {
+        featureAccessService.requireEnabled(FEATURE_CODE, null);
+        return relationshipMapper.findInactiveByParent(operatorUserId);
+    }
+
     /** 主副家长均可读取本人活动关系学生的当前主副关系。 */
     @Transactional(readOnly = true)
     public ParentRelationshipView getRelationships(Long operatorUserId, Long studentId) {

@@ -19,7 +19,8 @@
            FROM sys_organization o
           WHERE org.organization_path LIKE CONCAT(o.organization_path, '%')) AS organization_name <include refid="publishedFacts"/>
   <if test="!scope.allOrganizations"><include refid="authorizedSource"/></if>
-  ORDER BY org.organization_name,org.id
+  <!-- MySQL ONLY_FULL_GROUP_BY：DISTINCT 查询 ORDER BY 需引用 SELECT 别名，不能直接引用表列 -->
+  ORDER BY organization_name,org.id
  </select>
  <select id="findVisibleOrgIds" resultType="long">
   SELECT DISTINCT a.source_organization_id <include refid="publishedFacts"/>
@@ -45,8 +46,9 @@
   a.source_organization_id AS org_id,MAX(a.id) AS rep_id,
   (SELECT o2.organization_name FROM sys_organization o2 WHERE o2.organization_type IN ('SCHOOL', 'TRAINING_INSTITUTION') AND org.organization_path LIKE CONCAT(o2.organization_path,'%') ORDER BY LENGTH(o2.organization_path) DESC LIMIT 1) AS school_name,
   org.organization_name AS class_name,
-  CAST(COUNT(*) AS BIGINT) AS task_count,
-  CAST(SUM(CASE WHEN a.current_status='COMPLETED' THEN 1 ELSE 0 END) AS BIGINT) AS completed_count,
+  <!-- MySQL 无 BIGINT cast 类型（H2 专用语法），统一用 SIGNED -->
+  CAST(COUNT(*) AS SIGNED) AS task_count,
+  CAST(SUM(CASE WHEN a.current_status='COMPLETED' THEN 1 ELSE 0 END) AS SIGNED) AS completed_count,
   ROUND(CAST(SUM(CASE WHEN a.current_status='COMPLETED' THEN 1 ELSE 0 END) AS DECIMAL(14,4)) * 100
    / NULLIF(COUNT(*) - SUM(CASE WHEN a.current_status='IN_PROGRESS' THEN 1 ELSE 0 END) - SUM(CASE WHEN a.current_status='EXEMPT' THEN 1 ELSE 0 END), 0), 2) AS completion_rate,
   ROUND(COALESCE(AVG(CASE WHEN a.current_status='COMPLETED' THEN COALESCE((SELECT SUM(l.amount) FROM growth_point_ledger l WHERE l.source_assignment_id=a.id AND l.change_type IN ('TASK_REWARD','CORRECTION')),0) END), 0), 2) AS avg_points

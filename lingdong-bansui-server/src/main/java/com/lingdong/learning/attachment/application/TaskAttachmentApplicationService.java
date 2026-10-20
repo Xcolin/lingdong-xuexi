@@ -7,6 +7,7 @@ import com.lingdong.learning.attachment.infrastructure.persistence.ManagedFileMa
 import com.lingdong.learning.auth.application.AuthenticatedUser;
 import com.lingdong.learning.common.web.ResourceNotFoundException;
 import com.lingdong.learning.feature.application.FeatureAccessService;
+import com.lingdong.learning.learningtask.infrastructure.persistence.LearningTaskAssignmentMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,19 +30,22 @@ public class TaskAttachmentApplicationService {
     private final FileRelationMapper relationMapper;
     private final ManagedAttachmentContentService contentService;
     private final FeatureAccessService featureAccessService;
+    private final LearningTaskAssignmentMapper assignmentMapper;
 
     public TaskAttachmentApplicationService(
             AttachmentFileApplicationService fileService,
             ManagedFileMapper fileMapper,
             FileRelationMapper relationMapper,
             ManagedAttachmentContentService contentService,
-            FeatureAccessService featureAccessService
+            FeatureAccessService featureAccessService,
+            LearningTaskAssignmentMapper assignmentMapper
     ) {
         this.fileService = fileService;
         this.fileMapper = fileMapper;
         this.relationMapper = relationMapper;
         this.contentService = contentService;
         this.featureAccessService = featureAccessService;
+        this.assignmentMapper = assignmentMapper;
     }
 
     @Transactional
@@ -90,6 +94,29 @@ public class TaskAttachmentApplicationService {
         return toView(requireReadable(currentUser, fileId));
     }
 
+    /** 学生本人名下任务的参考示例图元数据，非本人任务或非示例文件直接忽略；附件功能停用时不阻断主业务响应。 */
+    @Transactional(readOnly = true)
+    public List<TaskAttachmentView> exampleMetadata(AuthenticatedUser currentUser, List<Long> fileIds) {
+        requireCurrentUser(currentUser);
+        // 附件功能停用时示例图仅作为展示性信息，直接忽略以避免打断打卡等主业务响应
+        if (!featureAccessService.isEnabled(ATTACHMENT_FEATURE_CODE, null)) {
+            return List.of();
+        }
+        featureAccessService.requireEnabled(LEARNING_TASK_FEATURE_CODE, null);
+        java.util.Set<Long> visibleIds = exampleFileIdsOfStudent(currentUser.userId());
+        List<TaskAttachmentView> views = new java.util.ArrayList<>();
+        for (Long fileId : normalizeFileIds(fileIds)) {
+            if (!visibleIds.contains(fileId)) {
+                continue;
+            }
+            ManagedFileRecord file = requireFile(fileId);
+            if (file.status() == FileStatus.AVAILABLE) {
+                views.add(toView(file));
+            }
+        }
+        return views;
+    }
+
     @Transactional(readOnly = true)
     public AttachmentContentView readContent(AuthenticatedUser currentUser, Long fileId) {
         ManagedFileRecord file = requireReadable(currentUser, fileId);
@@ -133,10 +160,28 @@ public class TaskAttachmentApplicationService {
         ManagedFileRecord file = requireFile(fileId);
         boolean uploader = currentUser.userId().equals(file.uploaderId());
         boolean reviewer = relationMapper.countReadableByCurrentReviewer(file.id(), currentUser.userId()) > 0;
-        if (file.status() != FileStatus.AVAILABLE || (!uploader && !reviewer)) {
+        boolean exampleOfOwnTask = uploader ? false : exampleFileIdsOfStudent(currentUser.userId()).contains(fileId);
+        if (file.status() != FileStatus.AVAILABLE || (!uploader && !reviewer && !exampleOfOwnTask)) {
             throw new ResourceNotFoundException("附件不存在或不可访问");
         }
         return file;
+    }
+
+    private java.util.Set<Long> exampleFileIdsOfStudent(Long studentUserId) {
+        java.util.Set<Long> ids = new LinkedHashSet<>();
+        for (String json : assignmentMapper.findExampleFileJsonByStudentUserId(studentUserId)) {
+            if (json == null || json.isBlank()) {
+                continue;
+            }
+            try {
+                List<Long> parsed = new com.fasterxml.jackson.databind.ObjectMapper()
+                        .readValue(json, new com.fasterxml.jackson.core.type.TypeReference<List<Long>>() { });
+                ids.addAll(parsed);
+            } catch (Exception ignored) {
+                // 示例清单格式异常时跳过该任务，不影响其余可读范围判定。
+            }
+        }
+        return ids;
     }
 
     private ManagedFileRecord requireFile(Long fileId) {

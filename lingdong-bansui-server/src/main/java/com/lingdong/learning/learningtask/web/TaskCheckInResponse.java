@@ -17,12 +17,13 @@ public record TaskCheckInResponse(
         String status,
         LocalDateTime submittedAt,
         String reviewComment,
-        List<TaskAttachmentResponse> attachments
+        List<TaskAttachmentResponse> attachments,
+        String completion
 ) {
     static TaskCheckInResponse from(TaskCheckInView view) {
         return view == null ? null : new TaskCheckInResponse(
                 view.id(), view.submissionNo(), view.content(), view.status(),
                 view.submittedAt(), view.reviewComment(), view.attachments().stream()
-                        .map(TaskAttachmentResponse::from).toList());
+                        .map(TaskAttachmentResponse::from).toList(), view.completion());
     }
 }

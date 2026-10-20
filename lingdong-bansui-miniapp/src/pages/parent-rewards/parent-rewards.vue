@@ -11,13 +11,16 @@
    <view class="tabs"><button v-if="manage" :disabled="busy" @tap="switchTab('rewards')">奖励库</button><button v-if="review" :disabled="busy" @tap="switchTab('exchanges')">兑换处理</button></view>
    <button v-if="tab==='rewards'&&manage&&primary" :disabled="busy" @tap="edit()">新增奖励</button>
    <view v-if="editing" class="card reward-editor">
-    <text>{{ editingId?'编辑奖励':'新增奖励' }}</text>
-    <text>奖励名称</text><input v-model="form.rewardName" :disabled="busy" maxlength="30" />
-    <text>所需积分</text><input v-model.number="form.requiredPoints" :disabled="busy" type="number" />
-    <text>说明</text><textarea v-model="form.description" :disabled="busy" maxlength="200" />
-    <text>有效期</text><view class="expiry-controls"><picker mode="date" :value="form.expiresAt.slice(0,10)" :disabled="busy" @change="expiryDate"><view class="field">{{form.expiresAt?form.expiresAt.slice(0,10):'选择日期（可选）'}}</view></picker><picker v-if="form.expiresAt" mode="time" :value="form.expiresAt.slice(11,16)" :disabled="busy" @change="expiryTime"><view class="field">{{form.expiresAt.slice(11,19)}}</view></picker></view><button v-if="form.expiresAt" :disabled="busy" @tap="form.expiresAt=''">不限有效期</button>
-    <picker :range="['下架','上架']" :value="form.status==='ONLINE'?1:0" :disabled="busy" @change="changeStatus"><view class="field">{{ form.status==='ONLINE'?'上架':'下架' }}</view></picker>
-    <view class="reward-editor-actions"><button :disabled="busy" @tap="editing=false">取消</button><button class="reward-save" :disabled="busy" @tap="save">保存奖励</button></view>
+    <text class="editor-title">{{ editingId?'编辑奖励':'新增奖励' }}</text>
+    <view class="form-row"><text class="form-label">奖励名称<text class="req">*</text></text><input v-model="form.rewardName" :disabled="busy" maxlength="30" placeholder="请输入奖励名称" /></view>
+    <view class="form-row"><text class="form-label">奖励分类<text class="req">*</text></text><picker :range="categoryLabels" :value="categoryIndex" :disabled="busy" @change="changeCategory"><view class="field picker-field"><text>{{ categoryLabels[categoryIndex] }}</text><text class="picker-caret">∨</text></view></picker></view>
+    <view class="form-row"><text class="form-label">所需积分<text class="req">*</text></text><view class="unit-field"><input v-model.number="form.requiredPoints" :disabled="busy" type="number" /><text class="unit">分</text></view></view>
+    <view class="form-row"><text class="form-label">库存数量<text class="req">*</text></text><view class="unit-field"><input v-model.number="form.stockQuantity" :disabled="busy" type="number" /><text class="unit">个</text></view></view>
+    <view class="form-row"><text class="form-label">奖励图片<text class="req">*</text></text><view class="image-row"><view v-if="imagePreviewPath" class="image-thumb"><image :src="imagePreviewPath" mode="aspectFill" /><text class="image-remove" @tap="removeImage">×</text></view><view class="image-add" :class="{ uploading: uploadingImage }" @tap="chooseRewardImage"><text class="image-plus">+</text><text class="image-add-label">{{ uploadingImage ? '上传中' : '添加图片' }}</text></view></view><text v-if="imageError" class="upload-error">{{ imageError }}</text></view>
+    <view class="form-row"><text class="form-label">奖励描述</text><textarea v-model="form.description" :disabled="busy" maxlength="200" placeholder="请输入奖励描述" /><text class="desc-count">{{ (form.description||'').length }}/200</text></view>
+    <view class="form-row"><text class="form-label">有效期</text><view class="expiry-controls"><picker mode="date" :value="form.expiresAt.slice(0,10)" :disabled="busy" @change="expiryDate"><view class="field">{{form.expiresAt?form.expiresAt.slice(0,10):'选择日期（可选）'}}</view></picker><picker v-if="form.expiresAt" mode="time" :value="form.expiresAt.slice(11,16)" :disabled="busy" @change="expiryTime"><view class="field">{{form.expiresAt.slice(11,19)}}</view></picker></view><button v-if="form.expiresAt" :disabled="busy" @tap="form.expiresAt=''">不限有效期</button></view>
+    <view class="form-row status-row"><text class="form-label">上架状态</text><view class="switch-block"><switch :checked="form.status==='ONLINE'" color="#13674e" :disabled="busy" @change="toggleStatus" /><text class="status-label">{{ form.status==='ONLINE'?'上架中':'未上架' }}</text></view></view>
+    <view class="reward-editor-actions"><button :disabled="busy" @tap="editing=false">取消</button><button class="reward-save" :disabled="busy" @tap="save">保 存</button></view>
    </view>
    <template v-else-if="ready&&!busy">
     <text>共 {{ total }} 项{{ tab==='rewards'?'奖励':'兑换记录' }}</text>
@@ -45,7 +48,8 @@
 import PrototypeIcon from '@/components/PrototypeIcon.vue';
 import {ref,reactive,computed} from 'vue';
 import {onShow,onHide,onUnload} from '@dcloudio/uni-app';
-import {parentRewardApi,canUseParentRewards,MANAGE_REWARDS,REVIEW_EXCHANGES,type RewardIdentity,type RewardChild,type ParentReward,type RewardInput} from '@/api/parent-reward';
+import {parentRewardApi,canUseParentRewards,MANAGE_REWARDS,REVIEW_EXCHANGES,REWARD_CATEGORY_LABELS,type RewardIdentity,type RewardChild,type ParentReward,type RewardInput,type RewardCategoryValue} from '@/api/parent-reward';
+import {uploadRewardImage,downloadTaskAttachmentAs} from '@/api/attachment';
 import type {StudentRewardExchange} from '@/api/reward';
 import {getMiniappCapabilities} from '@/api/capability';
 import {getParentSession} from '@/session/parent-session';
@@ -59,7 +63,11 @@ const manage=computed(()=>!!user.value&&canUseParentRewards(user.value,MANAGE_RE
 const review=computed(()=>!!user.value&&canUseParentRewards(user.value,REVIEW_EXCHANGES));
 const rewards=ref<ParentReward[]>([]),exchanges=ref<StudentRewardExchange[]>([]),reasons=reactive<Record<string,string>>({});
 const tab=ref<'rewards'|'exchanges'>('rewards'),page=ref(1),total=ref(0),busy=ref(false),ready=ref(false),error=ref(''),editing=ref(false),editingId=ref<string|null>(null);
-const form=reactive({rewardName:'',requiredPoints:1,description:'',expiresAt:'',status:'OFFLINE' as 'ONLINE'|'OFFLINE'});
+const form=reactive({rewardName:'',requiredPoints:1,category:'STUDY_SUPPLIES' as RewardCategoryValue,stockQuantity:1,imageUrl:null as string|null,description:'',expiresAt:'',status:'OFFLINE' as 'ONLINE'|'OFFLINE'});
+const categoryValues:RewardCategoryValue[]=['STUDY_SUPPLIES','LIFE_GOODS','EXPERIENCE'];
+const categoryLabels=categoryValues.map(value=>REWARD_CATEGORY_LABELS[value]);
+const categoryIndex=ref(0);
+const imagePreviewPath=ref(''),imageError=ref(''),uploadingImage=ref(false);
 let epoch=0;
 function current(n:number,token:string){return n===epoch&&getParentSession()?.accessToken===token;}
 function clearRows(){verification.value=null;verifiedDelivery.value=false;rewards.value=[];exchanges.value=[];total.value=0;ready.value=false;editing.value=false;for(const key of Object.keys(reasons))delete reasons[key];}
@@ -89,9 +97,14 @@ async function loadPage(target=1){
 function changeChild(event:Event){childIndex.value=Number((event as unknown as {detail:{value:string}}).detail.value);void loadPage(1);}
 function expiryDate(event:Event){const d=(event as unknown as {detail:{value:string}}).detail.value;form.expiresAt=d+'T'+(form.expiresAt.slice(11)||'23:59:59');}
 function expiryTime(event:Event){const t=(event as unknown as {detail:{value:string}}).detail.value;form.expiresAt=form.expiresAt.slice(0,10)+'T'+t+':00';}
-function changeStatus(event:Event){form.status=Number((event as unknown as {detail:{value:string}}).detail.value)===1?'ONLINE':'OFFLINE';}
+function changeCategory(event:Event){categoryIndex.value=Number((event as unknown as {detail:{value:string}}).detail.value);form.category=categoryValues[categoryIndex.value];}
+function toggleStatus(event:Event){form.status=(event as unknown as {detail:{value:boolean}}).detail.value?'ONLINE':'OFFLINE';}
 function switchTab(value:'rewards'|'exchanges'){tab.value=value;void loadPage(1);}
-function edit(reward?:ParentReward){if(busy.value||!primary.value||!manage.value)return;editingId.value=reward?.id||null;Object.assign(form,{rewardName:reward?.rewardName||'',requiredPoints:reward?.requiredPoints||1,description:reward?.description||'',expiresAt:reward?.expiresAt||'',status:reward?.status||'OFFLINE'});editing.value=true;error.value='';}
+function edit(reward?:ParentReward){if(busy.value||!primary.value||!manage.value)return;editingId.value=reward?.id||null;imagePreviewPath.value='';imageError.value='';uploadingImage.value=false;Object.assign(form,{rewardName:reward?.rewardName||'',requiredPoints:reward?.requiredPoints||1,category:reward?.category||'STUDY_SUPPLIES',stockQuantity:reward?.stockQuantity??1,imageUrl:reward?.imageUrl||null,description:reward?.description||'',expiresAt:reward?.expiresAt||'',status:reward?.status||'OFFLINE'});categoryIndex.value=Math.max(0,categoryValues.indexOf(form.category));if(form.imageUrl)void loadImagePreview(form.imageUrl);editing.value=true;error.value='';}
+async function loadImagePreview(imageUrl:string){const token=getParentSession()?.accessToken;if(!token)return;try{imagePreviewPath.value=await downloadTaskAttachmentAs(token,imageUrl);}catch{imageError.value='已保存图片预览读取失败，不影响保存';}}
+function removeImage(){form.imageUrl=null;imagePreviewPath.value='';imageError.value='';}
+async function chooseRewardImage(){if(busy.value||uploadingImage.value)return;uni.chooseImage({count:1,sizeType:['compressed'],success:selection=>{const path=selection.tempFilePaths?.[0];if(path)void uploadSelectedImage(path);},fail:()=>{imageError.value='未选择图片';}});}
+async function uploadSelectedImage(filePath:string){const token=getParentSession()?.accessToken;if(!token){error.value='请先登录家长账号';return;}uploadingImage.value=true;imageError.value='';try{const attachment=await uploadRewardImage(token,filePath);form.imageUrl=attachment.contentUrl;imagePreviewPath.value=filePath;}catch(cause){imageError.value=cause instanceof ApiError&&cause.statusCode===403?'图片上传通道未对家长开放，暂时无法上传图片':cause instanceof Error?cause.message:'图片上传未能完成';}finally{uploadingImage.value=false;}}
 async function confirm(content:string){return new Promise<boolean>(resolve=>uni.showModal({title:'确认操作',content,success:result=>resolve(result.confirm),fail:()=>resolve(false)}));}
 async function mutate(permission:string,content:string,work:(token:string)=>Promise<unknown>,confirmed=false){
  if(busy.value||!primary.value)return;const n=++epoch,token=getParentSession()?.accessToken;if(!token){clear();return;}busy.value=true;error.value='';
@@ -101,6 +114,7 @@ async function mutate(permission:string,content:string,work:(token:string)=>Prom
 }
 async function save(){
  if(!child.value)return;if(!form.rewardName.trim()||!Number.isSafeInteger(form.requiredPoints)||form.requiredPoints<=0){error.value='请填写名称和有效的正整数积分';return;}
+ if(!Number.isSafeInteger(form.stockQuantity)||form.stockQuantity<0){error.value='库存数量应为不小于 0 的整数';return;}
  if(form.expiresAt&&!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?$/.test(form.expiresAt)){error.value='有效期格式应为年-月-日T时:分:秒';return;}
  const input:RewardInput={...form,rewardName:form.rewardName.trim(),description:form.description||null,expiresAt:form.expiresAt||null};const studentId=child.value.studentId,rewardId=editingId.value;
  const confirmation=input.status==='ONLINE'?'确认保存并上架？上架后孩子可申请兑换，审批同意后扣除积分。':'确认保存为下架状态？下架后孩子不能新申请，已有兑换记录保留。';
@@ -137,7 +151,9 @@ onShow(reload);onHide(hide);onUnload(hide);
 
 @import "@/styles/workspace-prototype.scss";
 
-.reward-editor{position:fixed;inset:var(--window-top,0px) 0 0;z-index:110;overflow-y:auto;padding:28rpx 28rpx calc(160rpx + env(safe-area-inset-bottom))!important;margin:0!important;background:#F6F8F5!important;border-radius:0!important;}
+.reward-editor{position:fixed;inset:var(--window-top,0px) 0 0;z-index:110;overflow-y:auto;padding:20rpx 28rpx calc(140rpx + env(safe-area-inset-bottom))!important;margin:0!important;background:#F6F8F5!important;border-radius:0!important;}
+.reward-editor input{min-height:60rpx!important;}
+.reward-editor .form-label{margin:10rpx 0 6rpx;font-size:25rpx;}
 .reward-editor-actions{position:fixed;bottom:0;left:0;right:0;padding:20rpx 28rpx calc(20rpx + env(safe-area-inset-bottom));background:#fffefa;display:flex;gap:20rpx;border-top:1rpx solid #e0e8e1;}
 .reward-editor-actions button{flex:1;border-radius:18rpx;font-size:28rpx;margin:0!important;}
 .reward-editor-actions .reward-save{background:#184F40;color:white;}
@@ -164,4 +180,29 @@ button{border-radius:18rpx!important;font-size:26rpx!important;}button::after{bo
 .card>text{display:block;line-height:1.65;margin-bottom:12rpx;overflow-wrap:anywhere;}.reward-edit{background:#edf4ee!important;color:#184f40!important;}.reward-delete,.exchange-reject{background:#fff3f0!important;color:#b65a4d!important;border:1rpx solid #f0d4cd;}.exchange-approve,.exchange-verify,.reward-save{background:#184f40!important;color:#fff!important;}.card>button{margin-top:16rpx;}.card>textarea{margin:22rpx 0 12rpx;min-height:150rpx;}.reward-editor-actions{display:flex;gap:16rpx;}.reward-editor-actions button{flex:1;min-width:0;}.expiry-controls{display:flex;gap:14rpx;}.expiry-controls picker{flex:1;min-width:0;}.tabs{align-items:center;}.tabs button{min-width:0;}.field{overflow-wrap:anywhere;}button[disabled]{opacity:.45;}
 
 .verification-screen{padding:24rpx 0;}.verification-title{font-size:34rpx;text-align:center;font-weight:600;}.verification-card{background:white;border-radius:24rpx;padding:28rpx;margin:26rpx 0;}.verification-price{color:#f7940b;font-size:36rpx;font-weight:600;}.verification-row{display:flex;justify-content:space-between;gap:24rpx;border-bottom:1rpx solid #edf0e8;font-size:26rpx;}.delivery-check{display:flex;align-items:center;font-size:25rpx;line-height:1.6;margin:28rpx 0;}.verification-submit{background:#176c51;color:white;border-radius:20rpx;font-size:30rpx;}
+.editor-title{display:block;font-size:32rpx;font-weight:650;color:#162b24;margin-bottom:10rpx;}
+.form-row{margin-bottom:0;}
+.form-label{display:block;font-size:26rpx;color:#3c4a44;font-weight:550;margin:12rpx 0 6rpx;}
+.form-label .req{display:inline;margin:0;}
+.req{color:#d4553f;margin-left:4rpx;}
+.picker-field{display:flex;justify-content:space-between;align-items:center;}
+.picker-caret{color:#9aa7a0;font-size:24rpx;}
+.unit-field{display:flex;align-items:center;gap:12rpx;background:#fbfcfb!important;border:1rpx solid #dce5df!important;border-radius:14rpx!important;padding:2rpx 18rpx 2rpx 0;}
+.unit-field input{flex:1;border:0!important;margin:0!important;background:transparent!important;min-width:0;min-height:64rpx;}
+.unit{color:#8a968d;font-size:26rpx;}
+.image-row{display:flex;gap:18rpx;margin:8rpx 0;}
+.image-add{width:132rpx;height:132rpx;border:2rpx dashed #c8d6cd;border-radius:16rpx;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4rpx;background:#fbfcfb;color:#8a968d;font-size:24rpx;}
+.image-add.uploading{opacity:.6;}
+.image-plus{font-size:44rpx;line-height:1;color:#a9b6ae;}
+.image-add-label{font-size:22rpx;}
+.image-thumb{position:relative;width:132rpx;height:132rpx;border-radius:16rpx;overflow:hidden;border:1rpx solid #dce5df;}
+.image-thumb image{width:100%;height:100%;display:block;}
+.image-remove{position:absolute;top:0;right:0;background:rgba(0,0,0,.45);color:#fff;font-size:26rpx;padding:0 14rpx;line-height:1.7;border-radius:0 0 0 12rpx;}
+.upload-error{color:#a33c2e;font-size:24rpx;margin:6rpx 0;}
+.desc-count{display:block;text-align:right;color:#9aa7a0;font-size:22rpx;margin:0 0 4rpx;}
+.status-row{display:flex;align-items:center;justify-content:space-between;}
+.status-row .form-label{margin:12rpx 0;}
+.reward-editor .card>textarea,.reward-editor textarea{margin:6rpx 0!important;min-height:96rpx!important;height:96rpx!important;}
+.switch-block{display:flex;align-items:center;gap:14rpx;}
+.status-label{font-size:26rpx;color:#13674e;font-weight:550;}
 </style>

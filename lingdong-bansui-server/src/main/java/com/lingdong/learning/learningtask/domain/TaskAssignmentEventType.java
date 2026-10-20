@@ -13,5 +13,6 @@ public enum TaskAssignmentEventType {
     EXEMPTED,
     POINT_CORRECTED,
     MARKED_NEEDS_IMPROVEMENT,
+    DEFERRED,
     CLASS_INVALIDATED
 }

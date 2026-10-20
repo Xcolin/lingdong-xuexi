@@ -12,6 +12,7 @@ import com.lingdong.learning.learningtask.domain.TaskDeferType;
 import com.lingdong.learning.learningtask.infrastructure.persistence.LearningTaskAssignmentMapper;
 import com.lingdong.learning.learningtask.infrastructure.persistence.LearningTaskMapper;
 import com.lingdong.learning.learningtask.infrastructure.persistence.LearningTaskTagMapper;
+import com.lingdong.learning.learningtask.infrastructure.persistence.TaskAssignmentEventMapper;
 import com.lingdong.learning.learningtask.infrastructure.persistence.TaskDeferHistoryMapper;
 import com.lingdong.learning.learningtask.infrastructure.persistence.TaskDeferStateRow;
 import com.lingdong.learning.learningtask.infrastructure.persistence.TaskDeferMapper;
@@ -42,21 +43,27 @@ class TaskDeferServiceTest {
     private final LearningTaskTagMapper tagMapper = mock(LearningTaskTagMapper.class);
     private final LearningTaskAssignmentMapper assignmentMapper = mock(LearningTaskAssignmentMapper.class);
     private final TaskDeferHistoryMapper historyMapper = mock(TaskDeferHistoryMapper.class);
+    private final TaskAssignmentEventMapper eventMapper = mock(TaskAssignmentEventMapper.class);
     private final ParentStudentMapper parentStudentMapper = mock(ParentStudentMapper.class);
+    private final CurrentStudentAccessService currentStudentAccessService =
+            mock(CurrentStudentAccessService.class);
     private final OrganizationDataScopeService organizationDataScopeService = mock(OrganizationDataScopeService.class);
     private final FeatureAccessService featureAccessService = mock(FeatureAccessService.class);
     private final IdGenerator idGenerator = mock(IdGenerator.class);
+    private final LearningTaskScopeService permissionScope = mock(LearningTaskScopeService.class);
     private final Clock clock = Clock.fixed(
             Instant.parse("2026-08-08T04:00:00Z"), ZoneId.of("Asia/Shanghai"));
     private final TaskDeferService service = new TaskDeferService(
             deferMapper, taskMapper, tagMapper, assignmentMapper, historyMapper,
-            parentStudentMapper, organizationDataScopeService, featureAccessService,
-            idGenerator, clock, mock(LearningTaskScopeService.class));
+            eventMapper, parentStudentMapper, currentStudentAccessService,
+            organizationDataScopeService, featureAccessService, idGenerator, clock,
+            permissionScope);
     private final AuthenticatedUser parent = new AuthenticatedUser(
             44L, 55L, "parent", "家长", AuthClientType.WEB, List.of("PARENT"));
 
     @BeforeEach
     void setUp() {
+        org.mockito.Mockito.lenient().when(permissionScope.isParent(parent)).thenReturn(true);
         when(idGenerator.nextId()).thenReturn(
                 9000000000000000001L, 9000000000000000002L,
                 9000000000000000003L, 9000000000000000004L);

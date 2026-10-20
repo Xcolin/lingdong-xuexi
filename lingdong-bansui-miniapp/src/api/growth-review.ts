@@ -81,6 +81,11 @@ export function saveMyDailyReflection(reviewId:string, insight:string, difficult
  return authenticatedRequest(`/growth-reviews/me/${reviewId}/daily-reflection`,{method:'POST',data:{insight,difficulty,nextPlan}});
 }
 
+/** 无既有当日复盘时直接提交（后端自动确保当日复盘与快照存在）。 */
+export function saveMyDailyReflectionForToday(insight:string, difficulty:string, nextPlan:string):Promise<GrowthReviewSupplement[]> {
+ return authenticatedRequest(`/growth-reviews/me/daily-reflection`,{method:'POST',data:{insight,difficulty,nextPlan}});
+}
+
 function authenticatedRequest<T>(
   path: string,
   options: { method?: UniApp.RequestOptions['method']; data?: UniApp.RequestOptions['data'] } = {}

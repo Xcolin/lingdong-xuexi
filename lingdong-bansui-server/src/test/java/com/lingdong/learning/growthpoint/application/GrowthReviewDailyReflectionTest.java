@@ -19,7 +19,7 @@ class GrowthReviewDailyReflectionTest {
   var mapper=mock(GrowthReviewMapper.class);var access=mock(CurrentStudentAccessService.class);
   var actor=new AuthenticatedUser(1L,1L,"student","student",AuthClientType.MINIAPP,List.of("STUDENT"));
   when(access.require(actor)).thenReturn(Student.create(2L,"child","G1",1L));
-  var service=new GrowthReviewQueryService(mapper,access,mock(com.lingdong.learning.student.infrastructure.persistence.ParentStudentMapper.class),mock(FeatureAccessService.class),mock(com.lingdong.learning.common.id.IdGenerator.class),Clock.fixed(Instant.parse("2026-10-14T01:00:00Z"),ZoneOffset.UTC),mock(com.lingdong.learning.permission.application.PermissionDecisionService.class),mock(com.lingdong.learning.user.infrastructure.persistence.UserRoleMapper.class),mock(ParentActorAccessService.class));
+  var service=new GrowthReviewQueryService(mapper,access,mock(com.lingdong.learning.student.infrastructure.persistence.ParentStudentMapper.class),mock(FeatureAccessService.class),mock(com.lingdong.learning.common.id.IdGenerator.class),Clock.fixed(Instant.parse("2026-10-14T01:00:00Z"),ZoneOffset.UTC),mock(com.lingdong.learning.permission.application.PermissionDecisionService.class),mock(com.lingdong.learning.user.infrastructure.persistence.UserRoleMapper.class),mock(ParentActorAccessService.class),mock(com.lingdong.learning.growthpoint.application.GrowthReviewGenerationService.class));
   assertThatThrownBy(()->service.saveMyDailyReflection(actor,3L,new SaveDailyReflectionRequest("insight","difficulty"," ").toCommands())).isInstanceOf(IllegalArgumentException.class);
   verifyNoInteractions(mapper);
   var date=LocalDate.of(2026,10,14);var time=date.atStartOfDay();

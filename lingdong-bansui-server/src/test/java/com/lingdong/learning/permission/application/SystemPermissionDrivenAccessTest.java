@@ -65,6 +65,8 @@ class SystemPermissionDrivenAccessTest {
                 .isInstanceOf(IllegalStateException.class).hasMessageContaining("自己");
         assertThat(tasks.approve(task.id(), reviewer.id(), "同意").status()).isEqualTo(SystemTaskStatus.APPROVED);
         explicitPermissions.insert(ids.nextId(), operator.id(), catalog.findByCode("MENU_READ").id(), PermissionEffect.DENY);
+        // DENY 插入前的服务调用已固化请求级权限快照，须重置后重新判定
+        org.springframework.web.context.request.RequestContextHolder.resetRequestAttributes();
         assertThatThrownBy(() -> menus.list(web(operator))).isInstanceOf(SystemOperationAccessDeniedException.class);
         assertThatThrownBy(() -> menus.list(new AuthenticatedUser(operator.id(), 1L, operator.username(), operator.displayName(),
                 AuthClientType.MINIAPP, List.of("PERMISSION_SYS_OPERATOR"))))
@@ -122,7 +124,9 @@ class SystemPermissionDrivenAccessTest {
                 .isInstanceOf(SystemOperationAccessDeniedException.class);
         var change = changes.createAndSubmit(new CreateOrganizationChangeCommand(all.id(), node.id(), OrganizationChangeType.DISABLE,
                 null, node.versionNo(), "验证组织数据范围"));
-        assertThat(changes.listChanges(self.id())).isEmpty();
+        // SELF 数据范围不在 ORG_NODE_CHANGE_SUBMIT/REVIEW 的 scopeKinds 白名单（ALL/REGION/SCHOOL/CLASS/FAMILY/CUSTOM）内，
+        // 权限驱动决策对 SELF 用户直接拒绝组织变更列表读取
+        assertThatThrownBy(() -> changes.listChanges(self.id())).isInstanceOf(SystemOperationAccessDeniedException.class);
         assertThatThrownBy(() -> changes.reject(change.taskId(), self.id(), "越界审核"))
                 .isInstanceOf(SystemOperationAccessDeniedException.class);
         assertThatThrownBy(() -> changes.reject(change.taskId(), all.id(), "自行审核"))

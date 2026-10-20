@@ -2,7 +2,7 @@
   <view class="ld-page has-tabbar prototype-workspace"><NativeStatusSpacer/>
     
     <view class="ld-topbar"><text class="brand-title">灵动伴随</text><button class="space-switch" @tap="switchOrganization">{{ selectedOrganization?.name || '选择当前组织' }} ⌄</button></view>
-    <view class="workspace-intro"><view class="intro-heading"><view class="school-art"><image class="school-reference-art" src="/static/pixel/default-school.png" mode="aspectFit"/></view><view><text class="workspace-intro-title">{{ selectedOrganization?.typeCode === 'SCHOOL' ? '学校工作台' : '机构工作台' }}</text><text class="workspace-intro-caption">组织有序 · 教学相长</text></view></view><view class="workspace-stats"><view v-for="label in ['校区','年级','班级','成长伙伴','成长小主人']" :key="label"><text class="stats-value">—</text><text>{{ label }}</text></view></view></view>
+    <view class="workspace-intro"><view class="intro-heading"><view class="school-art"><image class="school-reference-art" src="/static/pixel/default-school.png" mode="aspectFit"/></view><view><text class="workspace-intro-title">{{ introTitle }}</text><text class="workspace-intro-caption">{{ introCaption }}</text></view></view><view class="workspace-stats"><view v-for="item in workspaceStats" :key="item.label"><text class="stats-value">{{ item.value }}</text><text>{{ item.label }}</text></view></view></view>
     <view v-if="reviewEnabled || reviewLoading || reviewError" class="ld-card review-card">
       <view class="review-info">
         <text class="ld-card-title">任务审核</text>
@@ -21,6 +21,8 @@
 <view class="workspace-shortcuts">
 <button v-if="context?.permissionCodes.includes('STUDENT_TRANSFER_VIEW')" class="workspace-shortcut" @tap="openTransferRecords"><view class="shortcut-symbol"><PrototypeIcon name="school" tone="white" :size="44"/></view><view class="shortcut-copy"><text class="shortcut-title">转学申请</text><text>查看申请 · 审核与处理</text></view><text class="shortcut-arrow">›</text></button>
 <button v-if="context?.permissionCodes.includes('CLASS_READ')" class="workspace-shortcut" @tap="openHierarchy"><view class="shortcut-symbol"><PrototypeIcon name="people" tone="white" :size="44"/></view><view class="shortcut-copy"><text class="shortcut-title">组织管理</text><text>校区 · 年级 · 班级 · 成员</text></view><text class="shortcut-arrow">›</text></button>
+<button v-if="context?.permissionCodes.includes('CLASS_READ')" class="workspace-shortcut" @tap="openCourseCategories"><view class="shortcut-symbol"><PrototypeIcon name="leaf" tone="white" :size="44"/></view><view class="shortcut-copy"><text class="shortcut-title">课程分类</text><text>管理课程与教学分类</text></view><text class="shortcut-arrow">›</text></button>
+<button v-if="context?.permissionCodes.includes('CLASS_READ')" class="workspace-shortcut" @tap="openStatistics"><view class="shortcut-symbol"><PrototypeIcon name="chart" tone="white" :size="44"/></view><view class="shortcut-copy"><text class="shortcut-title">数据概览</text><text>教学组织与成员统计</text></view><text class="shortcut-arrow">›</text></button>
 <button v-if="taskManagementEnabled" class="workspace-shortcut" @tap="openTasks"><view class="shortcut-symbol"><PrototypeIcon name="book" tone="white" :size="44"/></view><view class="shortcut-copy"><text class="shortcut-title">教学任务</text><text>发布与查看任务进度</text></view><text class="shortcut-arrow">›</text></button>
 <button v-if="teacherManagementEnabled" class="workspace-shortcut" @tap="openTeacherManagement"><view class="shortcut-symbol"><PrototypeIcon name="user" tone="white" :size="44"/></view><view class="shortcut-copy"><text class="shortcut-title">教师管理</text><text>成长伙伴账号与任教</text></view><text class="shortcut-arrow">›</text></button>
 </view>
@@ -31,6 +33,8 @@
 <script setup lang="ts">
 import NativeStatusSpacer from "@/components/NativeStatusSpacer.vue";
 function openHierarchy(){uni.navigateTo({url:'/pages/organization-hierarchy/organization-hierarchy'});}
+function openCourseCategories(){uni.navigateTo({url:'/pages/organization-hierarchy/organization-hierarchy'});}
+function openStatistics(){uni.navigateTo({url:'/pages/organization-statistics/organization-statistics'});}
 function openTransferRecords(){uni.navigateTo({url:'/pages/transfer-records/transfer-records'});}
 function switchOrganization(){uni.navigateTo({url:"/pages/my-organizations/my-organizations?identity=organization&choose=1"});}
 
@@ -51,7 +55,9 @@ const { attendanceEnabled, openAttendance } = useAttendanceEntry('organization')
 import { ApiError } from '@/api/http';
 import {
   getOrganizationWorkbenchContext,
-  type OrganizationWorkbenchContext
+  getOrganizationWorkbenchStatistics,
+  type OrganizationWorkbenchContext,
+  type OrganizationWorkbenchStatistics
 } from '@/api/organization-workbench';
 import {
   clearOrganizationSession,
@@ -59,7 +65,33 @@ import {
 } from '@/session/organization-session';
 
 const context = ref<OrganizationWorkbenchContext | null>(null);
+const statistics = ref<OrganizationWorkbenchStatistics | null>(null);
 const loading = ref(true);
+function formatCount(value: number | null | undefined): string {
+  return value == null ? '—' : value.toLocaleString('en-US');
+}
+const isTrainingWorkbench = computed(() => selectedOrganization.value?.typeCode === 'TRAINING_INSTITUTION');
+const introTitle = computed(() => isTrainingWorkbench.value ? '培训工作台' : (selectedOrganization.value?.typeCode === 'SCHOOL' ? '学校工作台' : '机构工作台'));
+const introCaption = computed(() => isTrainingWorkbench.value ? '专业成长 · 支持教学' : '组织有序 · 教学相长');
+const workspaceStats = computed(() => {
+  const stats = statistics.value;
+  if (isTrainingWorkbench.value) {
+    // 培训机构无校区层级，GRADE/CLASS 语义为课程分类/课程班（与组织层级页 label 映射一致）
+    return [
+      { label: '课程分类', value: formatCount(stats?.gradeCount) },
+      { label: '课程班', value: formatCount(stats?.classCount) },
+      { label: '成长伙伴', value: formatCount(stats?.teacherCount) },
+      { label: '成长小主人', value: formatCount(stats?.studentCount) }
+    ];
+  }
+  return [
+    { label: '校区', value: formatCount(stats?.campusCount) },
+    { label: '年级', value: formatCount(stats?.gradeCount) },
+    { label: '班级', value: formatCount(stats?.classCount) },
+    { label: '成长伙伴', value: formatCount(stats?.teacherCount) },
+    { label: '成长小主人', value: formatCount(stats?.studentCount) }
+  ];
+});
 const selectedOrganization = computed(() => context.value?.organizations.length === 1 ? context.value.organizations[0] : null);
 const accountSecurityEnabled = ref(false);
 const studentRelationshipEnabled = ref(false);
@@ -71,7 +103,7 @@ const parentMobileManualRecoveryEnabled = ref(false);
 const studentAccountCancellationEnabled = ref(false);
 
 let homeRevision=0;
-function hideWorkspace(){homeRevision++;context.value=null;loading.value=false;}
+function hideWorkspace(){homeRevision++;context.value=null;statistics.value=null;loading.value=false;}
 onHide(hideWorkspace);onUnload(hideWorkspace);
 onShow(async () => {
   const n=++homeRevision;context.value=null;
@@ -79,9 +111,10 @@ onShow(async () => {
   if (!session) return leaveWorkbench();
   loading.value = true;
   try {
-    const [capabilities, workbench] = await Promise.all([
+    const [capabilities, workbench, workbenchStatistics] = await Promise.all([
       getMiniappCapabilities(),
-      getOrganizationWorkbenchContext(session.accessToken)
+      getOrganizationWorkbenchContext(session.accessToken),
+      getOrganizationWorkbenchStatistics(session.accessToken).catch(() => null)
     ]);
     if(n!==homeRevision||getOrganizationSession()?.accessToken!==session.accessToken)return;
     if (!capabilities.organizationMiniappAuthEnabled) return leaveWorkbench();
@@ -89,6 +122,7 @@ onShow(async () => {
     context.value = selected?.accessToken === session.accessToken && selected.organizationId
       ? {...workbench, organizations: workbench.organizations.filter(item => item.id === selected.organizationId)}
       : {...workbench, organizations: []};
+    statistics.value = workbenchStatistics;
     accountSecurityEnabled.value = capabilities.accountSecurityManagementEnabled;
     studentRelationshipEnabled.value = capabilities.studentOrganizationRelationshipEnabled;
     classManagementEnabled.value = capabilities.classManagementEnabled === true;

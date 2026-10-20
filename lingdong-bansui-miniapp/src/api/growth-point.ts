@@ -52,6 +52,13 @@ export function getMyGrowthPointAccount(): Promise<GrowthPointAccount> {
   return authenticatedRequest<GrowthPointAccount>('/growth-points/me/account');
 }
 
+/** 家长查询孩子积分账户（家长身份，需家长 token）。 */
+export function getChildGrowthPointAccount(token: string, studentId: string): Promise<GrowthPointAccount> {
+  return request<GrowthPointAccount>(`/growth-points/students/${studentId}/account`, {
+    header: { Authorization: `Bearer ${token}` }
+  });
+}
+
 export function listMyGrowthPointLedgers(
   page: number,
   pageSize: number

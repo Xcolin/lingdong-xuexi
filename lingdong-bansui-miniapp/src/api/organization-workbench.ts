@@ -22,3 +22,20 @@ export function getOrganizationWorkbenchContext(
     header: { Authorization: `Bearer ${accessToken}` }
   });
 }
+
+export interface OrganizationWorkbenchStatistics {
+  campusCount: number | null;
+  gradeCount: number | null;
+  classCount: number | null;
+  teacherCount: number | null;
+  studentCount: number | null;
+}
+
+/** 使用显式机构访问令牌查询工作台统计汇总，无对应 read 权限的计数为 null。 */
+export function getOrganizationWorkbenchStatistics(
+  accessToken: string
+): Promise<OrganizationWorkbenchStatistics> {
+  return request<OrganizationWorkbenchStatistics>('/organization-workbench/statistics', {
+    header: { Authorization: `Bearer ${accessToken}` }
+  });
+}

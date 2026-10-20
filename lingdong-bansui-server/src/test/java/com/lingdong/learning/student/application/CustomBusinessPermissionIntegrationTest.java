@@ -57,6 +57,8 @@ class CustomBusinessPermissionIntegrationTest {
         assertThat(activity.activityTrends(operator, null, null)).isNotNull();
         jdbc.update("INSERT INTO sys_user_permission(id, user_id, permission_id, effect) SELECT ?, ?, id, 'DENY' FROM sys_permission WHERE permission_code = 'CLASS_READ'", ids.nextId(), operator.userId());
         sqlSession.clearCache(); // Direct JDBC fixture mutations do not invalidate this transaction's MyBatis local cache.
+        // DENY 插入前的服务调用已固化请求级权限快照，须重置后重新判定
+        org.springframework.web.context.request.RequestContextHolder.resetRequestAttributes();
         assertThatThrownBy(() -> classes.listClasses(operator)).isInstanceOf(SystemOperationAccessDeniedException.class);
     }
 
@@ -78,6 +80,8 @@ class CustomBusinessPermissionIntegrationTest {
                 .isInstanceOf(ResourceNotFoundException.class);
         jdbc.update("DELETE FROM sys_role_permission WHERE role_id = (SELECT id FROM sys_role WHERE role_code = ?) AND permission_id = (SELECT id FROM sys_permission WHERE permission_code = 'STUDENT_READ')", "CUSTOM_BUSINESS_custom_school");
         sqlSession.clearCache();
+        // 授权行删除前的服务调用已固化请求级权限快照，须重置后重新判定
+        org.springframework.web.context.request.RequestContextHolder.resetRequestAttributes();
         assertThatThrownBy(() -> students.listStudents(operator, null, 1, 10)).isInstanceOf(SystemOperationAccessDeniedException.class);
         assertThatThrownBy(() -> students.findStudent(operator, ownStudent)).isInstanceOf(SystemOperationAccessDeniedException.class);
     }

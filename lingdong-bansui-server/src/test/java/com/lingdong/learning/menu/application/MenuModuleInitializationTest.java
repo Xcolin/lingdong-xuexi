@@ -11,11 +11,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 class MenuModuleInitializationTest {
     @Autowired JdbcTemplate jdbc;
     @Test void modulesContainRequestedPagesAndNoObsoletePermissionCreation() {
-        assertThat(jdbc.queryForList("SELECT m.route FROM sys_menu m JOIN sys_menu p ON p.id=m.parent_id WHERE p.code='permission-management' ORDER BY m.sort_order",String.class))
+        // V118 重建后目录 code 采用大写下划线风格（V100 为 slug 风格）。
+        assertThat(jdbc.queryForList("SELECT m.route FROM sys_menu m JOIN sys_menu p ON p.id=m.parent_id WHERE p.code='PERMISSION_MANAGEMENT' ORDER BY m.sort_order",String.class))
             .containsExactly("/organizations","/users","/iam","/menu-management");
-        assertThat(jdbc.queryForList("SELECT m.route FROM sys_menu m JOIN sys_menu p ON p.id=m.parent_id WHERE p.code='system-settings' ORDER BY m.sort_order",String.class))
+        assertThat(jdbc.queryForList("SELECT m.route FROM sys_menu m JOIN sys_menu p ON p.id=m.parent_id WHERE p.code='SYSTEM_SETTINGS' ORDER BY m.sort_order",String.class))
             .containsExactly("/dictionaries","/cache-management","/feature-management");
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM sys_menu m JOIN sys_menu p ON p.id=m.parent_id WHERE p.code='import-export-management'",Integer.class)).isEqualTo(3);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM sys_menu m JOIN sys_menu p ON p.id=m.parent_id WHERE p.code='IMPORT_EXPORT_MANAGEMENT'",Integer.class)).isEqualTo(3);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM sys_menu WHERE code IN ('IAM_PERMISSION_CREATE','iam.iam-management-page.2','iam.iam-management-page.8','iam.iam-management-page.9','organizations.node.members')",Integer.class)).isZero();
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM sys_permission WHERE permission_code='IAM_PERMISSION_CREATE'",Integer.class)).isZero();
     }

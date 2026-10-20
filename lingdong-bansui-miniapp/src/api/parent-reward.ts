@@ -9,7 +9,9 @@ export function canUseParentRewards(user:RewardIdentity, permission?:string) {
     && (permission ? user.permissionCodes.includes(permission) : [MANAGE_REWARDS,REVIEW_EXCHANGES].some(code=>user.permissionCodes.includes(code)));
 }
 export interface RewardChild { studentId:string;studentName:string;relationshipRole:'PRIMARY_GUARDIAN'|'SECONDARY_GUARDIAN' }
-export interface RewardInput {rewardName:string;requiredPoints:number;description:string|null;expiresAt:string|null;status:'ONLINE'|'OFFLINE'}
+export type RewardCategoryValue = 'STUDY_SUPPLIES'|'LIFE_GOODS'|'EXPERIENCE';
+export const REWARD_CATEGORY_LABELS: Record<RewardCategoryValue,string> = { STUDY_SUPPLIES:'学习用品', LIFE_GOODS:'生活好物', EXPERIENCE:'体验活动' };
+export interface RewardInput {rewardName:string;requiredPoints:number;category:RewardCategoryValue;stockQuantity:number;imageUrl:string|null;description:string|null;expiresAt:string|null;status:'ONLINE'|'OFFLINE'}
 export interface ParentReward extends RewardInput {id:string;studentId:string}
 export interface RewardPage<T> {items:T[];page:number;pageSize:number;total:number}
 const header=(token:string)=>({Authorization:`Bearer ${token}`});

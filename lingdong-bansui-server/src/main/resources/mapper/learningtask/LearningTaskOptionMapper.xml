@@ -293,8 +293,7 @@
               AND scoped_relation.organization_id IN
               <foreach collection="organizationIds" item="id" open="(" separator="," close=")">#{id}</foreach>
         ) OR (NOT EXISTS (SELECT 1 FROM edu_student_organization any_class
-                WHERE any_class.student_id=student.id AND any_class.relation_type='CLASS' AND any_class.status='ACTIVE'
-                  AND any_class.organization_id IN <foreach collection="organizationIds" item="id" open="(" close=")" separator=",">#{id}</foreach>)
+                WHERE any_class.student_id=student.id AND any_class.relation_type='CLASS' AND any_class.status='ACTIVE')
           AND EXISTS (SELECT 1 FROM sys_user_organization placement
             JOIN sys_organization placement_org ON placement_org.id=placement.organization_id
             WHERE placement.user_id=student.student_user_id AND placement_org.organization_type IN ('GRADE','CAMPUS')
@@ -327,19 +326,18 @@
     </select>
     <sql id="teacherInTargetSchool">
         <if test="classId != null">
-          AND EXISTS (
-            SELECT 1 FROM sys_user_organization candidate_membership
-            JOIN sys_organization candidate_organization ON candidate_organization.id = candidate_membership.organization_id
-            JOIN sys_organization candidate_school
-              ON candidate_school.organization_type IN ('SCHOOL', 'TRAINING_INSTITUTION')
-             AND candidate_organization.organization_path LIKE CONCAT(candidate_school.organization_path, '%')
-            JOIN sys_organization target_class ON target_class.id = #{classId}
-            WHERE candidate_membership.user_id = teacher.id
-              AND candidate_organization.status = 'ENABLED' AND candidate_organization.effective_status = 'ENABLED'
-              AND candidate_school.status = 'ENABLED' AND candidate_school.effective_status = 'ENABLED'
-              AND target_class.organization_type = 'CLASS'
-              AND target_class.status = 'ENABLED' AND target_class.effective_status = 'ENABLED'
-              AND target_class.organization_path LIKE CONCAT(candidate_school.organization_path, '%')
+          AND (
+            teacher_class.class_organization_id IS NOT NULL
+            OR EXISTS (
+              SELECT 1 FROM sys_user_organization candidate_membership
+              JOIN sys_organization candidate_organization ON candidate_organization.id = candidate_membership.organization_id
+              JOIN sys_organization target_class ON target_class.id = #{classId}
+              WHERE candidate_membership.user_id = teacher.id
+                AND candidate_organization.status = 'ENABLED' AND candidate_organization.effective_status = 'ENABLED'
+                AND target_class.organization_type = 'CLASS'
+                AND target_class.status = 'ENABLED' AND target_class.effective_status = 'ENABLED'
+                AND target_class.organization_path LIKE CONCAT(candidate_organization.organization_path, '%')
+            )
           )
         </if>
     </sql>

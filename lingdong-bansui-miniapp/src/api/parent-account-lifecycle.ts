@@ -67,10 +67,12 @@ export function issueParentCancellationCode(accessToken: string): Promise<Parent
 export function requestParentCancellation(
   accessToken: string,
   code: string,
-  confirmation: string
+  confirmation: string,
+  reason: string,
+  note?: string
 ): Promise<void> {
   return authenticatedRequest('/auth/parent-account-cancellations', accessToken, {
-    method: 'POST', data: { code, confirmation }
+    method: 'POST', data: { code, confirmation, reason, ...(note ? { note } : {}) }
   });
 }
 

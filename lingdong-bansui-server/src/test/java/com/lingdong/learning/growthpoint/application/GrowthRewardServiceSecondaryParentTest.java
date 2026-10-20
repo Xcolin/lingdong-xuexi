@@ -42,7 +42,7 @@ class GrowthRewardServiceSecondaryParentTest {
         assertThatThrownBy(() -> service.create(
                 secondaryParent, studentId,
                 new SaveGrowthRewardCommand(
-                        "周末奖励", 100L, null, null, GrowthRewardStatus.ONLINE)))
+                        "周末奖励", 100L, null, 5, null, null, null, GrowthRewardStatus.ONLINE)))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 }

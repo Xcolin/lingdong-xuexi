@@ -3,15 +3,22 @@ import { getStudentSession } from '@/session/student-session';
 
 export interface RewardAccountSummary {
   studentId: string;
+  studentName: string | null;
+  currentClassName: string | null;
   availablePoints: number;
   updatedAt: string;
 }
+
+export type RewardCategory = 'STUDY_SUPPLIES' | 'LIFE_GOODS' | 'EXPERIENCE';
 
 export interface StudentReward {
   id: string;
   studentId: string;
   rewardName: string;
   requiredPoints: number;
+  category: RewardCategory | null;
+  stockQuantity: number;
+  imageUrl: string | null;
   description: string | null;
   expiresAt: string | null;
   status: 'ONLINE';

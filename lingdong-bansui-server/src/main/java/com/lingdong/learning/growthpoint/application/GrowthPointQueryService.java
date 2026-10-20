@@ -108,7 +108,11 @@ public class GrowthPointQueryService {
     }
 
     private void requireAccessibleChild(AuthenticatedUser currentUser, Long studentId) {
-        requireWebParent(currentUser);
+        parentActors.require(currentUser);
+        if (currentUser == null || (currentUser.clientType() != AuthClientType.WEB
+                && currentUser.clientType() != AuthClientType.MINIAPP)) {
+            throw new SystemOperationAccessDeniedException("仅活动关系家长可查询孩子积分");
+        }
         if (studentId == null || !parentStudentMapper.existsActiveByParentAndStudent(
                 currentUser.userId(), studentId)) {
             throw new ResourceNotFoundException("学生积分账户不存在或不可访问");

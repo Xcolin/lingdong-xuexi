@@ -4,8 +4,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 import static org.assertj.core.api.Assertions.*;
 @SpringBootTest @ActiveProfiles("test")
+// 事务化回滚：本类原本非事务提交，会向共享测试库遗留组织/用户/学生数据（如 88008001），污染 StudentManagementControllerTest 等事务性测试的目录断言
+@Transactional
 class OrganizationHierarchyTest {
  @Autowired OrganizationApplicationService service;
  @Autowired OrganizationChangeApplicationService changes;

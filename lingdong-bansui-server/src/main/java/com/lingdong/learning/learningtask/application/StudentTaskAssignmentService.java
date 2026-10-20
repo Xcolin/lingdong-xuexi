@@ -9,6 +9,7 @@ import com.lingdong.learning.learningtask.infrastructure.persistence.LearningTas
 import com.lingdong.learning.learningtask.infrastructure.persistence.LearningTaskTagMapper;
 import com.lingdong.learning.learningtask.infrastructure.persistence.LearningTaskTagRow;
 import com.lingdong.learning.learningtask.infrastructure.persistence.StudentTaskAssignmentRow;
+import com.lingdong.learning.learningtask.infrastructure.persistence.TaskAssignmentEventMapper;
 import com.lingdong.learning.student.domain.Student;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,19 +30,22 @@ public class StudentTaskAssignmentService {
     private final CurrentStudentAccessService currentStudentAccessService;
     private final FeatureAccessService featureAccessService;
     private final TaskAttachmentApplicationService attachmentService;
+    private final TaskAssignmentEventMapper eventMapper;
 
     public StudentTaskAssignmentService(
             LearningTaskAssignmentMapper assignmentMapper,
             LearningTaskTagMapper tagMapper,
             CurrentStudentAccessService currentStudentAccessService,
             FeatureAccessService featureAccessService,
-            TaskAttachmentApplicationService attachmentService
+            TaskAttachmentApplicationService attachmentService,
+            TaskAssignmentEventMapper eventMapper
     ) {
         this.assignmentMapper = assignmentMapper;
         this.tagMapper = tagMapper;
         this.currentStudentAccessService = currentStudentAccessService;
         this.featureAccessService = featureAccessService;
         this.attachmentService = attachmentService;
+        this.eventMapper = eventMapper;
     }
 
     @Transactional(readOnly = true)
@@ -81,7 +85,9 @@ public class StudentTaskAssignmentService {
         if (row == null) {
             throw new ResourceNotFoundException("学生任务不存在或不可访问");
         }
-        return withCheckInAttachments(row.toView(tagMapper.findCodesByTaskId(row.taskId())));
+        return withCheckInAttachments(row.toView(tagMapper.findCodesByTaskId(row.taskId())))
+                .withTimeline(eventMapper.findTimelineByAssignmentId(row.id()))
+                .withExampleFiles(attachmentService.exampleMetadata(currentUser, row.exampleFileIds()));
     }
 
     private StudentTaskAssignmentView withCheckInAttachments(StudentTaskAssignmentView view) {

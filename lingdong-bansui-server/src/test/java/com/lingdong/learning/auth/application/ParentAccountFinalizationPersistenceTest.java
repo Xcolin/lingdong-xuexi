@@ -35,7 +35,7 @@ class ParentAccountFinalizationPersistenceTest {
                     id, username, display_name, mobile, password_hash, user_type, status
                 ) VALUES (?, '13800138101', '待注销家长', '13800138101', 'password-hash', 'FAMILY', 'ENABLED')
                 """, USER_ID);
-        jdbcTemplate.update("insert into auth_parent_profile(id,user_id,onboarding_status,first_login_at) values(?,?,'COMPLETED',CURRENT_TIMESTAMP)", USER_ID + 90, USER_ID);
+        jdbcTemplate.update("insert into auth_parent_profile(id,user_id,onboarding_status,first_login_at,onboarding_completed_at) values(?,?,'COMPLETED',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)", USER_ID + 90, USER_ID);
         jdbcTemplate.update("""
                 INSERT INTO sys_user_role (id, user_id, role_id, organization_scope_key)
                 VALUES (?, ?, ?, 'GLOBAL')

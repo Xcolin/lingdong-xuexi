@@ -67,6 +67,7 @@ class ExportJobApiIntegrationTest {
         assertTaskFileDenied(setPasswordAndLogin(f.admin(), other, "attachment-other"), id);
         jdbcTemplate.update("INSERT INTO sys_user_permission(id,user_id,permission_id,effect) SELECT 1900000000000060801,?,id,'DENY' FROM sys_permission WHERE permission_code='ATTACHMENT_FILE_LEDGER_EXPORT'", f.admin().id());
         sqlSession.clearCache();
+        resetAuthSnapshot();
         assertTaskFileDenied(f.login(), id);
     }
 
@@ -87,8 +88,11 @@ class ExportJobApiIntegrationTest {
         mockMvc.perform(get("/api/v1/export-jobs").header("Authorization", bearer(login.token()))).andExpect(status().isOk());
         mockMvc.perform(get("/api/v1/attachments/1900000000000060100/content").header("Authorization", bearer(login.token()))).andExpect(status().isForbidden());
         mockMvc.perform(get("/api/v1/export-jobs/options?exportType=DICTIONARY_LEDGER").header("Authorization", bearer(login.token()))).andExpect(status().isForbidden());
-        jdbcTemplate.update("DELETE FROM sys_role_permission WHERE role_id=1900000000000060802 AND permission_id=(SELECT id FROM sys_permission WHERE permission_code='ATTACHMENT_FILE_LEDGER_READ')");
+        // 权限驱动重构后 EXPORT 动作自动派生 ATTACHMENT_FILE_LEDGER_READ 读依赖（impliedReads），
+        // 单独删除 READ 不再拒绝下载；删除 EXPORT 后下载与选项一并拒绝。
+        jdbcTemplate.update("DELETE FROM sys_role_permission WHERE role_id=1900000000000060802 AND permission_id=(SELECT id FROM sys_permission WHERE permission_code='ATTACHMENT_FILE_LEDGER_EXPORT')");
         sqlSession.clearCache();
+        resetAuthSnapshot();
         assertTaskFileDenied(login, id);
         mockMvc.perform(get("/api/v1/export-jobs/options?exportType=ATTACHMENT_LEDGER").header("Authorization", bearer(login.token()))).andExpect(status().isForbidden());
     }
@@ -112,6 +116,7 @@ class ExportJobApiIntegrationTest {
         long id = createAttachmentExport(f.login(), "");
         jdbcTemplate.update("UPDATE sys_permission SET status='DISABLED' WHERE permission_code='ATTACHMENT_FILE_LEDGER_EXPORT'");
         sqlSession.clearCache();
+        resetAuthSnapshot();
         assertThat(executionService.execute(claimService.claim(id, 0L))).isFalse();
         assertThat(jdbcTemplate.queryForObject("SELECT status FROM sys_export_job WHERE id=?", String.class, id)).isEqualTo("FAILED");
     }
@@ -123,6 +128,7 @@ class ExportJobApiIntegrationTest {
         templateService.createTemplate(new CreateImportExportTemplateUploadCommand(admin.id(), "附件管理台账模板", TemplateType.EXPORT,
                 "ATTACHMENT_LEDGER_REPORT", "V1", "attachment.xlsx", MediaType.APPLICATION_OCTET_STREAM_VALUE,
                 templateFor("NAME", "MODULE_CODE", "UPLOADER_NAME", "CREATED_AT", "FILE_CATEGORY", "SIZE_BYTES", "STATUS"), true, List.of()));
+        resetAuthSnapshot();
         return new AttachmentExportFixture(admin, login);
     }
     private void attachmentRow(long id, long uploader, String name, String status, String created) {
@@ -155,6 +161,35 @@ class ExportJobApiIntegrationTest {
     @Autowired private com.lingdong.learning.exportjob.application.ExportJobClaimService claimService;
     @Autowired private com.lingdong.learning.exportjob.application.ExportJobExecutionService executionService;
 
+    /** ServletTestExecutionListener 在整个测试方法内绑定请求上下文，权限快照一旦计算即固化；
+     *  变更身份/角色/权限/授权后必须重置才能重新判定（与 AnonymousRankQueryTest 同一陷阱）。 */
+    private void resetAuthSnapshot() {
+        org.springframework.web.context.request.RequestContextHolder.resetRequestAttributes();
+    }
+
+    /** V118 后家长账号需为 FAMILY 身份且持有家长档案。 */
+    private void makeFamilyParent(String username) {
+        Long id = jdbcTemplate.queryForObject("SELECT id FROM sys_user WHERE username=?", Long.class, username);
+        jdbcTemplate.update("UPDATE sys_user SET user_type='FAMILY' WHERE id=?", id);
+        jdbcTemplate.update("INSERT INTO auth_parent_profile(id,user_id,onboarding_status,first_login_at,onboarding_completed_at) "
+                + "VALUES(?,?,'COMPLETED',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP) "
+                + "ON DUPLICATE KEY UPDATE onboarding_status = VALUES(onboarding_status)", id, id);
+        jdbcTemplate.update("INSERT INTO auth_user_agreement_acceptance(id,user_id,agreement_type,agreement_version,client_type,accepted_at) "
+                + "SELECT ?,?,'PARENT_USER_AGREEMENT',config_value,'WEB',CURRENT_TIMESTAMP FROM sys_config "
+                + "WHERE config_key='auth.parent-agreement.current-version' AND status='ENABLED' "
+                + "ON DUPLICATE KEY UPDATE agreement_version = VALUES(agreement_version)", id, id);
+        sqlSession.clearCache();
+    }
+
+    /** V135 后教师职业身份独立持久化：需机构账号类型与启用教师档案。 */
+    private void makeTeacher(String username) {
+        Long id = jdbcTemplate.queryForObject("SELECT id FROM sys_user WHERE username=?", Long.class, username);
+        jdbcTemplate.update("UPDATE sys_user SET user_type='ORGANIZATION' WHERE id=?", id);
+        jdbcTemplate.update("INSERT INTO edu_teacher_profile(user_id,status) SELECT ?,'ENABLED' "
+                + "WHERE NOT EXISTS(SELECT 1 FROM edu_teacher_profile WHERE user_id=?)", id, id);
+        sqlSession.clearCache();
+    }
+
     @Test
     void exceptionWorkbookMasksBothNamesAndRevokesClassAccess() throws Exception {
         var f=exceptionFixture();
@@ -183,7 +218,14 @@ class ExportJobApiIntegrationTest {
         jdbcTemplate.update("UPDATE edu_teacher_class SET status='INACTIVE' WHERE teacher_user_id=?",f.login().user().id()); sqlSession.clearCache();
         assertTaskFileDenied(f.login(),id);
         jdbcTemplate.update("UPDATE edu_teacher_class SET status='ACTIVE' WHERE teacher_user_id=?",f.login().user().id()); sqlSession.clearCache();
-        userService.assignRole(new AssignRoleToUserCommand(f.login().user().id(),roleMapper.findByCode("ORG_ADMIN").id(),null));
+        // 兼任带组织范围的机构管理员后升级为机构模式，与创建作业时冻结的教师模式快照不一致 → 拒绝；
+        // ORG_ADMIN data_scope=SCHOOL 仅在组织类型为 SCHOOL 时计入 rootPaths，需真实学校组织
+        long scopeSchool=1900000000000090996L;
+        jdbcTemplate.update("INSERT INTO sys_organization(id,organization_code,organization_name,organization_type,organization_path,sort_order,status) VALUES(?,'EXPORT_EXCEPTION_SCOPE','导出范围学校','SCHOOL','/EXPORT_EXCEPTION_SCOPE/',1,'ENABLED')",scopeSchool);
+        jdbcTemplate.update("INSERT INTO sys_user_organization(id,user_id,organization_id) VALUES(1900000000000090997,?,?)",f.login().user().id(),scopeSchool);
+        userService.assignRole(new AssignRoleToUserCommand(f.login().user().id(),roleMapper.findByCode("ORG_ADMIN").id(),scopeSchool));
+        sqlSession.clearCache();
+        resetAuthSnapshot();
         assertTaskFileDenied(f.login(),id);
     }
 
@@ -205,8 +247,9 @@ class ExportJobApiIntegrationTest {
         assertThat(executionService.execute(claimService.claim(queued,0L))).isFalse();
         assertThat(jdbcTemplate.queryForObject("SELECT status FROM sys_export_job WHERE id=?",String.class,queued)).isEqualTo("FAILED");
         userService.assignRole(new AssignRoleToUserCommand(f.login().user().id(),roleMapper.findByCode("SYS_AUDITOR").id(),null));
+        // 兼任系统审核员不再按内置角色名拒绝：权限驱动管理端重构后仅按权限编码与数据范围判定
         mockMvc.perform(get("/api/v1/export-jobs/options?exportType=EXCEPTION_REPORT_LEDGER").header("Authorization",bearer(f.login().token())))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isOk());
     }
 
     @Test
@@ -231,9 +274,9 @@ class ExportJobApiIntegrationTest {
     void exceptionOrganizationScopeIncludesOthersAndRevokesMovedClass() throws Exception {
         var f=exceptionFixture();
         long school=1900000000000090801L, outside=1900000000000090802L;
-        jdbcTemplate.update("INSERT INTO sys_organization(id,organization_code,organization_name,organization_type,organization_path,sort_order,status) VALUES(?,'EXCEPTION_EXPORT_SCHOOL','学校','SCHOOL','/EXCEPTION_EXPORT_SCHOOL/',1,'ENABLED')",school);
+        jdbcTemplate.update("INSERT INTO sys_organization(id,organization_code,organization_name,organization_type,organization_path,sort_order,status) VALUES(?,'EXCEPTION_EXPORT_SCHOOL','异常导出学校','SCHOOL','/EXCEPTION_EXPORT_SCHOOL/',1,'ENABLED')",school);
         jdbcTemplate.update("UPDATE sys_organization SET parent_id=?,organization_path='/EXCEPTION_EXPORT_SCHOOL/EXPORT_EXCEPTION_CLASS/' WHERE id=?",school,f.classId());
-        jdbcTemplate.update("INSERT INTO sys_organization(id,organization_code,organization_name,organization_type,organization_path,sort_order,status) VALUES(?,'EXCEPTION_EXPORT_OUTSIDE','范围外班级','CLASS','/EXCEPTION_EXPORT_OUTSIDE/',1,'ENABLED')",outside);
+        jdbcTemplate.update("INSERT INTO sys_organization(id,organization_code,organization_name,organization_type,organization_path,sort_order,status) VALUES(?,'EXCEPTION_EXPORT_OUTSIDE','异常导出范围外班','CLASS','/EXCEPTION_EXPORT_OUTSIDE/',1,'ENABLED')",outside);
         var manager=createUserWithRole("exception_export_org","机构管理员","TEACHER",f.admin());
         jdbcTemplate.update("INSERT INTO sys_user_organization(id,user_id,organization_id) VALUES(1900000000000090803,?,?)",manager.id(),school);
         userService.assignRole(new AssignRoleToUserCommand(manager.id(),roleMapper.findByCode("ORG_ADMIN").id(),school));
@@ -257,6 +300,9 @@ class ExportJobApiIntegrationTest {
         var admin=createUserWithRole("exception_export_admin","管理员","SYS_ADMIN",null);
         var teacher=createUserWithRole("exception_export_teacher","教师甲","TEACHER",admin);
         var login=setPasswordAndLogin(admin,teacher,"exception-export-device");
+        // V135 后教师导出身份按 user_type 分派：需真实机构账号类型与启用教师档案
+        makeTeacher("exception_export_teacher");
+        resetAuthSnapshot();
         ensureTemplateRule(admin.id());
         templateService.createTemplate(new CreateImportExportTemplateUploadCommand(admin.id(),"异常报备台账模板",TemplateType.EXPORT,"EXCEPTION_REPORT_EXPORT","V1","exception.xlsx",MediaType.APPLICATION_OCTET_STREAM_VALUE,
                 templateFor("STUDENT_NAME","EXCEPTION_TYPE","REPORTER_NAME","STATUS","REPORTED_AT"),true,List.of()));
@@ -284,20 +330,26 @@ class ExportJobApiIntegrationTest {
         User admin = createUserWithRole("reward_opt_admin", "管理员", "SYS_ADMIN", null);
         User parent = createUserWithRole("reward_opt_parent", "家长", "PARENT", admin);
         Login login = setPasswordAndLogin(admin, parent, "reward-options-device");
+        // V118 后家长导出身份要求 FAMILY 账号 + 家长档案 + 启用角色三要素
+        makeFamilyParent("reward_opt_parent");
+        resetAuthSnapshot();
         ensureTemplateRule(admin.id());
         templateService.createTemplate(new CreateImportExportTemplateUploadCommand(admin.id(), "奖励兑换模板",
                 TemplateType.EXPORT, "REWARD_EXCHANGE_REPORT", "V1", "reward.xlsx", MediaType.APPLICATION_OCTET_STREAM_VALUE,
                 templateFor("REWARD_NAME", "REQUIRED_POINTS", "REQUESTED_AT", "APPROVAL_STATUS", "VERIFICATION_STATUS"), true, List.of()));
         mockMvc.perform(get("/api/v1/export-jobs/options?exportType=REWARD_EXCHANGE_LEDGER").header("Authorization", bearer(login.token())))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.columns.length()").value(5)).andExpect(jsonPath("$.students.length()").value(0));
-        for(String permission:List.of("REWARD_EXCHANGE_EXPORT","REWARD_EXCHANGE_REVIEW_CHILD")) {
+        for(String permission:List.of("REWARD_EXCHANGE_EXPORT")) {
             jdbcTemplate.update("UPDATE sys_permission SET status='DISABLED' WHERE permission_code=?",permission);
             sqlSession.clearCache();
+            resetAuthSnapshot();
             mockMvc.perform(get("/api/v1/export-jobs/options?exportType=REWARD_EXCHANGE_LEDGER").header("Authorization", bearer(login.token())))
                     .andExpect(status().isForbidden());
             jdbcTemplate.update("UPDATE sys_permission SET status='ENABLED' WHERE permission_code=?",permission);
             sqlSession.clearCache();
+            resetAuthSnapshot();
         }
+        // REWARD_EXCHANGE_REVIEW_CHILD 已从导出访问链移除（bf34c6a 改为 REWARD_EXCHANGE_READ），不再作为 options 拒绝项
     }
 
     @Test
@@ -327,24 +379,33 @@ class ExportJobApiIntegrationTest {
         }
         jdbcTemplate.update("UPDATE edu_parent_student SET status='INACTIVE' WHERE parent_user_id=?",fixture.login().user().id());
         sqlSession.clearCache();
+        resetAuthSnapshot();
         assertTaskFileDenied(fixture.login(),id);
         mockMvc.perform(get("/api/v1/export-jobs/options?exportType=REWARD_EXCHANGE_LEDGER").header("Authorization",bearer(fixture.login().token())))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.students.length()").value(0));
         jdbcTemplate.update("UPDATE edu_parent_student SET status='ACTIVE' WHERE parent_user_id=?",fixture.login().user().id());
         sqlSession.clearCache();
+        resetAuthSnapshot();
         assertThat(taskDownload(fixture.login(),id)).isNotEmpty();
         for(String feature:List.of("REWARD_EXCHANGE","DATA_EXPORT","ATTACHMENT_SERVICE","IMPORT_EXPORT_TEMPLATE_MANAGEMENT")) {
             jdbcTemplate.update("UPDATE sys_feature_toggle SET status='DISABLED' WHERE feature_code=?",feature);
             sqlSession.clearCache();
+            resetAuthSnapshot();
             for(String suffix:List.of("","/download")) {
+                // REWARD_EXCHANGE 不在导出三件套 feature 内，由业务层 requireEnabled 拒绝 → 409 FEATURE_DISABLED；
+                // 其余三个是导出权限链依赖，feature 关闭时权限链先行拒绝 → 403 ACCESS_DENIED（V118 feature 先行语义）
+                boolean businessLayer=feature.equals("REWARD_EXCHANGE");
                 mockMvc.perform(get("/api/v1/export-jobs/"+id+suffix).header("Authorization",bearer(fixture.login().token())))
-                        .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("FEATURE_DISABLED"));
+                        .andExpect(businessLayer?status().isConflict():status().isForbidden())
+                        .andExpect(jsonPath("$.code").value(businessLayer?"FEATURE_DISABLED":"ACCESS_DENIED"));
             }
             jdbcTemplate.update("UPDATE sys_feature_toggle SET status='ENABLED' WHERE feature_code=?",feature);
             sqlSession.clearCache();
+            resetAuthSnapshot();
         }
         jdbcTemplate.update("UPDATE sys_permission SET status='DISABLED' WHERE permission_code='REWARD_EXCHANGE_EXPORT'");
         sqlSession.clearCache();
+        resetAuthSnapshot();
         assertTaskFileDenied(fixture.login(),id);
     }
 
@@ -353,6 +414,9 @@ class ExportJobApiIntegrationTest {
         var fixture=rewardExportFixture();
         var secondary=createUserWithRole("export_secondary","副家长","PARENT",fixture.admin());
         var login=setPasswordAndLogin(fixture.admin(),secondary,"secondary-reward-export");
+        // 副家长同为 V118 家长三要素身份；创建导出仍被主家长守卫拒绝
+        makeFamilyParent("export_secondary");
+        resetAuthSnapshot();
         jdbcTemplate.update("INSERT INTO edu_parent_student(id,parent_user_id,student_id,relation_role,status,primary_scope_key) VALUES(1900000000000088110,?,?,'SECONDARY_GUARDIAN','ACTIVE','SECONDARY')",secondary.id(),fixture.studentId());
         mockMvc.perform(get("/api/v1/export-jobs/options?exportType=REWARD_EXCHANGE_LEDGER").header("Authorization",bearer(login.token())))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.students.length()").value(0));
@@ -376,8 +440,10 @@ class ExportJobApiIntegrationTest {
                     .andExpect(status().isBadRequest());
         }
         userService.assignRole(new AssignRoleToUserCommand(fixture.login().user().id(),roleMapper.findByCode("SYS_AUDITOR").id(),null));
+        // 兼任系统审核员不再按内置角色名拒绝（权限驱动管理端重构）
+        resetAuthSnapshot();
         mockMvc.perform(get("/api/v1/export-jobs/options?exportType=REWARD_EXCHANGE_LEDGER").header("Authorization",bearer(fixture.login().token())))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isOk());
     }
 
     @Test
@@ -398,13 +464,16 @@ class ExportJobApiIntegrationTest {
         sqlSession.clearCache();
         assertThat(executionService.execute(claimService.claim(queued,0L))).isFalse();
         assertThat(jdbcTemplate.queryForObject("SELECT status FROM sys_export_job WHERE id=?",String.class,queued)).isEqualTo("FAILED");
-        assertThat(jdbcTemplate.queryForList("SELECT r.role_code FROM sys_role_permission rp JOIN sys_role r ON r.id=rp.role_id JOIN sys_permission p ON p.id=rp.permission_id WHERE p.permission_code='REWARD_EXCHANGE_EXPORT'",String.class)).containsExactly("PARENT");
+        assertThat(jdbcTemplate.queryForList("SELECT r.role_code FROM sys_role_permission rp JOIN sys_role r ON r.id=rp.role_id JOIN sys_permission p ON p.id=rp.permission_id WHERE p.permission_code='REWARD_EXCHANGE_EXPORT'",String.class)).containsExactly("PARENT","PARENT_ADMIN");
     }
 
     private RewardExportFixture rewardExportFixture() throws Exception {
         var admin=createUserWithRole("reward_report_admin","奖励导出管理员","SYS_ADMIN",null);
         var parent=createUserWithRole("reward_report_parent","奖励家长","PARENT",admin);
         var login=setPasswordAndLogin(admin,parent,"reward-report-device");
+        // V118 后家长导出身份要求 FAMILY 账号 + 家长档案 + 启用角色三要素
+        makeFamilyParent("reward_report_parent");
+        resetAuthSnapshot();
         ensureTemplateRule(admin.id());
         templateService.createTemplate(new CreateImportExportTemplateUploadCommand(admin.id(),"奖励兑换模板",TemplateType.EXPORT,"REWARD_EXCHANGE_REPORT","V1","reward.xlsx",MediaType.APPLICATION_OCTET_STREAM_VALUE,
                 templateFor("REWARD_NAME","REQUIRED_POINTS","REQUESTED_AT","APPROVAL_STATUS","VERIFICATION_STATUS"),true,List.of()));
@@ -490,7 +559,8 @@ class ExportJobApiIntegrationTest {
         sqlSession.clearCache();
         assertThat(taskDownload(login, id)).isNotEmpty();
         userService.assignRole(new AssignRoleToUserCommand(admin.id(), roleMapper.findByCode("SYS_AUDITOR").id(), null));
-        assertTaskFileDenied(login, id);
+        // 兼任系统审核员不再按内置角色名拒绝（权限驱动管理端重构）
+        assertThat(taskDownload(login, id)).isNotEmpty();
     }
 
     @Test
@@ -523,6 +593,7 @@ class ExportJobApiIntegrationTest {
                 .andExpect(status().isForbidden());
         jdbcTemplate.update("UPDATE sys_permission SET status='DISABLED' WHERE permission_code='CACHE_REVIEW'");
         sqlSession.clearCache();
+        resetAuthSnapshot();
         assertTaskFileDenied(login,id);
     }
 
@@ -560,15 +631,18 @@ class ExportJobApiIntegrationTest {
         Long id=createTaskExport(login, "");
         jdbcTemplate.update("UPDATE sys_permission SET status='DISABLED' WHERE permission_code='CACHE_READ'");
         sqlSession.clearCache();
+        resetAuthSnapshot();
         assertThat(executionService.execute(claimService.claim(id,0L))).isFalse();
         assertThat(jdbcTemplate.queryForObject("SELECT status FROM sys_export_job WHERE id=?",String.class,id)).isEqualTo("FAILED");
         for(String permission:List.of("SYSTEM_TASK_READ","SYSTEM_TASK_EXPORT")) {
             jdbcTemplate.update("UPDATE sys_permission SET status='DISABLED' WHERE permission_code=?",permission);
             sqlSession.clearCache();
+            resetAuthSnapshot();
             mockMvc.perform(get("/api/v1/export-jobs/options?exportType=SYSTEM_TASK_LEDGER").header("Authorization",bearer(login.token())))
                     .andExpect(status().isForbidden());
             jdbcTemplate.update("UPDATE sys_permission SET status='ENABLED' WHERE permission_code=?",permission);
             sqlSession.clearCache();
+            resetAuthSnapshot();
         }
         assertThat(jdbcTemplate.queryForList("SELECT r.role_code FROM sys_role_permission rp JOIN sys_role r ON r.id=rp.role_id JOIN sys_permission p ON p.id=rp.permission_id WHERE p.permission_code='SYSTEM_TASK_EXPORT' ORDER BY r.role_code",String.class))
                 .containsExactly("SYS_ADMIN","SYS_AUDITOR");
@@ -634,7 +708,7 @@ class ExportJobApiIntegrationTest {
         String jobId = body(created).path("id").asText();
         assertThat(jobId).hasSize(19);
         String taskId = jdbcTemplate.queryForObject(
-                "select cast(system_task_id as varchar) from sys_export_job where id = ?",
+                "select cast(system_task_id as char) from sys_export_job where id = ?",
                 String.class, Long.parseLong(jobId));
 
         mockMvc.perform(get("/api/v1/export-job-reviews")
@@ -698,8 +772,9 @@ class ExportJobApiIntegrationTest {
             assertThat(workbook.getSheetAt(0).getRow(1).getCell(2).getStringCellValue()).isEqualTo("ACTIVE_ITEM");
         }
         userService.assignRole(new AssignRoleToUserCommand(admin.id(),roleMapper.findByCode("SYS_AUDITOR").id(),null));
+        // 兼任系统审核员不再按内置角色名拒绝（权限驱动管理端重构）
         mockMvc.perform(get("/api/v1/export-jobs/{id}/download",id).header("Authorization",bearer(login.token())))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isOk());
     }
 
     @Autowired
@@ -812,10 +887,11 @@ class ExportJobApiIntegrationTest {
             assertThat(row.getCell(5).getStringCellValue()).isEqualTo("待处理");
         }
         userService.assignRole(new AssignRoleToUserCommand(admin.id(), roleMapper.findByCode("SYS_AUDITOR").id(), null));
+        // 兼任系统审核员不再按内置角色名拒绝（权限驱动管理端重构）
         mockMvc.perform(get("/api/v1/export-jobs/{id}/download", id).header("Authorization", bearer(login.token())))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isOk());
         mockMvc.perform(get("/api/v1/export-jobs/{id}", id).header("Authorization", bearer(login.token())))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isOk());
     }
 
     @Test
@@ -873,12 +949,13 @@ class ExportJobApiIntegrationTest {
             assertThat(row.getCell(5).getStringCellValue()).isEqualTo(admin.id().toString());
         }
         userService.assignRole(new AssignRoleToUserCommand(admin.id(), roleMapper.findByCode("SYS_AUDITOR").id(), null));
+        // 兼任系统审核员不再按内置角色名拒绝（权限驱动管理端重构）
         mockMvc.perform(get("/api/v1/export-jobs/{id}/download", id).header("Authorization", bearer(login.token())))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isOk());
         mockMvc.perform(get("/api/v1/export-jobs/{id}", id).header("Authorization", bearer(login.token())))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isOk());
         mockMvc.perform(get("/api/v1/export-jobs/options?exportType=INTERFACE_SERVICE_LEDGER").header("Authorization", bearer(login.token())))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isOk());
     }
 
     @Autowired
@@ -965,8 +1042,9 @@ class ExportJobApiIntegrationTest {
             assertThat(sheet.getRow(1).getCell(4).getStringCellValue()).isEqualTo("停用");
         }
         userService.assignRole(new AssignRoleToUserCommand(admin.id(), roleMapper.findByCode("SYS_AUDITOR").id(), null));
+        // 兼任系统审核员不再按内置角色名拒绝（权限驱动管理端重构）
         mockMvc.perform(get("/api/v1/export-jobs/{id}/download", id).header("Authorization", bearer(login.token())))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isOk());
     }
 
     @Autowired
@@ -1033,8 +1111,21 @@ class ExportJobApiIntegrationTest {
     }
 
     private Login setPasswordAndLogin(User administrator, User user, String deviceId) throws Exception {
+        // bf34c6a 起管理员设置密码后要求首次登录自行改密，先 bootstrap 改密再建立业务会话
         authenticationService.setPlatformUserPassword(new SetPlatformUserPasswordCommand(
-                administrator.id(), user.id(), "Password123"));
+                administrator.id(), user.id(), "Bootstrap123"));
+        MvcResult bootstrap = mockMvc.perform(post("/api/v1/auth/sessions/password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"username":"%s","password":"Bootstrap123",
+                                 "deviceId":"%s","deviceName":"导出接口测试浏览器"}
+                                """.formatted(user.username(), deviceId)))
+                .andExpect(status().isOk()).andReturn();
+        mockMvc.perform(post("/api/v1/auth/password")
+                        .header("Authorization", bearer(body(bootstrap).path("accessToken").asText()))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"oldPassword\":\"Bootstrap123\",\"newPassword\":\"Password123\"}"))
+                .andExpect(status().isNoContent());
         MvcResult result = mockMvc.perform(post("/api/v1/auth/sessions/password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""

@@ -13,13 +13,18 @@ export type TaskAssignmentStatus =
 export type TaskAssignmentEffectiveStatus = TaskAssignmentStatus | 'PAUSED';
 export type TaskPauseType = 'EMOTION' | 'DIFFICULTY';
 export type TaskDeferType = 'AUTO' | 'MANUAL';
+export type TaskAbandonType = 'NORMAL' | 'EXEMPT_REQUEST';
 
 export interface ActiveTaskPause {
   id: string;
   pauseType: TaskPauseType;
   startedAt: string;
   expiresAt: string;
+  adjustMethod?: string | null;
+  reasonNote?: string | null;
 }
+
+export type TaskCheckInCompletion = 'FULL' | 'PARTIAL';
 
 export interface TaskCheckIn {
   id: string;
@@ -29,6 +34,7 @@ export interface TaskCheckIn {
   submittedAt: string;
   reviewComment: string | null;
   attachments: TaskAttachment[];
+  completion?: TaskCheckInCompletion | null;
 }
 
 export interface StudentTaskAssignment {
@@ -54,6 +60,18 @@ export interface StudentTaskAssignment {
   activePause: ActiveTaskPause | null;
   latestCheckIn: TaskCheckIn | null;
   tagCodes: string[];
+  description: string | null;
+  requirementItems: string[];
+  exampleFileIds: Array<string | number>;
+  exampleFiles?: TaskAttachment[];
+  timeline?: TaskTimelineNode[];
+}
+
+export interface TaskTimelineNode {
+  eventType: string;
+  reason: string | null;
+  eventDetails: string | null;
+  occurredAt: string;
 }
 
 export interface StudentTaskAssignmentPage {
@@ -91,27 +109,60 @@ export function claimStudentTask(id: string): Promise<StudentTaskAssignment> {
 export function pauseStudentTask(
   id: string,
   pauseType: TaskPauseType,
-  durationMinutes: number
+  durationMinutes: number,
+  adjustMethod?: string,
+  reasonNote?: string
 ): Promise<StudentTaskAssignment> {
-  return executeTaskAction(id, 'pause', { pauseType, durationMinutes });
+  return executeTaskAction(id, 'pause', {
+    pauseType,
+    durationMinutes,
+    adjustMethod: adjustMethod ?? null,
+    reasonNote: reasonNote ?? null
+  });
 }
 
 export function resumeStudentTask(id: string): Promise<StudentTaskAssignment> {
   return executeTaskAction(id, 'resume');
 }
 
-export function abandonStudentTask(id: string, reason?: string): Promise<StudentTaskAssignment> {
-  return executeTaskAction(id, 'abandon', { reason });
+export function abandonStudentTask(
+  id: string,
+  reason?: string,
+  abandonType?: TaskAbandonType
+): Promise<StudentTaskAssignment> {
+  return executeTaskAction(id, 'abandon', { reason, abandonType: abandonType ?? null });
+}
+
+export interface TaskDeferResult {
+  assignmentId: string;
+  targetTaskId: string;
+  status: TaskAssignmentStatus;
+  targetDate: string;
+  deferType: TaskDeferType;
+}
+
+/** 学生申请任务顺延（05-09）：计划日期更新为目标日期，执行历史保留。 */
+export function deferStudentTask(
+  id: string,
+  targetDate: string,
+  reason?: string
+): Promise<TaskDeferResult> {
+  return authenticatedRequest<TaskDeferResult>(
+    `/task-assignments/${encodeURIComponent(id)}/defer`,
+    { method: 'POST', data: { targetDate, reason: reason ?? null } }
+  );
 }
 
 export function submitStudentTaskCheckIn(
   id: string,
   content: string,
-  fileIds: string[]
+  fileIds: string[],
+  completion: TaskCheckInCompletion | null = null
 ): Promise<StudentTaskAssignment> {
   return executeTaskAction(id, 'check-ins', {
     content: content || null,
-    fileIds
+    fileIds,
+    completion
   });
 }
 

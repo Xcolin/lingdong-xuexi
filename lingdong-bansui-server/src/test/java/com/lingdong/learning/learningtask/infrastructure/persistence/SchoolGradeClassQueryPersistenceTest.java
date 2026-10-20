@@ -34,6 +34,8 @@ class SchoolGradeClassQueryPersistenceTest {
             jdbc.update("insert into sys_user(id,username,display_name,user_type,status) values(?,?,?,'ORGANIZATION','ENABLED')", id, "candidate_" + id, "Teacher " + id);
             jdbc.update("insert into sys_user_role(id,user_id,role_id) select ?,?,id from sys_role where role_code='TEACHER'", id, id);
             jdbc.update("insert into sys_user_organization(id,user_id,organization_id) values(?,?,?)", id, id, id == 97003 ? 96001 : 95001);
+            // 候选教师查询要求启用中的职业档案（LearningTaskOptionMapper.findScopedTeacherOptions）。
+            jdbc.update("insert into edu_teacher_profile(user_id,status) values(?,'ENABLED')", id);
         }
         jdbc.update("insert into edu_teacher_class(id,teacher_user_id,class_organization_id,status) values(97002,97002,95003,'ACTIVE')");
         var rows = options.findScopedTeacherOptions(List.of(95001L,95002L,95003L,96001L),95003L,null);

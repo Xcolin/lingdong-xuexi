@@ -60,6 +60,8 @@ class PreviousDayTaskCopyPersistenceTest {
         jdbcTemplate.update(
                 "delete from edu_parent_student where student_id = ?", STUDENT_ID);
         jdbcTemplate.update("delete from edu_student where id = ?", STUDENT_ID);
+        jdbcTemplate.update("delete from sys_user_role where id = 8900000000000000009");
+        jdbcTemplate.update("delete from auth_parent_profile where user_id = ?", PARENT_ID);
         jdbcTemplate.update("delete from sys_user where id = ?", PARENT_ID);
     }
 
@@ -68,8 +70,11 @@ class PreviousDayTaskCopyPersistenceTest {
         LocalDate today = LocalDate.now(ZoneId.of("Asia/Shanghai"));
         jdbcTemplate.update("""
                 insert into sys_user (id, username, display_name, user_type, status)
-                values (?, 'copy_parent', '复制测试家长', 'PLATFORM', 'ENABLED')
+                values (?, 'copy_parent', '复制测试家长', 'FAMILY', 'ENABLED')
                 """, PARENT_ID);
+        // V118 家长身份：FAMILY 账号需 COMPLETED 家长档案与活动角色，否则 ParentActorAccessService 拒绝
+        jdbcTemplate.update("insert into auth_parent_profile(id,user_id,onboarding_status,first_login_at,onboarding_completed_at) values(?,?,'COMPLETED',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP) on duplicate key update onboarding_status=values(onboarding_status)", PARENT_ID, PARENT_ID);
+        jdbcTemplate.update("insert into sys_user_role(id,user_id,role_id,organization_scope_key) select ?,?,id,'GLOBAL' from sys_role where role_code='PARENT'", 8900000000000000009L, PARENT_ID);
         jdbcTemplate.update("""
                 insert into edu_student (id, student_name, grade_code, status)
                 values (?, '复制测试学生', 'GRADE_3', 'ENABLED')

@@ -7,10 +7,12 @@ import com.lingdong.learning.student.domain.ParentRelationshipRole;
 public record ParentRelationshipStudentResponse(
         String studentId,
         String studentName,
-        ParentRelationshipRole relationshipRole
+        ParentRelationshipRole relationshipRole,
+        String boundAt
 ) {
     static ParentRelationshipStudentResponse from(ParentRelationshipStudentView view) {
         return new ParentRelationshipStudentResponse(
-                view.studentId().toString(), view.studentName(), view.relationshipRole());
+                view.studentId().toString(), view.studentName(), view.relationshipRole(),
+                view.boundAt() == null ? null : view.boundAt().toLocalDate().toString());
     }
 }

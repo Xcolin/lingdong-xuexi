@@ -71,7 +71,8 @@ class AttendancePersistenceTest {
                     List.of(entry(student, AttendanceStatus.NORMAL, null), entry(second, AttendanceStatus.LATE, null)));
             assertThat(page(user(teacher, "TEACHER")).total()).isEqualTo(2);
             assertThat(page(user(parent, "PARENT")).items()).extracting(AttendanceRow::studentId).containsExactly(student);
-            assertThat(page(user(studentUser, "STUDENT")).items()).extracting(AttendanceRow::studentId).containsExactly(student);
+            // V118 规范：学生账号仅适用于小程序（WEB 客户端一律拒绝），本人范围考勤查询走 MINIAPP。
+            assertThat(page(user(studentUser, "STUDENT", AuthClientType.MINIAPP)).items()).extracting(AttendanceRow::studentId).containsExactly(student);
             var otherRecord = rows.stream().filter(r -> r.studentId().equals(second)).findFirst().orElseThrow();
             assertThatThrownBy(() -> service.details(user(parent, "PARENT"), otherRecord.id())).isInstanceOf(ResourceNotFoundException.class);
             assertThat(service.classes(user(parent, "PARENT"), false)).extracting(AttendanceClassRow::classOrganizationId).containsExactly(classroom);
@@ -102,7 +103,7 @@ class AttendancePersistenceTest {
     @Test void dynamicOrganizationRoleIsBoundToItsSchool() {
         tx.executeWithoutResult(status -> {
             seed();
-            long manager = addUser("考勤管理员");
+            long manager = addUser("考勤管理员","ORGANIZATION");
             long role = id();
             jdbc.update("insert into sys_role(id,role_code,role_name,role_type,data_scope,built_in,status) values(?,?,'考勤员','CUSTOM','SCHOOL',0,'ENABLED')",role,"ATT_CUSTOM_"+role);
             assign(manager,role,school);
@@ -147,11 +148,12 @@ class AttendancePersistenceTest {
 
     private AttendanceService.Page page(AuthenticatedUser u) { return service.page(u,null,null,null,null,date,date,1,20); }
     private AttendanceEntry entry(long id,AttendanceStatus state,Long version) { return new AttendanceEntry(id,state,null,null,version); }
-    private AuthenticatedUser user(long id,String role) { return new AuthenticatedUser(id,1L,"test","测试",AuthClientType.WEB,List.of(role)); }
+    private AuthenticatedUser user(long id,String role) { return user(id,role,AuthClientType.WEB); }
+    private AuthenticatedUser user(long id,String role,AuthClientType client) { return new AuthenticatedUser(id,1L,"test","测试",client,List.of(role)); }
     private long id() { return ++next; }
-    private long addUser(String name) {
+    private long addUser(String name,String type) {
         long value=id();
-        jdbc.update("insert into sys_user(id,username,display_name,user_type,status) values(?,?,?,'ORGANIZATION','ENABLED')",value,"attendance_"+value,name);
+        jdbc.update("insert into sys_user(id,username,display_name,user_type,status) values(?,?,?,?,'ENABLED')",value,"attendance_"+value,name,type);
         return value;
     }
     private void assign(long user,long role,Long org) {
@@ -172,7 +174,11 @@ class AttendancePersistenceTest {
         school=organization(null,"SCHOOL","/ATT_TEST/");
         classroom=organization(school,"CLASS","/ATT_TEST/CLASS/");
         otherClass=organization(null,"CLASS","/ATT_OTHER/");
-        teacher=addUser("考勤教师"); parent=addUser("考勤家长"); studentUser=addUser("考勤学生");
+        teacher=addUser("考勤教师","ORGANIZATION"); parent=addUser("考勤家长","FAMILY"); studentUser=addUser("考勤学生","STUDENT");
+        // 教师身份判定链要求启用中的职业档案（TeacherIdentityService.isTeacher）。
+        jdbc.update("insert into edu_teacher_profile(user_id,status) values(?,'ENABLED')",teacher);
+        // 家长身份判定链要求 FAMILY 账号 + 家长档案（ParentActorAccessService.require）。
+        jdbc.update("insert into auth_parent_profile(id,user_id,onboarding_status,first_login_at) values(?,?,'PENDING',CURRENT_TIMESTAMP)",id(),parent);
         assign(teacher,1874244142494646276L,classroom);
         assign(parent,1874244142494646277L,null);
         assign(studentUser,1874244142494646278L,null);

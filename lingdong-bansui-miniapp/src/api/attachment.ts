@@ -40,6 +40,28 @@ export function uploadTaskAttachment(
   });
 }
 
+/** 家长端上传奖励图片（复用统一附件通道，模块沿用任务图片规则）。 */
+export function uploadRewardImage(token: string, filePath: string): Promise<TaskAttachment> {
+  return new Promise((resolve, reject) => {
+    const task = uni.uploadFile({
+      url: apiUrl('/attachments/uploads'),
+      filePath,
+      name: 'file',
+      formData: { moduleCode: 'LEARNING_TASK_CHECKIN', fileCategory: 'IMAGE' },
+      header: { Authorization: `Bearer ${token}` },
+      success: (response) => {
+        const body = parseBody(response.data);
+        if (response.statusCode >= 200 && response.statusCode < 300) {
+          resolve(body as TaskAttachment);
+          return;
+        }
+        reject(new ApiError(response.statusCode, body as ApiErrorBody));
+      },
+      fail: () => reject(new Error('图片上传未能完成'))
+    });
+  });
+}
+
 export function deleteTaskAttachment(fileId: string): Promise<void> {
   const session = getStudentSession();
   if (!session) return Promise.reject(new Error('学生登录状态已失效'));
@@ -53,10 +75,15 @@ export function deleteTaskAttachment(fileId: string): Promise<void> {
 export function downloadTaskAttachment(contentUrl: string): Promise<string> {
   const session = getStudentSession();
   if (!session) return Promise.reject(new Error('学生登录状态已失效'));
+  return downloadTaskAttachmentAs(contentUrl, session.accessToken);
+}
+
+/** 以指定令牌下载附件（家长端等非学生会话复用同一受控通道）。 */
+export function downloadTaskAttachmentAs(contentUrl: string, token: string): Promise<string> {
   return new Promise((resolve, reject) => {
     uni.downloadFile({
       url: apiUrl(contentUrl),
-      header: { Authorization: `Bearer ${session.accessToken}` },
+      header: { Authorization: `Bearer ${token}` },
       success: (response) => {
         if (response.statusCode >= 200 && response.statusCode < 300) {
           resolve(response.tempFilePath);

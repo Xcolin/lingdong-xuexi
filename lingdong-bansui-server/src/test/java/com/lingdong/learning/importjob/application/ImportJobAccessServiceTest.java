@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
@@ -60,7 +61,10 @@ class ImportJobAccessServiceTest {
 
         allowRead(10L);
         when(userRoleMapper.hasRoleCode(10L, "SYS_ADMIN")).thenReturn(true);
-        assertThatCode(() -> service.requireRead(10L, job)).doesNotThrowAnyException();
+        // 权限驱动重构后非属主读取不再因内置角色名放行：仅按权限编码与数据范围判定（isSystemAdministrator 已废弃恒 false）
+        assertThatThrownBy(() -> service.requireRead(10L, job))
+                .isInstanceOf(SystemOperationAccessDeniedException.class);
+        assertThat(service.isSystemAdministrator(10L)).isFalse();
     }
 
     @Test

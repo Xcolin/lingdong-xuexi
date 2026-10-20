@@ -25,6 +25,8 @@ class AnonymousRankQueryTest {
         for (long p : List.of(parent,parent+20)) {
             jdbc.update("insert into sys_user(id,username,display_name,user_type,status) values(?,?,'家长','FAMILY','ENABLED')",p,"rank_"+p);
             jdbc.update("insert into sys_user_role(id,user_id,role_id,organization_scope_key) select ?,?,id,'GLOBAL' from sys_role where role_code='PARENT'",p+100,p);
+            // V118 家长身份：FAMILY 账号需持有 COMPLETED 家长档案，否则 ParentActorAccessService 拒绝
+            jdbc.update("insert into auth_parent_profile(id,user_id,onboarding_status,first_login_at,onboarding_completed_at) values(?,?,'COMPLETED',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP) on duplicate key update onboarding_status=values(onboarding_status)",p,p);
             jdbc.update("insert into edu_student(id,student_name,status) select ?,'孩子','ENABLED' where not exists(select 1 from edu_student where id=?)",student,student);
             jdbc.update("insert into edu_parent_student(id,parent_user_id,student_id,relation_role,status,primary_scope_key) values(?,?,?,?,'ACTIVE',?)",p+200,p,student,p==parent?"PRIMARY_GUARDIAN":"SECONDARY_GUARDIAN",p==parent?"PRIMARY":"SECONDARY");
         }
@@ -48,6 +50,9 @@ class AnonymousRankQueryTest {
         assertThat(service.ranking(mini,student,classroom)).hasSize(1);
         jdbc.update("update sys_permission set status='DISABLED' where permission_code='MINIAPP_ANONYMOUS_CLASS_RANK_READ'");
         session.clearCache();
+        // ServletTestExecutionListener 会为 WebApplicationContext 绑定请求上下文，
+        // AuthorizationRequestCache 据此在同一测试方法内固化权限快照；变更授权后需重置才能重新判定
+        org.springframework.web.context.request.RequestContextHolder.resetRequestAttributes();
         assertThatThrownBy(() -> service.ranking(mini,student,classroom)).isInstanceOf(RuntimeException.class);
         assertThat(service.ranking(user(parent),student,classroom)).hasSize(1);
         assertThat(service.set(mini,student,classroom,false,1).enabled()).isFalse();

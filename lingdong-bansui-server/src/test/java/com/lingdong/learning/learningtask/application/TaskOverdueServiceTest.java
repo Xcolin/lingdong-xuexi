@@ -57,7 +57,7 @@ class TaskOverdueServiceTest {
                 .thenReturn(new TaskOverdueStateRow(11L, 22L, 0));
         when(pauseMapper.findActive(11L, cutoff)).thenReturn(new TaskPause(
                 33L, 11L, TaskPauseType.EMOTION, 44L,
-                cutoff.minusMinutes(10), cutoff.plusMinutes(20), null, null));
+                cutoff.minusMinutes(10), cutoff.plusMinutes(20), null, null, null, null));
 
         assertThat(service.markNeedsImprovement(11L, cutoff)).isFalse();
 

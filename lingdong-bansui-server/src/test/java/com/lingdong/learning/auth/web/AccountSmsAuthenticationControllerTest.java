@@ -25,12 +25,16 @@ class AccountSmsAuthenticationControllerTest {
     @Autowired IdGenerator ids;
     @Autowired InMemoryParentSmsVerificationStore proofs;
     @Autowired FeatureToggleMapper features;
+    @Autowired com.lingdong.learning.organization.onboarding.infrastructure.persistence.MobileVerificationMapper mobileVerifications;
     @BeforeEach void setup(){proofs.clear();features.updateGlobalStatus("PARENT_PHONE_AUTH",FeatureStatus.ENABLED);}
     void issue(String client)throws Exception{mvc.perform(post("/api/v1/auth/login-sms-codes").contentType(MediaType.APPLICATION_JSON).content("{\"mobile\":\""+PHONE+"\",\"clientType\":\""+client+"\"}"))
         .andExpect(status().isOk()).andExpect(jsonPath("$.retryAfterSeconds").value(60)).andExpect(jsonPath("$.code").doesNotExist());}
     String body(String client){return "{\"mobile\":\""+PHONE+"\",\"code\":\""+FixedTestParentSmsCodeGenerator.CODE+"\",\"clientType\":\""+client+"\",\"deviceId\":\"sms-test\",\"deviceName\":\"短信测试\"}";}
     @Test void registeredAccountCanUseBothClientsAndProofCannotBeReplayed()throws Exception {
-        users.insert(User.create(ids.nextId(),"sms_http_personal","短信账号",PHONE,UserType.PERSONAL));
+        var user=User.create(ids.nextId(),"sms_http_personal","短信账号",PHONE,UserType.PERSONAL);
+        users.insert(user);
+        // 已验证手机机制后，注册流程会写入 auth_verified_mobile；SMS 登录前需存在该记录，否则直接 401
+        mobileVerifications.save(user.id(),PHONE);
         for(String client:new String[]{"WEB","MINIAPP"}){
             issue(client);
             mvc.perform(post("/api/v1/auth/sessions/sms").contentType(MediaType.APPLICATION_JSON).content(body(client)))

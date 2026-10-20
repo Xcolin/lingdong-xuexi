@@ -1,6 +1,6 @@
 <template>
   <view class="prototype-workspace page-shell">
-    <PrototypePageHeader :title="cancellationFlowOpen?'账号注销申请':'账号与手机号'" icon="phone"/>
+    <PrototypePageHeader title="账号与手机号" icon="phone"/>
     <view v-if="loading && !state" class="state-view">加载中</view>
     <view v-else-if="errorMessage" class="state-view error-state">
       <text>{{ errorMessage }}</text>
@@ -40,15 +40,8 @@
         <text class="section-title">账号注销</text>
         <text v-if="state.activeStudentRelationshipCount > 0" class="field-note">请先解除全部学生关系</text>
         <template v-else-if="state.cancellationStatus === 'NONE'">
-          <button v-if="!cancellationFlowOpen" class="danger-command" @tap="cancellationFlowOpen = true">申请注销</button>
-          <view v-else class="form-stack">
-            <text class="field-note">申请后进入 7 天冷静期，期间账号仍可登录并撤销。</text>
-            <button class="secondary-command" :disabled="submitting" @tap="sendCancellationCode">发送注销验证码</button>
-            <input v-model="cancellationCode" class="field-input" maxlength="6" type="number" placeholder="注销验证码" />
-            <input v-model="confirmation" class="field-input" maxlength="4" placeholder="请输入“确认注销”" />
-            <button class="danger-command" :disabled="!sixDigits(cancellationCode) || confirmation !== '确认注销' || submitting" @tap="submitCancellation">提交注销申请</button>
-            <button class="text-command cancel-command" :disabled="submitting" @tap="cancellationFlowOpen = false">取消</button>
-          </view>
+          <!-- 8.4：注销改独立表单页（对照 07-10），前置校验保留在新页内 -->
+          <button class="danger-command" @tap="openCancelForm">申请注销</button>
         </template>
         <template v-else-if="state.cancellationStatus === 'COOLING_OFF'">
           <text class="field-note">冷静期截止 {{ formatTime(state.coolingEndsAt) }}</text>
@@ -71,8 +64,6 @@ import {
   getParentAccountLifecycle,
   issueCurrentMobileCode,
   issueNewMobileCode,
-  issueParentCancellationCode,
-  requestParentCancellation,
   revokeParentCancellation,
   verifyCurrentMobile,
   type ParentAccountLifecycleState
@@ -90,9 +81,6 @@ const currentCode = ref('');
 const ticket = ref('');
 const newMobile = ref('');
 const newCode = ref('');
-const cancellationFlowOpen = ref(false);
-const cancellationCode = ref('');
-const confirmation = ref('');
 
 const cancellationLabel = computed(() => {
   if (state.value?.cancellationStatus === 'COOLING_OFF') return '冷静期中';
@@ -144,6 +132,10 @@ function cancelMobileFlow(): void {
   mobileFlowOpen.value = false;
 }
 
+function openCancelForm(): void {
+  uni.navigateTo({ url: '/pages/parent-cancel-form/parent-cancel-form' });
+}
+
 async function sendCurrentCode(): Promise<void> {
   await execute(async () => {
     await issueCurrentMobileCode(requireToken());
@@ -172,24 +164,6 @@ async function completeMobileChange(): Promise<void> {
     clearParentSession();
     toast('手机号已更换，请重新登录');
     await uni.reLaunch({ url: '/pages/parent-login/parent-login' });
-  });
-}
-
-async function sendCancellationCode(): Promise<void> {
-  await execute(async () => {
-    await issueParentCancellationCode(requireToken());
-    toast('验证码已发送');
-  });
-}
-
-async function submitCancellation(): Promise<void> {
-  await execute(async () => {
-    await requestParentCancellation(requireToken(), cancellationCode.value, confirmation.value);
-    cancellationFlowOpen.value = false;
-    cancellationCode.value = '';
-    confirmation.value = '';
-    await loadState();
-    toast('注销申请已进入冷静期');
   });
 }
 

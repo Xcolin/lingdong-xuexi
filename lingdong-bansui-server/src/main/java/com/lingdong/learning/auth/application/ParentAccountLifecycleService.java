@@ -170,16 +170,30 @@ public class ParentAccountLifecycleService {
                 cancellation.id(), cancellation.requestedAt(), cancellation.coolingEndsAt());
     }
 
+    /** 注销原因允许值（8.4 对照 07-10 四选）。 */
+    private static final java.util.Set<String> CANCELLATION_REASONS =
+            java.util.Set.of("UNUSED", "RE_REGISTER", "GRADUATED", "OTHER");
+
     @Transactional
     public ParentAccountCancellationRecord requestCancellation(
             Long userId,
             AuthClientType clientType,
             String code,
-            String confirmation
+            String confirmation,
+            String reason,
+            String note
     ) {
         featureAccessService.requireEnabled(FEATURE_CODE, null);
         if (!CANCELLATION_CONFIRMATION.equals(confirmation)) {
             throw new IllegalArgumentException("请输入确认注销");
+        }
+        String normalizedReason = reason == null ? "" : reason.trim();
+        if (!CANCELLATION_REASONS.contains(normalizedReason)) {
+            throw new IllegalArgumentException("请选择注销原因");
+        }
+        String normalizedNote = note == null ? "" : note.trim();
+        if (normalizedNote.length() > 200) {
+            throw new IllegalArgumentException("补充说明不能超过 200 字");
         }
         User parent = requireParent(userMapper.findByIdForUpdate(userId));
         if(ownerGuard!=null)ownerGuard.requireAccountAvailable(userId);
@@ -197,7 +211,7 @@ public class ParentAccountLifecycleService {
                 idGenerator.nextId(), userId, ParentAccountCancellationStatus.COOLING_OFF,
                 ACTIVE_SCOPE_KEY, requestedAt, requestedAt.plus(CANCELLATION_COOLING_PERIOD), null, null);
         try {
-            if (lifecycleMapper.insertCancellation(record) != 1) {
+            if (lifecycleMapper.insertCancellation(record, normalizedReason, normalizedNote.isEmpty() ? null : normalizedNote) != 1) {
                 throw new IllegalStateException("账号注销申请保存失败");
             }
         } catch (DataIntegrityViolationException exception) {

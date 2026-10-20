@@ -13,6 +13,7 @@
             <arg column="reviewed_by_user_id" javaType="java.lang.Long"/>
             <arg column="reviewed_at" javaType="java.time.LocalDateTime"/>
             <arg column="review_comment" javaType="java.lang.String"/>
+            <arg column="completion" javaType="java.lang.String"/>
         </constructor>
     </resultMap>
     <select id="nextSubmissionNo" resultType="int">
@@ -24,17 +25,17 @@
     <insert id="insert">
         INSERT INTO learn_task_checkin (
             id, assignment_id, submission_no, content, status,
-            submitted_by_user_id, submitted_at
+            submitted_by_user_id, submitted_at, completion
         ) VALUES (
             #{checkIn.id}, #{checkIn.assignmentId}, #{checkIn.submissionNo},
             #{checkIn.content}, #{checkIn.status}, #{checkIn.submittedByUserId},
-            #{checkIn.submittedAt}
+            #{checkIn.submittedAt}, #{checkIn.completion, jdbcType=VARCHAR}
         )
     </insert>
 
     <select id="findLatestSubmittedForUpdate" resultMap="TaskCheckInMap">
         SELECT id, assignment_id, submission_no, content, status, submitted_by_user_id,
-               submitted_at, reviewed_by_user_id, reviewed_at, review_comment
+               submitted_at, reviewed_by_user_id, reviewed_at, review_comment, completion
         FROM learn_task_checkin
         WHERE assignment_id = #{assignmentId} AND status = 'SUBMITTED'
         ORDER BY submission_no DESC
@@ -44,7 +45,7 @@
 
     <select id="findLatestApprovedForUpdate" resultMap="TaskCheckInMap">
         SELECT id, assignment_id, submission_no, content, status, submitted_by_user_id,
-               submitted_at, reviewed_by_user_id, reviewed_at, review_comment
+               submitted_at, reviewed_by_user_id, reviewed_at, review_comment, completion
         FROM learn_task_checkin
         WHERE assignment_id = #{assignmentId} AND status = 'APPROVED'
         ORDER BY submission_no DESC
@@ -63,7 +64,7 @@
     <update id="approve">
         UPDATE learn_task_checkin
         SET status = 'APPROVED', reviewed_by_user_id = #{reviewerUserId},
-            reviewed_at = #{reviewedAt}, review_comment = NULL,
+            reviewed_at = #{reviewedAt}, review_comment = #{reviewComment},
             updated_at = #{reviewedAt}
         WHERE id = #{id} AND status = 'SUBMITTED'
     </update>
@@ -76,4 +77,34 @@
           AND status = 'APPROVED'
           AND reviewed_by_user_id = #{reviewerUserId}
     </update>
+
+    <resultMap id="FamilyCheckInRowMap" type="com.lingdong.learning.learningtask.application.FamilyTaskCheckInRow">
+        <constructor>
+            <idArg column="check_in_id" javaType="java.lang.Long"/>
+            <arg column="assignment_id" javaType="java.lang.Long"/>
+            <arg column="student_id" javaType="java.lang.Long"/>
+            <arg column="student_name" javaType="java.lang.String"/>
+            <arg column="content" javaType="java.lang.String"/>
+            <arg column="status" javaType="java.lang.String"/>
+            <arg column="submitted_at" javaType="java.time.LocalDateTime"/>
+            <arg column="completion" javaType="java.lang.String"/>
+        </constructor>
+    </resultMap>
+    <select id="findFamilyRecords" resultMap="FamilyCheckInRowMap">
+        SELECT checkin.id AS check_in_id,
+               assignment.id AS assignment_id,
+               student.id AS student_id,
+               student.student_name,
+               checkin.content,
+               checkin.status,
+               checkin.submitted_at,
+               checkin.completion
+        FROM learn_task_checkin checkin
+        JOIN learn_task_assignment assignment ON assignment.id = checkin.assignment_id
+        JOIN edu_student student ON student.id = assignment.student_id
+        WHERE assignment.task_id = #{taskId}
+          AND checkin.status IN ('SUBMITTED', 'APPROVED')
+        ORDER BY checkin.submitted_at DESC, checkin.id DESC
+        LIMIT #{limit}
+    </select>
 </mapper>

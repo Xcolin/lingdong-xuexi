@@ -123,7 +123,7 @@ class ParentRelationshipApplicationServiceTest {
     void listsOnlyStudentsWithCurrentParentRelationship() {
         when(relationshipMapper.findActiveStudentsByParent(PRIMARY_USER_ID)).thenReturn(List.of(
                 new ParentRelationshipStudentView(
-                        STUDENT_ID, "小灵", ParentRelationshipRole.PRIMARY_GUARDIAN)));
+                        STUDENT_ID, "小灵", ParentRelationshipRole.PRIMARY_GUARDIAN, null)));
 
         List<ParentRelationshipStudentView> result = service.getRelationshipStudents(PRIMARY_USER_ID);
 

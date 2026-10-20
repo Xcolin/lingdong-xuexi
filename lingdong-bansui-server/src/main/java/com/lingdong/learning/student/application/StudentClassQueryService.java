@@ -47,6 +47,13 @@ public class StudentClassQueryService {
           var first=byId.get(a.currentClassId()); var second=byId.get(b.currentClassId());
           int c=first==null?(second==null?0:1):second==null?-1:order.compare(first,second);
           if(c==0)c=a.studentName().compareTo(b.studentName()); return c==0?a.id().compareTo(b.id()):c;
-        }).map(o -> new StudentOption(o.id(),o.studentName(),o.studentAccountMasked(),o.currentClassId(),paths.getOrDefault(o.currentClassId(),o.currentClassName()),o.relationshipRole())).toList();
+        }).map(o -> new StudentOption(o.id(),o.studentName(),o.studentAccountMasked(),o.currentClassId(),paths.getOrDefault(o.currentClassId(),o.currentClassName()),o.relationshipRole(),schoolNameOf(byId,o.currentClassId()))).toList();
+    }
+
+    /** 从预加载的组织树派生学生班级所属学校（含培训机构根），无班级时为 null。 */
+    private String schoolNameOf(java.util.Map<Long,com.lingdong.learning.organization.domain.Organization> byId, Long classId) {
+        var school = classId == null ? null
+                : com.lingdong.learning.organization.application.OrganizationHierarchy.schoolOf(byId.get(classId), organizations);
+        return school == null ? null : school.name();
     }
 }

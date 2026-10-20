@@ -25,5 +25,12 @@ async function draw(value:string){
 watch(()=>props.value,draw);
 onMounted(()=>{void draw(props.value);});
 onBeforeUnmount(()=>{revision++;});
+/** 导出当前二维码到相册（保存图片操作）。 */
+async function saveToAlbum(): Promise<void>{
+ return new Promise((resolve,reject)=>{
+  uni.canvasToTempFilePath({canvasId,success:r=>{uni.saveImageToPhotosAlbum({filePath:r.tempFilePath,success:()=>resolve(),fail:e=>reject(new Error(e.errMsg||'保存未完成'))});},fail:e=>reject(new Error(e.errMsg||'导出未完成'))},component);
+ });
+}
+defineExpose({saveToAlbum});
 </script>
 <style scoped>.qr-frame{display:flex;flex-direction:column;align-items:center;margin:24rpx auto;background:#fff;border:1rpx solid #e3eadd;border-radius:20rpx;padding:12rpx;width:384rpx;box-sizing:border-box;}.qr-canvas{width:360rpx;height:360rpx;}.qr-error{display:block;font-size:22rpx;color:#a77654;line-height:1.5;margin-top:12rpx;}</style>

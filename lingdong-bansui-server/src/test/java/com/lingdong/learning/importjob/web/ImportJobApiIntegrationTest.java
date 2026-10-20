@@ -144,6 +144,8 @@ class ImportJobApiIntegrationTest {
         userService.assignRole(new AssignRoleToUserCommand(user.id(), role.id(), null));
         authenticationService.setPlatformUserPassword(
                 new SetPlatformUserPasswordCommand(user.id(), user.id(), "Password123"));
+        // bf34c6a 管理员设密后要求首登改密，业务测试直接清除首登改密标记
+        jdbcTemplate.update("UPDATE auth_initial_password_state SET change_required=false WHERE user_id=?", user.id());
         MvcResult result = mockMvc.perform(post("/api/v1/auth/sessions/password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""

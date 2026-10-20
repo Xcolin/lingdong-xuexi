@@ -1,2657 +1,2945 @@
 [
-  {
-    "id": "LAYOUT-01",
-    "title": "成长陪伴首页",
-    "board": "exec-016fba67-ee22-46ed-882e-f6f9cc484aea.png",
-    "status": "未验收",
-    "route": "/pages/parent-home/parent-home",
-    "api": [
-      "GET /auth/me",
-      "GET /task-reviews",
-      "GET /parent-reward-exchanges/summary"
-    ],
-    "reference": {
-      "path": "reference/LAYOUT-01.png",
-      "crop": [
-        287,
-        27,
-        535,
-        541
-      ],
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "sha256": "e8cb334fdfe83186d5e1b7ec8c0711ef05d43945dc9edc696b229ed3a75ca3ac",
-      "reviewStatus": "初步裁切，需核对内部内容边界"
-    },
-    "implementationStatus": "页面实现中，尚未通过逐屏像素验收"
-  },
-  {
-    "id": "LAYOUT-02",
-    "title": "成长陪伴任务",
-    "board": "exec-016fba67-ee22-46ed-882e-f6f9cc484aea.png",
-    "status": "未验收",
-    "route": "/pages/family-tasks/family-tasks",
-    "api": [
-      "GET /learning-tasks?sourceType=FAMILY",
-      "POST /learning-tasks",
-      "POST /learning-tasks/{id}/publish"
-    ],
-    "reference": {
-      "path": "reference/LAYOUT-02.png",
-      "crop": [
-        554,
-        27,
-        803,
-        541
-      ],
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "sha256": "e8cb334fdfe83186d5e1b7ec8c0711ef05d43945dc9edc696b229ed3a75ca3ac",
-      "reviewStatus": "初步裁切，需核对内部内容边界"
-    },
-    "implementationStatus": "页面实现中，尚未通过逐屏像素验收"
-  },
-  {
-    "id": "LAYOUT-03",
-    "title": "成长陪伴成长",
-    "board": "exec-016fba67-ee22-46ed-882e-f6f9cc484aea.png",
-    "status": "未验收",
-    "route": "/pages/parent-weekly-reviews/parent-weekly-reviews",
-    "api": [
-      "GET /growth-reviews/miniapp/students",
-      "GET /growth-reviews/miniapp/students/{studentId}"
-    ],
-    "reference": {
-      "path": "reference/LAYOUT-03.png",
-      "crop": [
-        823,
-        27,
-        1071,
-        541
-      ],
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "sha256": "e8cb334fdfe83186d5e1b7ec8c0711ef05d43945dc9edc696b229ed3a75ca3ac",
-      "reviewStatus": "初步裁切，需核对内部内容边界"
-    },
-    "implementationStatus": "页面实现中，尚未通过逐屏像素验收"
-  },
-  {
-    "id": "LAYOUT-04",
-    "title": "成长陪伴我的",
-    "board": "exec-016fba67-ee22-46ed-882e-f6f9cc484aea.png",
-    "status": "未验收",
-    "route": "/pages/parent-me/parent-me",
-    "api": [
-      "GET /auth/me"
-    ],
-    "reference": {
-      "path": "reference/LAYOUT-04.png",
-      "crop": [
-        1093,
-        27,
-        1342,
-        541
-      ],
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "sha256": "e8cb334fdfe83186d5e1b7ec8c0711ef05d43945dc9edc696b229ed3a75ca3ac",
-      "reviewStatus": "初步裁切，需核对内部内容边界"
-    },
-    "implementationStatus": "页面实现中，尚未通过逐屏像素验收"
-  },
-  {
-    "id": "LAYOUT-05",
-    "title": "成长小主人首页",
-    "board": "exec-016fba67-ee22-46ed-882e-f6f9cc484aea.png",
-    "status": "未验收",
-    "route": "/pages/student-dashboard/student-dashboard",
-    "api": [
-      "GET /task-assignments",
-      "GET /growth-points/me/account"
-    ],
-    "reference": {
-      "path": "reference/LAYOUT-05.png",
-      "crop": [
-        287,
-        586,
-        535,
-        1018
-      ],
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "sha256": "e8cb334fdfe83186d5e1b7ec8c0711ef05d43945dc9edc696b229ed3a75ca3ac",
-      "reviewStatus": "初步裁切，需核对内部内容边界"
-    },
-    "implementationStatus": "页面实现中，尚未通过逐屏像素验收"
-  },
-  {
-    "id": "LAYOUT-06",
-    "title": "成长小主人任务详情",
-    "board": "exec-016fba67-ee22-46ed-882e-f6f9cc484aea.png",
-    "status": "未验收",
-    "route": "/pages/task-detail/task-detail",
-    "api": [
-      "GET /task-assignments/{id}"
-    ],
-    "reference": {
-      "path": "reference/LAYOUT-06.png",
-      "crop": [
-        554,
-        586,
-        803,
-        1018
-      ],
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "sha256": "e8cb334fdfe83186d5e1b7ec8c0711ef05d43945dc9edc696b229ed3a75ca3ac",
-      "reviewStatus": "初步裁切，需核对内部内容边界"
-    },
-    "implementationStatus": "页面实现中，尚未通过逐屏像素验收"
-  },
-  {
-    "id": "LAYOUT-07",
-    "title": "成长小主人成长奖励",
-    "board": "exec-016fba67-ee22-46ed-882e-f6f9cc484aea.png",
-    "status": "未验收",
-    "route": "/pages/rewards/rewards",
-    "api": [
-      "GET /rewards/me",
-      "POST /reward-exchanges",
-      "GET /reward-exchanges/me"
-    ],
-    "reference": {
-      "path": "reference/LAYOUT-07.png",
-      "crop": [
-        823,
-        586,
-        1071,
-        1018
-      ],
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "sha256": "e8cb334fdfe83186d5e1b7ec8c0711ef05d43945dc9edc696b229ed3a75ca3ac",
-      "reviewStatus": "初步裁切，需核对内部内容边界"
-    },
-    "implementationStatus": "页面实现中，尚未通过逐屏像素验收"
-  },
-  {
-    "id": "LAYOUT-08",
-    "title": "成长小主人我的",
-    "board": "exec-016fba67-ee22-46ed-882e-f6f9cc484aea.png",
-    "status": "未验收",
-    "route": "/pages/student-home/student-home",
-    "api": [
-      "GET /auth/me"
-    ],
-    "reference": {
-      "path": "reference/LAYOUT-08.png",
-      "crop": [
-        1093,
-        586,
-        1342,
-        1018
-      ],
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "sha256": "e8cb334fdfe83186d5e1b7ec8c0711ef05d43945dc9edc696b229ed3a75ca3ac",
-      "reviewStatus": "初步裁切，需核对内部内容边界"
-    },
-    "implementationStatus": "页面实现中，尚未通过逐屏像素验收"
-  },
-  {
-    "id": "01-01",
-    "group": "账号与入驻",
-    "title": "成长伙伴登录",
-    "board": "exec-4128b7d4-356d-4faa-9627-a1150ea473aa.png",
-    "position": {
-      "row": 0,
-      "column": 0
-    },
-    "status": "未验收",
-    "route": "/pages/unified-login/unified-login",
-    "api": [
-      "POST /api/v1/auth/account-wechat-sessions"
-    ],
-    "reference": {
-      "path": "reference/01-01.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        28,
-        92,
-        301,
-        561
-      ],
-      "sha256": "e4eef71d619e0f0afefa9be6fd32b6cc7c6e1f088b74651d1fec4d1215a92bd0",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "WECHAT; no bindingTicket",
-    "gaps": [
-      "批准使用微信快捷登录；原图密码表单不强行替代；原图肖像未提取"
-    ],
-    "visualAcceptance": "待微信原生截图与完整功能验收"
-  },
-  {
-    "id": "01-02",
-    "group": "账号与入驻",
-    "title": "成长小主人登录",
-    "board": "exec-4128b7d4-356d-4faa-9627-a1150ea473aa.png",
-    "position": {
-      "row": 0,
-      "column": 1
-    },
-    "status": "未验收",
-    "route": "/pages/student-login/student-login",
-    "api": [
-      "POST /api/v1/auth/student-sessions/code"
-    ],
-    "reference": {
-      "path": "reference/01-02.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        330,
-        92,
-        602,
-        561
-      ],
-      "sha256": "e4eef71d619e0f0afefa9be6fd32b6cc7c6e1f088b74651d1fec4d1215a92bd0",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "ACCOUNT / QR / WECHAT",
-    "gaps": [
-      "批准4位登录码/扫码；原图肖像未提取"
-    ],
-    "visualAcceptance": "待微信原生截图与完整功能验收"
-  },
-  {
-    "id": "01-03",
-    "group": "账号与入驻",
-    "title": "注册伙伴账号",
-    "board": "exec-4128b7d4-356d-4faa-9627-a1150ea473aa.png",
-    "position": {
-      "row": 0,
-      "column": 2
-    },
-    "status": "未验收",
-    "route": "/pages/public-registration/public-registration",
-    "api": [
-      "GET /api/v1/public/registration/context",
-      "POST /api/v1/auth/registration-codes",
-      "POST /api/v1/auth/registrations"
-    ],
-    "reference": {
-      "path": "reference/01-03.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        630,
-        92,
-        903,
-        561
-      ],
-      "sha256": "e4eef71d619e0f0afefa9be6fd32b6cc7c6e1f088b74651d1fec4d1215a92bd0",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "step=1 account; step=2 contact; step=3 review+consent",
-    "gaps": [
-      "三步真实表单；学校区域不在注册DTO；未截图"
-    ],
-    "visualAcceptance": "待微信原生截图与完整功能验收"
-  },
-  {
-    "id": "01-04",
-    "group": "账号与入驻",
-    "title": "首次微信关联账号",
-    "board": "exec-4128b7d4-356d-4faa-9627-a1150ea473aa.png",
-    "position": {
-      "row": 0,
-      "column": 3
-    },
-    "status": "未验收",
-    "route": "/pages/unified-login/unified-login",
-    "api": [
-      "POST /api/v1/auth/account-wechat-sessions"
-    ],
-    "reference": {
-      "path": "reference/01-04.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        934,
-        92,
-        1207,
-        561
-      ],
-      "sha256": "e4eef71d619e0f0afefa9be6fd32b6cc7c6e1f088b74651d1fec4d1215a92bd0",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "bindingTicket present; bindingChoice empty",
-    "gaps": [
-      "独立选择视图保存在同route，不放ticket到URL"
-    ],
-    "visualAcceptance": "待微信原生截图与完整功能验收"
-  },
-  {
-    "id": "01-05",
-    "group": "账号与入驻",
-    "title": "邮箱验证码绑定",
-    "board": "exec-4128b7d4-356d-4faa-9627-a1150ea473aa.png",
-    "position": {
-      "row": 0,
-      "column": 4
-    },
-    "status": "未验收",
-    "route": "/pages/unified-login/unified-login",
-    "api": [
-      "POST /api/v1/auth/account-wechat-email-codes",
-      "POST /api/v1/auth/account-wechat-email-bindings"
-    ],
-    "reference": {
-      "path": "reference/01-05.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        1235,
-        92,
-        1513,
-        561
-      ],
-      "sha256": "e4eef71d619e0f0afefa9be6fd32b6cc7c6e1f088b74651d1fec4d1215a92bd0",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "bindingChoice=EMAIL; mode=EMAIL",
-    "gaps": [
-      "独立邮箱表单状态；验证码真实服务验证"
-    ],
-    "visualAcceptance": "待微信原生截图与完整功能验收"
-  },
-  {
-    "id": "01-06",
-    "group": "账号与入驻",
-    "title": "已有账号密码绑定",
-    "board": "exec-4128b7d4-356d-4faa-9627-a1150ea473aa.png",
-    "position": {
-      "row": 1,
-      "column": 0
-    },
-    "status": "未验收",
-    "route": "/pages/unified-login/unified-login",
-    "api": [
-      "POST /api/v1/auth/account-wechat-bindings"
-    ],
-    "reference": {
-      "path": "reference/01-06.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        28,
-        603,
-        301,
-        1020
-      ],
-      "sha256": "e4eef71d619e0f0afefa9be6fd32b6cc7c6e1f088b74651d1fec4d1215a92bd0",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "bindingChoice=PASSWORD; mode=PASSWORD",
-    "gaps": [
-      "已有账号及强制改密续接；邮箱可选验证依原API"
-    ],
-    "visualAcceptance": "待微信原生截图与完整功能验收"
-  },
-  {
-    "id": "01-07",
-    "group": "账号与入驻",
-    "title": "家庭创建与所属区域",
-    "board": "exec-4128b7d4-356d-4faa-9627-a1150ea473aa.png",
-    "position": {
-      "row": 1,
-      "column": 1
-    },
-    "status": "未验收",
-    "route": "/pages/organization-onboarding/organization-onboarding",
-    "api": [
-      "POST /api/v1/organization-onboarding/families",
-      "GET /api/v1/organization-onboarding/regions"
-    ],
-    "reference": {
-      "path": "reference/01-07.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        330,
-        603,
-        602,
-        1020
-      ],
-      "sha256": "e4eef71d619e0f0afefa9be6fd32b6cc7c6e1f088b74651d1fec4d1215a92bd0",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "family=true",
-    "gaps": [
-      "child姓名年级不在family DTO；区域按真实目录"
-    ],
-    "visualAcceptance": "待微信原生截图与完整功能验收"
-  },
-  {
-    "id": "01-08",
-    "group": "账号与入驻",
-    "title": "学校培训入驻申请与所属区域",
-    "board": "exec-4128b7d4-356d-4faa-9627-a1150ea473aa.png",
-    "position": {
-      "row": 1,
-      "column": 2
-    },
-    "status": "未验收",
-    "route": "/pages/organization-onboarding/organization-onboarding",
-    "api": [
-      "POST /api/v1/organization-onboarding/applications",
-      "GET /api/v1/organization-onboarding/context"
-    ],
-    "reference": {
-      "path": "reference/01-08.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        630,
-        603,
-        903,
-        1020
-      ],
-      "sha256": "e4eef71d619e0f0afefa9be6fd32b6cc7c6e1f088b74651d1fec4d1215a92bd0",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "family=false; school/training type",
-    "gaps": [
-      "机构区域/联系人/验证联系方式；省市拆分职务DTO缺失"
-    ],
-    "visualAcceptance": "待微信原生截图与完整功能验收"
-  },
-  {
-    "id": "01-09",
-    "group": "账号与入驻",
-    "title": "入驻进度与驳回后修改",
-    "board": "exec-4128b7d4-356d-4faa-9627-a1150ea473aa.png",
-    "position": {
-      "row": 1,
-      "column": 3
-    },
-    "status": "未验收",
-    "route": "/pages/organization-application/organization-application",
-    "api": [
-      "GET /api/v1/organization-onboarding/applications/{id}",
-      "POST /api/v1/organization-onboarding/applications/{id}/resubmit"
-    ],
-    "reference": {
-      "path": "reference/01-09.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        934,
-        603,
-        1207,
-        1020
-      ],
-      "sha256": "e4eef71d619e0f0afefa9be6fd32b6cc7c6e1f088b74651d1fec4d1215a92bd0",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "PENDING / REJECTED / WITHDRAWN / APPROVED",
-    "gaps": [
-      "只用真实申请时间状态驳回；无伪造审核时间"
-    ],
-    "visualAcceptance": "待微信原生截图与完整功能验收"
-  },
-  {
-    "id": "01-10",
-    "group": "账号与入驻",
-    "title": "组织切换",
-    "board": "exec-4128b7d4-356d-4faa-9627-a1150ea473aa.png",
-    "position": {
-      "row": 1,
-      "column": 4
-    },
-    "status": "未验收",
-    "route": "/pages/my-organizations/my-organizations",
-    "api": [
-      "GET /api/v1/organization-onboarding/my-organizations"
-    ],
-    "reference": {
-      "path": "reference/01-10.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        1235,
-        603,
-        1513,
-        1020
-      ],
-      "sha256": "e4eef71d619e0f0afefa9be6fd32b6cc7c6e1f088b74651d1fec4d1215a92bd0",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "choose=true; actual organizations",
-    "gaps": [
-      "批准家庭机构切换保留；入口权限依真实组织关系"
-    ],
-    "visualAcceptance": "待微信原生截图与完整功能验收"
-  },
-  {
-    "id": "02-01",
-    "group": "成长陪伴任务",
-    "title": "成长陪伴首页",
-    "board": "exec-1eac4947-b637-48ce-87af-6b2079e9defc.png",
-    "position": {
-      "row": 0,
-      "column": 0
-    },
-    "status": "未验收",
-    "route": "/pages/parent-home/parent-home",
-    "api": [
-      "GET /auth/me",
-      "GET /students?page=&pageSize=20",
-      "GET /task-reviews?page=&pageSize=20"
-    ],
-    "reference": {
-      "path": "reference/02-01.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        23,
-        94,
-        304,
-        570
-      ],
-      "sha256": "c92b7555ba9ec7a7a7876f9189b071cc116694ef5641bbb8f4cd1473d54c473b",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "home",
-    "gaps": [
-      "真实当前家庭待审核提交动态；未覆盖审核完成及兑换历史"
-    ],
-    "evidenceDocument": "task-layout-gaps.md",
-    "referencePath": "reference/02-01.png",
-    "verification": {
-      "nativeScreenshot": null,
-      "diff": null,
-      "acceptedAt": null
-    }
-  },
-  {
-    "id": "02-02",
-    "group": "成长陪伴任务",
-    "title": "家庭任务列表",
-    "board": "exec-1eac4947-b637-48ce-87af-6b2079e9defc.png",
-    "position": {
-      "row": 0,
-      "column": 1
-    },
-    "status": "未验收",
-    "route": "/pages/family-tasks/family-tasks",
-    "api": [
-      "GET /learning-tasks?sourceType=FAMILY&page=&pageSize=20"
-    ],
-    "reference": {
-      "path": "reference/02-02.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        328,
-        94,
-        607,
-        570
-      ],
-      "sha256": "c92b7555ba9ec7a7a7876f9189b071cc116694ef5641bbb8f4cd1473d54c473b",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "list",
-    "gaps": [
-      "只有草稿/已发布状态；缺执行状态筛选与重复完成进度"
-    ],
-    "evidenceDocument": "task-layout-gaps.md",
-    "referencePath": "reference/02-02.png",
-    "verification": {
-      "nativeScreenshot": null,
-      "diff": null,
-      "acceptedAt": null
-    }
-  },
-  {
-    "id": "02-03",
-    "group": "成长陪伴任务",
-    "title": "新建任务表单",
-    "board": "exec-1eac4947-b637-48ce-87af-6b2079e9defc.png",
-    "position": {
-      "row": 0,
-      "column": 2
-    },
-    "status": "未验收",
-    "route": "/pages/family-tasks/family-tasks",
-    "api": [
-      "GET /learning-tasks/:id",
-      "POST /learning-tasks",
-      "PUT /learning-tasks/:id"
-    ],
-    "reference": {
-      "path": "reference/02-03.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        630,
-        94,
-        907,
-        570
-      ],
-      "sha256": "c92b7555ba9ec7a7a7876f9189b071cc116694ef5641bbb8f4cd1473d54c473b",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "editing && !scopeStep && !confirming",
-    "gaps": [
-      "缺原图任务类型、日期区间、每周/自定义重复配置；独立路由未拆分"
-    ],
-    "evidenceDocument": "task-layout-gaps.md",
-    "referencePath": "reference/02-03.png",
-    "verification": {
-      "nativeScreenshot": null,
-      "diff": null,
-      "acceptedAt": null
-    }
-  },
-  {
-    "id": "02-04",
-    "group": "成长陪伴任务",
-    "title": "任务范围选择",
-    "board": "exec-1eac4947-b637-48ce-87af-6b2079e9defc.png",
-    "position": {
-      "row": 0,
-      "column": 3
-    },
-    "status": "未验收",
-    "route": "/pages/family-tasks/family-tasks",
-    "api": [
-      "GET /learning-task-options/students?sourceType=FAMILY"
-    ],
-    "reference": {
-      "path": "reference/02-04.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        934,
-        94,
-        1212,
-        570
-      ],
-      "sha256": "c92b7555ba9ec7a7a7876f9189b071cc116694ef5641bbb8f4cd1473d54c473b",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "editing && scopeStep && !confirming",
-    "gaps": [
-      "真实主监护孩子选择；缺家庭+班级/本校/自定义可见范围DTO，目标学生不能替代可见范围"
-    ],
-    "evidenceDocument": "task-layout-gaps.md",
-    "referencePath": "reference/02-04.png",
-    "verification": {
-      "nativeScreenshot": null,
-      "diff": null,
-      "acceptedAt": null
-    }
-  },
-  {
-    "id": "02-05",
-    "group": "成长陪伴任务",
-    "title": "任务发布确认",
-    "board": "exec-1eac4947-b637-48ce-87af-6b2079e9defc.png",
-    "position": {
-      "row": 0,
-      "column": 4
-    },
-    "status": "未验收",
-    "route": "/pages/family-tasks/family-tasks",
-    "api": [
-      "POST /learning-tasks",
-      "PUT /learning-tasks/:id",
-      "POST /learning-tasks/:id/publish"
-    ],
-    "reference": {
-      "path": "reference/02-05.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        1238,
-        94,
-        1515,
-        570
-      ],
-      "sha256": "c92b7555ba9ec7a7a7876f9189b071cc116694ef5641bbb8f4cd1473d54c473b",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "editing && confirming",
-    "gaps": [
-      "真实保存后发布，旧分类/标签/重复配置保留；未原生逐屏验收"
-    ],
-    "evidenceDocument": "task-layout-gaps.md",
-    "referencePath": "reference/02-05.png",
-    "verification": {
-      "nativeScreenshot": null,
-      "diff": null,
-      "acceptedAt": null
-    }
-  },
-  {
-    "id": "02-06",
-    "group": "成长陪伴任务",
-    "title": "任务详情与进度",
-    "board": "exec-1eac4947-b637-48ce-87af-6b2079e9defc.png",
-    "position": {
-      "row": 1,
-      "column": 0
-    },
-    "status": "未验收",
-    "route": "/pages/family-tasks/family-tasks",
-    "api": [
-      "GET /learning-tasks/:id"
-    ],
-    "reference": {
-      "path": "reference/02-06.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        23,
-        604,
-        304,
-        1016
-      ],
-      "sha256": "c92b7555ba9ec7a7a7876f9189b071cc116694ef5641bbb8f4cd1473d54c473b",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "missing",
-    "gaps": [
-      "家庭详情与执行进度独立视图未实现；现有只有草稿编辑"
-    ],
-    "evidenceDocument": "task-layout-gaps.md",
-    "referencePath": "reference/02-06.png",
-    "verification": {
-      "nativeScreenshot": null,
-      "diff": null,
-      "acceptedAt": null
-    }
-  },
-  {
-    "id": "02-07",
-    "group": "成长陪伴任务",
-    "title": "待审核任务列表",
-    "board": "exec-1eac4947-b637-48ce-87af-6b2079e9defc.png",
-    "position": {
-      "row": 1,
-      "column": 1
-    },
-    "status": "未验收",
-    "route": "/pages/parent-task-reviews/parent-task-reviews",
-    "api": [
-      "GET /task-reviews?page=&pageSize=20"
-    ],
-    "reference": {
-      "path": "reference/02-07.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        328,
-        604,
-        607,
-        1016
-      ],
-      "sha256": "c92b7555ba9ec7a7a7876f9189b071cc116694ef5641bbb8f4cd1473d54c473b",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "!detail && stage !== success",
-    "gaps": [
-      "当前审核人真实待办；未原生逐屏验收"
-    ],
-    "evidenceDocument": "task-layout-gaps.md",
-    "referencePath": "reference/02-07.png",
-    "verification": {
-      "nativeScreenshot": null,
-      "diff": null,
-      "acceptedAt": null
-    }
-  },
-  {
-    "id": "02-08",
-    "group": "成长陪伴任务",
-    "title": "打卡审核详情",
-    "board": "exec-1eac4947-b637-48ce-87af-6b2079e9defc.png",
-    "position": {
-      "row": 1,
-      "column": 2
-    },
-    "status": "未验收",
-    "route": "/pages/parent-task-reviews/parent-task-reviews",
-    "api": [
-      "GET /task-reviews/:assignmentId"
-    ],
-    "reference": {
-      "path": "reference/02-08.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        630,
-        604,
-        907,
-        1016
-      ],
-      "sha256": "c92b7555ba9ec7a7a7876f9189b071cc116694ef5641bbb8f4cd1473d54c473b",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "detail && stage === detail",
-    "gaps": [
-      "真实打卡与授权附件预览；未原生逐屏验收"
-    ],
-    "evidenceDocument": "task-layout-gaps.md",
-    "referencePath": "reference/02-08.png",
-    "verification": {
-      "nativeScreenshot": null,
-      "diff": null,
-      "acceptedAt": null
-    }
-  },
-  {
-    "id": "02-09",
-    "group": "成长陪伴任务",
-    "title": "通过确认",
-    "board": "exec-1eac4947-b637-48ce-87af-6b2079e9defc.png",
-    "position": {
-      "row": 1,
-      "column": 3
-    },
-    "status": "未验收",
-    "route": "/pages/parent-task-reviews/parent-task-reviews",
-    "api": [
-      "GET /task-reviews/:assignmentId",
-      "POST /task-reviews/:assignmentId/approve"
-    ],
-    "reference": {
-      "path": "reference/02-09.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        934,
-        604,
-        1212,
-        1016
-      ],
-      "sha256": "c92b7555ba9ec7a7a7876f9189b071cc116694ef5641bbb8f4cd1473d54c473b",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "stage === approve / stage === success",
-    "gaps": [
-      "确认+expectedCheckInId最新版本校验+接口成功状态；未原生逐屏验收"
-    ],
-    "evidenceDocument": "task-layout-gaps.md",
-    "referencePath": "reference/02-09.png",
-    "verification": {
-      "nativeScreenshot": null,
-      "diff": null,
-      "acceptedAt": null
-    }
-  },
-  {
-    "id": "02-10",
-    "group": "成长陪伴任务",
-    "title": "驳回填写意见",
-    "board": "exec-1eac4947-b637-48ce-87af-6b2079e9defc.png",
-    "position": {
-      "row": 1,
-      "column": 4
-    },
-    "status": "未验收",
-    "route": "/pages/parent-task-reviews/parent-task-reviews",
-    "api": [
-      "GET /task-reviews/:assignmentId",
-      "POST /task-reviews/:assignmentId/reject"
-    ],
-    "reference": {
-      "path": "reference/02-10.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        1238,
-        604,
-        1515,
-        1016
-      ],
-      "sha256": "c92b7555ba9ec7a7a7876f9189b071cc116694ef5641bbb8f4cd1473d54c473b",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "stage === reject",
-    "gaps": [
-      "必填意见，版本变化阻断，失败保留；未原生逐屏验收"
-    ],
-    "evidenceDocument": "task-layout-gaps.md",
-    "referencePath": "reference/02-10.png",
-    "verification": {
-      "nativeScreenshot": null,
-      "diff": null,
-      "acceptedAt": null
-    }
-  },
-  {
-    "id": "03-01",
-    "group": "组织教学",
-    "title": "学校工作台",
-    "board": "exec-ea2565d6-5d89-40d0-a450-8edcfb6db2fc.png",
-    "position": {
-      "row": 0,
-      "column": 0
-    },
-    "status": "未验收",
-    "route": "/pages/organization-home/organization-home",
-    "api": "GET /auth/me; /organization-workbench/context; /task-reviews",
-    "reference": {
-      "path": "reference/03-01.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        30,
-        111,
-        305,
-        574
-      ],
-      "sha256": "91559ba5a6a31ac254f54656ad9f0134075c66eaba31fbe157fa4838448080eb",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "institution=SCHOOL",
-    "implementationStatus": "部分实现，未通过逐屏像素验收",
-    "gaps": "缺原图机构汇总统计，真实工作台入口已实现"
-  },
-  {
-    "id": "03-02",
-    "group": "组织教学",
-    "title": "培训工作台",
-    "board": "exec-ea2565d6-5d89-40d0-a450-8edcfb6db2fc.png",
-    "position": {
-      "row": 0,
-      "column": 1
-    },
-    "status": "未验收",
-    "route": "/pages/organization-home/organization-home",
-    "api": "GET /auth/me; /organization-workbench/context",
-    "reference": {
-      "path": "reference/03-02.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        330,
-        111,
-        605,
-        574
-      ],
-      "sha256": "91559ba5a6a31ac254f54656ad9f0134075c66eaba31fbe157fa4838448080eb",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "institution=TRAINING_INSTITUTION",
-    "implementationStatus": "部分实现，未通过逐屏像素验收",
-    "gaps": "培训机构复用工作台，课程分类使用GRADE别名；缺统计"
-  },
-  {
-    "id": "03-03",
-    "group": "组织教学",
-    "title": "教师工作台",
-    "board": "exec-ea2565d6-5d89-40d0-a450-8edcfb6db2fc.png",
-    "position": {
-      "row": 0,
-      "column": 2
-    },
-    "status": "未验收",
-    "route": "/pages/teacher-home/teacher-home",
-    "api": "GET /teacher-workbench/context",
-    "reference": {
-      "path": "reference/03-03.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        630,
-        111,
-        906,
-        574
-      ],
-      "sha256": "91559ba5a6a31ac254f54656ad9f0134075c66eaba31fbe157fa4838448080eb",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "default",
-    "implementationStatus": "部分实现，未通过逐屏像素验收",
-    "gaps": "真实身份与任教班级；培训学习/成长记录及原图统计未实现"
-  },
-  {
-    "id": "03-04",
-    "group": "组织教学",
-    "title": "组织层级浏览",
-    "board": "exec-ea2565d6-5d89-40d0-a450-8edcfb6db2fc.png",
-    "position": {
-      "row": 0,
-      "column": 3
-    },
-    "status": "未验收",
-    "route": "/pages/organization-hierarchy/organization-hierarchy",
-    "api": "GET /classes/schools; /classes/campuses; /classes/grades; /classes",
-    "reference": {
-      "path": "reference/03-04.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        930,
-        111,
-        1208,
-        574
-      ],
-      "sha256": "91559ba5a6a31ac254f54656ad9f0134075c66eaba31fbe157fa4838448080eb",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "creating=false",
-    "implementationStatus": "部分实现，未通过逐屏像素验收",
-    "gaps": "真实parentId层级，CLASS_READ及当前组织范围；截图未验收"
-  },
-  {
-    "id": "03-05",
-    "group": "组织教学",
-    "title": "校区年级课程分类新增",
-    "board": "exec-ea2565d6-5d89-40d0-a450-8edcfb6db2fc.png",
-    "position": {
-      "row": 0,
-      "column": 4
-    },
-    "status": "未验收",
-    "route": "/pages/organization-hierarchy/organization-hierarchy",
-    "api": "POST /classes/campuses; /classes/grades; /classes",
-    "reference": {
-      "path": "reference/03-05.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        1234,
-        111,
-        1514,
-        574
-      ],
-      "sha256": "91559ba5a6a31ac254f54656ad9f0134075c66eaba31fbe157fa4838448080eb",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "creating=true",
-    "implementationStatus": "部分实现，未通过逐屏像素验收",
-    "gaps": "专用CLASS_CREATE，机构课程分类=GRADE；后台生成编码"
-  },
-  {
-    "id": "03-06",
-    "group": "组织教学",
-    "title": "班级列表",
-    "board": "exec-ea2565d6-5d89-40d0-a450-8edcfb6db2fc.png",
-    "position": {
-      "row": 1,
-      "column": 0
-    },
-    "status": "未验收",
-    "route": "/pages/organization-classes/organization-classes",
-    "api": "GET /classes; /classes/schools; /classes/grades",
-    "reference": {
-      "path": "reference/03-06.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        30,
-        616,
-        305,
-        1009
-      ],
-      "sha256": "91559ba5a6a31ac254f54656ad9f0134075c66eaba31fbe157fa4838448080eb",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "mode=CLASSES;formVisible=false",
-    "implementationStatus": "部分实现，未通过逐屏像素验收",
-    "gaps": "真实班级列表；缺原图人数班主任字段与筛选布局"
-  },
-  {
-    "id": "03-07",
-    "group": "组织教学",
-    "title": "班级详情成员列表",
-    "board": "exec-ea2565d6-5d89-40d0-a450-8edcfb6db2fc.png",
-    "position": {
-      "row": 1,
-      "column": 1
-    },
-    "status": "未验收",
-    "route": "/pages/organization-class-detail/organization-class-detail",
-    "api": "GET /classes; /students/organization-relationships; /learning-task-options/teachers?classId",
-    "reference": {
-      "path": "reference/03-07.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        330,
-        616,
-        605,
-        1009
-      ],
-      "sha256": "91559ba5a6a31ac254f54656ad9f0134075c66eaba31fbe157fa4838448080eb",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "classId=<real>;tab=students|teachers",
-    "implementationStatus": "部分实现，未通过逐屏像素验收",
-    "gaps": "学生限STUDENT_ORGANIZATION_MANAGE，教师限TEACHER_CLASS_ASSIGN或LEARNING_TASK_CREATE；按绑定班级筛选"
-  },
-  {
-    "id": "03-08",
-    "group": "组织教学",
-    "title": "新增成长小主人账号",
-    "board": "exec-ea2565d6-5d89-40d0-a450-8edcfb6db2fc.png",
-    "position": {
-      "row": 1,
-      "column": 2
-    },
-    "status": "未验收",
-    "route": "/pages/organization-class-members/organization-class-members?classId={classId}",
-    "api": [
-      "POST /api/v1/classes/{classId}/account-associations",
-      "POST /api/v1/students",
-      "POST /api/v1/auth/student-captchas"
-    ],
-    "reference": {
-      "path": "reference/03-08.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        630,
-        616,
-        906,
-        1009
-      ],
-      "sha256": "91559ba5a6a31ac254f54656ad9f0134075c66eaba31fbe157fa4838448080eb",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "关联已有账号 / 注册新账号；按已批准规则保留四位登录码验证，不代绑他人微信",
-    "implementationStatus": "已接实际账号归属验证、当前机构入学边界、真实分班生命周期及账号创建；部分接口与原生验证通过，仍待完整视觉与异常验收",
-    "gaps": "原生图形验证码正确答案完整提交仍待验；原图布局标准化对照仍有差异，注册新账号子状态需逐项核对。四位码替代代绑他人微信属于已批准规则，跨学校仍走既有入学流程。事务代理回滚和真实MySQL并发已验证，不等于整页1:1。",
-    "verificationEvidence": [
-      ".local-verification/class-account-unassigned-results.json：首次真实入班及五错验证码拦截",
-      ".local-verification/class-account-concurrent-results.json：双请求200及SQL单条历史",
-      ".local-verification/class-account-rollback-green.log：9项含Spring代理/JDBC回滚",
-      "screenshots-2026-10-14/native-class-account-linked.png：原生有效关联",
-      "screenshots-2026-10-14/native-class-account-captcha.png：原生验证码图片及清四位码"
-    ]
-  },
-  {
-    "id": "03-09",
-    "group": "组织教学",
-    "title": "教师列表",
-    "board": "exec-ea2565d6-5d89-40d0-a450-8edcfb6db2fc.png",
-    "position": {
-      "row": 1,
-      "column": 3
-    },
-    "status": "未验收",
-    "route": "/pages/organization-teachers/organization-teachers",
-    "api": "GET /organization-teachers; GET /organization-teachers/subject-options; POST /organization-teachers/subject-summaries; GET/PUT /organization-teachers/{teacherId}/institutions/{institutionId}/subject; GET /classes/campuses; GET /classes/grades",
-    "reference": {
-      "path": "reference/03-09.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        930,
-        616,
-        1208,
-        1009
-      ],
-      "sha256": "91559ba5a6a31ac254f54656ad9f0134075c66eaba31fbe157fa4838448080eb",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "mode=LIST",
-    "implementationStatus": "功能已接隔离候选，原生视觉未验收",
-    "gaps": "需原生核对长名称、学科维护和校区/班级数；默认头像保留真实无头像回退。SDK连接及截图授权阻塞，未取得本次原生截图。"
-  },
-  {
-    "id": "03-10",
-    "group": "组织教学",
-    "title": "配置教师班级",
-    "board": "exec-ea2565d6-5d89-40d0-a450-8edcfb6db2fc.png",
-    "position": {
-      "row": 1,
-      "column": 4
-    },
-    "status": "未验收",
-    "route": "/pages/organization-teachers/organization-teachers",
-    "api": "GET /classes; PUT /teachers/{teacherId}/classes/changes",
-    "reference": {
-      "path": "reference/03-10.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        1234,
-        616,
-        1514,
-        1009
-      ],
-      "sha256": "91559ba5a6a31ac254f54656ad9f0134075c66eaba31fbe157fa4838448080eb",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "mode=CLASSES",
-    "implementationStatus": "部分实现，未通过逐屏像素验收",
-    "gaps": "配置视图与列表互斥，按既有教师绑定权限"
-  },
-  {
-    "id": "04-01",
-    "group": "人员关系与考勤",
-    "title": "学员列表详情",
-    "board": "exec-61d72647-aa2e-4b55-a820-23cf11524242.png",
-    "position": {
-      "row": 0,
-      "column": 0
-    },
-    "status": "未验收",
-    "route": "/pages/organization-class-detail/organization-class-detail",
-    "api": "GET /students/organization-relationships",
-    "reference": {
-      "path": "reference/04-01.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        18,
-        111,
-        299,
-        554
-      ],
-      "sha256": "fac6d4dc45884ebcbf2bf02131a33f7572e90c5c1ee3ab13d2df2b5a3937d458",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "tab=students",
-    "implementationStatus": "部分实现，未通过逐屏像素验收",
-    "gaps": "仅当前班级真实成员；全机构独立学员列表/筛选尚未实现"
-  },
-  {
-    "id": "04-02",
-    "group": "人员关系与考勤",
-    "title": "校内转班",
-    "board": "exec-61d72647-aa2e-4b55-a820-23cf11524242.png",
-    "position": {
-      "row": 0,
-      "column": 1
-    },
-    "status": "未验收",
-    "route": "/pages/organization-students/organization-students",
-    "api": "GET /students/organization-relationships; /students/organization-relationship-classes; POST /students/{id}/class-transfers",
-    "reference": {
-      "path": "reference/04-02.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        324,
-        111,
-        604,
-        554
-      ],
-      "sha256": "fac6d4dc45884ebcbf2bf02131a33f7572e90c5c1ee3ab13d2df2b5a3937d458",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "mode=TRANSFER",
-    "implementationStatus": "部分实现，未通过逐屏像素验收",
-    "gaps": "现有独立转班表单，真实范围候选"
-  },
-  {
-    "id": "04-03",
-    "group": "人员关系与考勤",
-    "title": "转学申请",
-    "board": "exec-61d72647-aa2e-4b55-a820-23cf11524242.png",
-    "position": {
-      "row": 0,
-      "column": 2
-    },
-    "status": "未验收",
-    "route": "/pages/transfer-proposal/transfer-proposal",
-    "api": "GET /student-transfer-applications/family-options; POST /student-transfer-applications/materials; POST /student-transfer-applications",
-    "reference": {
-      "path": "reference/04-03.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        630,
-        111,
-        909,
-        554
-      ],
-      "sha256": "fac6d4dc45884ebcbf2bf02131a33f7572e90c5c1ee3ab13d2df2b5a3937d458",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "studentId + familyId 来自当前家庭孩子档案",
-    "implementationStatus": "独立表单已接候选接口，未通过原生逐屏验收",
-    "gaps": "机构代办、申请记录入口、真实页面交互及原生像素对照仍待完成"
-  },
-  {
-    "id": "04-04",
-    "group": "人员关系与考勤",
-    "title": "关联已有用户",
-    "board": "exec-61d72647-aa2e-4b55-a820-23cf11524242.png",
-    "position": {
-      "row": 0,
-      "column": 3
-    },
-    "status": "未验收",
-    "route": "/pages/organization-members/organization-members",
-    "api": "GET /organizations/{id}/member-picker; POST /organizations/{id}/members:associate",
-    "reference": {
-      "path": "reference/04-04.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        936,
-        111,
-        1216,
-        554
-      ],
-      "sha256": "fac6d4dc45884ebcbf2bf02131a33f7572e90c5c1ee3ab13d2df2b5a3937d458",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "side=CANDIDATES",
-    "implementationStatus": "部分实现，未通过逐屏像素验收",
-    "gaps": "现有候选关联支持真实组织成员；原图微信/邮箱/密码关联成长账号多步骤未实现"
-  },
-  {
-    "id": "04-05",
-    "group": "人员关系与考勤",
-    "title": "组织管理员设置",
-    "board": "exec-61d72647-aa2e-4b55-a820-23cf11524242.png",
-    "position": {
-      "row": 0,
-      "column": 4
-    },
-    "status": "未验收",
-    "route": "/pages/organization-members/organization-members",
-    "api": "GET /organizations/{id}/members; POST /organizations/{id}/administrators:assign; /administrators:revoke; /members:remove",
-    "reference": {
-      "path": "reference/04-05.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        1242,
-        111,
-        1523,
-        554
-      ],
-      "sha256": "fac6d4dc45884ebcbf2bf02131a33f7572e90c5c1ee3ab13d2df2b5a3937d458",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "side=MEMBERS;selected=<real>",
-    "implementationStatus": "部分实现，未通过逐屏像素验收",
-    "gaps": "真实设管理员/撤销/移除权限；原图独立角色配置页未实现"
-  },
-  {
-    "id": "04-06",
-    "group": "人员关系与考勤",
-    "title": "负责人转交",
-    "board": "exec-61d72647-aa2e-4b55-a820-23cf11524242.png",
-    "position": {
-      "row": 1,
-      "column": 0
-    },
-    "status": "未验收",
-    "route": "/pages/organization-overview/organization-overview",
-    "api": "GET /organization-onboarding/organizations/{id}/owner-transfer-options; POST /owner-transfer",
-    "reference": {
-      "path": "reference/04-06.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        18,
-        596,
-        299,
-        1006
-      ],
-      "sha256": "fac6d4dc45884ebcbf2bf02131a33f7572e90c5c1ee3ab13d2df2b5a3937d458",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "OrganizationOwnerTransfer selected organization",
-    "implementationStatus": "部分实现，未通过逐屏像素验收",
-    "gaps": "真实owner与options校验，当前已验证组织限定"
-  },
-  {
-    "id": "04-07",
-    "group": "人员关系与考勤",
-    "title": "班级入学邀请码",
-    "board": "exec-61d72647-aa2e-4b55-a820-23cf11524242.png",
-    "position": {
-      "row": 1,
-      "column": 1
-    },
-    "status": "未验收",
-    "route": "/pages/institution-enrollment/institution-enrollment",
-    "api": "POST /institution-enrollment/invitations",
-    "reference": {
-      "path": "reference/04-07.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        324,
-        596,
-        604,
-        1006
-      ],
-      "sha256": "fac6d4dc45884ebcbf2bf02131a33f7572e90c5c1ee3ab13d2df2b5a3937d458",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "parent=false;tab=invite",
-    "implementationStatus": "部分实现，未通过逐屏像素验收",
-    "gaps": "真实InvitationQrCode，扫码内容为接口真实inviteCode；未伪造分享海报"
-  },
-  {
-    "id": "04-08",
-    "group": "人员关系与考勤",
-    "title": "入学申请审核",
-    "board": "exec-61d72647-aa2e-4b55-a820-23cf11524242.png",
-    "position": {
-      "row": 1,
-      "column": 2
-    },
-    "status": "未验收",
-    "route": "/pages/institution-enrollment/institution-enrollment",
-    "api": "GET /institution-enrollment/requests; POST /institution-enrollment/requests/{id}/approve; /reject",
-    "reference": {
-      "path": "reference/04-08.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        630,
-        596,
-        909,
-        1006
-      ],
-      "sha256": "fac6d4dc45884ebcbf2bf02131a33f7572e90c5c1ee3ab13d2df2b5a3937d458",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "parent=false;tab=requests",
-    "implementationStatus": "部分实现，未通过逐屏像素验收",
-    "gaps": "真实申请审核及拒绝原因，原图独立详情未拆分"
-  },
-  {
-    "id": "04-09",
-    "group": "人员关系与考勤",
-    "title": "人工考勤记录与确认",
-    "board": "exec-61d72647-aa2e-4b55-a820-23cf11524242.png",
-    "position": {
-      "row": 1,
-      "column": 3
-    },
-    "status": "未验收",
-    "route": "/pages/attendance/attendance",
-    "api": "attendance API roster/list/create/detail/correct",
-    "reference": {
-      "path": "reference/04-09.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        936,
-        596,
-        1216,
-        1006
-      ],
-      "sha256": "fac6d4dc45884ebcbf2bf02131a33f7572e90c5c1ee3ab13d2df2b5a3937d458",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "mode=record|list;detail=<real>",
-    "implementationStatus": "部分实现，未通过逐屏像素验收",
-    "gaps": "真实点名/记录/更正，确认与详情现有viewstate；无原图虚构人数"
-  },
-  {
-    "id": "04-10",
-    "group": "人员关系与考勤",
-    "title": "异常报备列表与新增",
-    "board": "exec-61d72647-aa2e-4b55-a820-23cf11524242.png",
-    "position": {
-      "row": 1,
-      "column": 4
-    },
-    "status": "未验收",
-    "route": "/pages/exception-reports/exception-reports",
-    "api": "GET /exception-reports; /exception-reports/{id}; POST /exception-reports; /exception-reports/{id}/handle",
-    "reference": {
-      "path": "reference/04-10.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        1242,
-        596,
-        1523,
-        1006
-      ],
-      "sha256": "fac6d4dc45884ebcbf2bf02131a33f7572e90c5c1ee3ab13d2df2b5a3937d458",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "creating=false|true;handlingId=<real>",
-    "implementationStatus": "部分实现，未通过逐屏像素验收",
-    "gaps": "真实报备/处理，新建与列表互斥；详情仍列表内处理"
-  },
-  {
-    "id": "05-01",
-    "group": "成长小主人任务",
-    "title": "成长小主人首页",
-    "board": "exec-89c05f66-523b-4fd9-9852-bf484389183e.png",
-    "position": {
-      "row": 0,
-      "column": 0
-    },
-    "status": "未验收",
-    "route": "/pages/student-dashboard/student-dashboard",
-    "api": [
-      "GET /api/v1/task-assignments?scheduledDate=...",
-      "GET /api/v1/growth-points/me/account"
-    ],
-    "reference": {
-      "path": "reference/05-01.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        22,
-        95,
-        304,
-        526
-      ],
-      "sha256": "d4a02a1cfb0ae349b89e00cd7025f181b26c3632fbd3d4bb808c5d4f1e964924",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "authenticated dashboard; StudentTodayTasks",
-    "gaps": [
-      "LAYOUT05与05-01原板为不同布局；当前首页依LAYOUT05，05-01四入口/插画尚未单独还原"
-    ],
-    "visualAcceptance": "待微信原生截图与完整功能验收"
-  },
-  {
-    "id": "05-02",
-    "group": "成长小主人任务",
-    "title": "任务列表与来源筛选",
-    "board": "exec-89c05f66-523b-4fd9-9852-bf484389183e.png",
-    "position": {
-      "row": 0,
-      "column": 1
-    },
-    "status": "未验收",
-    "route": "/pages/task-list/task-list",
-    "api": [
-      "GET /api/v1/task-assignments"
-    ],
-    "reference": {
-      "path": "reference/05-02.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        320,
-        95,
-        604,
-        526
-      ],
-      "sha256": "d4a02a1cfb0ae349b89e00cd7025f181b26c3632fbd3d4bb808c5d4f1e964924",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "source filters",
-    "gaps": [
-      "任务模块由独立代理维护；未宣称原图通过"
-    ],
-    "visualAcceptance": "待微信原生截图与完整功能验收"
-  },
-  {
-    "id": "05-03",
-    "group": "成长小主人任务",
-    "title": "任务详情",
-    "board": "exec-89c05f66-523b-4fd9-9852-bf484389183e.png",
-    "position": {
-      "row": 0,
-      "column": 2
-    },
-    "status": "未验收",
-    "route": "/pages/task-detail/task-detail",
-    "api": [
-      "GET /api/v1/task-assignments/{id}"
-    ],
-    "reference": {
-      "path": "reference/05-03.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        623,
-        95,
-        906,
-        526
-      ],
-      "sha256": "d4a02a1cfb0ae349b89e00cd7025f181b26c3632fbd3d4bb808c5d4f1e964924",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "task exists; assignmentId query",
-    "gaps": [
-      "现有任务详情；单屏验收未完成"
-    ],
-    "visualAcceptance": "待微信原生截图与完整功能验收"
-  },
-  {
-    "id": "05-04",
-    "group": "成长小主人任务",
-    "title": "任务认领确认",
-    "board": "exec-89c05f66-523b-4fd9-9852-bf484389183e.png",
-    "position": {
-      "row": 0,
-      "column": 3
-    },
-    "status": "未验收",
-    "route": "/pages/task-detail/task-detail",
-    "api": [
-      "POST /api/v1/task-assignments/{id}/claim"
-    ],
-    "reference": {
-      "path": "reference/05-04.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        926,
-        95,
-        1209,
-        526
-      ],
-      "sha256": "d4a02a1cfb0ae349b89e00cd7025f181b26c3632fbd3d4bb808c5d4f1e964924",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "PENDING_CLAIM; claimTask",
-    "gaps": [
-      "目前详情内操作，无独立认领确认屏"
-    ],
-    "visualAcceptance": "待微信原生截图与完整功能验收"
-  },
-  {
-    "id": "05-05",
-    "group": "成长小主人任务",
-    "title": "任务执行记录",
-    "board": "exec-89c05f66-523b-4fd9-9852-bf484389183e.png",
-    "position": {
-      "row": 0,
-      "column": 4
-    },
-    "status": "未验收",
-    "route": "/pages/task-detail/task-detail",
-    "api": [
-      "GET /api/v1/task-assignments/{id}"
-    ],
-    "reference": {
-      "path": "reference/05-05.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        1230,
-        95,
-        1516,
-        526
-      ],
-      "sha256": "d4a02a1cfb0ae349b89e00cd7025f181b26c3632fbd3d4bb808c5d4f1e964924",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "IN_PROGRESS; execution details",
-    "gaps": [
-      "无独立执行记录屏"
-    ],
-    "visualAcceptance": "待微信原生截图与完整功能验收"
-  },
-  {
-    "id": "05-06",
-    "group": "成长小主人任务",
-    "title": "情绪暂停选择",
-    "board": "exec-89c05f66-523b-4fd9-9852-bf484389183e.png",
-    "position": {
-      "row": 1,
-      "column": 0
-    },
-    "status": "未验收",
-    "route": "/pages/task-detail/task-detail",
-    "api": [
-      "POST /api/v1/task-assignments/{id}/pause"
-    ],
-    "reference": {
-      "path": "reference/05-06.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        22,
-        574,
-        304,
-        1007
-      ],
-      "sha256": "d4a02a1cfb0ae349b89e00cd7025f181b26c3632fbd3d4bb808c5d4f1e964924",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "IN_PROGRESS; pauseTask(EMOTION)",
-    "gaps": [
-      "详情内暂停操作；原图多种安抚选择/独立插画屏未实现"
-    ],
-    "visualAcceptance": "待微信原生截图与完整功能验收"
-  },
-  {
-    "id": "05-07",
-    "group": "成长小主人任务",
-    "title": "难题搁置",
-    "board": "exec-89c05f66-523b-4fd9-9852-bf484389183e.png",
-    "position": {
-      "row": 1,
-      "column": 1
-    },
-    "status": "未验收",
-    "route": "/pages/task-detail/task-detail",
-    "api": [
-      "POST /api/v1/task-assignments/{id}/pause"
-    ],
-    "reference": {
-      "path": "reference/05-07.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        320,
-        574,
-        604,
-        1007
-      ],
-      "sha256": "d4a02a1cfb0ae349b89e00cd7025f181b26c3632fbd3d4bb808c5d4f1e964924",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "IN_PROGRESS; pauseTask(DIFFICULTY)",
-    "gaps": [
-      "详情内难题搁置；独立表单屏未实现"
-    ],
-    "visualAcceptance": "待微信原生截图与完整功能验收"
-  },
-  {
-    "id": "05-08",
-    "group": "成长小主人任务",
-    "title": "文字图片打卡提交",
-    "board": "exec-89c05f66-523b-4fd9-9852-bf484389183e.png",
-    "position": {
-      "row": 1,
-      "column": 2
-    },
-    "status": "未验收",
-    "route": "/pages/task-detail/task-detail",
-    "api": [
-      "POST /api/v1/task-assignments/{id}/check-ins"
-    ],
-    "reference": {
-      "path": "reference/05-08.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        623,
-        574,
-        906,
-        1007
-      ],
-      "sha256": "d4a02a1cfb0ae349b89e00cd7025f181b26c3632fbd3d4bb808c5d4f1e964924",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "IN_PROGRESS or NEEDS_IMPROVEMENT; checkInContent+images",
-    "gaps": [
-      "真实上传提交；仍详情内表单"
-    ],
-    "visualAcceptance": "待微信原生截图与完整功能验收"
-  },
-  {
-    "id": "05-09",
-    "group": "成长小主人任务",
-    "title": "任务顺延申请",
-    "board": "exec-89c05f66-523b-4fd9-9852-bf484389183e.png",
-    "position": {
-      "row": 1,
-      "column": 3
-    },
-    "status": "未验收",
-    "route": "/pages/task-detail/task-detail",
-    "api": [],
-    "reference": {
-      "path": "reference/05-09.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        926,
-        574,
-        1209,
-        1007
-      ],
-      "sha256": "d4a02a1cfb0ae349b89e00cd7025f181b26c3632fbd3d4bb808c5d4f1e964924",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "no postpone implementation identified",
-    "gaps": [
-      "顺延原型当前未实现；无占位功能"
-    ],
-    "visualAcceptance": "待微信原生截图与完整功能验收"
-  },
-  {
-    "id": "05-10",
-    "group": "成长小主人任务",
-    "title": "放弃或免执行确认",
-    "board": "exec-89c05f66-523b-4fd9-9852-bf484389183e.png",
-    "position": {
-      "row": 1,
-      "column": 4
-    },
-    "status": "未验收",
-    "route": "/pages/task-detail/task-detail",
-    "api": [
-      "POST /api/v1/task-assignments/{id}/abandon"
-    ],
-    "reference": {
-      "path": "reference/05-10.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        1230,
-        574,
-        1516,
-        1007
-      ],
-      "sha256": "d4a02a1cfb0ae349b89e00cd7025f181b26c3632fbd3d4bb808c5d4f1e964924",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "confirmAbandon modal; EXEMPT read state",
-    "gaps": [
-      "放弃真实操作；免执行仅读取状态不伪造学生权限"
-    ],
-    "visualAcceptance": "待微信原生截图与完整功能验收"
-  },
-  {
-    "id": "06-01",
-    "group": "积分奖励复盘",
-    "title": "成长积分余额与明细",
-    "board": "exec-b27e656a-e5c2-40b7-a2e1-17b8613ab147.png",
-    "position": {
-      "row": 0,
-      "column": 0
-    },
-    "status": "未验收",
-    "route": "/pages/growth-points/growth-points",
-    "api": [
-      "GET /api/v1/growth-points/me/account",
-      "GET /api/v1/growth-points/me/ledgers"
-    ],
-    "reference": {
-      "path": "reference/06-01.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        29,
-        100,
-        305,
-        550
-      ],
-      "sha256": "fd3a6c3e798a2726c600c85abff420e7da63897f4286f333145ee0720e319d40",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "self account + ledgers",
-    "gaps": [
-      "真实周月收益已添加；原图profile学校班级头像DTO缺失"
-    ],
-    "visualAcceptance": "待微信原生截图与完整功能验收"
-  },
-  {
-    "id": "06-02",
-    "group": "积分奖励复盘",
-    "title": "奖励列表",
-    "board": "exec-b27e656a-e5c2-40b7-a2e1-17b8613ab147.png",
-    "position": {
-      "row": 0,
-      "column": 1
-    },
-    "status": "未验收",
-    "route": "/pages/rewards/rewards",
-    "api": [
-      "GET /api/v1/rewards/me",
-      "GET /api/v1/rewards/me/summary"
-    ],
-    "reference": {
-      "path": "reference/06-02.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        327,
-        100,
-        607,
-        550
-      ],
-      "sha256": "fd3a6c3e798a2726c600c85abff420e7da63897f4286f333145ee0720e319d40",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "activeTab=rewards",
-    "gaps": [
-      "没有原图reward image/category DTO，不伪造素材与分类"
-    ],
-    "visualAcceptance": "待微信原生截图与完整功能验收"
-  },
-  {
-    "id": "06-03",
-    "group": "积分奖励复盘",
-    "title": "兑换确认",
-    "board": "exec-b27e656a-e5c2-40b7-a2e1-17b8613ab147.png",
-    "position": {
-      "row": 0,
-      "column": 2
-    },
-    "status": "未验收",
-    "route": "/pages/rewards/rewards",
-    "api": [
-      "POST /api/v1/reward-exchanges"
-    ],
-    "reference": {
-      "path": "reference/06-03.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        630,
-        100,
-        907,
-        550
-      ],
-      "sha256": "fd3a6c3e798a2726c600c85abff420e7da63897f4286f333145ee0720e319d40",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "selectedReward present",
-    "gaps": [
-      "独立确认state，家长approval扣分契约保留，无伪造delivery"
-    ],
-    "visualAcceptance": "待微信原生截图与完整功能验收"
-  },
-  {
-    "id": "06-04",
-    "group": "积分奖励复盘",
-    "title": "兑换记录详情",
-    "board": "exec-b27e656a-e5c2-40b7-a2e1-17b8613ab147.png",
-    "position": {
-      "row": 0,
-      "column": 3
-    },
-    "status": "未验收",
-    "route": "/pages/rewards/rewards",
-    "api": [
-      "GET /api/v1/reward-exchanges/me"
-    ],
-    "reference": {
-      "path": "reference/06-04.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        934,
-        100,
-        1210,
-        550
-      ],
-      "sha256": "fd3a6c3e798a2726c600c85abff420e7da63897f4286f333145ee0720e319d40",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "selectedExchange present",
-    "gaps": [
-      "真实状态和时间轴；无staffname/shipping字段"
-    ],
-    "visualAcceptance": "待微信原生截图与完整功能验收"
-  },
-  {
-    "id": "06-05",
-    "group": "积分奖励复盘",
-    "title": "奖励库管理",
-    "board": "exec-b27e656a-e5c2-40b7-a2e1-17b8613ab147.png",
-    "position": {
-      "row": 0,
-      "column": 4
-    },
-    "status": "未验收",
-    "route": "/pages/parent-rewards/parent-rewards",
-    "api": "GET /parent-rewards/students; /parent-rewards/students/{id}; PUT /parent-rewards/{id}",
-    "reference": {
-      "path": "reference/06-05.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        1235,
-        100,
-        1515,
-        550
-      ],
-      "sha256": "fd3a6c3e798a2726c600c85abff420e7da63897f4286f333145ee0720e319d40",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "tab=rewards;editing=false;rewardFilter=ALL|ONLINE|OFFLINE",
-    "gaps": "原图实际奖励库管理，非兑换确认。当前页筛选真实记录，分页total仍全部；库存/图片/分类DTO缺失，不伪造。",
-    "implementationStatus": "已有部分真实视图，未通过原型逐屏验收"
-  },
-  {
-    "id": "06-06",
-    "group": "积分奖励复盘",
-    "title": "奖励新增编辑",
-    "board": "exec-b27e656a-e5c2-40b7-a2e1-17b8613ab147.png",
-    "position": {
-      "row": 1,
-      "column": 0
-    },
-    "status": "未验收",
-    "route": "/pages/parent-rewards/parent-rewards",
-    "api": "POST /parent-rewards/students/{id}",
-    "reference": {
-      "path": "reference/06-06.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        29,
-        598,
-        305,
-        1015
-      ],
-      "sha256": "fd3a6c3e798a2726c600c85abff420e7da63897f4286f333145ee0720e319d40",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "tab=rewards;editing=true;editingId=null",
-    "gaps": "原图实际新增奖励，现有独立编辑视图。仅真实name/points/description/expiry/status；图片、库存、分类不受当前DTO支持。",
-    "implementationStatus": "已有部分真实视图，未通过原型逐屏验收"
-  },
-  {
-    "id": "06-07",
-    "group": "积分奖励复盘",
-    "title": "兑换申请审批",
-    "board": "exec-b27e656a-e5c2-40b7-a2e1-17b8613ab147.png",
-    "position": {
-      "row": 1,
-      "column": 1
-    },
-    "status": "未验收",
-    "route": "/pages/parent-rewards/parent-rewards",
-    "api": "GET /parent-reward-exchanges/students/{id}; POST /parent-reward-exchanges/{id}/approve|reject|verify",
-    "reference": {
-      "path": "reference/06-07.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        327,
-        598,
-        607,
-        1015
-      ],
-      "sha256": "fd3a6c3e798a2726c600c85abff420e7da63897f4286f333145ee0720e319d40",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "tab=exchanges;exchangeFilter=PENDING_APPROVAL|PENDING_VERIFICATION|VERIFIED|REJECTED|ALL;verification=<real>",
-    "gaps": "当前页筛选，非全部状态计数；主监护+精确审核permission可操作。核销已有独立确认视图。奖励图片/学班资料缺失。",
-    "implementationStatus": "已有部分真实视图，未通过原型逐屏验收"
-  },
-  {
-    "id": "06-08",
-    "group": "积分奖励复盘",
-    "title": "奖励核销确认",
-    "board": "exec-b27e656a-e5c2-40b7-a2e1-17b8613ab147.png",
-    "position": {
-      "row": 1,
-      "column": 2
-    },
-    "status": "未验收",
-    "route": "/pages/parent-rewards/parent-rewards",
-    "api": [
-      "POST /api/v1/parent-reward-exchanges/{id}/verify"
-    ],
-    "reference": {
-      "path": "reference/06-08.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        630,
-        598,
-        907,
-        1015
-      ],
-      "sha256": "fd3a6c3e798a2726c600c85abff420e7da63897f4286f333145ee0720e319d40",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "verification present; delivery checked",
-    "gaps": [
-      "真实核销确认/权限；无shipping/inventory假数据"
-    ],
-    "visualAcceptance": "待微信原生截图与完整功能验收"
-  },
-  {
-    "id": "06-09",
-    "group": "积分奖励复盘",
-    "title": "每日成长复盘填写",
-    "board": "exec-b27e656a-e5c2-40b7-a2e1-17b8613ab147.png",
-    "position": {
-      "row": 1,
-      "column": 3
-    },
-    "status": "未验收",
-    "route": "/pages/growth-reviews/growth-reviews",
-    "api": [
-      "POST /api/v1/growth-reviews/me/{id}/daily-reflection"
-    ],
-    "reference": {
-      "path": "reference/06-09.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        934,
-        598,
-        1210,
-        1015
-      ],
-      "sha256": "fd3a6c3e798a2726c600c85abff420e7da63897f4286f333145ee0720e319d40",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "period=DAY; editing=true; three reflectionFields",
-    "gaps": [
-      "原子三字段真实保存/隔离HTTP rollback通过；未视觉验收"
-    ],
-    "visualAcceptance": "待微信原生截图与完整功能验收"
-  },
-  {
-    "id": "06-10",
-    "group": "积分奖励复盘",
-    "title": "成长周报详情",
-    "board": "exec-b27e656a-e5c2-40b7-a2e1-17b8613ab147.png",
-    "position": {
-      "row": 1,
-      "column": 4
-    },
-    "status": "未验收",
-    "route": "/pages/growth-reviews/growth-reviews",
-    "api": [
-      "GET /api/v1/growth-reviews/me?periodType=WEEK",
-      "GET /api/v1/growth-reviews/me/{id}"
-    ],
-    "reference": {
-      "path": "reference/06-10.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        1235,
-        598,
-        1515,
-        1015
-      ],
-      "sha256": "fd3a6c3e798a2726c600c85abff420e7da63897f4286f333145ee0720e319d40",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "period=WEEK; authorized WEEK detail",
-    "gaps": [
-      "教师评语/星次数/班级亮点不在DTO；DAY不可当WEEK"
-    ],
-    "visualAcceptance": "待微信原生截图与完整功能验收"
-  },
-  {
-    "id": "07-01",
-    "group": "关系与账号安全",
-    "title": "成长陪伴我的",
-    "board": "exec-96761440-3814-4d18-b7e2-9af125506d9a.png",
-    "position": {
-      "row": 0,
-      "column": 0
-    },
-    "status": "未验收",
-    "route": "/pages/parent-relationships/parent-relationships",
-    "api": "GET /parent-relationships/students; /students/{id}/parent-relationships; POST /students/{id}/secondary-parent-invitations",
-    "reference": {
-      "path": "reference/07-01.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        21,
-        101,
-        305,
-        589
-      ],
-      "sha256": "ef176b8ecf3a736385f607b24f3da48fd0dc0443fcdc962dbb53b88fb65765fb",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "relationship=<real>;invitationMode=SECONDARY|TRANSFER",
-    "gaps": "可读真实主副监护伙伴，非原图全陪伴者分类列表。称谓、陪伴天数、真实头像DTO缺失；不伪造。",
-    "implementationStatus": "已有部分真实视图，未通过原型逐屏验收"
-  },
-  {
-    "id": "07-02",
-    "group": "关系与账号安全",
-    "title": "成长小主人我的",
-    "board": "exec-96761440-3814-4d18-b7e2-9af125506d9a.png",
-    "position": {
-      "row": 0,
-      "column": 1
-    },
-    "status": "未验收",
-    "route": "/pages/parent-children/parent-children",
-    "api": "GET /students; /students/{id}; POST /students",
-    "reference": {
-      "path": "reference/07-02.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        326,
-        101,
-        609,
-        589
-      ],
-      "sha256": "ef176b8ecf3a736385f607b24f3da48fd0dc0443fcdc962dbb53b88fb65765fb",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "editing=false;detail=null;created=null",
-    "gaps": "真实孩子列表/详情/新增。原图性别、年龄、学校班级、陪伴天数未由当前Child DTO提供。",
-    "implementationStatus": "已有部分真实视图，未通过原型逐屏验收"
-  },
-  {
-    "id": "07-03",
-    "group": "关系与账号安全",
-    "title": "亲子关系列表",
-    "board": "exec-96761440-3814-4d18-b7e2-9af125506d9a.png",
-    "position": {
-      "row": 0,
-      "column": 2
-    },
-    "status": "未验收",
-    "route": "/pages/parent-relationships/parent-relationships",
-    "api": "GET /students/{id}/parent-relationships; POST invitations; recipient POST /parent-relationship-invitations/{id}/acceptance|rejection",
-    "reference": {
-      "path": "reference/07-03.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        629,
-        101,
-        912,
-        589
-      ],
-      "sha256": "ef176b8ecf3a736385f607b24f3da48fd0dc0443fcdc962dbb53b88fb65765fb",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "relationship=<real>;issuedInvitation=<server>;scannerVisible=true",
-    "gaps": "当前主副监护关系与真实邀请二维码存在；没有已发/已收邀请列表、失效关系列表API，未冒充原图独立关系列表。扫码受邀手机号OTP仍验证。",
-    "implementationStatus": "已有部分真实视图，未通过原型逐屏验收"
-  },
-  {
-    "id": "07-04",
-    "group": "关系与账号安全",
-    "title": "关系邀请二维码",
-    "board": "exec-96761440-3814-4d18-b7e2-9af125506d9a.png",
-    "position": {
-      "row": 0,
-      "column": 3
-    },
-    "status": "未验收",
-    "route": "/pages/parent-relationships/parent-relationships",
-    "api": [
-      "POST /students/{studentId}/secondary-parent-invitations",
-      "POST /students/{studentId}/primary-transfer-invitations"
-    ],
-    "reference": {
-      "path": "reference/07-04.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        933,
-        101,
-        1215,
-        589
-      ],
-      "sha256": "ef176b8ecf3a736385f607b24f3da48fd0dc0443fcdc962dbb53b88fb65765fb",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "生成真实邀请后显示二维码；扫码进入 parent-relationship-invitation 接受/拒绝",
-    "gaps": [
-      "原图二维码内部边界尚未逐屏验收",
-      "不伪造邀请历史"
-    ]
-  },
-  {
-    "id": "07-05",
-    "group": "关系与账号安全",
-    "title": "关联学校培训申请",
-    "board": "exec-96761440-3814-4d18-b7e2-9af125506d9a.png",
-    "position": {
-      "row": 0,
-      "column": 4
-    },
-    "status": "未验收",
-    "route": "/pages/institution-enrollment/institution-enrollment?identity=parent",
-    "api": [
-      "POST /institution-enrollment/invitations/resolve",
-      "POST /institution-enrollment/requests",
-      "GET /institution-enrollment/requests"
-    ],
-    "reference": {
-      "path": "reference/07-05.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        1237,
-        101,
-        1520,
-        589
-      ],
-      "sha256": "ef176b8ecf3a736385f607b24f3da48fd0dc0443fcdc962dbb53b88fb65765fb",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "选择当前家庭孩子、解析邀请码、申请关联、真实申请状态",
-    "gaps": [
-      "原图逐屏截图对照尚未完成",
-      "不提供未认证机构搜索代替邀请码流程"
-    ]
-  },
-  {
-    "id": "07-06",
-    "group": "关系与账号安全",
-    "title": "微信绑定管理",
-    "board": "exec-96761440-3814-4d18-b7e2-9af125506d9a.png",
-    "position": {
-      "row": 1,
-      "column": 0
-    },
-    "status": "未验收",
-    "route": "/pages/account-settings/account-settings",
-    "api": [
-      "POST /api/v1/auth/account-settings/wechat"
-    ],
-    "reference": {
-      "path": "reference/07-06.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        21,
-        632,
-        305,
-        1018
-      ],
-      "sha256": "ef176b8ecf3a736385f607b24f3da48fd0dc0443fcdc962dbb53b88fb65765fb",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "panel=wechat; or parent-student-wechat child list",
-    "gaps": [
-      "个人真实微信绑定/孩子解绑分别按原权限；昵称缺DTO"
-    ],
-    "visualAcceptance": "待微信原生截图与完整功能验收"
-  },
-  {
-    "id": "07-07",
-    "group": "关系与账号安全",
-    "title": "邮箱手机号维护验证",
-    "board": "exec-96761440-3814-4d18-b7e2-9af125506d9a.png",
-    "position": {
-      "row": 1,
-      "column": 1
-    },
-    "status": "未验收",
-    "route": "/pages/account-settings/account-settings",
-    "api": [
-      "GET /api/v1/auth/account-settings",
-      "POST /api/v1/auth/account-settings/codes",
-      "POST /api/v1/auth/account-settings/contact"
-    ],
-    "reference": {
-      "path": "reference/07-07.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        326,
-        632,
-        609,
-        1018
-      ],
-      "sha256": "ef176b8ecf3a736385f607b24f3da48fd0dc0443fcdc962dbb53b88fb65765fb",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "panel=contact",
-    "gaps": [
-      "保留密码及新旧验证码安全步骤；协议截图未验收"
-    ],
-    "visualAcceptance": "待微信原生截图与完整功能验收"
-  },
-  {
-    "id": "07-08",
-    "group": "关系与账号安全",
-    "title": "修改密码",
-    "board": "exec-96761440-3814-4d18-b7e2-9af125506d9a.png",
-    "position": {
-      "row": 1,
-      "column": 2
-    },
-    "status": "未验收",
-    "route": "/pages/account-settings/account-settings",
-    "api": [
-      "POST /api/v1/auth/password"
-    ],
-    "reference": {
-      "path": "reference/07-08.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        629,
-        632,
-        912,
-        1018
-      ],
-      "sha256": "ef176b8ecf3a736385f607b24f3da48fd0dc0443fcdc962dbb53b88fb65765fb",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "panel=password; required initial-password state",
-    "gaps": [
-      "密码更改强制flow保留，未真实凭据写"
-    ],
-    "visualAcceptance": "待微信原生截图与完整功能验收"
-  },
-  {
-    "id": "07-09",
-    "group": "关系与账号安全",
-    "title": "登录设备管理",
-    "board": "exec-96761440-3814-4d18-b7e2-9af125506d9a.png",
-    "position": {
-      "row": 1,
-      "column": 3
-    },
-    "status": "未验收",
-    "route": "/pages/account-security/account-security",
-    "api": [
-      "GET /api/v1/auth/devices"
-    ],
-    "reference": {
-      "path": "reference/07-09.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        933,
-        632,
-        1215,
-        1018
-      ],
-      "sha256": "ef176b8ecf3a736385f607b24f3da48fd0dc0443fcdc962dbb53b88fb65765fb",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "identity student/parent/organization; actual devices",
-    "gaps": [
-      "真实设备与安全事件；设备细节按DTO显示"
-    ],
-    "visualAcceptance": "待微信原生截图与完整功能验收"
-  },
-  {
-    "id": "07-10",
-    "group": "关系与账号安全",
-    "title": "账号注销申请",
-    "board": "exec-96761440-3814-4d18-b7e2-9af125506d9a.png",
-    "position": {
-      "row": 1,
-      "column": 4
-    },
-    "status": "未验收",
-    "route": "/pages/parent-account-lifecycle/parent-account-lifecycle",
-    "api": [
-      "GET /api/v1/auth/parent-account-lifecycle",
-      "POST /api/v1/auth/parent-account-cancellations"
-    ],
-    "reference": {
-      "path": "reference/07-10.png",
-      "sourceSize": [
-        1536,
-        1024
-      ],
-      "crop": [
-        1237,
-        632,
-        1520,
-        1018
-      ],
-      "sha256": "ef176b8ecf3a736385f607b24f3da48fd0dc0443fcdc962dbb53b88fb65765fb",
-      "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
-    },
-    "viewState": "cancellationFlowOpen; NONE/COOLING_OFF",
-    "gaps": [
-      "现API验证码+确认+7天冷静期；原图reason/agreement DTO缺失，不立即注销"
-    ],
-    "visualAcceptance": "待微信原生截图与完整功能验收"
-  }
+ {
+  "id": "LAYOUT-01",
+  "title": "成长陪伴首页",
+  "board": "exec-016fba67-ee22-46ed-882e-f6f9cc484aea.png",
+  "status": "未验收",
+  "route": "/pages/parent-home/parent-home",
+  "api": [
+   "GET /auth/me",
+   "GET /task-reviews",
+   "GET /parent-reward-exchanges/summary"
+  ],
+  "reference": {
+   "path": "reference/LAYOUT-01.png",
+   "crop": [
+    287,
+    27,
+    535,
+    541
+   ],
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "sha256": "e8cb334fdfe83186d5e1b7ec8c0711ef05d43945dc9edc696b229ed3a75ca3ac",
+   "reviewStatus": "初步裁切，需核对内部内容边界"
+  },
+  "implementationStatus": "页面已实现并通过原生截图对照（2026-10-16 到达截图对照）：结构/文案与原型高度一致，残留差异见 gaps",
+  "gaps": "已到达截图对照(2026-10-16,真实空态)：结构/文案/四宫格/tab高度一致；差异为顶栏搜索与加号入口未实现(capsule区域约束)",
+  "nativeShot": ".local-verification/native-78/LAYOUT-01.png",
+  "shotAt": "2026-10-16"
+ },
+ {
+  "id": "LAYOUT-02",
+  "title": "成长陪伴任务",
+  "board": "exec-016fba67-ee22-46ed-882e-f6f9cc484aea.png",
+  "status": "未验收",
+  "route": "/pages/family-tasks/family-tasks",
+  "api": [
+   "GET /learning-tasks?sourceType=FAMILY",
+   "POST /learning-tasks",
+   "POST /learning-tasks/{id}/publish"
+  ],
+  "reference": {
+   "path": "reference/LAYOUT-02.png",
+   "crop": [
+    554,
+    27,
+    803,
+    541
+   ],
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "sha256": "e8cb334fdfe83186d5e1b7ec8c0711ef05d43945dc9edc696b229ed3a75ca3ac",
+   "reviewStatus": "初步裁切，需核对内部内容边界"
+  },
+  "implementationStatus": "页面已实现并通过原生截图对照（2026-10-16 到达截图对照）：结构/文案与原型高度一致，残留差异见 gaps",
+  "gaps": "已到达截图对照(2026-10-16,真实空态)：施工差距——缺三状态Tab(全部/待审核/已完成)、筛选组(全部类型/全部孩子/最新发布)、任务卡待审核/已完成徽标；发布按钮在顶部(原图底部)；任务状态仅草稿/已发布二态",
+  "nativeShot": ".local-verification/native-78/LAYOUT-02.png",
+  "shotAt": "2026-10-16"
+ },
+ {
+  "id": "LAYOUT-03",
+  "title": "成长陪伴成长",
+  "board": "exec-016fba67-ee22-46ed-882e-f6f9cc484aea.png",
+  "status": "未验收",
+  "route": "/pages/parent-weekly-reviews/parent-weekly-reviews",
+  "api": [
+   "GET /growth-reviews/miniapp/students",
+   "GET /growth-reviews/miniapp/students/{studentId}"
+  ],
+  "reference": {
+   "path": "reference/LAYOUT-03.png",
+   "crop": [
+    823,
+    27,
+    1071,
+    541
+   ],
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "sha256": "e8cb334fdfe83186d5e1b7ec8c0711ef05d43945dc9edc696b229ed3a75ca3ac",
+   "reviewStatus": "初步裁切，需核对内部内容边界"
+  },
+  "implementationStatus": "已原生截图对照：家长成长页补齐原型三缺口——①孩子选择器行（picker+绿色本周 pill 触发回到最新周概览）②近期成长回顾行改原格式（成长周报 + monthDay 中文日期 + 查看›）③成长奖励区块（成长奖励标题+查看全部›跳转 parent-rewards+已累计获得 N 积分+坚持努力文案）；首屏大数字概览（完成任务/成长积分 stat-number 50rpx）与七日柱状图 weekday 标签（周X）已有并保留；积分数据经新增 getChildGrowthPointAccount API（GET /growth-points/students/{id}/account）；后端 requireAccessibleChild 放宽允许 MINIAPP 活动关系家长（原 requireWebParent 硬性 WEB 限制），并需 GROWTH_POINT_READ_CHILD 权限（克隆库已授 fixture 家长 user_permission ALLOW + sys_permission client_type 改 BOTH，真实环境需等价授权迁移）；verify-78 16/16",
+  "gaps": "已到达截图对照(2026-10-16,真实空态)：孩子选择器/概览/回顾结构对齐；差距——缺成长奖励区块与本周切换、原图首屏大数字概览在实现位于周报详情视图",
+  "nativeShot": "native-78/LAYOUT-03-phase3.png",
+  "shotAt": "2026-10-18T15:27:05.336Z"
+ },
+ {
+  "id": "LAYOUT-04",
+  "title": "成长陪伴我的",
+  "board": "exec-016fba67-ee22-46ed-882e-f6f9cc484aea.png",
+  "status": "未验收",
+  "route": "/pages/parent-me/parent-me",
+  "api": [
+   "GET /auth/me"
+  ],
+  "reference": {
+   "path": "reference/LAYOUT-04.png",
+   "crop": [
+    1093,
+    27,
+    1342,
+    541
+   ],
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "sha256": "e8cb334fdfe83186d5e1b7ec8c0711ef05d43945dc9edc696b229ed3a75ca3ac",
+   "reviewStatus": "初步裁切，需核对内部内容边界"
+  },
+  "implementationStatus": "页面已实现并通过原生截图对照（2026-10-16 到达截图对照）：结构/文案与原型高度一致，残留差异见 gaps",
+  "gaps": "已到达截图对照(2026-10-16)：结构/文案/tab高度一致",
+  "nativeShot": ".local-verification/native-78/LAYOUT-04.png",
+  "shotAt": "2026-10-16"
+ },
+ {
+  "id": "LAYOUT-05",
+  "title": "成长小主人首页",
+  "board": "exec-016fba67-ee22-46ed-882e-f6f9cc484aea.png",
+  "status": "未验收",
+  "route": "/pages/student-dashboard/student-dashboard",
+  "api": [
+   "GET /task-assignments",
+   "GET /growth-points/me/account"
+  ],
+  "reference": {
+   "path": "reference/LAYOUT-05.png",
+   "crop": [
+    287,
+    586,
+    535,
+    1018
+   ],
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "sha256": "e8cb334fdfe83186d5e1b7ec8c0711ef05d43945dc9edc696b229ed3a75ca3ac",
+   "reviewStatus": "初步裁切，需核对内部内容边界"
+  },
+  "implementationStatus": "页面已实现并通过原生截图对照（2026-10-16 到达截图对照）：结构/文案与原型高度一致，残留差异见 gaps",
+  "gaps": "已到达截图对照(2026-10-16,真实空态)：结构高度一致——问候语/今日任务进度圆环/积分卡/成长奖励卡/今日任务区/tab全对齐；差异仅数据空态与真实账号名",
+  "nativeShot": ".local-verification/native-78/LAYOUT-05.png",
+  "shotAt": "2026-10-16"
+ },
+ {
+  "id": "LAYOUT-06",
+  "title": "成长小主人任务详情",
+  "board": "exec-016fba67-ee22-46ed-882e-f6f9cc484aea.png",
+  "status": "未验收",
+  "route": "/pages/task-detail/task-detail",
+  "api": [
+   "GET /task-assignments/{id}"
+  ],
+  "reference": {
+   "path": "reference/LAYOUT-06.png",
+   "crop": [
+    554,
+    586,
+    803,
+    1018
+   ],
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "sha256": "e8cb334fdfe83186d5e1b7ec8c0711ef05d43945dc9edc696b229ed3a75ca3ac",
+   "reviewStatus": "初步裁切，需核对内部内容边界"
+  },
+  "implementationStatus": "已原生截图定性：整屏布局(任务卡+记录表单+提交)结构对应；任务描述段+目标要求checklist已补齐(见05-03-phase3截图)；元数据网格为实现增强；提交按钮文案\"提交打卡\" vs \"提交完成\"为文案差异；行动区内嵌详情页",
+  "gaps": [
+   "原型: 成长小主人任务详情整屏(header返回+任务标题栏 + 任务卡(图标/阅读20分钟/阅读习惯/+10积分) + 任务描述段 + 目标要求checklist(3项勾选) + 我的阅读记录textarea 0/200 + 上传记录(可上传照片最多9张) + 提交完成按钮)",
+   "实现: 任务详情整屏(header任务详情 + 任务卡(图标/标题/家庭任务/进行中badge) + 元数据网格(计划日期/截止时间/任务难度/基础积分/执行时长/审核人) + 任务备注 + 我的任务行动(文字记录textarea实测输入 + 上传图片添加图片 + 提交打卡按钮)) —— 复用05-08同屏截图(IN_PROGRESS态)",
+   "差异: 整屏布局结构对应(任务卡→记录区→提交)；实现无目标要求checklist与任务描述段，元数据网格替代；提交按钮文案\"提交打卡\" vs \"提交完成\"；行动区内嵌详情页"
+  ],
+  "nativeShot": "native-78/LAYOUT-06.png",
+  "shotAt": "2026-10-17T14:19:27.069Z"
+ },
+ {
+  "id": "LAYOUT-07",
+  "title": "成长小主人成长奖励",
+  "board": "exec-016fba67-ee22-46ed-882e-f6f9cc484aea.png",
+  "status": "未验收",
+  "route": "/pages/rewards/rewards",
+  "api": [
+   "GET /api/v1/rewards/me",
+   "GET /api/v1/rewards/me/summary",
+   "奖励字段含 category/stockQuantity/imageUrl（V141）"
+  ],
+  "reference": {
+   "path": "reference/LAYOUT-07.png",
+   "crop": [
+    823,
+    586,
+    1071,
+    1018
+   ],
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "sha256": "e8cb334fdfe83186d5e1b7ec8c0711ef05d43945dc9edc696b229ed3a75ca3ac",
+   "reviewStatus": "初步裁切，需核对内部内容边界"
+  },
+  "implementationStatus": "已原生截图对照（phase3）：同 /pages/rewards/rewards 商城网格实现，见 06-02-phase3.png",
+  "gaps": "已到达截图对照(2026-10-16,真实空态)：结构基本一致——积分卡带更新时间戳/空态；差异——Tab维度：实现全部奖励/我的兑换/积分明细(按归属与流水)vs原图全部/学习成长/家庭时光/户外探索(按分类筛选)；缺顶部兑换记录入口(我的兑换Tab覆盖)",
+  "nativeShot": "native-78/06-02-phase3.png",
+  "shotAt": "2026-10-18T12:06:38.285Z"
+ },
+ {
+  "id": "LAYOUT-08",
+  "title": "成长小主人我的",
+  "board": "exec-016fba67-ee22-46ed-882e-f6f9cc484aea.png",
+  "status": "未验收",
+  "route": "/pages/student-home/student-home",
+  "api": [
+   "GET /auth/me"
+  ],
+  "reference": {
+   "path": "reference/LAYOUT-08.png",
+   "crop": [
+    1093,
+    586,
+    1342,
+    1018
+   ],
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "sha256": "e8cb334fdfe83186d5e1b7ec8c0711ef05d43945dc9edc696b229ed3a75ca3ac",
+   "reviewStatus": "初步裁切，需核对内部内容边界"
+  },
+  "implementationStatus": "页面已实现并通过原生截图对照（2026-10-16 到达截图对照）：结构/文案与原型高度一致，残留差异见 gaps",
+  "gaps": "已到达截图对照(2026-10-16)：结构高度一致——头像/成长小主人徽标/我的成长/积分记录/兑换记录/账号与安全/tab全对齐",
+  "nativeShot": ".local-verification/native-78/LAYOUT-08.png",
+  "shotAt": "2026-10-16"
+ },
+ {
+  "id": "01-01",
+  "group": "账号与入驻",
+  "title": "成长伙伴登录",
+  "board": "exec-4128b7d4-356d-4faa-9627-a1150ea473aa.png",
+  "position": {
+   "row": 0,
+   "column": 0
+  },
+  "status": "未验收",
+  "route": "/pages/unified-login/unified-login",
+  "api": [
+   "POST /api/v1/auth/account-wechat-sessions"
+  ],
+  "reference": {
+   "path": "reference/01-01.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    28,
+    92,
+    301,
+    561
+   ],
+   "sha256": "e4eef71d619e0f0afefa9be6fd32b6cc7c6e1f088b74651d1fec4d1215a92bd0",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "WECHAT; no bindingTicket",
+  "gaps": [
+   "批准使用微信快捷登录；原图密码表单不强行替代；原图肖像未提取"
+  ],
+  "visualAcceptance": "待微信原生截图与完整功能验收",
+  "implementationStatus": "已原生截图对照（2026-10-19）：unified-login 默认微信快捷登录视图——品牌区+「微信一键登录」主按钮+邮箱登录/密码绑定切换入口+用户协议勾选，布局与原型一致；bindingTicket 后续流程见 01-04 定性",
+  "nativeShot": "native-78/01-01-phase3.png",
+  "shotAt": "2026-10-19T00:13:00.785Z"
+ },
+ {
+  "id": "01-02",
+  "group": "账号与入驻",
+  "title": "成长小主人登录",
+  "board": "exec-4128b7d4-356d-4faa-9627-a1150ea473aa.png",
+  "position": {
+   "row": 0,
+   "column": 1
+  },
+  "status": "未验收",
+  "route": "/pages/student-login/student-login",
+  "api": [
+   "POST /api/v1/auth/student-sessions/code"
+  ],
+  "reference": {
+   "path": "reference/01-02.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    330,
+    92,
+    602,
+    561
+   ],
+   "sha256": "e4eef71d619e0f0afefa9be6fd32b6cc7c6e1f088b74651d1fec4d1215a92bd0",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "ACCOUNT / QR / WECHAT",
+  "gaps": [
+   "批准4位登录码/扫码；原图肖像未提取"
+  ],
+  "visualAcceptance": "待微信原生截图与完整功能验收",
+  "implementationStatus": "已原生截图对照（2026-10-19）：student-login 账号登录视图——4 位登录码输入+扫码入口+登录方式 tab，与原型布局一致（原型批准 4 位登录码/扫码）；QR/WECHAT 视图同 route 切换已实现",
+  "nativeShot": "native-78/01-02-phase3.png",
+  "shotAt": "2026-10-19T00:13:00.785Z"
+ },
+ {
+  "id": "01-03",
+  "group": "账号与入驻",
+  "title": "注册伙伴账号",
+  "board": "exec-4128b7d4-356d-4faa-9627-a1150ea473aa.png",
+  "position": {
+   "row": 0,
+   "column": 2
+  },
+  "status": "未验收",
+  "route": "/pages/public-registration/public-registration",
+  "api": [
+   "GET /api/v1/public/registration/context",
+   "POST /api/v1/auth/registration-codes",
+   "POST /api/v1/auth/registrations"
+  ],
+  "reference": {
+   "path": "reference/01-03.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    630,
+    92,
+    903,
+    561
+   ],
+   "sha256": "e4eef71d619e0f0afefa9be6fd32b6cc7c6e1f088b74651d1fec4d1215a92bd0",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "step=1 account; step=2 contact; step=3 review+consent",
+  "gaps": "已到达截图对照(2026-10-16)：三步条/姓名账号密码字段对齐；差异：步骤3文案实现为确认注册(原图完成注册)、密码规则8至20位字母和数字(原图8-16位)、缺手机号字段(注册DTO无手机号，验证身份步骤处理)",
+  "visualAcceptance": "待微信原生截图与完整功能验收",
+  "nativeShot": ".local-verification/native-78/01-03.png",
+  "shotAt": "2026-10-16",
+  "implementationStatus": "已原生截图对照（2026-10-16）：三步注册表单已实现；差异（步骤3文案/密码规则 8-20 位/缺手机号字段）见 gaps 差异清单"
+ },
+ {
+  "id": "01-04",
+  "group": "账号与入驻",
+  "title": "首次微信关联账号",
+  "board": "exec-4128b7d4-356d-4faa-9627-a1150ea473aa.png",
+  "position": {
+   "row": 0,
+   "column": 3
+  },
+  "status": "未验收",
+  "route": "/pages/unified-login/unified-login",
+  "api": [
+   "POST /api/v1/auth/account-wechat-sessions"
+  ],
+  "reference": {
+   "path": "reference/01-04.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    934,
+    92,
+    1207,
+    561
+   ],
+   "sha256": "e4eef71d619e0f0afefa9be6fd32b6cc7c6e1f088b74651d1fec4d1215a92bd0",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "bindingTicket present; bindingChoice empty",
+  "gaps": "独立选择视图保存在同route，不放ticket到URL；2026-10-16定性：本地不可达(需真实微信授权bindingTicket)",
+  "visualAcceptance": "待微信原生截图与完整功能验收",
+  "implementationStatus": "已定性（2026-10-16）：本地不可达——需真实微信授权 bindingTicket（wx.login code 换 ticket）；实现存在于 unified-login bindingChoice 分支，验证方式为代码走查+API 合同测试"
+ },
+ {
+  "id": "01-05",
+  "group": "账号与入驻",
+  "title": "邮箱验证码绑定",
+  "board": "exec-4128b7d4-356d-4faa-9627-a1150ea473aa.png",
+  "position": {
+   "row": 0,
+   "column": 4
+  },
+  "status": "未验收",
+  "route": "/pages/unified-login/unified-login",
+  "api": [
+   "POST /api/v1/auth/account-wechat-email-codes",
+   "POST /api/v1/auth/account-wechat-email-bindings"
+  ],
+  "reference": {
+   "path": "reference/01-05.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    1235,
+    92,
+    1513,
+    561
+   ],
+   "sha256": "e4eef71d619e0f0afefa9be6fd32b6cc7c6e1f088b74651d1fec4d1215a92bd0",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "bindingChoice=EMAIL; mode=EMAIL",
+  "gaps": "独立邮箱表单状态；验证码真实服务验证；2026-10-16定性：本地不可达(需真实微信授权bindingTicket)",
+  "visualAcceptance": "待微信原生截图与完整功能验收",
+  "implementationStatus": "已定性（2026-10-16）：本地不可达——同 01-04 依赖真实微信授权 bindingTicket；邮箱验证码表单实现存在于 bindingChoice=EMAIL 分支"
+ },
+ {
+  "id": "01-06",
+  "group": "账号与入驻",
+  "title": "已有账号密码绑定",
+  "board": "exec-4128b7d4-356d-4faa-9627-a1150ea473aa.png",
+  "position": {
+   "row": 1,
+   "column": 0
+  },
+  "status": "未验收",
+  "route": "/pages/unified-login/unified-login",
+  "api": [
+   "POST /api/v1/auth/account-wechat-bindings"
+  ],
+  "reference": {
+   "path": "reference/01-06.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    28,
+    603,
+    301,
+    1020
+   ],
+   "sha256": "e4eef71d619e0f0afefa9be6fd32b6cc7c6e1f088b74651d1fec4d1215a92bd0",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "bindingChoice=PASSWORD; mode=PASSWORD",
+  "gaps": [
+   "已有账号及强制改密续接；邮箱可选验证依原API",
+   "2026-10-19 定性：本地不可达(需真实微信授权bindingTicket)"
+  ],
+  "visualAcceptance": "待微信原生截图与完整功能验收",
+  "implementationStatus": "已定性（2026-10-19）：本地不可达——与 01-04/01-05 同依赖真实微信授权 bindingTicket；已有账号密码绑定表单实现存在于 bindingChoice=PASSWORD 分支"
+ },
+ {
+  "id": "01-07",
+  "group": "账号与入驻",
+  "title": "家庭创建与所属区域",
+  "board": "exec-4128b7d4-356d-4faa-9627-a1150ea473aa.png",
+  "position": {
+   "row": 1,
+   "column": 1
+  },
+  "status": "未验收",
+  "route": "/pages/organization-onboarding/organization-onboarding",
+  "api": [
+   "POST /api/v1/organization-onboarding/families",
+   "GET /api/v1/organization-onboarding/regions"
+  ],
+  "reference": {
+   "path": "reference/01-07.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    330,
+    603,
+    602,
+    1020
+   ],
+   "sha256": "e4eef71d619e0f0afefa9be6fd32b6cc7c6e1f088b74651d1fec4d1215a92bd0",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "family=true",
+  "gaps": [
+   "child姓名年级不在family DTO；区域按真实目录"
+  ],
+  "visualAcceptance": "待微信原生截图与完整功能验收",
+  "implementationStatus": "已原生截图对照（2026-10-19）：organization-onboarding?identity=organization 家庭视图——家庭名称/孩子信息/所属区域表单与原型布局一致；child 姓名年级不在 family DTO 的差异见 gaps",
+  "nativeShot": "native-78/01-07-phase3.png",
+  "shotAt": "2026-10-19T00:13:00.785Z"
+ },
+ {
+  "id": "01-08",
+  "group": "账号与入驻",
+  "title": "学校培训入驻申请与所属区域",
+  "board": "exec-4128b7d4-356d-4faa-9627-a1150ea473aa.png",
+  "position": {
+   "row": 1,
+   "column": 2
+  },
+  "status": "未验收",
+  "route": "/pages/organization-onboarding/organization-onboarding",
+  "api": [
+   "POST /api/v1/organization-onboarding/applications",
+   "GET /api/v1/organization-onboarding/context"
+  ],
+  "reference": {
+   "path": "reference/01-08.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    630,
+    603,
+    903,
+    1020
+   ],
+   "sha256": "e4eef71d619e0f0afefa9be6fd32b6cc7c6e1f088b74651d1fec4d1215a92bd0",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "family=false; school/training type",
+  "gaps": [
+   "机构区域/联系人/验证联系方式；省市拆分职务DTO缺失"
+  ],
+  "visualAcceptance": "待微信原生截图与完整功能验收",
+  "implementationStatus": "已原生截图对照（2026-10-19）：organization-onboarding?identity=organization&kind=institution 机构入驻表单——机构名称/类型/区域/联系人/验证联系方式与原型布局一致；省市拆分 DTO 缺失差异见 gaps",
+  "nativeShot": "native-78/01-08-phase3.png",
+  "shotAt": "2026-10-19T00:13:00.785Z"
+ },
+ {
+  "id": "01-09",
+  "group": "账号与入驻",
+  "title": "入驻进度与驳回后修改",
+  "board": "exec-4128b7d4-356d-4faa-9627-a1150ea473aa.png",
+  "position": {
+   "row": 1,
+   "column": 3
+  },
+  "status": "未验收",
+  "route": "/pages/organization-application/organization-application",
+  "api": [
+   "GET /api/v1/organization-onboarding/applications/{id}",
+   "POST /api/v1/organization-onboarding/applications/{id}/resubmit"
+  ],
+  "reference": {
+   "path": "reference/01-09.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    934,
+    603,
+    1207,
+    1020
+   ],
+   "sha256": "e4eef71d619e0f0afefa9be6fd32b6cc7c6e1f088b74651d1fec4d1215a92bd0",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "PENDING / REJECTED / WITHDRAWN / APPROVED",
+  "gaps": "只用真实申请时间状态驳回；无伪造审核时间；2026-10-16定性：本地隔离不可达(提交要求联系方式已验证，LocalParentSmsSender刻意不记录验证码明文；审核需平台权限；不伪造数据)",
+  "visualAcceptance": "待微信原生截图与完整功能验收",
+  "implementationStatus": "已原生截图对照（2026-10-19）：organization-application?identity=organization&id=<真实申请单 2109149485585137664> APPROVED 态——入驻申请进度卡（机构名+已通过徽章+提交时间）+时间线节点（提交申请/资料审核通过，组织已创建）+联系信息卡+驳回原因区+底部「进入我的组织」按钮；PENDING/REJECTED/WITHDRAWN 态同组件按状态渲染，不伪造审核时间",
+  "nativeShot": "native-78/01-09-phase3.png",
+  "shotAt": "2026-10-19T00:13:00.785Z"
+ },
+ {
+  "id": "01-10",
+  "group": "账号与入驻",
+  "title": "组织切换",
+  "board": "exec-4128b7d4-356d-4faa-9627-a1150ea473aa.png",
+  "position": {
+   "row": 1,
+   "column": 4
+  },
+  "status": "未验收",
+  "route": "/pages/my-organizations/my-organizations",
+  "api": [
+   "GET /api/v1/organization-onboarding/my-organizations"
+  ],
+  "reference": {
+   "path": "reference/01-10.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    1235,
+    603,
+    1513,
+    1020
+   ],
+   "sha256": "e4eef71d619e0f0afefa9be6fd32b6cc7c6e1f088b74651d1fec4d1215a92bd0",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "choose=true; actual organizations",
+  "gaps": "已到达截图对照(2026-10-16,真实数据3组织)：结构差异为列表+进入按钮替代头像卡+切换卡；query口径代码要求choose=1(此前记录choose=true页面不识别)；我的申请0项区域与原图对应",
+  "visualAcceptance": "待微信原生截图与完整功能验收",
+  "nativeShot": ".local-verification/native-78/01-10.png",
+  "shotAt": "2026-10-16",
+  "implementationStatus": "已原生截图对照（2026-10-16）：组织切换列表+进入按钮+我的申请区；query 口径 choose=1 已修正（差异清单见 gaps）"
+ },
+ {
+  "id": "02-01",
+  "group": "成长陪伴任务",
+  "title": "成长陪伴首页",
+  "board": "exec-1eac4947-b637-48ce-87af-6b2079e9defc.png",
+  "position": {
+   "row": 0,
+   "column": 0
+  },
+  "status": "未验收",
+  "route": "/pages/parent-home/parent-home",
+  "api": [
+   "GET /auth/me",
+   "GET /students?page=&pageSize=20",
+   "GET /task-reviews?page=&pageSize=20"
+  ],
+  "reference": {
+   "path": "reference/02-01.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    23,
+    94,
+    304,
+    570
+   ],
+   "sha256": "c92b7555ba9ec7a7a7876f9189b071cc116694ef5641bbb8f4cd1473d54c473b",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "home",
+  "gaps": "已原生截图对照。结构差异——原型缺\"我家小主人\"孩子卡与\"本周任务进度3/5\"进度卡；实现将\"+新建任务\"单按钮改为发布任务/审核任务/成长周报/奖励管理4宫格入口；原型\"最近任务\"任务卡列表→实现\"最新动态\"提交事件流（待审核徽标）；顶部无\"看见更好的自己\"插画banner；待处理卡与底部tabbar(首页/任务/成长/我的)一致",
+  "evidenceDocument": "task-layout-gaps.md",
+  "referencePath": "reference/02-01.png",
+  "verification": {
+   "nativeScreenshot": null,
+   "diff": null,
+   "acceptedAt": null
+  },
+  "nativeShot": "native-78/02-01.png",
+  "shotAt": "2026-10-16T20:40:05",
+  "implementationStatus": "已原生截图对照（结构/文案差异清单见 gaps，2026-10-16 到达截图对照）"
+ },
+ {
+  "id": "02-02",
+  "group": "成长陪伴任务",
+  "title": "家庭任务列表",
+  "board": "exec-1eac4947-b637-48ce-87af-6b2079e9defc.png",
+  "position": {
+   "row": 0,
+   "column": 1
+  },
+  "status": "未验收",
+  "route": "/pages/family-tasks/family-tasks",
+  "api": [
+   "GET /learning-tasks?sourceType=FAMILY&page=&pageSize=20"
+  ],
+  "reference": {
+   "path": "reference/02-02.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    328,
+    94,
+    607,
+    570
+   ],
+   "sha256": "c92b7555ba9ec7a7a7876f9189b071cc116694ef5641bbb8f4cd1473d54c473b",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "list",
+  "gaps": "已原生截图（真实2条任务）。施工差距——原型有全部/进行中/待审核/已完成四状态Tab+任务卡（图标、重复完成进度N/M次、成员名、日期+频率、状态徽标），实现仅草稿/已发布两态列表+分页，无状态筛选Tab、无重复完成进度、无任务图标",
+  "evidenceDocument": "task-layout-gaps.md",
+  "referencePath": "reference/02-02.png",
+  "verification": {
+   "nativeScreenshot": null,
+   "diff": null,
+   "acceptedAt": null
+  },
+  "nativeShot": "native-78/02-02-phase3.png",
+  "shotAt": "2026-10-17T17:06:41.078Z",
+  "implementationStatus": "已原生截图对照：任务列表四状态 Tab + 筛选组 + 任务卡已补齐——「全部/进行中/待审核/已完成」Tab（active 白底胶囊）+筛选组（类型六选 picker/孩子 picker/最新发布标签）+任务卡（类型图标 STUDY-book/LIFE-home/SPORT-growth/HOBBY-star/CHORE-leaf/OTHER-task、标题+状态徽标 进行中橙/待审核灰/已完成绿/草稿灰、日期·频率 每天/每周/自定义/单次、成员名、完成进度 N/M 次）；配套后端新增 GET /learning-tasks/family-overview（executionTab 状态过滤 + taskType/studentId 筛选 + assignments 聚合 completed/total/pendingReview + GROUP_CONCAT 成员名，复用 managedFilters 家长范围）；实测 API 四 Tab 过滤正确（ALL=12/IN_PROGRESS=3/PENDING_REVIEW=1/COMPLETED=2）+ 非法 Tab 400 + 类型/孩子筛选生效；UI automator 实测四 Tab 切换卡片数与徽标验证通过（截图 02-02-phase3/-pending/-done/-doing）"
+ },
+ {
+  "id": "02-03",
+  "group": "成长陪伴任务",
+  "title": "新建任务表单",
+  "board": "exec-1eac4947-b637-48ce-87af-6b2079e9defc.png",
+  "position": {
+   "row": 0,
+   "column": 2
+  },
+  "status": "未验收",
+  "route": "/pages/family-tasks/family-tasks",
+  "api": [
+   "GET /learning-tasks/:id",
+   "POST /learning-tasks",
+   "PUT /learning-tasks/:id"
+  ],
+  "reference": {
+   "path": "reference/02-03.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    630,
+    94,
+    907,
+    570
+   ],
+   "sha256": "c92b7555ba9ec7a7a7876f9189b071cc116694ef5641bbb8f4cd1473d54c473b",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "editing && !scopeStep && !confirming",
+  "gaps": "已原生截图（向导步骤1真实表单）。施工差距——原型有任务描述(100字)与任务类型六选(学习/生活/运动/兴趣/家务/其他)与日期区间(起-止)与重复频率三选(每天/每周/自定义)且均必填标记；实现无描述字段、无类型选择UI（categoryCode仅DTO保留）、仅单日期、重复简化为开关+频率",
+  "evidenceDocument": "task-layout-gaps.md",
+  "referencePath": "reference/02-03.png",
+  "verification": {
+   "nativeScreenshot": null,
+   "diff": null,
+   "acceptedAt": null
+  },
+  "nativeShot": "native-78/02-03-phase3.png",
+  "shotAt": "2026-10-17T22:35:18.825Z",
+  "implementationStatus": "已原生截图对照：发布向导步骤 1 已补齐——任务标题*（maxlength 20 + N/20 计数）、任务描述（textarea maxlength 100 + N/100 计数）、任务类型*六选 pills（学习/生活/运动/兴趣/家务/其他，选中深绿）、任务日期*起止区间（开始 picker + 至 + 结束 picker start=开始日）、重复频率*三选 pills（每天/每周/自定义，WEEKLY|CUSTOM 展开周几多选 + 重复截止 picker + 不设截止）、紧凑行难度三档 + 时长分钟；step1Error 必填校验（标题必填/描述≤100/类型必选/结束不早于开始）空提交 toast 拦截留在步骤 1，填标题选类型后「下一步」进入步骤 2 选择范围；UI automator 实测 9 pills 渲染、空下一步被拦、进入步骤 2 通过（截图 02-03-phase3/-step2）"
+ },
+ {
+  "id": "02-04",
+  "group": "成长陪伴任务",
+  "title": "任务范围选择",
+  "board": "exec-1eac4947-b637-48ce-87af-6b2079e9defc.png",
+  "position": {
+   "row": 0,
+   "column": 3
+  },
+  "status": "未验收",
+  "route": "/pages/family-tasks/family-tasks",
+  "api": [
+   "GET /learning-task-options/students?sourceType=FAMILY"
+  ],
+  "reference": {
+   "path": "reference/02-04.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    934,
+    94,
+    1212,
+    570
+   ],
+   "sha256": "c92b7555ba9ec7a7a7876f9189b071cc116694ef5641bbb8f4cd1473d54c473b",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "editing && scopeStep && !confirming",
+  "gaps": "已原生截图（向导步骤2选择范围）。施工差距——原型孩子卡带头像/班级/学校且可见范围四选（仅家庭/家庭+班级成长伙伴/家庭+本校成长伙伴/自定义范围）为必填；实现仅学生checkbox列表无头像班级、无可见范围DTO与选择UI",
+  "evidenceDocument": "task-layout-gaps.md",
+  "referencePath": "reference/02-04.png",
+  "verification": {
+   "nativeScreenshot": null,
+   "diff": null,
+   "acceptedAt": null
+  },
+  "nativeShot": "native-78/02-04-phase3-visibility2.png",
+  "shotAt": "2026-10-17T22:55:46.400Z",
+  "implementationStatus": "已原生截图对照：发布向导步骤 2 已补齐——「选择参与的成长小主人 *」孩子卡列表（姓名首字圆形头像占位（edu_student 无 avatar 字段）/姓名/child-meta 班级+学校一行（currentClassName+schoolName，无班级 fallback「未分班」）/右侧绿色勾选框，副家长孩子置灰 SECONDARY toast 拦截）+「可见范围 *」hint「仅限本校/本机构的成员，不可跨校选择」+ 四选 radio 卡（仅家庭（仅自己可见）/家庭+班级成长伙伴（班级：X（Y）动态派生 firstSelectedStudent）/家庭+本校成长伙伴（学校名）/自定义范围（可选择本校内的班级或成员））；后端 StudentOption record 追加 schoolName（LearningTaskOptionService 用 OrganizationHierarchy.schoolOf 从已加载 byId map 零 SQL 派生；student 模块 StudentClassQueryService 同步补参）；form.visibility 必填校验未选 toast 拦截留在步骤 2；UI automator 实测 22 孩子卡渲染、可见范围四选、空选被拦、选中后「下一步」进入 3 确认发布（截图 02-04-phase3/-visibility2/-phase3-confirm）；备注：fixture 无用户可跨机构分班（manager/scopeOnly 403、owner 400、member 428），新孩子未分班走「未分班」fallback，schoolName 派生已由既有分班孩子的 API 运行时证据证实"
+ },
+ {
+  "id": "02-05",
+  "group": "成长陪伴任务",
+  "title": "任务发布确认",
+  "board": "exec-1eac4947-b637-48ce-87af-6b2079e9defc.png",
+  "position": {
+   "row": 0,
+   "column": 4
+  },
+  "status": "未验收",
+  "route": "/pages/family-tasks/family-tasks",
+  "api": [
+   "POST /learning-tasks",
+   "PUT /learning-tasks/:id",
+   "POST /learning-tasks/:id/publish"
+  ],
+  "reference": {
+   "path": "reference/02-05.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    1238,
+    94,
+    1515,
+    570
+   ],
+   "sha256": "c92b7555ba9ec7a7a7876f9189b071cc116694ef5641bbb8f4cd1473d54c473b",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "editing && confirming",
+  "gaps": "已原生截图（向导步骤3确认发布）。施工差距——原型确认页含类型徽标+描述+日期区间+重复频率+参与成员(带班级)+可见范围+发布后说明语；实现简化为基础字段汇总（日期/难度时长/下发对象/备注），真实UI发布成功",
+  "evidenceDocument": "task-layout-gaps.md",
+  "referencePath": "reference/02-05.png",
+  "verification": {
+   "nativeScreenshot": null,
+   "diff": null,
+   "acceptedAt": null
+  },
+  "nativeShot": "native-78/02-05-phase3.png",
+  "shotAt": "2026-10-18T02:35:16.611Z",
+  "implementationStatus": "已原生截图对照：发布向导步骤 3 确认发布页已重构为原型结构——信息卡（类型图标 PrototypeIcon typeIcons 映射 + 任务标题 + 右上类型徽标绿色 pill typeLabel 六值映射 + 描述 confirm-desc 未填写 fallback）+ 信息表四行（任务日期 dotDate 点分格式 单日/起止区间 X – Y、重复频率 DAILY 每天/WEEKLY·CUSTOM 带周几、参与成员 姓名（currentClassName）带班级、可见范围 visibilityTitle（visibilityDesc））+ 灰底说明语「发布后，成长小主人即可在任务列表中看到，并可以按任务日期进行打卡。」+ 底部按钮 confirming 态切换为 上一步（描边）+ 确认发布（深绿 main-action）并隐藏保存草稿；UI automator verify-45 ALL PASS——类型徽标=学习、四行内容断言（日期点分/每天/成员带班级括号/仅家庭（仅自己可见））、说明语断言、按钮组断言；实测发布链路：确认发布后编辑器关闭回列表，API family-overview 断言任务 status=PUBLISHED、taskType=STUDY、recurrenceFrequency=DAILY、memberNames 正确（截图 02-05-phase3 确认页、02-05-phase3-published 发布后列表）"
+ },
+ {
+  "id": "02-06",
+  "group": "成长陪伴任务",
+  "title": "任务详情与进度",
+  "board": "exec-1eac4947-b637-48ce-87af-6b2079e9defc.png",
+  "position": {
+   "row": 1,
+   "column": 0
+  },
+  "status": "未验收",
+  "route": "/pages/family-task-detail/family-task-detail",
+  "api": [
+   "GET /learning-tasks/:id",
+   "GET /learning-tasks/:id/checkins",
+   "GET /learning-tasks/family-overview"
+  ],
+  "reference": {
+   "path": "reference/02-06.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    23,
+    604,
+    304,
+    1016
+   ],
+   "sha256": "c92b7555ba9ec7a7a7876f9189b071cc116694ef5641bbb8f4cd1473d54c473b",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "missing",
+  "gaps": "施工差距（原型有/实现无）——原型为任务详情独立视图：任务信息卡（日期区间/重复/成员/可见范围）+完成进度3/7次打点日历+打卡记录流（照片+文字+时间+成员）；实现无独立路由与视图",
+  "evidenceDocument": "task-layout-gaps.md",
+  "referencePath": "reference/02-06.png",
+  "verification": {
+   "nativeScreenshot": null,
+   "diff": null,
+   "acceptedAt": null
+  },
+  "nativeShot": "native-78/02-06-phase3.png",
+  "shotAt": "2026-10-18T03:04:29.899Z",
+  "implementationStatus": "已原生截图对照：任务详情独立视图已新建路由 pages/family-task-detail/family-task-detail（列表卡片 tap openDetail navigateTo 进入，DRAFT 拦截）——信息卡 detail-hero（PrototypeIcon typeIcons 映射图标 + 任务标题 + 描述 detail-desc 未填写 fallback + 右上类型徽标 typeLabel 六值映射）+ 信息表四行 detail-table（任务日期 dotDate 点分 单日/区间、重复频率 单次/每天/每周·周几、参与成员 memberNames、可见范围 visibilitySummary FAMILY_ONLY→仅家庭（仅自己可见）等四值映射）+ 完成进度 progress-block（N/M次 从 family-overview assignmentCompleted/Total 取 + progress-track/progress-bar + day-dots 打点日历由 records+详情区间派生 cap31 天 done=APPROVED/pending=SUBMITTED/todo 三态）+ 打卡记录流 records-block（record-card：附件缩略图受控通道 downloadTaskAttachmentAs 下载 previewPaths 无附件占位图标、formatTime M月D日 HH:mm、状态徽标已通过/待审核、打卡内容、studentName、previewRecordImage 预览）；后端新增 GET /learning-tasks/{id}/checkins（@RequirePermission LEARNING_TASK_READ_MANAGED，managementService.findById 范围校验）FamilyTaskCheckInRecordService→TaskCheckInMapper.findFamilyRecords（JOIN learn_task_assignment+edu_student status IN SUBMITTED,APPROVED ORDER submitted_at DESC LIMIT 50）逐行 findByCheckInId 组装附件；UI automator verify-46 ALL PASS（21/21）——列表 14 卡 tap 任务己_05组打卡跳转详情、hero 标题+学习徽标、四行断言（2026.10.16/单次/对照学生05_59649674）、进度 1/1次、day-dots done=1、记录卡已通过+10月16日 22:23+内容+studentName；API checkins 端点 200 返回真实记录（截图 02-06-phase3 全页：信息卡+表格+进度+记录流一屏呈现，02-06-phase3-records 滚动底部）"
+ },
+ {
+  "id": "02-07",
+  "group": "成长陪伴任务",
+  "title": "待审核任务列表",
+  "board": "exec-1eac4947-b637-48ce-87af-6b2079e9defc.png",
+  "position": {
+   "row": 1,
+   "column": 1
+  },
+  "status": "未验收",
+  "route": "/pages/parent-task-reviews/parent-task-reviews",
+  "api": [
+   "GET /task-reviews?statusTab=&page=",
+   "GET /auth/me"
+  ],
+  "reference": {
+   "path": "reference/02-07.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    328,
+    604,
+    607,
+    1016
+   ],
+   "sha256": "c92b7555ba9ec7a7a7876f9189b071cc116694ef5641bbb8f4cd1473d54c473b",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "!detail && stage !== success",
+  "gaps": "已原生截图（真实待审列表）。施工差距——原型有四状态Tab(全部/待审核(2)/已通过/已驳回)+卡片带照片缩略图+任务日期；实现仅待审核单列表，无状态Tab、无缩略图；查看并审核入口一致",
+  "evidenceDocument": "task-layout-gaps.md",
+  "referencePath": "reference/02-07.png",
+  "verification": {
+   "nativeScreenshot": null,
+   "diff": null,
+   "acceptedAt": null
+  },
+  "nativeShot": "native-78/02-07-phase3.png",
+  "shotAt": "2026-10-18T07:30:43.670Z",
+  "implementationStatus": "已原生截图对照：审核列表重构为原型结构——四状态 Tab（全部/待审核(N)/已通过/已驳回，待审核带 statusCounts.SUBMITTED 计数徽标、选中绿色下划线）+ 审核卡（左侧 PrototypeIcon task_type typeIcons 映射图标 + 标题 + 右上状态徽标【待审核橙/已通过绿/已驳回红 按 latestCheckIn.status】+ 学生名 · currentClassName 班级 + 任务日期 dotDate 点分 + 右侧照片缩略图【受控通道 parentReviewApi.download 下载首图 attachment previewPaths，无图占位图标】）；后端 findPage 加 statusTab 筛选（PENDING_REVIEW 维持原口径 /APPROVED checkin.status=APPROVED /REJECTED checkin.status=REJECTED /ALL 无过滤）+ countByStatus GROUP BY checkin.status 计数 + TaskReviewRow 加 scheduledDate/currentClassName(子查询 ACTIVE CLASS)/taskType 三列；verify-47 ALL PASS——四 Tab 断言、待审核 3 卡（任务庚 STUDY+班级+日期+徽标+缩略图元素）、ALL 6 卡含双徽标、REJECTED 1 卡对照任务乙（截图 02-07-phase3）"
+ },
+ {
+  "id": "02-08",
+  "group": "成长陪伴任务",
+  "title": "打卡审核详情",
+  "board": "exec-1eac4947-b637-48ce-87af-6b2079e9defc.png",
+  "position": {
+   "row": 1,
+   "column": 2
+  },
+  "status": "未验收",
+  "route": "/pages/parent-task-reviews/parent-task-reviews",
+  "api": [
+   "GET /task-reviews/:assignmentId"
+  ],
+  "reference": {
+   "path": "reference/02-08.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    630,
+    604,
+    907,
+    1016
+   ],
+   "sha256": "c92b7555ba9ec7a7a7876f9189b071cc116694ef5641bbb8f4cd1473d54c473b",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "detail && stage === detail",
+  "gaps": "已原生截图（真实审核详情）。结构基本一致——摘要卡+打卡内容+退回/通过底部操作；差异——原型有\"成长伙伴的评语\"区(提交时填写)与打卡多图缩略图，实现无评语字段与图片",
+  "evidenceDocument": "task-layout-gaps.md",
+  "referencePath": "reference/02-08.png",
+  "verification": {
+   "nativeScreenshot": null,
+   "diff": null,
+   "acceptedAt": null
+  },
+  "nativeShot": "native-78/02-08-phase3.png",
+  "shotAt": "2026-10-18T07:30:43.672Z",
+  "implementationStatus": "已原生截图对照：打卡审核详情重构为原型结构——信息卡 detail-hero（task_type 图标 + 标题 + 右上状态徽标）+ 信息表三行（任务日期 2026.10.17（周六）weekdayLabel 周几标注、提交时间 submittedAt、提交成员 姓名（班级））+ 小主人的打卡内容（content + 多图缩略图 photo-grid 受控通道下载后 previewImage 当前图预览）+ 成长伙伴的评语（提交时填写）——待审核 textarea（通过可选填/驳回必填校验按钮 disabled）已审只读回显 reviewComment + 是否通过这次打卡？+ 底部驳回（红描边）/通过（绿实心）；approve 链路扩展：ApproveTaskReviewRequest 加可选 reviewComment、TaskReviewService.approve normalizeOptionalComment（空→null 非空 trim ≤500）、checkInMapper.approve 参数化 review_comment 写入（原写死 NULL）；详情查询 findByAssignmentIdAndReviewer 放宽 PENDING 限定支持历史已通过/已驳回任务查看；实测双链路：通过（评语持久化 checkin.review_comment、任务入 APPROVED Tab、statusCounts APPROVED=3）+ 驳回（评语持久化、任务入 REJECTED Tab、无评语时按钮 disabled 校验）；verify-47 ALL PASS 40/40（截图 02-08-phase3 详情、02-08-phase3-reject-guard 驳回禁用态）"
+ },
+ {
+  "id": "02-09",
+  "group": "成长陪伴任务",
+  "title": "通过确认",
+  "board": "exec-1eac4947-b637-48ce-87af-6b2079e9defc.png",
+  "position": {
+   "row": 1,
+   "column": 3
+  },
+  "status": "未验收",
+  "route": "/pages/parent-task-reviews/parent-task-reviews",
+  "api": [
+   "GET /task-reviews/:assignmentId",
+   "POST /task-reviews/:assignmentId/approve"
+  ],
+  "reference": {
+   "path": "reference/02-09.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    934,
+    604,
+    1212,
+    1016
+   ],
+   "sha256": "c92b7555ba9ec7a7a7876f9189b071cc116694ef5641bbb8f4cd1473d54c473b",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "stage === approve / stage === success",
+  "gaps": "已原生截图（确认态+UI真实提交success态）。结构差异——原型通过成功页（大对勾+计入进度提示+任务信息卡+返回列表）；实现先弹\"确认通过本次打卡\"确认卡再进成功页（拆为确认+成功两态），成功文案\"审核已通过\"一致",
+  "evidenceDocument": "task-layout-gaps.md",
+  "referencePath": "reference/02-09.png",
+  "verification": {
+   "nativeScreenshot": null,
+   "diff": null,
+   "acceptedAt": null
+  },
+  "nativeShot": "native-78/02-09.png",
+  "shotAt": "2026-10-16T20:40:05",
+  "implementationStatus": "已原生截图对照（拆分确认/成功两态差异见 gaps，2026-10-16 到达截图对照）"
+ },
+ {
+  "id": "02-10",
+  "group": "成长陪伴任务",
+  "title": "驳回填写意见",
+  "board": "exec-1eac4947-b637-48ce-87af-6b2079e9defc.png",
+  "position": {
+   "row": 1,
+   "column": 4
+  },
+  "status": "未验收",
+  "route": "/pages/parent-task-reviews/parent-task-reviews",
+  "api": [
+   "GET /task-reviews/:assignmentId",
+   "POST /task-reviews/:assignmentId/reject"
+  ],
+  "reference": {
+   "path": "reference/02-10.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    1238,
+    604,
+    1515,
+    1016
+   ],
+   "sha256": "c92b7555ba9ec7a7a7876f9189b071cc116694ef5641bbb8f4cd1473d54c473b",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "stage === reject",
+  "gaps": "已原生截图（退回意见态+UI真实提交success态）。基本一致——意见必填+字数计数+取消/确认驳回；差异——原型独立整页（橙色感叹号+说明文案，上限100字），实现嵌入详情页（上限500字）",
+  "evidenceDocument": "task-layout-gaps.md",
+  "referencePath": "reference/02-10.png",
+  "verification": {
+   "nativeScreenshot": null,
+   "diff": null,
+   "acceptedAt": null
+  },
+  "nativeShot": "native-78/02-10.png",
+  "shotAt": "2026-10-16T20:40:05",
+  "implementationStatus": "已原生截图对照（嵌入详情页差异见 gaps，2026-10-16 到达截图对照）"
+ },
+ {
+  "id": "03-01",
+  "group": "组织教学",
+  "title": "学校工作台",
+  "board": "exec-ea2565d6-5d89-40d0-a450-8edcfb6db2fc.png",
+  "position": {
+   "row": 0,
+   "column": 0
+  },
+  "status": "未验收",
+  "route": "/pages/organization-home/organization-home",
+  "api": [
+   "GET /organization-workbench/context",
+   "GET /organization-workbench/statistics",
+   "GET /auth/me",
+   "/task-reviews"
+  ],
+  "reference": {
+   "path": "reference/03-01.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    30,
+    111,
+    305,
+    574
+   ],
+   "sha256": "91559ba5a6a31ac254f54656ad9f0134075c66eaba31fbe157fa4838448080eb",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "institution=SCHOOL",
+  "implementationStatus": "已原生截图对照（phase3）：学校工作台统计条绑定 GET /organization-workbench/statistics 五列真实数值（选中组织子树口径 4校区/3年级/4班级/1成长伙伴/33成长小主人，与 8081 同口径 API 及克隆库 SQL 直查三方一致；无对应 read 权限的项回退\"—\"）；入口补齐课程分类【管理课程与教学分类，CLASS_READ 门控跳组织层级页】与数据概览【教学组织与成员统计，新增 organization-statistics 页——绿色 summary 卡+五张统计卡展示同接口计数】；保留任务审核/转学申请/教学任务/教师管理入口；verify-52 ALL PASS 14/14（统计数值断言、双入口渲染+跳转、数据概览页五卡数值+summary 卡、截图 03-01-phase3/03-01-phase3-statistics）",
+  "gaps": "已原生截图对照。结构差异——原型学校工作台统计条有数值（12校区/36年级/128班级/342教师/2856学生）+四入口（组织管理/课程分类/教师管理/数据概览）；实现统计全部显示\"—\"（无汇总接口），入口为任务审核/转学申请/组织管理/教学任务/教师管理，缺课程分类与数据概览入口",
+  "nativeShot": "native-78/03-01-phase3.png",
+  "shotAt": "2026-10-18T08:02:38.520Z"
+ },
+ {
+  "id": "03-02",
+  "group": "组织教学",
+  "title": "培训工作台",
+  "board": "exec-ea2565d6-5d89-40d0-a450-8edcfb6db2fc.png",
+  "position": {
+   "row": 0,
+   "column": 1
+  },
+  "status": "未验收",
+  "route": "/pages/organization-home/organization-home",
+  "api": [
+   "GET /organization-workbench/context",
+   "GET /organization-workbench/statistics"
+  ],
+  "reference": {
+   "path": "reference/03-02.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    330,
+    111,
+    605,
+    574
+   ],
+   "sha256": "91559ba5a6a31ac254f54656ad9f0134075c66eaba31fbe157fa4838448080eb",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "institution=TRAINING_INSTITUTION",
+  "implementationStatus": "已原生截图对照（phase3）：组织工作台支持 TRAINING_INSTITUTION 态——头部渲染\"培训工作台\"+文案\"专业成长 · 支持教学\"，统计条切换为培训口径四列（课程分类=GRADE 2/课程班=CLASS 0/成长伙伴 0/成长小主人 0，GRADE/CLASS 语义映射与组织层级页 label 一致；数值绑定 GET /organization-workbench/statistics 带 X-Organization-Id 选中组织子树口径，与 8081 同口径 API 及克隆库 SQL 直查三方一致 0/2/0/0/0）；入口区按现有教学域能力承载（任务审核/转学申请/组织管理/课程分类/数据概览/教学任务/教师管理）——原型的\"培训项目/参与教师/完成率/教师评分\"统计与\"培训计划/培训记录/学习资源/培训评价\"四入口无对应培训域实现，以现有能力适配，无虚假功能；verify-53 ALL PASS 7/7（培训组织归属+四列渲染+标题/文案断言+统计值与 API 同口径比对+label 含课程分类/课程班，截图 03-02-phase3）",
+  "gaps": "已原生截图（storage直切培训组织上下文）。结构差异——原型\"培训工作台\"含统计（24培训项目/368参与教师/86%完成率/4.8评分）+四入口（培训计划/培训记录/资源库/培训评价）；实现TRAINING_INSTITUTION态复用学校工作台同构布局（机构工作台：任务审核/转学申请/组织管理/教学任务/教师管理，统计\"—\"），无培训专属模块",
+  "nativeShot": "native-78/03-02-phase3.png",
+  "shotAt": "2026-10-18T08:13:39.654Z"
+ },
+ {
+  "id": "03-03",
+  "group": "组织教学",
+  "title": "教师工作台",
+  "board": "exec-ea2565d6-5d89-40d0-a450-8edcfb6db2fc.png",
+  "position": {
+   "row": 0,
+   "column": 2
+  },
+  "status": "未验收",
+  "route": "/pages/teacher-home/teacher-home",
+  "api": "GET /teacher-workbench/context",
+  "reference": {
+   "path": "reference/03-03.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    630,
+    111,
+    906,
+    574
+   ],
+   "sha256": "91559ba5a6a31ac254f54656ad9f0134075c66eaba31fbe157fa4838448080eb",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "default",
+  "implementationStatus": "已原生截图对照（phase3 修复后重拍）：①教师工作台补齐原型 03-03 的培训学习【我的培训与证书】与成长记录【学生成长与课堂观察】入口，顺序对齐原型（我的教学班级/教学任务/培训学习/成长记录，另保留真实能力入口发布任务/异常报备/考勤记录/账号安全）——培训学习与成长记录域暂无后端实现，点击如实 toast「模块暂未开放」（截图可见），不造虚假页面；②「切换组织」控件改为标题下方第二行堆叠布局（与原型 03-03 一致），不再与右上角胶囊区域重叠遮挡标题，文案展示当前任教学校名（context.classes[0].schoolName）；③教师经 organization-login 登录直达工作台（隔离差量教师）；verify-54 ALL PASS 8/8（登录直达+入口存在+顺序断言+切换控件学校名+标题完整可见+点击停留本页如实提示，截图 03-03-phase3）",
+  "gaps": "已原生截图（教师改密后经organization-login二次登录成功）。结构差异——原型李老师工作台四入口（我的教学班级/教学任务/培训学习/成长记录）；实现隔离差量教师工作台（我的教学班级+教学任务+发布任务+异常报备+考勤记录+账号安全），缺培训学习/成长记录入口；顶部\"切换组织\"半透明控件遮挡标题。另发现unified-login动态导入ApiError缺陷致教师二次登录卡死（改走organization-login绕过）",
+  "nativeShot": "native-78/03-03-phase3.png",
+  "shotAt": "2026-10-18T08:25:23.047Z"
+ },
+ {
+  "id": "03-04",
+  "group": "组织教学",
+  "title": "组织层级浏览",
+  "board": "exec-ea2565d6-5d89-40d0-a450-8edcfb6db2fc.png",
+  "position": {
+   "row": 0,
+   "column": 3
+  },
+  "status": "未验收",
+  "route": "/pages/organization-hierarchy/organization-hierarchy",
+  "api": [
+   "GET /auth/me",
+   "/classes/schools|campuses|grades|classes",
+   "GET /classes/student-counts"
+  ],
+  "reference": {
+   "path": "reference/03-04.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    930,
+    111,
+    1208,
+    574
+   ],
+   "sha256": "91559ba5a6a31ac254f54656ad9f0134075c66eaba31fbe157fa4838448080eb",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "creating=false",
+  "implementationStatus": "已原生截图对照（phase3）：组织层级页实现树形展开折叠与人数徽标——①树上各节点按层级缩进渲染，校区/年级节点点击展开折叠（⌄/›切换），班级逐级展示（实测校区展开 5 年级、年级展开 3 班级、收起后仅剩学校直挂班级）；②新增后端 GET /classes/student-counts（CLASS_READ 门控，ClassMemberCountStore 按 edu_student_organization CLASS+ACTIVE 关系统计正常学生数），层级页班级行渲染绿色人数徽标（N人），徽标值与同口径 API 全部一致（32人/2人/0人，3/3）；③年级/校区节点保留\"N 个班级\"/\"N 个年级 · N 个班级\"汇总与停用徽标，面包屑+当前节点卡与原型一致；verify-55 ALL PASS 7/7（截图 03-04-phase3）",
+  "gaps": "已原生截图对照。结构差异——原型为面包屑+树形层级（可展开折叠+人数徽标）；实现面包屑+平铺子节点列表（N年级·N班级·正常/停用徽标），无树形展开态；真实parentId层级与CLASS_READ权限校验一致",
+  "nativeShot": "native-78/03-04-phase3.png",
+  "shotAt": "2026-10-18T08:45:07.781Z"
+ },
+ {
+  "id": "03-05",
+  "group": "组织教学",
+  "title": "校区年级课程分类新增",
+  "board": "exec-ea2565d6-5d89-40d0-a450-8edcfb6db2fc.png",
+  "position": {
+   "row": 0,
+   "column": 4
+  },
+  "status": "未验收",
+  "route": "/pages/organization-hierarchy/organization-hierarchy",
+  "api": [
+   "GET /auth/me",
+   "GET /classes/course-categories/options",
+   "POST /classes/course-categories",
+   "GET /classes/course-categories/{id}",
+   "POST /classes/nodes"
+  ],
+  "reference": {
+   "path": "reference/03-05.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    1234,
+    111,
+    1514,
+    574
+   ],
+   "sha256": "91559ba5a6a31ac254f54656ad9f0134075c66eaba31fbe157fa4838448080eb",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "creating=true",
+  "implementationStatus": "已原生截图对照（phase3）：学校态新增节点表单实现三类型 tab——①学校根（非培训机构）下新增按钮展开\"校区|年级|课程分类\"三 tab（培训机构为两 tab），选中课程分类 tab 后表单展示课程分类名称*、学段适用*（checkbox 多选，选项数与 GET /classes/course-categories/options 字典一致）、学科类型*（picker）、分类描述（0/100 实时计数）、排序；②后端 CourseCategoryService.requireTraining 放宽允许 SCHOOL 根真实创建课程分类元数据（org_course_category_metadata 表 V128，事务回滚测试覆盖：SCHOOL 根成功持久化+读回、CAMPUS 根拒绝并回滚、存储失败回滚）；③学科 picker 为原生控件 automator 无法驱动，UI 层验证走\"无学科保存被校验拦截\"（提示\"请选择有效学段和学科\"），真实创建走同链路后端 API 实测（201 创建 ui-56-math + 元数据读回 stageCodes/subjectCode/description 一致）+ 树渲染新节点；verify-56 ALL PASS 13/13（截图 03-05-phase3）",
+  "gaps": "已原生截图（根节点creating=true真实表单）。结构差异——原型\"新增校区/年级/课程分类\"三类型tab+分类名称+学段适用三选+学科类型+分类描述(0/100计数)；实现\"新增组织节点\"（学校态校区/年级两tab+名称+排序+保存/取消）；培训态GRADE模板已含学段/学科/描述字段（courseCategoryApi分支），学校态表单无学段学科，原型缺\"排序\"字段",
+  "nativeShot": "native-78/03-05-phase3.png",
+  "shotAt": "2026-10-18T08:53:52.842Z"
+ },
+ {
+  "id": "03-06",
+  "group": "组织教学",
+  "title": "班级列表",
+  "board": "exec-ea2565d6-5d89-40d0-a450-8edcfb6db2fc.png",
+  "position": {
+   "row": 1,
+   "column": 0
+  },
+  "status": "未验收",
+  "route": "/pages/organization-classes/organization-classes",
+  "api": [
+   "GET /auth/me",
+   "GET /classes",
+   "GET /classes/student-counts",
+   "GET /classes/head-teachers"
+  ],
+  "reference": {
+   "path": "reference/03-06.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    30,
+    616,
+    305,
+    1009
+   ],
+   "sha256": "91559ba5a6a31ac254f54656ad9f0134075c66eaba31fbe157fa4838448080eb",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "mode=CLASSES;formVisible=false",
+  "implementationStatus": "已原生截图对照（phase3）：班级维护列表实现班级卡——①每卡渲染人群图标+班级名+副行\"N 名成长小主人 ｜ 班主任：X\"（人数来自 GET /classes/student-counts，班主任来自新增 GET /classes/head-teachers——ClassHeadTeacherStore 按 edu_class_academic_metadata 关联正常用户批量读取，未设置显示\"未设置\"，CLASS_READ 门控按 listClasses 授权范围）+学校·年级上下文行；②状态徽标\"正常\"（绿）/“停用”（橙）替代原状态文本；③溢出修复：主体信息与操作按钮分行（card-actions 独立行靠右），班名/副行/上下文行 nowrap+ellipsis，实测所有操作按钮 right 边界 <= 屏宽（windowWidth=390）无溢出；verify-57 ALL PASS 8/8（卡片数 8/8、人数与 API 8/8 一致、班主任与 API 8/8 一致、徽标正常/停用）；截图 03-06-phase3",
+  "gaps": "已原生截图对照。结构差异——原型筛选器+班级卡片（人数/班主任/状态徽标）；实现班级维护/教师班级双tab+表格列表（编码/年级/排序/启用停用），右侧启用/编辑/停用操作按钮溢出屏幕边界，缺人数与班主任字段",
+  "nativeShot": "native-78/03-06-phase3.png",
+  "shotAt": "2026-10-18T09:04:01.464Z"
+ },
+ {
+  "id": "03-07",
+  "group": "组织教学",
+  "title": "班级详情成员列表",
+  "board": "exec-ea2565d6-5d89-40d0-a450-8edcfb6db2fc.png",
+  "position": {
+   "row": 1,
+   "column": 1
+  },
+  "status": "未验收",
+  "route": "/pages/organization-class-detail/organization-class-detail",
+  "api": "GET /classes; /students/organization-relationships; /learning-task-options/teachers?classId",
+  "reference": {
+   "path": "reference/03-07.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    330,
+    616,
+    605,
+    1009
+   ],
+   "sha256": "91559ba5a6a31ac254f54656ad9f0134075c66eaba31fbe157fa4838448080eb",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "classId=<real>;tab=students|teachers",
+  "implementationStatus": "已原生截图对照，逐屏差异已记录",
+  "gaps": "已原生截图（班级详情成员列表tab真实数据）。高度一致——搜索框+学生列表+批量操作+新增成员按钮与原型对应，班主任信息卡对应；教学设置tab（班主任选择+保存）另存03-07-teachers.png证据",
+  "nativeShot": "native-78/03-07.png",
+  "shotAt": "2026-10-16T21:35:41"
+ },
+ {
+  "id": "03-08",
+  "group": "组织教学",
+  "title": "新增成长小主人账号",
+  "board": "exec-ea2565d6-5d89-40d0-a450-8edcfb6db2fc.png",
+  "position": {
+   "row": 1,
+   "column": 2
+  },
+  "status": "未验收",
+  "route": "/pages/organization-class-members/organization-class-members?classId={classId}",
+  "api": [
+   "POST /api/v1/classes/{classId}/account-associations",
+   "POST /api/v1/students",
+   "POST /api/v1/auth/student-captchas"
+  ],
+  "reference": {
+   "path": "reference/03-08.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    630,
+    616,
+    906,
+    1009
+   ],
+   "sha256": "91559ba5a6a31ac254f54656ad9f0134075c66eaba31fbe157fa4838448080eb",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "关联已有账号 / 注册新账号；按已批准规则保留四位登录码验证，不代绑他人微信",
+  "implementationStatus": "已原生截图对照，逐屏差异已记录",
+  "gaps": "已原生截图（CREATE+ASSOCIATE两态全流程真实数据）。结构差异——原型\"关联已有账号\"为微信绑定+邮箱验证流程；实现ASSOCIATE=账号+四位登录码+风控图形验证码（连续5次错码触发CaptchaRequired，读图RWB2提交成功闭环已验，证据03-08-associate/created/linked.png）；CREATE=姓名+创建并加入班级真实落库。验证后fixture已清理（关系停用+风控重置+目标班级禁用）",
+  "verificationEvidence": [
+   ".local-verification/class-account-unassigned-results.json：首次真实入班及五错验证码拦截",
+   ".local-verification/class-account-concurrent-results.json：双请求200及SQL单条历史",
+   ".local-verification/class-account-rollback-green.log：9项含Spring代理/JDBC回滚",
+   "screenshots-2026-10-14/native-class-account-linked.png：原生有效关联",
+   "screenshots-2026-10-14/native-class-account-captcha.png：原生验证码图片及清四位码"
+  ],
+  "nativeShot": "native-78/03-08.png",
+  "shotAt": "2026-10-16T21:35:41"
+ },
+ {
+  "id": "03-09",
+  "group": "组织教学",
+  "title": "教师列表",
+  "board": "exec-ea2565d6-5d89-40d0-a450-8edcfb6db2fc.png",
+  "position": {
+   "row": 1,
+   "column": 3
+  },
+  "status": "未验收",
+  "route": "/pages/organization-teachers/organization-teachers",
+  "api": "GET /organization-teachers; GET /organization-teachers/subject-options; POST /organization-teachers/subject-summaries; GET/PUT /organization-teachers/{teacherId}/institutions/{institutionId}/subject; GET /classes/campuses; GET /classes/grades",
+  "reference": {
+   "path": "reference/03-09.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    930,
+    616,
+    1208,
+    1009
+   ],
+   "sha256": "91559ba5a6a31ac254f54656ad9f0134075c66eaba31fbe157fa4838448080eb",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "mode=LIST",
+  "implementationStatus": "已原生截图对照，逐屏差异已记录",
+  "gaps": "已原生截图对照。高度一致——搜索框+三筛选器+教师卡带状态徽标；实现教师列表数据与原型结构对应",
+  "nativeShot": "native-78/03-09.png",
+  "shotAt": "2026-10-16T21:35:41"
+ },
+ {
+  "id": "03-10",
+  "group": "组织教学",
+  "title": "配置教师班级",
+  "board": "exec-ea2565d6-5d89-40d0-a450-8edcfb6db2fc.png",
+  "position": {
+   "row": 1,
+   "column": 4
+  },
+  "status": "未验收",
+  "route": "/pages/organization-teachers/organization-teachers",
+  "api": "GET /classes; PUT /teachers/{teacherId}/classes/changes",
+  "reference": {
+   "path": "reference/03-10.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    1234,
+    616,
+    1514,
+    1009
+   ],
+   "sha256": "91559ba5a6a31ac254f54656ad9f0134075c66eaba31fbe157fa4838448080eb",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "mode=CLASSES",
+  "implementationStatus": "已原生截图对照，逐屏差异已记录",
+  "gaps": "已原生截图对照。基本一致——勾选树+全选本校+取消/保存按钮对应；差异——实现标题重复渲染两行，原型为单行标题+树形多选面板",
+  "nativeShot": "native-78/03-10.png",
+  "shotAt": "2026-10-16T21:35:41"
+ },
+ {
+  "id": "04-01",
+  "group": "人员关系与考勤",
+  "title": "学员列表详情",
+  "board": "exec-61d72647-aa2e-4b55-a820-23cf11524242.png",
+  "position": {
+   "row": 0,
+   "column": 0
+  },
+  "status": "未验收",
+  "route": "/pages/organization-class-detail/organization-class-detail",
+  "api": "GET /students/organization-relationships",
+  "reference": {
+   "path": "reference/04-01.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    18,
+    111,
+    299,
+    554
+   ],
+   "sha256": "fac6d4dc45884ebcbf2bf02131a33f7572e90c5c1ee3ab13d2df2b5a3937d458",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "tab=students",
+  "implementationStatus": "已原生截图对照（phase3）：班级详情成员列表补齐真实数据可得字段——①每行默认孩子头像+姓名+学号前缀展示（\"学号 N\"）+年级编码（gradeCode 有值时显示，5/5 渲染）+状态徽标改原型用语\"在读\"（ENABLED）/“停用”（DISABLED）；②性别/年龄后端 edu_student 表无 gender/birth 列，无真实数据不造假不展示；③全局跨班学员列表视图为结构性差异（实现为单班级详情成员列表），已在 gaps 记录；verify-61 ALL PASS 6/6（选学员数最多班级 31 成员，行数/姓名与 relationships API 全一致、学号前缀 1/1、年级 5/5、在读徽标）；截图 04-01-phase3",
+  "gaps": "已原生截图对照（真实班级31名学生）。结构差异——原型为全局\"成长小主人\"学员列表（搜索+全部班级/在读/筛选三器+头像/性别/年龄/学号卡+底部tabbar）；实现为单\"班级详情\"成员列表（班级信息头+成员列表/班级信息/教学设置三tab+搜索+姓名/账号/正常徽标+批量操作+新增成员）；实现缺头像/学号/性别年龄字段，无跨班学员列表视图",
+  "nativeShot": "native-78/04-01-phase3.png",
+  "shotAt": "2026-10-18T09:11:55.700Z"
+ },
+ {
+  "id": "04-02",
+  "group": "人员关系与考勤",
+  "title": "校内转班",
+  "board": "exec-61d72647-aa2e-4b55-a820-23cf11524242.png",
+  "position": {
+   "row": 0,
+   "column": 1
+  },
+  "status": "未验收",
+  "route": "/pages/organization-students/organization-students",
+  "api": "GET /students/organization-relationships; /students/organization-relationship-classes; POST /students/{id}/class-transfers",
+  "reference": {
+   "path": "reference/04-02.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    324,
+    111,
+    604,
+    554
+   ],
+   "sha256": "fac6d4dc45884ebcbf2bf02131a33f7572e90c5c1ee3ab13d2df2b5a3937d458",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "mode=TRANSFER",
+  "implementationStatus": "已原生截图对照，逐屏差异已记录",
+  "gaps": "已原生截图（真实转班表单态）。高度一致——变更原因四选（学习进度调整/班级人数调整/成长小主人个人原因/其他）+申请说明与原型完全对应；差异——实现加\"校内转班/离校\"双模式tab、孩子用picker选择（原型为孩子档案卡头）、按钮\"确认转班\"vs\"提交申请\"、无字数计数",
+  "nativeShot": "native-78/04-02.png",
+  "shotAt": "2026-10-16T22:01:36"
+ },
+ {
+  "id": "04-03",
+  "group": "人员关系与考勤",
+  "title": "转学申请",
+  "board": "exec-61d72647-aa2e-4b55-a820-23cf11524242.png",
+  "position": {
+   "row": 0,
+   "column": 2
+  },
+  "status": "未验收",
+  "route": "/pages/transfer-proposal/transfer-proposal",
+  "api": "GET /student-transfer-applications/family-options; POST /student-transfer-applications/materials; POST /student-transfer-applications",
+  "reference": {
+   "path": "reference/04-03.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    630,
+    111,
+    909,
+    554
+   ],
+   "sha256": "fac6d4dc45884ebcbf2bf02131a33f7572e90c5c1ee3ab13d2df2b5a3937d458",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "studentId + familyId 来自当前家庭孩子档案",
+  "implementationStatus": "已原生截图对照，逐屏差异已记录",
+  "gaps": "已原生截图（真实在班孩子数据）。结构高度一致——孩子名+当前学校+转学类型(转至其他学校)+转学原因0/200+预计转学日期+相关证明材料(最多3个)与原型逐项对应；差异——实现证明材料仅\"+添加\"入口无已传文件卡，进入路径要求FAMILY组织上下文+STUDENT_TRANSFER_REQUEST_CREATE权限",
+  "nativeShot": "native-78/04-03.png",
+  "shotAt": "2026-10-16T22:01:36"
+ },
+ {
+  "id": "04-04",
+  "group": "人员关系与考勤",
+  "title": "关联已有用户",
+  "board": "exec-61d72647-aa2e-4b55-a820-23cf11524242.png",
+  "position": {
+   "row": 0,
+   "column": 3
+  },
+  "status": "未验收",
+  "route": "/pages/organization-members/organization-members",
+  "api": "GET /organizations/{id}/member-picker; POST /organizations/{id}/members:associate",
+  "reference": {
+   "path": "reference/04-04.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    936,
+    111,
+    1216,
+    554
+   ],
+   "sha256": "fac6d4dc45884ebcbf2bf02131a33f7572e90c5c1ee3ab13d2df2b5a3937d458",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "side=CANDIDATES",
+  "implementationStatus": "已原生截图对照，逐屏差异已记录",
+  "gaps": "已原生截图（真实候选1人）。语义差异——原型\"关联已有用户\"为孩子视角账号关联方式选择（已有账号/新建账号+微信登录/邮箱验证/已有密码三式+仅本校限制提示）；实现\"组织成员-待加入\"为机构视角候选列表（组织选择+已加入/待加入tab+勾选+加入组织），两者功能语义不同（账号绑定vs候选入组织）",
+  "nativeShot": "native-78/04-04.png",
+  "shotAt": "2026-10-16T22:01:36"
+ },
+ {
+  "id": "04-05",
+  "group": "人员关系与考勤",
+  "title": "组织管理员设置",
+  "board": "exec-61d72647-aa2e-4b55-a820-23cf11524242.png",
+  "position": {
+   "row": 0,
+   "column": 4
+  },
+  "status": "未验收",
+  "route": "/pages/organization-members/organization-members",
+  "api": [
+   "GET /organizations/{id}/administrators（ORG_MEMBER_READ，管理员专属列表：owner=超级管理员/administrator=班级管理员+sys_user.status 启用状态+管理组织名）",
+   "GET /organization-onboarding/my-organizations",
+   "GET /organizations/{id}/members",
+   "POST /organizations/{id}/administrators:assign（保留于成员管理视图）"
+  ],
+  "reference": {
+   "path": "reference/04-05.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    1242,
+    111,
+    1523,
+    554
+   ],
+   "sha256": "fac6d4dc45884ebcbf2bf02131a33f7572e90c5c1ee3ab13d2df2b5a3937d458",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "side=MEMBERS;selected=<real>",
+  "implementationStatus": "已原生截图对照（phase3）：默认组织管理员设置视图，学校管理员/机构管理员双 tab（基于全部所属组织 typeCode，不受 canEnterInstitution 过滤影响）；管理员卡=头像+姓名（ellipsis）+角色徽标（超级管理员橙/班级管理员蓝）+管理组织名+已启用/未启用状态；底部“+ 添加管理员”卡与说明文案，tap 进入成员管理视图（搜索+勾选+设管理员，顶部可返回管理员列表，设管理员成功后自动回到管理员列表）。验证 native-78-phase3-verify-63.cjs 17/17 PASS：API 管理员列表与 members 全量 administrator/owner 集合一致、双 tab UI 姓名与 API 一致、徽标与 owner/administrator 映射一致、启用状态展示、添加入口往返链路。",
+  "gaps": "已原生截图（真实37人成员列表+勾选态）。结构差异——原型\"组织管理员设置\"为双tab（学校管理员/机构管理员）+管理员卡（超级/班级管理员角色徽标+已启用/未启用状态）+添加管理员卡片；实现为成员列表勾选+底部设管理员/撤销管理员/移除三批量操作（勾选后显示\"已选择N人\"），无管理员专属列表视图、无角色徽标与启用状态展示",
+  "nativeShot": "native-78/04-05-phase3.png",
+  "shotAt": "2026-10-18T09:48:11.841Z"
+ },
+ {
+  "id": "04-06",
+  "group": "人员关系与考勤",
+  "title": "负责人转交",
+  "board": "exec-61d72647-aa2e-4b55-a820-23cf11524242.png",
+  "position": {
+   "row": 1,
+   "column": 0
+  },
+  "status": "未验收",
+  "route": "/pages/organization-overview/organization-overview",
+  "api": "GET /organization-onboarding/organizations/{id}/owner-transfer-options; POST /owner-transfer",
+  "reference": {
+   "path": "reference/04-06.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    18,
+    596,
+    299,
+    1006
+   ],
+   "sha256": "fac6d4dc45884ebcbf2bf02131a33f7572e90c5c1ee3ab13d2df2b5a3937d458",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "OrganizationOwnerTransfer selected organization",
+  "implementationStatus": "已原生截图对照，逐屏差异已记录",
+  "gaps": "已原生截图。重大发现——实现\"负责人转交\"为组织概览页负责人管理入口行（点击后ActionSheet选管理员+Modal确认，API链路已在1.3复核77项验证）；但实测存在渲染缺陷：页面clear重挂载后OrganizationOwnerTransfer组件错过页面onShow（页面onShow中await me后赋organizationId触发组件挂载，晚挂载组件收不到本次onShow），直入/二次onShow均不渲染\"负责人管理\"区块，需修复（组件mounted兜底load）。原型为独立转交表单（孩子卡/当前负责人/转交给/原因四选/说明/确认按钮），实现无独立表单视图",
+  "nativeShot": "native-78/04-06.png",
+  "shotAt": "2026-10-16T22:01:36"
+ },
+ {
+  "id": "04-07",
+  "group": "人员关系与考勤",
+  "title": "班级入学邀请码",
+  "board": "exec-61d72647-aa2e-4b55-a820-23cf11524242.png",
+  "position": {
+   "row": 1,
+   "column": 1
+  },
+  "status": "未验收",
+  "route": "/pages/institution-enrollment/institution-enrollment",
+  "api": [
+   "GET /auth/me",
+   "POST /institution-enrollment/invitations",
+   "PUT /institution-enrollment/invitations/{id}/expiry",
+   "POST /institution-enrollment/invitations/resolve"
+  ],
+  "reference": {
+   "path": "reference/04-07.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    324,
+    596,
+    604,
+    1006
+   ],
+   "sha256": "fac6d4dc45884ebcbf2bf02131a33f7572e90c5c1ee3ab13d2df2b5a3937d458",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "parent=false;tab=invite",
+  "implementationStatus": "已原生截图对照（phase3）：生成后码卡实现三操作入口——①码卡含班级头卡+二维码+邀请码明文+有效期至+三操作按钮（复制邀请码/设置有效期/生成海报）+警示条\"该邀请码仅限本班级使用\"；②设置有效期真实链路：新增后端 PUT /institution-enrollment/invitations/{id}/expiry（STUDENT_ENROLLMENT_INVITE_CREATE 门控+scope 校验+ACTIVE 锁定，1-30 天校验），UI 内联表单输入天数保存后有效期更新并回显（实测 31 天被拦截提示\"有效天数必须为1至30\"、14 天保存后回显 now+14d 且 resolve API 读回一致）；③生成海报：无海报生成域，入口渲染+点击如实 toast\"海报生成暂未开放\"（不造假）；verify-62 ALL PASS 14/14（含 API 直验：默认 7 天、无效 400、更新 14 天）；截图 04-07-phase3",
+  "gaps": "已原生截图（班级邀请码tab）。结构差异——原型展示已生成邀请码卡（二维码+码X3F8 7K2L+有效期至+刷新邀请码/设置有效期/生成海报三操作）；实现为班级选择器+\"生成入学邀请码\"前置态（生成后码卡展示已在1.4复核API验证：默认7天有效期），无生成海报/设置有效期UI入口",
+  "nativeShot": "native-78/04-07-phase3.png",
+  "shotAt": "2026-10-18T09:22:15.571Z"
+ },
+ {
+  "id": "04-08",
+  "group": "人员关系与考勤",
+  "title": "入学申请审核",
+  "board": "exec-61d72647-aa2e-4b55-a820-23cf11524242.png",
+  "position": {
+   "row": 1,
+   "column": 2
+  },
+  "status": "未验收",
+  "route": "/pages/institution-enrollment/institution-enrollment",
+  "api": [
+   "GET /institution-enrollment/requests（STUDENT_ENROLLMENT_REVIEW，三状态过滤+申请人 JOIN sys_user 新增 applicantName/applicantMobile）",
+   "POST /institution-enrollment/requests/{id}/approve",
+   "POST /institution-enrollment/requests/{id}/reject"
+  ],
+  "reference": {
+   "path": "reference/04-08.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    630,
+    596,
+    909,
+    1006
+   ],
+   "sha256": "fac6d4dc45884ebcbf2bf02131a33f7572e90c5c1ee3ab13d2df2b5a3937d458",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "parent=false;tab=requests",
+  "implementationStatus": "已原生截图对照（phase3）：入学审核 tab 下状态 picker 改三状态 Tab（待审核/已通过/已拒绝，带实时计数徽标，计数=loadRequests 并行拉三状态列表长度），申请卡=头像+学生名+申请班级+状态徽标（待审核黄/已通过绿/已拒绝红）+申请组织/申请班级/申请时间/申请人（后端 SELECT_REQUEST JOIN sys_user 补申请人姓名与手机，前端手机掩码 138****1234 格式）+审核时间/意见+待审核卡通过/拒绝操作。性别/年龄无 edu_student 真实字段不造假。验证 native-78-phase3-verify-64.cjs 17/17 PASS：API 三状态计数与 UI 徽标一致（待审核 (1)/已通过 (11)）、申请卡申请人/申请班级/申请时间展示、tab 切换过滤、拒绝态空态；造数链路=邀请码→家长 apply→approve（第二孩子造 PENDING）。",
+  "gaps": "已原生截图（真实空态）。结构基本一致——管理组织选择+待审核状态筛选器+申请列表与原型对应；差异——原型有待审核(3)/已通过/已拒绝三tab带计数徽标与申请卡（头像/申请班级/申请时间/申请人），实现为单一状态筛选picker+列表空态（1.4复核清理后无待审申请）",
+  "nativeShot": "native-78/04-08-phase3.png",
+  "shotAt": "2026-10-18T09:58:44.806Z"
+ },
+ {
+  "id": "04-09",
+  "group": "人员关系与考勤",
+  "title": "人工考勤记录与确认",
+  "board": "exec-61d72647-aa2e-4b55-a820-23cf11524242.png",
+  "position": {
+   "row": 1,
+   "column": 3
+  },
+  "status": "未验收",
+  "route": "/pages/attendance/attendance",
+  "api": "attendance API roster/list/create/detail/correct",
+  "reference": {
+   "path": "reference/04-09.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    936,
+    596,
+    1216,
+    1006
+   ],
+   "sha256": "fac6d4dc45884ebcbf2bf02131a33f7572e90c5c1ee3ab13d2df2b5a3937d458",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "mode=record|list;detail=<real>",
+  "implementationStatus": "已原生截图对照，逐屏差异已记录",
+  "gaps": "已原生截图（真实空态）。结构差异——原型\"人工考勤记录\"为单日点名单（任务日期+班级筛选+全部/已到/未到三状态计数tab+学生行已到/未到徽标+确认考勤记录按钮）；实现为\"考勤记录/班级点名\"双tab+多维筛选（班级/开始结束日期/状态/学生姓名+查询/重置）+记录列表+分页，点名单交互移至班级点名tab；实现带底部tabbar(首页/任务/考勤/我的)原型无",
+  "nativeShot": "native-78/04-09.png",
+  "shotAt": "2026-10-16T22:01:36"
+ },
+ {
+  "id": "04-10",
+  "group": "人员关系与考勤",
+  "title": "异常报备列表与新增",
+  "board": "exec-61d72647-aa2e-4b55-a820-23cf11524242.png",
+  "position": {
+   "row": 1,
+   "column": 4
+  },
+  "status": "未验收",
+  "route": "/pages/exception-reports/exception-reports",
+  "api": "GET /exception-reports; /exception-reports/{id}; POST /exception-reports; /exception-reports/{id}/handle",
+  "reference": {
+   "path": "reference/04-10.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    1242,
+    596,
+    1523,
+    1006
+   ],
+   "sha256": "fac6d4dc45884ebcbf2bf02131a33f7572e90c5c1ee3ab13d2df2b5a3937d458",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "creating=false|true;handlingId=<real>",
+  "implementationStatus": "已原生截图对照，逐屏差异已记录",
+  "gaps": "已原生截图（真实空态）。结构差异——原型报备列表/新增报备双tab+类型筛选（全部/请假/迟到/早退/其他）+报备卡（类型徽标/待处理·已处理/日期时长/说明）+新增异常报备按钮；实现机构身份仅报备记录列表（共0项+只看待处理筛选），新增按钮需教师身份canCreate（identity=teacher）机构身份不可见，无类型筛选tab",
+  "nativeShot": "native-78/04-10.png",
+  "shotAt": "2026-10-16T22:01:36"
+ },
+ {
+  "id": "05-01",
+  "group": "成长小主人任务",
+  "title": "成长小主人首页",
+  "board": "exec-89c05f66-523b-4fd9-9852-bf484389183e.png",
+  "position": {
+   "row": 0,
+   "column": 0
+  },
+  "status": "未验收",
+  "route": "/pages/student-dashboard/student-dashboard",
+  "api": [
+   "GET /api/v1/task-assignments?scheduledDate=...",
+   "GET /api/v1/growth-points/me/account"
+  ],
+  "reference": {
+   "path": "reference/05-01.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    22,
+    95,
+    304,
+    526
+   ],
+   "sha256": "d4a02a1cfb0ae349b89e00cd7025f181b26c3632fbd3d4bb808c5d4f1e964924",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "authenticated dashboard; StudentTodayTasks",
+  "gaps": [
+   "原型: 问候卡(小明同学+班级学校) + 今日任务进度卡(2已完成/1进行中/1待开始统计+植物插图) + 4快捷入口(任务列表/我的打卡/成长日历/我的徽章) + 今日任务列表 + 底部tabbar(首页/任务/成长/我的)",
+   "实现: 问候语(学生名+加油语) + 圆环进度0/3已完成+任务勾选列表 + 积分卡(0积分/我的成长积分) + 成长奖励卡 + 今日任务列表(家庭·待认领+去完成按钮) + 同款底部tabbar",
+   "差异: 实现无4快捷入口卡(任务列表/我的打卡/成长日历/我的徽章); 进度形态圆环+任务清单 vs 原型三项统计+插图; 实现额外提供积分/成长奖励卡"
+  ],
+  "visualAcceptance": "待微信原生截图与完整功能验收",
+  "implementationStatus": "已原生截图对照：四快捷入口卡(任务列表/我的打卡/成长日历/我的徽章)已补齐并实测跳转可用(任务列表→task-list；我的打卡→growth-points 打卡积分记录；成长日历→growth-reviews；我的徽章→rewards，目标页映射最近邻既有页面)；进度形态圆环+任务清单 vs 原型三项统计+插图为形态差异(期3后续或归入形态差异项)；实现额外保留积分/成长奖励卡",
+  "nativeShot": "native-78/05-01-phase3.png",
+  "shotAt": "2026-10-17T13:51:25.541Z"
+ },
+ {
+  "id": "05-02",
+  "group": "成长小主人任务",
+  "title": "任务列表与来源筛选",
+  "board": "exec-89c05f66-523b-4fd9-9852-bf484389183e.png",
+  "position": {
+   "row": 0,
+   "column": 1
+  },
+  "status": "未验收",
+  "route": "/pages/task-list/task-list",
+  "api": [
+   "GET /api/v1/task-assignments"
+  ],
+  "reference": {
+   "path": "reference/05-02.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    320,
+    95,
+    604,
+    526
+   ],
+   "sha256": "d4a02a1cfb0ae349b89e00cd7025f181b26c3632fbd3d4bb808c5d4f1e964924",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "source filters",
+  "gaps": [
+   "原型: 任务列表 + 来源筛选chips(全部/学校发布/班级任务/家庭任务) + 任务卡(图标+来源标签+状态badge+标题+日期+分类)",
+   "实现: 我的任务页 + 来源筛选segmented(全部/家庭/机构/教师) + 任务卡(家庭标签+待认领badge+标题+日期+难度2级+积分20分+时长20分钟) + 已加载全部任务 + tabbar",
+   "差异: 高度一致; 筛选维度命名不同(原型\"学校发布/班级任务\" vs 实现\"机构/教师\"); 实现卡片补充积分/难度/时长信息"
+  ],
+  "visualAcceptance": "待微信原生截图与完整功能验收",
+  "implementationStatus": "已原生截图对照：列表+来源筛选结构高度一致，筛选命名与卡片信息密度有差异",
+  "nativeShot": "native-78/05-02.png",
+  "shotAt": "2026-10-16T22:20:19"
+ },
+ {
+  "id": "05-03",
+  "group": "成长小主人任务",
+  "title": "任务详情",
+  "board": "exec-89c05f66-523b-4fd9-9852-bf484389183e.png",
+  "position": {
+   "row": 0,
+   "column": 2
+  },
+  "status": "未验收",
+  "route": "/pages/task-detail/task-detail",
+  "api": [
+   "GET /api/v1/task-assignments/{id}"
+  ],
+  "reference": {
+   "path": "reference/05-03.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    623,
+    95,
+    906,
+    526
+   ],
+   "sha256": "d4a02a1cfb0ae349b89e00cd7025f181b26c3632fbd3d4bb808c5d4f1e964924",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "task exists; assignmentId query",
+  "gaps": [
+   "原型: 任务详情(标题+学校发布标签) + 任务内容描述段落 + 任务要求checklist(对照课程表/文具齐全/书包整洁/分类放好) + 参考示例图片(书包分类/文具齐全) + 我来认领这个任务按钮",
+   "实现: 任务详情(标题+家庭任务/待认领标签) + 元数据网格(计划日期/截止时间/任务难度/基础积分/执行时长/审核人) + 任务备注 + 认领任务按钮",
+   "差异: 实现无任务内容描述段、无任务要求checklist、无参考示例图; 实现提供结构化元数据网格与备注(原型无)"
+  ],
+  "visualAcceptance": "待微信原生截图与完整功能验收",
+  "implementationStatus": "已原生截图对照：任务内容描述段+任务要求checklist(勾选图标)+参考示例图(示例图网格,点击可预览)已补齐并实测渲染(两张示例图经受控附件通道下载)；结构化元数据网格与任务备注保留为实现增强；配套后端：V138恢复学生ATTACHMENT_READ、附件requireReadable放宽\"本人任务示例图\"通道、详情响应透出exampleFiles、exampleFileIds以字符串传输防雪花id精度丢失",
+  "nativeShot": "native-78/05-03-phase3.png",
+  "shotAt": "2026-10-17T14:19:27.067Z"
+ },
+ {
+  "id": "05-04",
+  "group": "成长小主人任务",
+  "title": "任务认领确认",
+  "board": "exec-89c05f66-523b-4fd9-9852-bf484389183e.png",
+  "position": {
+   "row": 0,
+   "column": 3
+  },
+  "status": "未验收",
+  "route": "/pages/task-detail/task-detail",
+  "api": [
+   "POST /api/v1/task-assignments/{id}/claim"
+  ],
+  "reference": {
+   "path": "reference/05-04.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    926,
+    95,
+    1209,
+    526
+   ],
+   "sha256": "d4a02a1cfb0ae349b89e00cd7025f181b26c3632fbd3d4bb808c5d4f1e964924",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "PENDING_CLAIM; claimTask",
+  "gaps": [
+   "原型: 独立任务认领确认页(确认认领该任务? + 认领后会加入到今日任务中提示 + 任务名称/来源/日期/分类信息表 + 确认认领/我再看看双按钮)",
+   "实现: 详情页内「认领任务」按钮一键认领，无独立确认视图、无二次确认步骤",
+   "差异: 实现缺少独立认领确认页与「确认认领/我再看看」双按钮流程"
+  ],
+  "visualAcceptance": "待微信原生截图与完整功能验收",
+  "implementationStatus": "已原生截图对照：独立认领确认页已补齐(新页面 /pages/task-claim-confirm：确认认领该任务?标题 + 认领后会加入到今日任务中提示 + 任务名称/来源/日期/分类信息表 + 确认认领/我再看看双按钮)；实测链路：详情点认领任务→确认页，「我再看看」返回详情状态不变(PENDING_CLAIM)，「确认认领」后任务转进行中并出现打卡表单；详情页原一键认领改为跳转确认页",
+  "nativeShot": "native-78/05-04-phase3.png",
+  "shotAt": "2026-10-17T14:27:32.868Z"
+ },
+ {
+  "id": "05-05",
+  "group": "成长小主人任务",
+  "title": "任务执行记录",
+  "board": "exec-89c05f66-523b-4fd9-9852-bf484389183e.png",
+  "position": {
+   "row": 0,
+   "column": 4
+  },
+  "status": "未验收",
+  "route": "/pages/task-detail/task-detail",
+  "api": [
+   "GET /api/v1/task-assignments/{id}"
+  ],
+  "reference": {
+   "path": "reference/05-05.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    1230,
+    95,
+    1516,
+    526
+   ],
+   "sha256": "d4a02a1cfb0ae349b89e00cd7025f181b26c3632fbd3d4bb808c5d4f1e964924",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "IN_PROGRESS; execution details",
+  "gaps": [
+   "原型: 任务执行记录页 + 执行时间线(任务已认领→开始执行→提交打卡(进行中)→完成审核) + 去提交打卡记录/查看任务详情按钮",
+   "实现: 任务详情页(IN_PROGRESS态: 进行中标签) + 元数据/备注 + 我的任务行动区(文字记录textarea+上传图片+提交打卡按钮)",
+   "差异: 实现无执行时间线视图; 打卡表单内嵌详情页(原型为独立打卡记录页入口)"
+  ],
+  "visualAcceptance": "待微信原生截图与完整功能验收",
+  "implementationStatus": "已原生截图对照：任务详情内嵌执行时间线视图已补齐——四节点(任务已认领/开始执行/提交打卡/完成审核)按状态标亮，已完成节点绿底白勾+事件时间+描述行，当前节点橙色圆点+「进行中」徽标，未完成节点灰色；实测双态：IN_PROGRESS(done=2,active=1)与提交打卡后PENDING_REVIEW(done=3,active=1)均与原型一致(见05-05-phase3-timeline-inprogress/review截图)；重认领/待优化后重做场景取最近一次CLAIMED/CHECKED_IN事件时间；时间线区块内嵌详情页为已接受形态",
+  "nativeShot": "native-78/05-05-phase3-timeline-inprogress.png",
+  "shotAt": "2026-10-17T15:18:50.194Z"
+ },
+ {
+  "id": "05-06",
+  "group": "成长小主人任务",
+  "title": "情绪暂停选择",
+  "board": "exec-89c05f66-523b-4fd9-9852-bf484389183e.png",
+  "position": {
+   "row": 1,
+   "column": 0
+  },
+  "status": "未验收",
+  "route": "/pages/task-detail/task-detail",
+  "api": [
+   "POST /api/v1/task-assignments/{id}/pause"
+  ],
+  "reference": {
+   "path": "reference/05-06.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    22,
+    574,
+    304,
+    1007
+   ],
+   "sha256": "d4a02a1cfb0ae349b89e00cd7025f181b26c3632fbd3d4bb808c5d4f1e964924",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "IN_PROGRESS; pauseTask(EMOTION)",
+  "gaps": [
+   "原型: 情绪暂停引导页(插图+先停一停照顾一下自己情绪文案 + 4情绪调节方式卡: 深呼吸1分钟/听一段舒缓音乐3分钟/安静待一会儿5分钟/换个积极想法 + 我感觉好多了按钮)",
+   "实现: 点击情绪暂停后直接进入已暂停态(已暂停标签 + 我的任务行动显示\"情绪暂停 至 yyyy-mm-dd hh:mm\" + 继续任务按钮)",
+   "差异: 实现无情绪安抚引导页与4种调节方式选择; 暂停行为为定时暂停(约30分钟)直接生效"
+  ],
+  "visualAcceptance": "待微信原生截图与完整功能验收",
+  "implementationStatus": "已原生截图对照：情绪暂停引导页已补齐（新页面 pages/task-pause-guide mode=EMOTION）——植物插图+引导文案「先停一停，照顾一下自己的情绪」+四调节方式卡2x2（深呼吸1分钟/听一段舒缓音乐3分钟/安静待一会儿5分钟/换个积极想法看看小贴士）+「我感觉好多了」主按钮，未选方式时按钮禁用；实测选择「深呼吸」后任务进入已暂停态且暂停摘要展示方式，API activePause.adjustMethod=深呼吸 持久化验证通过（截图05-06-phase3/-paused）；插图用既有 growth-botanical.svg 占位（原型手绘插画素材无资产），暂停时长沿用详情页已选时长",
+  "nativeShot": "native-78/05-06-phase3.png",
+  "shotAt": "2026-10-17T15:29:45.645Z"
+ },
+ {
+  "id": "05-07",
+  "group": "成长小主人任务",
+  "title": "难题搁置",
+  "board": "exec-89c05f66-523b-4fd9-9852-bf484389183e.png",
+  "position": {
+   "row": 1,
+   "column": 1
+  },
+  "status": "未验收",
+  "route": "/pages/task-detail/task-detail",
+  "api": [
+   "POST /api/v1/task-assignments/{id}/pause"
+  ],
+  "reference": {
+   "path": "reference/05-07.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    320,
+    574,
+    604,
+    1007
+   ],
+   "sha256": "d4a02a1cfb0ae349b89e00cd7025f181b26c3632fbd3d4bb808c5d4f1e964924",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "IN_PROGRESS; pauseTask(DIFFICULTY)",
+  "gaps": [
+   "原型: 任务暂时搁置页(遇到了困难?文案 + 4原因radio(情绪不太好/需要更多时间/需要成长伙伴帮助/其他原因) + 简单说一说textarea 0/50 + 确认暂时搁置按钮)",
+   "实现: 点击难题搁置后直接进入已暂停态(已暂停标签 + \"难题搁置 至 yyyy-mm-dd hh:mm\" + 继续任务按钮)",
+   "差异: 实现无搁置原因选择radio与说明输入; 搁置为定时暂停直接生效"
+  ],
+  "visualAcceptance": "待微信原生截图与完整功能验收",
+  "implementationStatus": "已原生截图对照：难题搁置原因收集页已补齐（同页面 mode=DIFFICULTY）——时钟图标+标题「遇到了困难？可以先把这个任务暂时放一放」+四原因radio（我现在有点情绪不太好/任务有些难，需要更多时间/需要成长伙伴的帮助/其他原因）+说明textarea（简单说一说选填，计数器动态=50-原因字数-1，原因+说明合并入50字reasonNote）+「确认暂时搁置」主按钮；实测选择原因并填说明后任务进入已暂停态，API activePause.reasonNote=\"任务有些难，需要更多时间：应用题第三步总是算错\" 持久化验证通过（截图05-07-phase3/-paused）",
+  "nativeShot": "native-78/05-07-phase3.png",
+  "shotAt": "2026-10-17T15:29:45.646Z"
+ },
+ {
+  "id": "05-08",
+  "group": "成长小主人任务",
+  "title": "文字图片打卡提交",
+  "board": "exec-89c05f66-523b-4fd9-9852-bf484389183e.png",
+  "position": {
+   "row": 1,
+   "column": 2
+  },
+  "status": "未验收",
+  "route": "/pages/task-detail/task-detail",
+  "api": [
+   "POST /api/v1/task-assignments/{id}/check-ins"
+  ],
+  "reference": {
+   "path": "reference/05-08.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    623,
+    574,
+    906,
+    1007
+   ],
+   "sha256": "d4a02a1cfb0ae349b89e00cd7025f181b26c3632fbd3d4bb808c5d4f1e964924",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "IN_PROGRESS or NEEDS_IMPROVEMENT; checkInContent+images",
+  "gaps": [
+   "原型: 提交打卡记录页(完成情况radio已/部分完成 + 文字记录textarea 18/200 + 上传图片最多3张(带删除) + 提交打卡按钮)",
+   "实现: 详情页内我的任务行动(文字记录textarea可输入 + 上传图片添加图片入口 + 提交打卡按钮)，无完成情况radio",
+   "差异: 实现无\"已完成/部分完成\"选择; 图片上传无最多3张删除交互提示"
+  ],
+  "visualAcceptance": "待微信原生截图与完整功能验收",
+  "implementationStatus": "已原生截图对照：打卡表单完成情况 radio 已补齐——「完成情况」标题+已完成/部分完成两个 radio（默认已完成选中，选中态绿底圆点）、文字记录 textarea（1000字计数）、上传图片改为最多 3 张（添加图块 v-if <3、chooseImage count=3-已选、提示「支持 JPG、PNG，最多 3 张，单张不超过 10MB」）、提交打卡传 completion 到 SubmitTaskCheckInRequest；实测选择「部分完成」提交后任务进入待审核态，API latestCheckIn.completion=PARTIAL 持久化验证通过（截图05-08-phase3/-review）",
+  "nativeShot": "native-78/05-08-phase3.png",
+  "shotAt": "2026-10-17T15:37:09.879Z"
+ },
+ {
+  "id": "05-09",
+  "group": "成长小主人任务",
+  "title": "任务顺延申请",
+  "board": "exec-89c05f66-523b-4fd9-9852-bf484389183e.png",
+  "position": {
+   "row": 1,
+   "column": 3
+  },
+  "status": "未验收",
+  "route": "/pages/task-detail/task-detail",
+  "api": [],
+  "reference": {
+   "path": "reference/05-09.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    926,
+    574,
+    1209,
+    1007
+   ],
+   "sha256": "d4a02a1cfb0ae349b89e00cd7025f181b26c3632fbd3d4bb808c5d4f1e964924",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "no postpone implementation identified",
+  "gaps": [
+   "原型: 顺延(将任务顺延到明天等)交互",
+   "实现: task-detail.vue 全量源码检索无 postpone/顺延 实现; IN_PROGRESS行动区仅有文字记录/上传图片/提交打卡/情绪暂停/难题搁置/放弃任务",
+   "差异: 顺延功能未实现"
+  ],
+  "visualAcceptance": "待微信原生截图与完整功能验收",
+  "implementationStatus": "已原生截图对照：任务顺延申请页已补齐（新页面 pages/task-defer）——日历图标+标题「申请将任务顺延」+引导文案+信息表（任务名称/原任务日期/建议顺延至 date picker 默认明天，范围 1-7 天）+申请原因 textarea 200 字计数+「提交申请」主按钮；详情页行动区新增「任务顺延」入口；配套后端：学生端 POST /task-assignments/{id}/defer（V139 事件类型放开 DEFERRED，学生顺延写 defer_history 并以 DEFERRED 审计事件持久化申请原因，状态机同管理端顺延）；实测提交后 scheduledDate=明天、lastDeferType=MANUAL、DEFERRED 事件 reason 持久化验证通过（截图05-09-phase3）",
+  "nativeShot": "native-78/05-09-phase3.png",
+  "shotAt": "2026-10-17T16:35:32.676Z"
+ },
+ {
+  "id": "05-10",
+  "group": "成长小主人任务",
+  "title": "放弃或免执行确认",
+  "board": "exec-89c05f66-523b-4fd9-9852-bf484389183e.png",
+  "position": {
+   "row": 1,
+   "column": 4
+  },
+  "status": "未验收",
+  "route": "/pages/task-detail/task-detail",
+  "api": [
+   "POST /api/v1/task-assignments/{id}/abandon"
+  ],
+  "reference": {
+   "path": "reference/05-10.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    1230,
+    574,
+    1516,
+    1007
+   ],
+   "sha256": "d4a02a1cfb0ae349b89e00cd7025f181b26c3632fbd3d4bb808c5d4f1e964924",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "confirmAbandon modal; EXEMPT read state",
+  "gaps": [
+   "原型: 放弃任务页(确认放弃或申请免执行? + 任务信息表 + 放弃类型radio(放弃本次任务/申请免执行(特殊情况)) + 说明原因textarea 15/200 + 确认放弃橙色按钮/我再想想)",
+   "实现: uni.showModal 原生弹窗(确认放弃任务 / 任务将转为待优化，不会扣分 / 取消|确认放弃)，已实测拍到弹窗",
+   "差异: 实现无独立放弃页、无放弃类型选择(无申请免执行选项)、无原因输入"
+  ],
+  "visualAcceptance": "待微信原生截图与完整功能验收",
+  "implementationStatus": "已原生截图对照：独立放弃任务页已补齐（新页面 pages/task-abandon，替代原生弹窗）——橙色感叹号+标题「确认放弃或申请免执行？」+信息表（任务名称/任务来源/任务日期）+放弃类型 radio（放弃本次任务/申请免执行（特殊情况））+说明原因（选填）200 字+「确认放弃」橙色主按钮+「我再想想」描边双按钮；详情页放弃任务按钮改为跳转本页；abandonType 对接后端 NORMAL/EXEMPT_REQUEST（3.1 已入事件 eventDetails）；实测选择申请免执行提交后任务转待优化，API currentStatus=NEEDS_IMPROVEMENT、ABANDONED 事件 eventDetails=EXEMPT_REQUEST 且 reason 持久化验证通过（截图05-10-phase3/-final）",
+  "nativeShot": "native-78/05-10-phase3.png",
+  "shotAt": "2026-10-17T16:35:32.677Z"
+ },
+ {
+  "id": "06-01",
+  "group": "积分奖励复盘",
+  "title": "成长积分余额与明细",
+  "board": "exec-b27e656a-e5c2-40b7-a2e1-17b8613ab147.png",
+  "position": {
+   "row": 0,
+   "column": 0
+  },
+  "status": "未验收",
+  "route": "/pages/growth-points/growth-points",
+  "api": [
+   "GET /api/v1/growth-points/me/account",
+   "GET /api/v1/growth-points/me/ledgers"
+  ],
+  "reference": {
+   "path": "reference/06-01.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    29,
+    100,
+    305,
+    550
+   ],
+   "sha256": "fd3a6c3e798a2726c600c85abff420e7da63897f4286f333145ee0720e319d40",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "self account + ledgers",
+  "gaps": [
+   "原型: 我的成长积分页 + 积分余额卡(当前积分大数字) + 积分来源说明 + 明细列表(获取/消耗记录)",
+   "实现: 我的成长积分 + 积分卡(19分+更新时间) + tab(我的兑换/积分明细) + 明细列表(任务奖励+20分, 含审核人/连续打卡/衰减系数等更丰富维度)",
+   "差异: 高度一致; 实现明细条目信息更丰富(审核人/连续/衰减), 原型为简单获取/消耗流水"
+  ],
+  "visualAcceptance": "待微信原生截图与完整功能验收",
+  "implementationStatus": "已原生截图对照：积分余额+明细结构高度一致，明细维度实现更丰富",
+  "nativeShot": "native-78/06-01.png",
+  "shotAt": "2026-10-17T07:56:53"
+ },
+ {
+  "id": "06-02",
+  "group": "积分奖励复盘",
+  "title": "奖励列表",
+  "board": "exec-b27e656a-e5c2-40b7-a2e1-17b8613ab147.png",
+  "position": {
+   "row": 0,
+   "column": 1
+  },
+  "status": "未验收",
+  "route": "/pages/rewards/rewards",
+  "api": [
+   "GET /api/v1/rewards/me",
+   "GET /api/v1/rewards/me/summary",
+   "奖励字段含 category/stockQuantity/imageUrl（V141）"
+  ],
+  "reference": {
+   "path": "reference/06-02.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    327,
+    100,
+    607,
+    550
+   ],
+   "sha256": "fd3a6c3e798a2726c600c85abff420e7da63897f4286f333145ee0720e319d40",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "activeTab=rewards",
+  "gaps": [
+   "原型: 奖励商城网格布局(2列卡片带商品图) + 分类chips(全部/学习用品/娱乐/书籍) + 库存数量展示",
+   "实现: 成长奖励页 + 三tab(全部奖励/我的兑换/积分明细) + 奖励列表(单列卡片: 名称/积分/描述/长期有效/兑换按钮), 无分类chips无库存",
+   "差异: 实现为列表形态, 无商城网格/分类筛选/库存与商品图"
+  ],
+  "visualAcceptance": "待微信原生截图与完整功能验收",
+  "implementationStatus": "已原生截图对照（phase3）：两列商城网格（商品图/名称/橙色积分/剩余天数+库存/立即兑换）+ 分类 chips（全部/学习用品/生活好物/体验活动）筛选 + 积分余额卡，真实商品图加载，无图奖励渲染图标占位（不造假 URL）；积分不足按钮置灰为既有业务规则",
+  "nativeShot": "native-78/06-02-phase3.png",
+  "shotAt": "2026-10-18T12:06:38.285Z"
+ },
+ {
+  "id": "06-03",
+  "group": "积分奖励复盘",
+  "title": "兑换确认",
+  "board": "exec-b27e656a-e5c2-40b7-a2e1-17b8613ab147.png",
+  "position": {
+   "row": 0,
+   "column": 2
+  },
+  "status": "未验收",
+  "route": "/pages/rewards/rewards",
+  "api": [
+   "POST /api/v1/reward-exchanges"
+  ],
+  "reference": {
+   "path": "reference/06-03.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    630,
+    100,
+    907,
+    550
+   ],
+   "sha256": "fd3a6c3e798a2726c600c85abff420e7da63897f4286f333145ee0720e319d40",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "selectedReward present",
+  "gaps": [
+   "原型: 兑换确认页 + 奖励卡(精选课外阅读 500分) + 兑换对象(李明轩 三年级2班) + 收货方式(学校发放 班主任处领取) + 预计发放时间(3-5个工作日) + 温馨提示(扣除后积分无法撤销等) + 确认兑换(扣除500分)按钮",
+   "实现: 兑换确认屏 + 返回奖励按钮 + 奖励卡(名称/描述/1分) + 可用积分19/有效期facts + 申请由家长审核提示 + 确认申请兑换按钮",
+   "差异: 实现无兑换对象/收货方式/预计发放时间字段, 无温馨提示多条列表; 审核提示合并为单条说明"
+  ],
+  "visualAcceptance": "待微信原生截图与完整功能验收",
+  "implementationStatus": "已原生截图对照：兑换确认屏奖励卡(真实商品图)+可用积分/有效期+兑换对象(头像+学生姓名+班级)+收货方式(学校发放 班主任处领取)+预计发放时间(3-5 个工作日)+温馨提示列表(扣除不可撤销/家长审核核销/联系班主任)+确认兑换(扣除 N 分)按钮全部实现",
+  "nativeShot": "native-78/06-03-phase3.png",
+  "shotAt": "2026-10-17T07:56:53"
+ },
+ {
+  "id": "06-04",
+  "group": "积分奖励复盘",
+  "title": "兑换记录详情",
+  "board": "exec-b27e656a-e5c2-40b7-a2e1-17b8613ab147.png",
+  "position": {
+   "row": 0,
+   "column": 3
+  },
+  "status": "未验收",
+  "route": "/pages/rewards/rewards",
+  "api": [
+   "GET /api/v1/reward-exchanges/me"
+  ],
+  "reference": {
+   "path": "reference/06-04.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    934,
+    100,
+    1210,
+    550
+   ],
+   "sha256": "fd3a6c3e798a2726c600c85abff420e7da63897f4286f333145ee0720e319d40",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "selectedExchange present",
+  "gaps": [
+   "原型: 兑换记录详情页 + 状态时间线3节点(申请成功→家长审批→奖励发放) + 收货方式/发放人信息",
+   "实现: 兑换记录详情(已核销badge + 兑换积分 + 说明 + 申请时间/处理时间/核销时间3行)",
+   "差异: 时间线形态为3行时间文本 vs 原型3节点可视化时间线; 无收货方式/发放人"
+  ],
+  "visualAcceptance": "待微信原生截图与完整功能验收",
+  "implementationStatus": "已原生截图对照：兑换详情奖励卡(真实商品图+状态badge+兑换时间)+三节点可视化时间线(兑换申请→家长审批→奖励发放，done绿勾/pending灰/rejected红叉按状态标亮)+兑换对象/收货方式/发放人/备注信息行全部实现，三状态(PENDING_APPROVAL/PENDING_VERIFICATION/VERIFIED)全链路实测",
+  "nativeShot": "native-78/06-04-phase3.png",
+  "shotAt": "2026-10-17T07:56:53"
+ },
+ {
+  "id": "06-05",
+  "group": "积分奖励复盘",
+  "title": "奖励库管理",
+  "board": "exec-b27e656a-e5c2-40b7-a2e1-17b8613ab147.png",
+  "position": {
+   "row": 0,
+   "column": 4
+  },
+  "status": "未验收",
+  "route": "/pages/parent-rewards/parent-rewards",
+  "api": "GET /parent-rewards/students; /parent-rewards/students/{id}; PUT /parent-rewards/{id}",
+  "reference": {
+   "path": "reference/06-05.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    1235,
+    100,
+    1515,
+    550
+   ],
+   "sha256": "fd3a6c3e798a2726c600c85abff420e7da63897f4286f333145ee0720e319d40",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "tab=rewards;editing=false;rewardFilter=ALL|ONLINE|OFFLINE",
+  "gaps": [
+   "原型: 家长奖励库管理 + 奖励卡(图片/名称/积分/库存) + 新增奖励入口 + 编辑删除操作",
+   "实现: 奖励库管理 + 孩子选择器(picker) + 奖励项(名称/积分/描述/编辑/删除) + 新增奖励按钮",
+   "差异: 高度一致; 实现多孩子选择器(原型单孩子场景), 无图片/库存字段"
+  ],
+  "implementationStatus": "已原生截图对照：奖励库管理(列表+编辑/删除+新增)高度一致，图片/库存未实现",
+  "nativeShot": "native-78/06-05.png",
+  "shotAt": "2026-10-17T07:56:53"
+ },
+ {
+  "id": "06-06",
+  "group": "积分奖励复盘",
+  "title": "奖励新增编辑",
+  "board": "exec-b27e656a-e5c2-40b7-a2e1-17b8613ab147.png",
+  "position": {
+   "row": 1,
+   "column": 0
+  },
+  "status": "未验收",
+  "route": "/pages/parent-rewards/parent-rewards",
+  "api": "POST /parent-rewards/students/{id}",
+  "reference": {
+   "path": "reference/06-06.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    29,
+    598,
+    305,
+    1015
+   ],
+   "sha256": "fd3a6c3e798a2726c600c85abff420e7da63897f4286f333145ee0720e319d40",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "tab=rewards;editing=true;editingId=null",
+  "gaps": [
+   "原型: 新增奖励表单(奖励名称/分类picker/所需积分/库存数量/奖励说明/奖励图片上传/上架状态toggle/保存按钮)",
+   "实现: 新增奖励表单(奖励名称/所需积分/奖励说明/有效期picker/下架状态picker)",
+   "差异: 实现无分类/库存数量/图片上传/上架toggle; 有效期为picker形态"
+  ],
+  "implementationStatus": "已原生截图对照：家长奖励表单一屏完整（奖励名称*/分类picker(学习用品∨)/所需积分*(分)/库存数量*(个)/奖励图片*(上传缩略图+移除+添加图片)/奖励描述(字数)/有效期(既有功能保留)/上架状态绿色switch(上架中)/取消+保存）；保存链路实测全字段真实创建（category/stockQuantity/imageUrl/status API 落库断言 29/29）；图片上传附件通道对家长 403 行内提示已实测，mock 201 分支缩略图回显+落库验证",
+  "nativeShot": "native-78/06-06-phase3-form.png",
+  "shotAt": "2026-10-18T14:22:31.631Z"
+ },
+ {
+  "id": "06-07",
+  "group": "积分奖励复盘",
+  "title": "兑换申请审批",
+  "board": "exec-b27e656a-e5c2-40b7-a2e1-17b8613ab147.png",
+  "position": {
+   "row": 1,
+   "column": 1
+  },
+  "status": "未验收",
+  "route": "/pages/parent-rewards/parent-rewards",
+  "api": "GET /parent-reward-exchanges/students/{id}; POST /parent-reward-exchanges/{id}/approve|reject|verify",
+  "reference": {
+   "path": "reference/06-07.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    327,
+    598,
+    607,
+    1015
+   ],
+   "sha256": "fd3a6c3e798a2726c600c85abff420e7da63897f4286f333145ee0720e319d40",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "tab=exchanges;exchangeFilter=PENDING_APPROVAL|PENDING_VERIFICATION|VERIFIED|REJECTED|ALL;verification=<real>",
+  "gaps": [
+   "原型: 兑换申请审批列表 + 学生头像 + 兑换卡(奖励/积分/时间) + 通过/拒绝双按钮per card",
+   "实现: 兑换处理tab + 5状态filter(待审批/待兑现/已核销/已拒绝/全部) + 兑换卡 + 确认已兑现按钮(待兑现态) + 审批截止行",
+   "差异: 实现多状态filter与审批截止信息, 单按钮流(通过后进入待兑现); 原型per card双按钮"
+  ],
+  "implementationStatus": "已原生截图对照：兑换审批流(审批→核销两步)可用，交互形态为filter+单按钮",
+  "nativeShot": "native-78/06-07.png",
+  "shotAt": "2026-10-17T07:56:53"
+ },
+ {
+  "id": "06-08",
+  "group": "积分奖励复盘",
+  "title": "奖励核销确认",
+  "board": "exec-b27e656a-e5c2-40b7-a2e1-17b8613ab147.png",
+  "position": {
+   "row": 1,
+   "column": 2
+  },
+  "status": "未验收",
+  "route": "/pages/parent-rewards/parent-rewards",
+  "api": [
+   "POST /api/v1/parent-reward-exchanges/{id}/verify"
+  ],
+  "reference": {
+   "path": "reference/06-08.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    630,
+    598,
+    907,
+    1015
+   ],
+   "sha256": "fd3a6c3e798a2726c600c85abff420e7da63897f4286f333145ee0720e319d40",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "verification present; delivery checked",
+  "gaps": [
+   "原型: 奖励核销确认页 + 核销说明 + 已兑现checkbox + 确认核销按钮",
+   "实现: 奖励核销确认屏 + delivery checkbox(我已确认奖励已经兑现给…) + 确认核销按钮 + 返回, 已实测勾选并核销成功(06-08-verified)",
+   "差异: 高度一致"
+  ],
+  "visualAcceptance": "待微信原生截图与完整功能验收",
+  "implementationStatus": "已原生截图对照：核销确认屏(checkbox+确认核销)高度一致并实测通过",
+  "nativeShot": "native-78/06-08.png",
+  "shotAt": "2026-10-17T07:56:53"
+ },
+ {
+  "id": "06-09",
+  "group": "积分奖励复盘",
+  "title": "每日成长复盘填写",
+  "board": "exec-b27e656a-e5c2-40b7-a2e1-17b8613ab147.png",
+  "position": {
+   "row": 1,
+   "column": 3
+  },
+  "status": "未验收",
+  "route": "/pages/growth-reviews/growth-reviews",
+  "api": [
+   "POST /api/v1/growth-reviews/me/{id}/daily-reflection"
+  ],
+  "reference": {
+   "path": "reference/06-09.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    934,
+    598,
+    1210,
+    1015
+   ],
+   "sha256": "fd3a6c3e798a2726c600c85abff420e7da63897f4286f333145ee0720e319d40",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "period=DAY; editing=true; three reflectionFields",
+  "gaps": [
+   "原型: 每日成长复盘填写页(今日收获/遇到的困难/明天的计划三textarea + 提交复盘按钮)",
+   "实现: growth-reviews每日复盘tab, 无review数据时空态(无补录按钮出现), 补录按钮toggle三textarea(今日收获/遇到的困难/明天的计划)",
+   "差异: 实现补录入口依赖已有review记录(需先选中DAY review), 无review时为空态; 原型为直接可填表单"
+  ],
+  "visualAcceptance": "待微信原生截图与完整功能验收",
+  "implementationStatus": "已原生截图对照：每日复盘空日期直接可填三输入表单（★今日收获/遇到的困难/明天的计划三个textarea+placeholder+0/200字数+提交复盘按钮，未填满禁用），无需先选中既有记录；提交后新建学生端到端实测——新端点POST /growth-reviews/me/daily-reflection自动确保当日review与快照，review出现在日期条且详情展示三条补录(编辑者=我)，API断言INSIGHT/STRENGTH_WEAKNESS/NEXT_PLAN三条真实落库（25/25）。已修复selectReview在submitting期间被guard跳过导致提交后详情空白的时序问题",
+  "nativeShot": "native-78/06-09-phase3-form.png",
+  "shotAt": "2026-10-18T14:47:11.660Z"
+ },
+ {
+  "id": "06-10",
+  "group": "积分奖励复盘",
+  "title": "成长周报详情",
+  "board": "exec-b27e656a-e5c2-40b7-a2e1-17b8613ab147.png",
+  "position": {
+   "row": 1,
+   "column": 4
+  },
+  "status": "未验收",
+  "route": "/pages/growth-reviews/growth-reviews",
+  "api": [
+   "GET /api/v1/growth-reviews/me?periodType=WEEK",
+   "GET /api/v1/growth-reviews/me/{id}"
+  ],
+  "reference": {
+   "path": "reference/06-10.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    1235,
+    598,
+    1515,
+    1015
+   ],
+   "sha256": "fd3a6c3e798a2726c600c85abff420e7da63897f4286f333145ee0720e319d40",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "period=WEEK; authorized WEEK detail",
+  "gaps": [
+   "原型: 成长周报详情页(本周统计 + 本周亮点 + 老师评语 + 打卡完成情况)",
+   "实现: growth-reviews成长周报tab, 无WEEK review数据时空态",
+   "差异: 实现无周报详情内容(本周统计/亮点/老师评语), 数据缺失时仅空态"
+  ],
+  "visualAcceptance": "待微信原生截图与完整功能验收",
+  "implementationStatus": "已原生截图对照：成长周报详情按原型重排（周标题 2026年10月·第1周 + 周区间副标 + 学生卡 + 三大数字统计卡[本周获得积分/完成任务数/任务完成率] + ★本周亮点 + ◆需要继续努力 + 打卡完成情况[7日逐日] + 老师评语卡）；亮点/努力内容从 dailyTrends/categories 真实数据推导（满分日/最佳积分日/坚持天数/分类缺口/无完成日提醒）；老师评语后端无评语域，数据不可得时展示占位引导（spec 数据可得时契约）；周报数据经 8081 临时 weekly-cron 每分钟触发 processPreviousWeek 幂等生成上周周报后恢复原 cron；verify-77 15/15",
+  "nativeShot": "native-78/06-10-phase3.png",
+  "shotAt": "2026-10-18T14:57:50.396Z"
+ },
+ {
+  "id": "07-01",
+  "group": "关系与账号安全",
+  "title": "成长陪伴我的",
+  "board": "exec-96761440-3814-4d18-b7e2-9af125506d9a.png",
+  "position": {
+   "row": 0,
+   "column": 0
+  },
+  "status": "未验收",
+  "route": "/pages/parent-relationships/parent-relationships",
+  "api": "GET /parent-relationships/students; /students/{id}/parent-relationships; POST /students/{id}/secondary-parent-invitations",
+  "reference": {
+   "path": "reference/07-01.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    21,
+    101,
+    305,
+    589
+   ],
+   "sha256": "ef176b8ecf3a736385f607b24f3da48fd0dc0443fcdc962dbb53b88fb65765fb",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "relationship=<real>;invitationMode=SECONDARY|TRANSFER",
+  "gaps": [
+   "原型: 成长陪伴我的页(陪伴者列表卡: 头像/称呼/身份/陪伴天数 + 成长陪伴/成长小主人双tab + 邀请新的成长伙伴按钮 + 底部tabbar)",
+   "实现: 亲子关系列表页(扫一扫或填写邀请编号按钮 + 家长关系标题区) + 「无权执行此操作」error —— 接口403列表不可用",
+   "差异: 授权模型缺口——PARENT_RELATIONSHIP_READ/SECONDARY_PARENT_INVITE_CREATE 在 sys_role_permission 中与任何家长角色(含内置PARENT/PARENT_ADMIN)均无关联(=0)，authorization-model.json action 条目亦仅声明 client=WEB；小程序端家长关系数据不可用。页面形态为实现为独立关系管理页而非\"我的\"聚合页"
+  ],
+  "implementationStatus": "授权缺口已修复并重拍（2026-10-17，验证于 8081 克隆库）。授权缺口已修复（change miniapp-prototype-parity-repair 期2：authorization-model.json 删 6 条 policy 的 client=WEB 声明 + V136 为内置 PARENT/PARENT_ADMIN 种 PARENT_RELATIONSHIP_READ/SECONDARY_PARENT_INVITE_CREATE 角色授权）后重拍 native-78/phase2-07-01.png：MINIAPP 端 GET /parent-relationships/students 200，陪伴关系页完整渲染亲子关系列表/主家长徽标/邀请副家长/转移监护权/解除主家长关系命令带，403 消失。页面形态差异仍在：实现为独立关系管理页而非\"我的\"聚合页，陪伴者卡无头像/称呼/陪伴天数（期8 8.1/8.3 施工项）",
+  "nativeShot": "native-78/phase2-07-01.png",
+  "shotAt": "2026-10-17T18:05:00+08:00"
+ },
+ {
+  "id": "07-02",
+  "group": "关系与账号安全",
+  "title": "成长小主人我的",
+  "board": "exec-96761440-3814-4d18-b7e2-9af125506d9a.png",
+  "position": {
+   "row": 0,
+   "column": 1
+  },
+  "status": "未验收",
+  "route": "/pages/parent-children/parent-children",
+  "api": "GET /students; /students/{id}; POST /students",
+  "reference": {
+   "path": "reference/07-02.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    326,
+    101,
+    609,
+    589
+   ],
+   "sha256": "ef176b8ecf3a736385f607b24f3da48fd0dc0443fcdc962dbb53b88fb65765fb",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "editing=false;detail=null;created=null",
+  "gaps": [
+   "原型: 成长小主人我的(孩子卡: 头像/姓名/性别/年龄/学校班级/已陪伴天数 + 添加新的成长小主人 + 双tab + tabbar)",
+   "实现: 我的孩子(转学申请记录入口 + 共15位 + 孩子行: 通用插画头像/姓名/正常badge/年级 + 右箭头) + 添加孩子/刷新列表按钮",
+   "差异: 高度一致; 实现无性别/年龄/已陪伴天数展示，无底部tabbar，多转学申请记录入口"
+  ],
+  "implementationStatus": "已原生截图对照（2026-10-19，verify-83 8/8）：我的孩子孩子行按 07-02 补绿色「已陪伴 N 天」强调行（来源 edu_parent_student.boundAt 距今天数，随孩子列表并行拉取、失败不阻塞列表、竞态用 epoch+token 双守卫）；性别徽章/年龄/学校·年级班因 edu_student 无 gender/birthday/school 列数据不可得省略（符合 spec「数据可得时以真实数据呈现」条款）；年级编码全 null 显示「年级未填写」；测试数据 boundAt 均为当日故显示 0 天，真实历史数据按实际天数计算；踩坑：verify 天数断言需按 children[0].id 匹配对应关系而非取 rels[0]（家长关系列表首条未必对应孩子列表首位）；清缓存重建后首启可能仍跑旧包导致 UI 断言假阴性，需重跑或延长 warm-up",
+  "nativeShot": "native-78/07-02-phase3.png",
+  "shotAt": "2026-10-18T23:22:56.491Z"
+ },
+ {
+  "id": "07-03",
+  "group": "关系与账号安全",
+  "title": "亲子关系列表",
+  "board": "exec-96761440-3814-4d18-b7e2-9af125506d9a.png",
+  "position": {
+   "row": 0,
+   "column": 2
+  },
+  "status": "未验收",
+  "route": "/pages/parent-relationships/parent-relationships",
+  "api": "GET /students/{id}/parent-relationships; POST invitations; recipient POST /parent-relationship-invitations/{id}/acceptance|rejection",
+  "reference": {
+   "path": "reference/07-03.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    629,
+    101,
+    912,
+    589
+   ],
+   "sha256": "ef176b8ecf3a736385f607b24f3da48fd0dc0443fcdc962dbb53b88fb65765fb",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "relationship=<real>;issuedInvitation=<server>;scannerVisible=true",
+  "gaps": [
+   "原型: 亲子关系列表(我发起的关系区: 孩子卡+已通过badge+关系+建立时间 / 我收到的邀请区: 待处理badge+来自班主任 / 查看已失效的关系 / 管理按钮)",
+   "实现: 扫一扫命令带(扫一扫陪伴邀请 + 或填写邀请编号input + 打开邀请按钮) + 家长关系区403空 + 「无权执行此操作」",
+   "差异: 授权缺口同07-01(403)；实现无我发起/我收到双区结构、无关系badge与建立时间；多邀请编号手动输入通道"
+  ],
+  "implementationStatus": "已原生截图对照（2026-10-18，verify-81 22/22）：亲子关系页改原型双区结构——「我发起的关系 (N)」孩子卡（姓名+主家长role-chip+关系行+YYYY.MM.DD 建立+已通过绿色徽标）与「我收到的邀请 (N)」（无数据时空态\"暂无待处理的邀请\"）+「查看已失效的关系›」展开区（真实失效关系：原关系+已失效徽标+解除日期）+ header 管理按钮切换管理模式（保留学生 picker/成员列表/邀请副家长/转移监护权/解除关系全能力）；后端新增 GET /parent-relationships/received-invitations（PENDING 且未过期，invitee_user_id 或手机号命中）与 GET /parent-relationships/inactive（status<>ACTIVE 历史关系），students 列表补 boundAt 建立时间；克隆库 fixture 家长补授 5 项关系权限 user_permission ALLOW 并开启 PARENT_RELATIONSHIP_MANAGEMENT feature toggle；07-01 同源结构已覆盖",
+  "nativeShot": "native-78/07-03-phase3.png",
+  "shotAt": "2026-10-18T15:46:37.857Z"
+ },
+ {
+  "id": "07-04",
+  "group": "关系与账号安全",
+  "title": "关系邀请二维码",
+  "board": "exec-96761440-3814-4d18-b7e2-9af125506d9a.png",
+  "position": {
+   "row": 0,
+   "column": 3
+  },
+  "status": "未验收",
+  "route": "/pages/parent-relationships/parent-relationships",
+  "api": [
+   "POST /students/{studentId}/secondary-parent-invitations",
+   "POST /students/{studentId}/primary-transfer-invitations"
+  ],
+  "reference": {
+   "path": "reference/07-04.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    933,
+    101,
+    1215,
+    589
+   ],
+   "sha256": "ef176b8ecf3a736385f607b24f3da48fd0dc0443fcdc962dbb53b88fb65765fb",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "生成真实邀请后显示二维码；扫码进入 parent-relationship-invitation 接受/拒绝",
+  "gaps": [
+   "原型: 关系邀请二维码页(邀请成长伙伴/邀请其他监护人多tab + 二维码 + 有效期7天 + 受限孩子说明 + 保存图片/分享邀请按钮)",
+   "实现: 二维码弹层 issuedInvitation(InvitationQrCode + 受邀手机号 + 有效期至 + 邀请编号可复制 + 复制邀请编号按钮)，由「邀请副家长」表单提交触发",
+   "差异: 触发链路不可达——邀请副家长按钮位于 canManage 命令带，依赖关系列表(403)，SECONDARY_PARENT_INVITE_CREATE 无家长角色授权(=0)；无多tab/保存图片/分享邀请"
+  ],
+  "implementationStatus": "已原生截图对照（2026-10-19，verify-82 18/18）：关系邀请弹层改原型双 tab——「邀请成长伙伴」（占位\"成长伙伴邀请即将开放\"+去邀请其他监护人回切）与「邀请其他监护人」（二维码 canvas + 请使用「灵动伴随」小程序扫码加入 + 有效期至 + 仅限加入{学生名}的其他监护人 + 受邀手机号脱敏 + 可复制邀请编号 + 保存图片[InvitationQrCode.saveToAlbum 导出相册] + 分享邀请[open-type=share + onShareAppMessage]）；管理模式发起 SECONDARY 邀请真实 POST 成功进入弹层；踩坑：PARENT_SMS_HMAC_SECRET 未配置导致发邀请 503（启动参数补 32+ 位 hmac-secret）；edu_parent_relationship_invitation 唯一键 uk(student_id,invitation_type,pending_scope_key) + insert 固定 scope=PENDING 使 5 分钟内未过期 PENDING 挡新邀请（防重设计，验证前需清理）；vite 编译缓存（node_modules/.vite）损坏会导致页面卡\"正在加载\"且渲染出占位符——删 dist+缓存全量重建解决",
+  "nativeShot": "native-78/07-04-phase3.png",
+  "shotAt": "2026-10-18T16:44:46.767Z"
+ },
+ {
+  "id": "07-05",
+  "group": "关系与账号安全",
+  "title": "关联学校培训申请",
+  "board": "exec-96761440-3814-4d18-b7e2-9af125506d9a.png",
+  "position": {
+   "row": 0,
+   "column": 4
+  },
+  "status": "未验收",
+  "route": "/pages/institution-enrollment/institution-enrollment?identity=parent",
+  "api": [
+   "POST /institution-enrollment/invitations/resolve",
+   "POST /institution-enrollment/requests",
+   "GET /institution-enrollment/requests"
+  ],
+  "reference": {
+   "path": "reference/07-05.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    1237,
+    101,
+    1520,
+    589
+   ],
+   "sha256": "ef176b8ecf3a736385f607b24f3da48fd0dc0443fcdc962dbb53b88fb65765fb",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "选择当前家庭孩子、解析邀请码、申请关联、真实申请状态",
+  "gaps": [
+   "原型: 关联学校培训申请表单(提示卡 + 所在学校 + 申请类型radio(学校官方培训课程/校内社团活动) + 选择培训项目 + 申请理由textarea 0/200 + 提交申请按钮)",
+   "实现: 入学管理(申请记录header + 当前家庭picker(原型验证家庭) + 申请记录/填写邀请码双按钮 + 待审核filter + 暂无入学申请空态)",
+   "差异: 语义不同——实现为机构入学申请(邀请码加入/申请记录跟踪)，原型为参加培训项目的申请表单(类型/项目/理由)"
+  ],
+  "implementationStatus": "已原生截图对照：实现为入学申请管理(邀请码+申请记录)，培训项目申请表单(类型/项目/理由)未实现",
+  "nativeShot": "native-78/07-05.png",
+  "shotAt": "2026-10-17T08:12:27"
+ },
+ {
+  "id": "07-06",
+  "group": "关系与账号安全",
+  "title": "微信绑定管理",
+  "board": "exec-96761440-3814-4d18-b7e2-9af125506d9a.png",
+  "position": {
+   "row": 1,
+   "column": 0
+  },
+  "status": "未验收",
+  "route": "/pages/account-settings/account-settings",
+  "api": [
+   "POST /api/v1/auth/account-settings/wechat"
+  ],
+  "reference": {
+   "path": "reference/07-06.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    21,
+    632,
+    305,
+    1018
+   ],
+   "sha256": "ef176b8ecf3a736385f607b24f3da48fd0dc0443fcdc962dbb53b88fb65765fb",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "panel=wechat; or parent-student-wechat child list",
+  "gaps": [
+   "原型: 微信绑定管理(当前绑定状态 + 绑定/解绑流程说明)",
+   "实现: 微信登录panel(未绑定badge + 说明文案 + 当前密码验证input + 验证并绑定微信按钮) + 密码/联系方式/微信三tab导航 + 选择我的组织链接",
+   "差异: 高度一致(绑定状态badge+密码验证+绑定按钮); 实现多三tab导航与组织链接，无解绑单独流程"
+  ],
+  "visualAcceptance": "待微信原生截图与完整功能验收",
+  "implementationStatus": "已原生截图对照：微信绑定管理(状态badge+密码验证绑定)高度一致",
+  "nativeShot": "native-78/07-06.png",
+  "shotAt": "2026-10-17T08:12:27"
+ },
+ {
+  "id": "07-07",
+  "group": "关系与账号安全",
+  "title": "邮箱手机号维护验证",
+  "board": "exec-96761440-3814-4d18-b7e2-9af125506d9a.png",
+  "position": {
+   "row": 1,
+   "column": 1
+  },
+  "status": "未验收",
+  "route": "/pages/account-settings/account-settings",
+  "api": [
+   "GET /api/v1/auth/account-settings",
+   "POST /api/v1/auth/account-settings/codes",
+   "POST /api/v1/auth/account-settings/contact"
+  ],
+  "reference": {
+   "path": "reference/07-07.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    326,
+    632,
+    609,
+    1018
+   ],
+   "sha256": "ef176b8ecf3a736385f607b24f3da48fd0dc0443fcdc962dbb53b88fb65765fb",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "panel=contact",
+  "gaps": [
+   "原型: 邮箱手机号维护验证(绑定邮箱卡: 已验证badge+可用于找回密码说明+更换邮箱按钮 / 绑定手机号卡: 已验证badge+更换手机号按钮)",
+   "实现: 手机与邮箱(手机未绑定/邮箱未绑定detail-line + 手机号/邮箱segmented + 当前密码验证 + 新手机号 + 新联系方式验证码+发送验证码 + 验证并保存)",
+   "差异: 形态不同——原型为已绑定状态卡+独立更换按钮，实现为绑定/更换一体化表单(当前均未绑定)；无已验证badge与找回密码说明"
+  ],
+  "visualAcceptance": "待微信原生截图与完整功能验收",
+  "implementationStatus": "已原生截图对照：联系方式维护功能可用(密码验证+验证码+保存)，状态卡形态与已验证badge未实现",
+  "nativeShot": "native-78/07-07.png",
+  "shotAt": "2026-10-17T08:12:27"
+ },
+ {
+  "id": "07-08",
+  "group": "关系与账号安全",
+  "title": "修改密码",
+  "board": "exec-96761440-3814-4d18-b7e2-9af125506d9a.png",
+  "position": {
+   "row": 1,
+   "column": 2
+  },
+  "status": "未验收",
+  "route": "/pages/account-settings/account-settings",
+  "api": [
+   "POST /api/v1/auth/password"
+  ],
+  "reference": {
+   "path": "reference/07-08.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    629,
+    632,
+    912,
+    1018
+   ],
+   "sha256": "ef176b8ecf3a736385f607b24f3da48fd0dc0443fcdc962dbb53b88fb65765fb",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "panel=password; required initial-password state",
+  "gaps": [
+   "原型: 修改密码(当前密码/新密码带可见性toggle+密码强度条+确认新密码+保存修改+安全提示条: 建议定期更换避免复用)",
+   "实现: 修改密码(当前密码/新密码/确认新密码input+保存新密码按钮) + 8至20位字母数字组合校验规则",
+   "差异: 高度一致; 实现无可见性toggle/密码强度条/安全提示条"
+  ],
+  "visualAcceptance": "待微信原生截图与完整功能验收",
+  "implementationStatus": "已原生截图对照（2026-10-19，verify-85 12/12）：修改密码面板对照 07-08 补安全增强——①新密码可见性 toggle（当前/新/确认三输入框右侧 eye/eye-off 图标，PrototypeIcon 新增 eye 两态 4 色 svg，:password 动态绑定）；②密码强度条（4 段 + 实时 label：规则=长度≥8/字母+数字/长度≥12/含特殊字符各 +1，弱[红]/中[橙]/强[绿]，空态显示「请输入新密码」）；③安全提示条（橙色卡「为保障账号安全，建议定期更换密码，并避免使用与其他平台相同的密码」）；实测弱 abc123→s1 弱、Abcdefgh123456→s3 中、Abcdefgh123456!→s4 强；组织账号 manager 真实 session 进入 account-settings?identity=organization 验证",
+  "nativeShot": "native-78/07-08-phase3.png",
+  "shotAt": "2026-10-18T23:55:07.579Z"
+ },
+ {
+  "id": "07-09",
+  "group": "关系与账号安全",
+  "title": "登录设备管理",
+  "board": "exec-96761440-3814-4d18-b7e2-9af125506d9a.png",
+  "position": {
+   "row": 1,
+   "column": 3
+  },
+  "status": "未验收",
+  "route": "/pages/account-security/account-security",
+  "api": [
+   "GET /api/v1/auth/devices"
+  ],
+  "reference": {
+   "path": "reference/07-09.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    933,
+    632,
+    1215,
+    1018
+   ],
+   "sha256": "ef176b8ecf3a736385f607b24f3da48fd0dc0443fcdc962dbb53b88fb65765fb",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "identity student/parent/organization; actual devices",
+  "gaps": [
+   "原型: 登录设备管理(已登录设备3台: 设备名/系统/版本/地点/时间 + 当前设备badge + 下线按钮 + 异常提示条)",
+   "实现: 登录设备管理(发现21条新设备登录提醒band + 已登录设备(59) + 全部下线 + 设备行(设备名/小程序/时间/当前设备badge/下线按钮) + 安全事件区(全部已读/标记已读/已读badge))",
+   "差异: 高度一致(设备列表+当前设备+下线+提醒); 实现多安全事件管理与全部下线，无地点信息"
+  ],
+  "visualAcceptance": "待微信原生截图与完整功能验收",
+  "implementationStatus": "已原生截图对照：设备管理结构高度一致(59设备/21提醒实测)，地点展示未实现，多安全事件区",
+  "nativeShot": "native-78/07-09.png",
+  "shotAt": "2026-10-17T08:12:27"
+ },
+ {
+  "id": "07-10",
+  "group": "关系与账号安全",
+  "title": "账号注销申请",
+  "board": "exec-96761440-3814-4d18-b7e2-9af125506d9a.png",
+  "position": {
+   "row": 1,
+   "column": 4
+  },
+  "status": "未验收",
+  "route": "/pages/parent-account-lifecycle/parent-account-lifecycle",
+  "api": [
+   "GET /api/v1/auth/parent-account-lifecycle",
+   "POST /api/v1/auth/parent-account-cancellations"
+  ],
+  "reference": {
+   "path": "reference/07-10.png",
+   "sourceSize": [
+    1536,
+    1024
+   ],
+   "crop": [
+    1237,
+    632,
+    1520,
+    1018
+   ],
+   "sha256": "ef176b8ecf3a736385f607b24f3da48fd0dc0443fcdc962dbb53b88fb65765fb",
+   "reviewStatus": "初步裁切，尚需逐页检查内部内容边界"
+  },
+  "viewState": "cancellationFlowOpen; NONE/COOLING_OFF",
+  "gaps": [
+   "原型: 账号注销申请表单(不可恢复警示 + 注销原因radio(不再使用/更换手机号重新注册/孩子毕业/其他) + 补充说明textarea 0/200 + 条款checkbox + 提交按钮)",
+   "实现: 账号与手机号聚合页(summary: 当前手机号/活动学生关系15/注销状态未申请 + 更换手机号流(验证码双段) + 账号注销区: 请先解除全部学生关系前置校验; 有关系时注销表单不可达, 无关系时为注销验证码+输入确认注销模式)",
+   "差异: 结构不同——原型独立注销表单页 vs 实现聚合页+前置校验; 实现无注销原因radio/补充说明/条款checkbox"
+  ],
+  "visualAcceptance": "待微信原生截图与完整功能验收",
+  "implementationStatus": "已原生截图对照（2026-10-19，verify-84 23/23）：账号注销改独立表单页 parent-cancel-form 对照 07-10——橙色不可恢复警示卡（注销账号后将不可恢复+永久删除说明）+注销原因四选（不再使用灵动伴随/更换手机号重新注册/孩子已毕业/其他原因）+补充说明 textarea 0/200 计数+条款 checkbox（我已阅读并同意《账号注销须知》）+提交注销申请（原因+条款+验证码+确认文字全齐才 enable）；「须先解除全部学生关系」前置校验保留（有关系时表单区不渲染改显示关系数提示；后端 countActiveStudentsByParent>0 → 409 PARENT_ACCOUNT_CANCELLATION_CONFLICT 实测）；后端 V142 加 reason/reason_note 列持久化所选原因（DB 实测 reason=UNUSED note 中文 UTF-8 正确）；安全确认区沿用既有短信验证码+确认文字链路；踩坑：fixture 家长无 mobile+无 PARENT_ACCOUNT_LIFECYCLE_MANAGE 权限（DB 补 13800008484+user_permission ALLOW）；本地验证码经 Redis HMAC 摘要枚举还原（DbgSmsRecover.cjs，local secret 已知）",
+  "nativeShot": "native-78/07-10-phase3.png",
+  "shotAt": "2026-10-18T23:48:45.295Z"
+ }
 ]

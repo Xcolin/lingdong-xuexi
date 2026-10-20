@@ -23,8 +23,8 @@ class TaskReviewAuditorBoundaryTest {
         features.updateGlobalStatus("LEARNING_TASK_MANAGEMENT", FeatureStatus.ENABLED);
         for (var client : AuthClientType.values()) {
             var user = new AuthenticatedUser(1874244142494699001L,1874244142494699002L,"auditor","审核员",client,List.of("PARENT","SYS_AUDITOR"));
-            assertThatThrownBy(() -> service.findPage(user,1,20)).isInstanceOf(SystemOperationAccessDeniedException.class);
-            assertThatThrownBy(() -> service.approve(user,1874244142494699003L,1874244142494699004L)).isInstanceOf(SystemOperationAccessDeniedException.class);
+            assertThatThrownBy(() -> service.findPage(user,"PENDING_REVIEW",1,20)).isInstanceOf(SystemOperationAccessDeniedException.class);
+            assertThatThrownBy(() -> service.approve(user,1874244142494699003L,1874244142494699004L,null)).isInstanceOf(SystemOperationAccessDeniedException.class);
         }
     }
 }

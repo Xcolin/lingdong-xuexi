@@ -71,6 +71,27 @@ public class ApiExceptionHandler {
         return response(HttpStatus.CONFLICT, "ROLE_REMOVAL_STATE_CONFLICT", exception.getMessage(), request);
     }
 
+    @ExceptionHandler(com.lingdong.learning.organization.application.DuplicateOrganizationNameException.class)
+    public ResponseEntity<SecurityErrorResponse> handleDuplicateOrganizationName(
+            com.lingdong.learning.organization.application.DuplicateOrganizationNameException exception, HttpServletRequest request
+    ) {
+        return response(HttpStatus.CONFLICT, "ORGANIZATION_NAME_DUPLICATE", exception.getMessage(), request);
+    }
+
+    @ExceptionHandler(com.lingdong.learning.organization.application.DuplicateOrganizationCodeException.class)
+    public ResponseEntity<SecurityErrorResponse> handleDuplicateOrganizationCode(
+            com.lingdong.learning.organization.application.DuplicateOrganizationCodeException exception, HttpServletRequest request
+    ) {
+        return response(HttpStatus.CONFLICT, "ORGANIZATION_CODE_DUPLICATE", "组织编码已存在，请重试", request);
+    }
+
+    @ExceptionHandler(com.lingdong.learning.organization.application.OrganizationNotOperationalException.class)
+    public ResponseEntity<SecurityErrorResponse> handleOrganizationNotOperational(
+            com.lingdong.learning.organization.application.OrganizationNotOperationalException exception, HttpServletRequest request
+    ) {
+        return response(HttpStatus.CONFLICT, "ORGANIZATION_NOT_OPERATIONAL", "组织当前不可开展新业务，请先启用组织或联系管理员", request);
+    }
+
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<SecurityErrorResponse> handleStateConflict(IllegalStateException exception, HttpServletRequest request) {
         return response(HttpStatus.CONFLICT, "STATE_CONFLICT", "当前状态不允许执行此操作", request);

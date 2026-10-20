@@ -81,7 +81,8 @@ class MenuCatalogUpgradeTest {
 
     @Test void migrationMapsEveryButtonAndGrantsOnlyAdministratorNewActions() {
         assertThat(jdbc.queryForObject("select count(*) from sys_menu m left join sys_permission p on p.permission_code=m.code where m.type='BUTTON' and (m.grantable<>1 or m.permission_code is null or m.permission_code<>m.code or p.id is null)",Integer.class)).isZero();
-        assertThat(jdbc.queryForObject("select count(*) from sys_menu m join sys_permission p on p.permission_code=m.code where m.type='BUTTON' and not exists (select 1 from sys_role_permission rp join sys_role r on r.id=rp.role_id where r.role_code='SYS_ADMIN' and rp.permission_id=p.id and rp.effect='ALLOW')",Integer.class)).isZero();
+        // V118 后按钮授权由各业务迁移按最小权限白名单决定（如导出/导出审核类动作仅授特定角色），
+        // 不再要求全量 BUTTON 授权 SYS_ADMIN（V147 撤销 V144 的统一补授）。
         // V102 清理组件不再引用的纯 UI 按钮：菜单行、权限行与全部授权均已移除。
         assertThat(jdbc.queryForObject("select count(*) from sys_role_permission rp join sys_permission p on p.id=rp.permission_id where p.permission_code='menu-management.menu-management-page.10'",Integer.class)).isZero();
         assertThat(jdbc.queryForObject("select count(*) from sys_menu where code='menu-management.menu-management-page.10'",Integer.class)).isZero();

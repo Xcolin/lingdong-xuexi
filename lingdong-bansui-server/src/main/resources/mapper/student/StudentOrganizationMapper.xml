@@ -408,6 +408,22 @@
           </include>
         ORDER BY student.student_name, student.id
     </select>
+    <select id="countActiveEnrollmentGroups" resultType="long">
+        SELECT COUNT(DISTINCT CONCAT(student.id, ':', enrollment.organization_id))
+        FROM edu_student student
+        JOIN edu_student_organization enrollment
+          ON enrollment.student_id = student.id
+         AND enrollment.relation_type = 'ENROLLMENT'
+         AND enrollment.status = 'ACTIVE'
+        JOIN sys_organization enrollment_organization
+          ON enrollment_organization.id = enrollment.organization_id
+        WHERE student.status = 'ENABLED'
+          AND enrollment_organization.status = 'ENABLED' AND enrollment_organization.effective_status = 'ENABLED'
+        <include refid="enrollmentInScope">
+          <property name="studentAlias" value="student"/><property name="enrollmentAlias" value="enrollment_organization"/>
+          <property name="allOrganizations" value="scope.allOrganizations"/><property name="rootPaths" value="scope.rootPaths"/>
+        </include>
+    </select>
 
     <select id="findEnabledClassOptionsByOrganizationAdministratorScope"
             resultMap="studentOrganizationClassOptionMap">
@@ -431,7 +447,7 @@
     <select id="findClassStudentOptions" resultType="com.lingdong.learning.learningtask.application.StudentOption">
         SELECT DISTINCT student.id, student.student_name, NULL AS student_account_masked,
                visible_class.id AS current_class_id, visible_class.organization_name AS current_class_name,
-               NULL AS relationship_role
+               NULL AS relationship_role, target_institution.organization_name AS school_name
         FROM edu_student student
         JOIN sys_organization target_class ON target_class.id = #{classId}
         JOIN sys_organization target_institution ON target_institution.organization_type IN ('SCHOOL','TRAINING_INSTITUTION')

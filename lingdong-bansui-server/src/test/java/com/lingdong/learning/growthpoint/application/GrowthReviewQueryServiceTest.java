@@ -73,6 +73,14 @@ class GrowthReviewQueryServiceTest {
                 insert into edu_student (id, student_name, student_user_id, status)
                 values (?, '复盘学生', ?, 'ENABLED')
                 """, STUDENT_ID, STUDENT_USER_ID);
+        // V118 家长身份：FAMILY 账号需持有 COMPLETED 家长档案，否则 ParentActorAccessService 拒绝
+        for (long parentId : new long[]{PARENT_ID, OTHER_PARENT_ID, SECONDARY_PARENT_ID}) {
+            jdbcTemplate.update("insert into auth_parent_profile(id,user_id,onboarding_status,first_login_at,onboarding_completed_at) values(?,?,'COMPLETED',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP) on duplicate key update onboarding_status=values(onboarding_status)", parentId, parentId);
+        }
+        // 家长档案校验还要求至少一个启用角色，三个家长统一预置 PARENT 角色
+        grantReviewRole(PARENT_ID, id(12));
+        grantReviewRole(OTHER_PARENT_ID, id(13));
+        grantReviewRole(SECONDARY_PARENT_ID, id(14));
         jdbcTemplate.update("""
                 insert into edu_parent_student
                     (id, parent_user_id, student_id, relation_role, status, primary_scope_key)
@@ -225,9 +233,11 @@ class GrowthReviewQueryServiceTest {
     }
 
     private void grantReviewRole(long userId, long relationId) {
+        // 幂等授予：setUp 已授 PARENT 角色的用户重复授予时命中 (user_id, role_id, scope) 唯一键，保持原行即可
         jdbcTemplate.update("""
                 insert into sys_user_role(id,user_id,role_id,organization_scope_key)
                 select ?,?,id,'GLOBAL' from sys_role where role_code='PARENT'
+                on duplicate key update user_id = VALUES(user_id)
                 """, relationId, userId);
     }
 

@@ -5,6 +5,8 @@ import com.lingdong.learning.common.security.RequirePermission;
 import com.lingdong.learning.organization.application.ClassManagementApplicationService;
 import com.lingdong.learning.organization.application.CreateClassCommand;
 import com.lingdong.learning.organization.application.UpdateClassCommand;
+import com.lingdong.learning.organization.infrastructure.persistence.ClassHeadTeacherStore;
+import com.lingdong.learning.organization.infrastructure.persistence.ClassMemberCountStore;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -26,11 +28,17 @@ import java.util.List;
 @RequestMapping("/api/v1/classes")
 public class ClassManagementController {
     private final ClassManagementApplicationService classManagementApplicationService;
+    private final ClassMemberCountStore classMemberCountStore;
+    private final ClassHeadTeacherStore classHeadTeacherStore;
 
     public ClassManagementController(
-            ClassManagementApplicationService classManagementApplicationService
+            ClassManagementApplicationService classManagementApplicationService,
+            ClassMemberCountStore classMemberCountStore,
+            ClassHeadTeacherStore classHeadTeacherStore
     ) {
         this.classManagementApplicationService = classManagementApplicationService;
+        this.classMemberCountStore = classMemberCountStore;
+        this.classHeadTeacherStore = classHeadTeacherStore;
     }
 
     @GetMapping("/lookup")
@@ -60,6 +68,32 @@ public class ClassManagementController {
     ) {
         return classManagementApplicationService.listClasses(currentUser,schoolOrganizationId,gradeOrganizationId,campusOrganizationId).stream()
                 .map(this::response)
+                .toList();
+    }
+
+    /** 授权范围内各班级的有效学员计数，供层级树与班级卡展示。 */
+    @RequirePermission("CLASS_READ")
+    @GetMapping("/student-counts")
+    public List<ClassStudentCountResponse> studentCounts(
+            @AuthenticationPrincipal AuthenticatedUser currentUser
+    ) {
+        var classes = classManagementApplicationService.listClasses(currentUser);
+        var counts = classMemberCountStore.countMembersByClassIds(classes.stream().map(Organization::id).toList());
+        return classes.stream()
+                .map(org -> new ClassStudentCountResponse(org.id(), counts.getOrDefault(org.id(), 0L)))
+                .toList();
+    }
+
+    /** 授权范围内各班级的班主任姓名，供班级卡展示。 */
+    @RequirePermission("CLASS_READ")
+    @GetMapping("/head-teachers")
+    public List<ClassHeadTeacherResponse> headTeachers(
+            @AuthenticationPrincipal AuthenticatedUser currentUser
+    ) {
+        var classes = classManagementApplicationService.listClasses(currentUser);
+        var names = classHeadTeacherStore.findHeadTeachersByClassIds(classes.stream().map(Organization::id).toList());
+        return classes.stream()
+                .map(org -> new ClassHeadTeacherResponse(org.id(), names.get(org.id())))
                 .toList();
     }
 

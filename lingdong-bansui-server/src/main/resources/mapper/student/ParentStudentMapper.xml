@@ -23,6 +23,19 @@
             <arg column="student_name" javaType="java.lang.String"/>
             <arg column="relationship_role"
                  javaType="com.lingdong.learning.student.domain.ParentRelationshipRole"/>
+            <arg column="bound_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="inactiveRelationshipMap"
+               type="com.lingdong.learning.student.application.ParentInactiveRelationshipView">
+        <constructor>
+            <idArg column="student_id" javaType="java.lang.Long"/>
+            <arg column="student_name" javaType="java.lang.String"/>
+            <arg column="relationship_role"
+                 javaType="com.lingdong.learning.student.domain.ParentRelationshipRole"/>
+            <arg column="bound_at" javaType="java.time.LocalDateTime"/>
+            <arg column="unbound_at" javaType="java.time.LocalDateTime"/>
         </constructor>
     </resultMap>
 
@@ -94,13 +107,26 @@
 
     <select id="findActiveStudentsByParent" resultMap="parentRelationshipStudentMap">
         SELECT student.id AS student_id, student.student_name,
-               parent_student.relation_role AS relationship_role
+               parent_student.relation_role AS relationship_role,
+               parent_student.bound_at AS bound_at
         FROM edu_parent_student parent_student
         JOIN edu_student student ON student.id = parent_student.student_id
         WHERE parent_student.parent_user_id = #{parentUserId}
           AND parent_student.status = 'ACTIVE'
           <include refid="selectedStudentScope"><property name="studentIdColumn" value="student.id"/></include>
         ORDER BY student.student_name, student.id
+    </select>
+
+    <select id="findInactiveByParent" resultMap="inactiveRelationshipMap">
+        SELECT student.id AS student_id, student.student_name,
+               parent_student.relation_role AS relationship_role,
+               parent_student.bound_at AS bound_at,
+               parent_student.unbound_at AS unbound_at
+        FROM edu_parent_student parent_student
+        JOIN edu_student student ON student.id = parent_student.student_id
+        WHERE parent_student.parent_user_id = #{parentUserId}
+          AND parent_student.status &lt;&gt; 'ACTIVE'
+        ORDER BY parent_student.unbound_at DESC, parent_student.id DESC
     </select>
 
     <insert id="insertPrimary">

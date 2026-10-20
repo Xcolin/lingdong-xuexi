@@ -50,6 +50,11 @@ public class OrganizationDataScopeService {
         List<String> paths = scope.allOrganizations() ? List.of(selected.path()) : intersect(scope.rootPaths(), List.of(selected.path()));
         return new OrganizationDataScope(false, scope.selfAllowed(), paths);
     }
+    /** 不受当前选中组织收窄的范围（用于跨根组织的只读列表，如组织管理员设置）。 */
+    public OrganizationDataScope resolveIgnoringSelection(Long userId) {
+        return resolveUnselected(userId);
+    }
+
     private OrganizationDataScope resolveUnselected(Long userId) {
         User user = userId == null ? null : userMapper.findById(userId);
         if (user == null || user.status() != UserStatus.ENABLED) {

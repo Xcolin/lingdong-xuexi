@@ -311,7 +311,7 @@ class ParentAuthenticationControllerTest {
                         .header("Authorization", "Bearer " + cancellationToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"code":"%s","confirmation":"确认注销"}
+                                {"code":"%s","confirmation":"确认注销","reason":"UNUSED"}
                                 """.formatted(FixedTestParentSmsCodeGenerator.CODE)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.cancellationId").isString())
@@ -350,8 +350,9 @@ class ParentAuthenticationControllerTest {
                 .andExpect(jsonPath("$.parentAccountLifecycleEnabled").value(false));
         mockMvc.perform(get("/api/v1/auth/parent-account-lifecycle")
                         .header("Authorization", "Bearer " + accessToken))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.code").value("FEATURE_DISABLED"));
+                // V118 后 feature 先行拒绝：开关关闭时权限链直接 403，不再到达业务层的 409 FEATURE_DISABLED
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
     }
 
     private String registerAndLogin() throws Exception {

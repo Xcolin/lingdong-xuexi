@@ -24,6 +24,13 @@ public class MemberScopeService {
   if(!scopes.resolve(operatorId).allows(org))throw new SystemOperationAccessDeniedException("组织超出实际数据范围");
   return org;
  }
+ /** 不受当前选中组织收窄的目标校验：按用户全部管理员范围判定（跨根组织只读列表用）。 */
+ public Organization requireTargetIgnoringSelection(Long operatorId,Long id) {
+  Organization org=organizations.findById(id);
+  if(org==null)throw new ResourceNotFoundException("组织不存在："+id);
+  if(!scopes.resolveIgnoringSelection(operatorId).allows(org))throw new SystemOperationAccessDeniedException("组织超出实际数据范围");
+  return org;
+ }
  public Organization school(Organization org) {
   Set<Long> seen=new HashSet<>();
   while(org!=null&&seen.add(org.id())) {if(com.lingdong.learning.organization.application.OrganizationHierarchy.isInstitutionRoot(org))return org;org=org.parentId()==null?null:organizations.findById(org.parentId());}

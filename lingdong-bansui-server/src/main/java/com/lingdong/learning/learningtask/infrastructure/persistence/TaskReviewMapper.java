@@ -11,11 +11,12 @@ import java.time.LocalDateTime;
 public interface TaskReviewMapper {
     List<TaskReviewRow> findPage(
             @Param("reviewerUserId") Long reviewerUserId,
+            @Param("statusTab") String statusTab,
             @Param("offset") int offset,
             @Param("limit") int limit
     );
 
-    long count(@Param("reviewerUserId") Long reviewerUserId);
+    List<TaskReviewStatusCountRow> countByStatus(@Param("reviewerUserId") Long reviewerUserId);
 
     TaskReviewRow findByAssignmentIdAndReviewer(
             @Param("assignmentId") Long assignmentId,

@@ -28,4 +28,9 @@ public interface ParentRelationshipInvitationMapper {
             @Param("invitationType") ParentRelationshipInvitationType invitationType,
             @Param("now") LocalDateTime now
     );
+
+    java.util.List<com.lingdong.learning.student.application.ParentReceivedInvitationView> findReceivedPending(
+            @Param("userId") Long userId,
+            @Param("mobile") String mobile
+    );
 }

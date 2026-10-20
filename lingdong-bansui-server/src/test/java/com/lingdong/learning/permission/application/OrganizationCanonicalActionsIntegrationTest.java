@@ -49,7 +49,7 @@ class OrganizationCanonicalActionsIntegrationTest {
   jdbc.update("INSERT INTO sys_role_permission(id,role_id,permission_id,effect) SELECT ?,?,p.id,'ALLOW' FROM sys_permission p WHERE p.permission_code='ORG_NODE_READ' AND NOT EXISTS(SELECT 1 FROM sys_role_permission rp WHERE rp.role_id=? AND rp.permission_id=p.id)",ids.nextId(),roles.findByCode("PARENT").id(),roles.findByCode("PARENT").id());
   jdbc.update("UPDATE sys_feature_toggle SET status='ENABLED' WHERE feature_code='ORGANIZATION_MANAGEMENT' AND scope_key='GLOBAL'");
   assertThat(management.listOrganizations(parent.id())).extracting(Organization::id).contains(familyId).doesNotContain(otherId);
-  jdbc.update("INSERT INTO sys_role(id,role_code,role_name,role_type,data_scope,built_in,status) VALUES(?,'PARENT_ADMIN','家庭管理员','BUILT_IN','FAMILY',1,'ENABLED')",ids.nextId());
+  // PARENT_ADMIN 已为 V118 内置种子角色，直接复用不再插入
   seedCanonical();
   members.addMembers(actor.id(),familyId,java.util.List.of(parent.id()),true);
   assertThat(grants.hasRoleCode(parent.id(),"PARENT_ADMIN")).isTrue();assertThat(scopes.canAccess(parent.id(),familyId)).isTrue();assertThat(scopes.canAccess(parent.id(),otherId)).isFalse();
@@ -57,7 +57,9 @@ class OrganizationCanonicalActionsIntegrationTest {
 
   Long adminRoleId=roles.findByCode("PARENT_ADMIN").id();
   for(String code:java.util.List.of("ORG_MEMBER_READ","ORG_ADMIN_ASSIGN","ORG_ADMIN_REVOKE"))
-   jdbc.update("INSERT INTO sys_role_permission(id,role_id,permission_id,effect) SELECT ?,?,id,'ALLOW' FROM sys_permission WHERE permission_code=?",ids.nextId(),adminRoleId,code);
+   jdbc.update("INSERT INTO sys_role_permission(id,role_id,permission_id,effect) SELECT ?,?,p.id,'ALLOW' FROM sys_permission p WHERE p.permission_code=? AND NOT EXISTS(SELECT 1 FROM sys_role_permission rp WHERE rp.role_id=? AND rp.permission_id=p.id)",ids.nextId(),adminRoleId,code,adminRoleId);
+  // 授权发生在 L51 listOrganizations 固化的 parent 权限快照之后，须重置请求属性重新判定
+  org.springframework.web.context.request.RequestContextHolder.resetRequestAttributes();
   assertThat(decisions.isAllowed(parent.id(),PermissionClient.WEB,"IAM_DATA_SCOPE_CONFIGURE")).isFalse();
   assertThat(decisions.isAllowed(parent.id(),PermissionClient.WEB,"IAM_USER_ROLE_ASSIGN")).isFalse();
   var delegated=users.createUser(new CreateUserCommand("delegated_parent_"+suffix,"另一家长",null,UserType.FAMILY));users.assignRole(new AssignRoleToUserCommand(delegated.id(),roles.findByCode("PARENT").id(),null));users.associateWithOrganization(new AssociateUserWithOrganizationCommand(delegated.id(),familyId));parentProfile(delegated.id());
@@ -67,11 +69,14 @@ class OrganizationCanonicalActionsIntegrationTest {
   members.revokeMembers(parent.id(),familyId,java.util.List.of(delegated.id()),true);
   assertThat(grants.hasRoleCode(delegated.id(),"PARENT_ADMIN")).isFalse();
   jdbc.update("INSERT INTO sys_user_permission(id,user_id,permission_id,effect) SELECT ?,?,id,'DENY' FROM sys_permission WHERE permission_code='ORG_ADMIN_ASSIGN'",ids.nextId(),actor.id());
+  // DENY 插入发生在 L54 addMembers 固化的 actor 权限快照之后，须重置请求属性
+  org.springframework.web.context.request.RequestContextHolder.resetRequestAttributes();
   assertThat(decisions.isAllowed(actor.id(),PermissionClient.WEB,"IAM_DATA_SCOPE_CONFIGURE")).isTrue();
   assertThat(decisions.isAllowed(actor.id(),PermissionClient.WEB,"IAM_USER_ROLE_ASSIGN")).isTrue();
   org.assertj.core.api.Assertions.assertThatThrownBy(()->members.addMembers(actor.id(),familyId,java.util.List.of(delegated.id()),true)).isInstanceOf(com.lingdong.learning.common.security.SystemOperationAccessDeniedException.class);
   assertThat(grants.hasRoleCode(delegated.id(),"PARENT_ADMIN")).isFalse();
   jdbc.update("UPDATE sys_role SET status='DISABLED' WHERE role_code='PARENT_ADMIN'");
+  org.springframework.web.context.request.RequestContextHolder.resetRequestAttributes();
   members.revokeMembers(actor.id(),familyId,java.util.List.of(parent.id()),true);
   assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM sys_user_role ur JOIN sys_role r ON r.id=ur.role_id WHERE ur.user_id=? AND r.role_code='PARENT_ADMIN'",Integer.class,parent.id())).isZero();
   assertThat(grants.hasRoleCode(parent.id(),"PARENT_ADMIN")).isFalse();assertThat(grants.hasRoleCode(parent.id(),"PARENT")).isTrue();assertThat(scopes.canAccess(parent.id(),familyId)).isFalse();
@@ -80,7 +85,8 @@ class OrganizationCanonicalActionsIntegrationTest {
  private void seedCanonical(){
   for(String code:java.util.List.of("ORG_MEMBER_READ","ORG_MEMBER_ASSOCIATE","ORG_MEMBER_REMOVE","ORG_ADMIN_ASSIGN","ORG_ADMIN_REVOKE")){
    permission(code,"BUTTON");
-   jdbc.update("INSERT INTO sys_role_permission(id,role_id,permission_id,effect) SELECT ?,?,id,'ALLOW' FROM sys_permission WHERE permission_code=?",ids.nextId(),roles.findByCode("SYS_ADMIN").id(),code);
+   // V143 种子已给 SYS_ADMIN 授这五权限，NOT EXISTS 防重避免主键/唯一键冲突
+   jdbc.update("INSERT INTO sys_role_permission(id,role_id,permission_id,effect) SELECT ?,?,p.id,'ALLOW' FROM sys_permission p WHERE p.permission_code=? AND NOT EXISTS(SELECT 1 FROM sys_role_permission rp WHERE rp.role_id=? AND rp.permission_id=p.id)",ids.nextId(),roles.findByCode("SYS_ADMIN").id(),code,roles.findByCode("SYS_ADMIN").id());
   }
  }
 }

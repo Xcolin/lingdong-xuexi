@@ -8,6 +8,7 @@ import com.lingdong.learning.common.security.SystemOperationAccessDeniedExceptio
 import com.lingdong.learning.common.web.ResourceNotFoundException;
 import com.lingdong.learning.feature.application.FeatureAccessService;
 import com.lingdong.learning.growthpoint.domain.GrowthReward;
+import com.lingdong.learning.growthpoint.domain.GrowthRewardCategory;
 import com.lingdong.learning.growthpoint.domain.GrowthRewardStatus;
 import com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthRewardMapper;
 import com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthPointAccountViewRow;
@@ -93,7 +94,8 @@ public class GrowthRewardService {
         if (row == null) {
             throw new ResourceNotFoundException("学生奖励积分账户不存在或不可访问");
         }
-        return new GrowthRewardAccountSummary(row.studentId(), row.availablePoints(), row.updatedAt());
+        return new GrowthRewardAccountSummary(row.studentId(), row.studentName(),
+                        row.currentClassName(), row.availablePoints(), row.updatedAt());
     }
 
     @Transactional
@@ -105,7 +107,8 @@ public class GrowthRewardService {
         LocalDateTime now = LocalDateTime.now(clock);
         GrowthReward reward = new GrowthReward(
                 idGenerator.nextId(), studentId, currentUser.userId(), normalized.rewardName(),
-                normalized.requiredPoints(), normalized.description(), normalized.expiresAt(),
+                normalized.requiredPoints(), normalized.category(), normalized.stockQuantity(),
+                normalized.imageUrl(), normalized.description(), normalized.expiresAt(),
                 normalized.status(), 0, now, now, null);
         if (rewardMapper.insert(reward) != 1) {
             throw new IllegalStateException("家庭奖励新增失败");
@@ -124,7 +127,8 @@ public class GrowthRewardService {
         LocalDateTime now = LocalDateTime.now(clock);
         GrowthReward updated = new GrowthReward(
                 existing.id(), existing.studentId(), existing.createdByParentId(), normalized.rewardName(),
-                normalized.requiredPoints(), normalized.description(), normalized.expiresAt(),
+                normalized.requiredPoints(), normalized.category(), normalized.stockQuantity(),
+                normalized.imageUrl(), normalized.description(), normalized.expiresAt(),
                 normalized.status(), existing.versionNo() + 1, existing.createdAt(), now, null);
         if (rewardMapper.update(updated, existing.versionNo()) != 1) {
             throw new IllegalStateException("家庭奖励已被其他操作修改");
@@ -203,6 +207,11 @@ public class GrowthRewardService {
         if (command.requiredPoints() == null || command.requiredPoints() <= 0) {
             throw new IllegalArgumentException("所需积分必须大于零");
         }
+        int stockQuantity = command.stockQuantity() == null ? 0 : command.stockQuantity();
+        if (stockQuantity < 0) {
+            throw new IllegalArgumentException("库存数量不能为负");
+        }
+        String imageUrl = normalizeOptional(command.imageUrl(), 500, "奖励图片");
         String description = normalizeOptional(command.description(), 200, "奖励说明");
         LocalDateTime now = LocalDateTime.now(clock);
         if (command.expiresAt() != null && !command.expiresAt().isAfter(now)) {
@@ -213,7 +222,8 @@ public class GrowthRewardService {
             throw new IllegalArgumentException("奖励状态不合法");
         }
         return new NormalizedReward(
-                rewardName, command.requiredPoints(), description, command.expiresAt(), command.status());
+                rewardName, command.requiredPoints(), command.category(), stockQuantity,
+                imageUrl, description, command.expiresAt(), command.status());
     }
 
     private String normalizeRequired(String value, int maximumLength, String fieldName) {
@@ -255,6 +265,9 @@ public class GrowthRewardService {
     private record NormalizedReward(
             String rewardName,
             Long requiredPoints,
+            GrowthRewardCategory category,
+            int stockQuantity,
+            String imageUrl,
             String description,
             LocalDateTime expiresAt,
             GrowthRewardStatus status

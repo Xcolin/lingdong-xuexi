@@ -143,8 +143,9 @@ class OrganizationChangeControllerTest {
         try {
             mockMvc.perform(get("/api/v1/organizations")
                             .header("Authorization", bearer(token)))
-                    .andExpect(status().isConflict())
-                    .andExpect(jsonPath("$.code").value("FEATURE_DISABLED"));
+                    // V118 后功能停用在权限层先行拒绝
+                    .andExpect(status().isForbidden())
+                    .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
             mockMvc.perform(get("/api/v1/public/capabilities").param("client", "WEB"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.organizationManagementEnabled").value(false));
@@ -172,9 +173,12 @@ class OrganizationChangeControllerTest {
     private void setPasswords(User administrator, User... users) {
         authenticationApplicationService.setPlatformUserPassword(
                 new SetPlatformUserPasswordCommand(administrator.id(), administrator.id(), "Password123"));
+        // bf34c6a 管理员设密后要求首登改密，业务测试直接清除首登改密标记
+        jdbcTemplate.update("UPDATE auth_initial_password_state SET change_required=false WHERE user_id=?", administrator.id());
         for (User user : users) {
             authenticationApplicationService.setPlatformUserPassword(
                     new SetPlatformUserPasswordCommand(administrator.id(), user.id(), "Password123"));
+            jdbcTemplate.update("UPDATE auth_initial_password_state SET change_required=false WHERE user_id=?", user.id());
         }
     }
 

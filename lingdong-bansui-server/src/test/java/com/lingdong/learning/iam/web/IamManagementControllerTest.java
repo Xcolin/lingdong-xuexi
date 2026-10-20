@@ -53,6 +53,46 @@ class IamManagementControllerTest {
     @Autowired private RoleApplicationService roleApplicationService;
     @Autowired private RoleDataScopeMapper roleDataScopeMapper;
     @Autowired private OrganizationAdminMapper organizationAdminMapper;
+    @Autowired private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
+    @org.junit.jupiter.api.BeforeEach
+    void cleanFixedRoleResidue() {
+        // 非 @Transactional：上轮运行留下的自定义角色及其 DENY/ALLOW 授权会污染全库不变量断言（如 FlywayMigrationTest）。
+        jdbcTemplate.update("delete from sys_role_permission where role_id in (select id from sys_role where role_code in ('IAM_RACE_ROLE','IAM_BATCH_ROLE','IAM_SCOPE_ROLE'))");
+        jdbcTemplate.update("delete from sys_user_role where role_id in (select id from sys_role where role_code in ('IAM_RACE_ROLE','IAM_BATCH_ROLE','IAM_SCOPE_ROLE'))");
+        jdbcTemplate.update("delete from sys_role_data_scope where role_id in (select id from sys_role where role_code in ('IAM_RACE_ROLE','IAM_BATCH_ROLE','IAM_SCOPE_ROLE'))");
+        jdbcTemplate.update("delete from sys_role where role_code in ('IAM_RACE_ROLE','IAM_BATCH_ROLE','IAM_SCOPE_ROLE')");
+        // 上轮残留的测试用户（本类用户名均以 iam_ 开头）。
+        jdbcTemplate.update("delete from sys_user_role where user_id in (select id from sys_user where username like 'iam\\_%')");
+        jdbcTemplate.update("delete from sys_user_permission where user_id in (select id from sys_user where username like 'iam\\_%')");
+        jdbcTemplate.update("delete from sys_user_organization where user_id in (select id from sys_user where username like 'iam\\_%')");
+        jdbcTemplate.update("delete from sys_organization_admin where user_id in (select id from sys_user where username like 'iam\\_%')");
+        jdbcTemplate.update("delete from auth_security_event where session_id in (select id from auth_device_session where user_id in (select id from sys_user where username like 'iam\\_%'))");
+        jdbcTemplate.update("delete from auth_device_session where user_id in (select id from sys_user where username like 'iam\\_%')");
+        jdbcTemplate.update("delete from auth_initial_password_state where user_id in (select id from sys_user where username like 'iam\\_%')");
+        jdbcTemplate.update("delete from sys_user where username like 'iam\\_%'");
+        // 上轮残留的固定业务数据：目录用户、OPS 角色/权限、固定编码组织。
+        jdbcTemplate.update("delete from auth_initial_password_state where user_id in (select id from sys_user where username in ('directory_teacher','directory_parent'))");
+        jdbcTemplate.update("delete from auth_security_event where session_id in (select id from auth_device_session where user_id in (select id from sys_user where username in ('directory_teacher','directory_parent')))");
+        jdbcTemplate.update("delete from auth_device_session where user_id in (select id from sys_user where username in ('directory_teacher','directory_parent'))");
+        jdbcTemplate.update("delete from sys_user_role where user_id in (select id from sys_user where username in ('directory_teacher','directory_parent'))");
+        jdbcTemplate.update("delete from sys_user_permission where user_id in (select id from sys_user where username in ('directory_teacher','directory_parent'))");
+        jdbcTemplate.update("delete from sys_user_organization where user_id in (select id from sys_user where username in ('directory_teacher','directory_parent'))");
+        jdbcTemplate.update("delete from sys_organization_admin where user_id in (select id from sys_user where username in ('directory_teacher','directory_parent'))");
+        jdbcTemplate.update("delete from sys_user where username in ('directory_teacher','directory_parent')");
+        jdbcTemplate.update("delete from sys_role_permission where permission_id in (select id from sys_permission where permission_code in ('OPS_SAMPLE_OPERATION','OPS_FORBIDDEN_PERMISSION','IAM_MISSING_PARENT'))");
+        jdbcTemplate.update("delete from sys_permission where permission_code in ('OPS_SAMPLE_OPERATION','OPS_FORBIDDEN_PERMISSION','IAM_MISSING_PARENT')");
+        jdbcTemplate.update("delete from sys_role_permission where role_id in (select id from sys_role where role_code = 'OPS_USER_MANAGER')");
+        jdbcTemplate.update("delete from sys_user_role where role_id in (select id from sys_role where role_code = 'OPS_USER_MANAGER')");
+        jdbcTemplate.update("delete from sys_role_data_scope where role_id in (select id from sys_role where role_code = 'OPS_USER_MANAGER')");
+        jdbcTemplate.update("delete from sys_role where role_code = 'OPS_USER_MANAGER'");
+        jdbcTemplate.update("delete from sys_role_data_scope where organization_id in (select id from sys_organization where organization_code in ('IAM_API_SCHOOL','IAM_OPS_CREATE_ORG','IAM_SCOPE_SCHOOL','IAM_NOT_FOUND_SCHOOL','IAM_AUDIT_CREATE_ORG'))");
+        jdbcTemplate.update("delete from sys_user_role where organization_id in (select id from sys_organization where organization_code in ('IAM_API_SCHOOL','IAM_OPS_CREATE_ORG','IAM_SCOPE_SCHOOL','IAM_NOT_FOUND_SCHOOL','IAM_AUDIT_CREATE_ORG'))");
+        jdbcTemplate.update("delete from sys_user_organization where organization_id in (select id from sys_organization where organization_code in ('IAM_API_SCHOOL','IAM_OPS_CREATE_ORG','IAM_SCOPE_SCHOOL','IAM_NOT_FOUND_SCHOOL','IAM_AUDIT_CREATE_ORG'))");
+        jdbcTemplate.update("delete from sys_organization_admin where organization_id in (select id from sys_organization where organization_code in ('IAM_API_SCHOOL','IAM_OPS_CREATE_ORG','IAM_SCOPE_SCHOOL','IAM_NOT_FOUND_SCHOOL','IAM_AUDIT_CREATE_ORG'))");
+        jdbcTemplate.update("delete from sys_organization_owner where organization_id in (select id from sys_organization where organization_code in ('IAM_API_SCHOOL','IAM_OPS_CREATE_ORG','IAM_SCOPE_SCHOOL','IAM_NOT_FOUND_SCHOOL','IAM_AUDIT_CREATE_ORG'))");
+        jdbcTemplate.update("delete from sys_organization where organization_code in ('IAM_API_SCHOOL','IAM_OPS_CREATE_ORG','IAM_SCOPE_SCHOOL','IAM_NOT_FOUND_SCHOOL','IAM_AUDIT_CREATE_ORG')");
+    }
 
     @Test
     void concurrentBatchSavesAcceptOnlyOneSnapshotAndAuditNewAllow() throws Exception {
@@ -175,13 +215,14 @@ class IamManagementControllerTest {
         Organization school = organizationApplicationService.createOrganization(
                 new CreateOrganizationCommand("IAM_API_SCHOOL", "IAM 接口学校", "SCHOOL", null, 1)
         );
+        // 组织约束：ORG_ADMIN 为 SCHOOL 范围角色须授权至机构根；SCHOOL 组织仅允许 ORGANIZATION/STUDENT 用户（OrganizationUserTypePolicy）
         String administratorAccessToken = loginAccessToken("iam_user_admin");
 
         MvcResult createdUserResult = mockMvc.perform(post("/api/v1/users")
                         .header("Authorization", "Bearer " + administratorAccessToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"username":"iam_created_user","displayName":"新建平台用户","mobile":"13900000001","type":"PLATFORM","organizationId":"%s","password":"Password123"}
+                                {"username":"iam_created_user","displayName":"新建组织用户","mobile":"13900000001","type":"ORGANIZATION","organizationId":"%s","password":"Password123"}
                                 """.formatted(school.id())))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").isString())
@@ -557,11 +598,22 @@ class IamManagementControllerTest {
 
     private void setPassword(User administrator, User targetUser) {
         authenticationApplicationService.setPlatformUserPassword(new SetPlatformUserPasswordCommand(
-                administrator.id(), targetUser.id(), "Password123"
+                administrator.id(), targetUser.id(), "Bootstrap123"
         ));
     }
 
+    private final java.util.Set<String> bootstrapped = new java.util.HashSet<>();
+
     private String loginAccessToken(String username) throws Exception {
+        // bf34c6a 起首次登录需自行改密：每个用户只走一次 bootstrap 改密，重复调用直接用已改密码登录
+        if (bootstrapped.add(username)) {
+            String bootstrap = loginAccessToken(username, "Bootstrap123");
+            mockMvc.perform(post("/api/v1/auth/password")
+                            .header("Authorization", "Bearer " + bootstrap)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"oldPassword\":\"Bootstrap123\",\"newPassword\":\"Password123\"}"))
+                    .andExpect(status().isNoContent());
+        }
         return loginAccessToken(username, "Password123");
     }
 

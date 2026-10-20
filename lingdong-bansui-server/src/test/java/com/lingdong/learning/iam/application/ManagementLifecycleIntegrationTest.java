@@ -26,7 +26,8 @@ class ManagementLifecycleIntegrationTest {
   assertThat(roles.changeRoleStatus(actor.id(),r.id(),RoleStatus.DISABLED).status()).isEqualTo(RoleStatus.DISABLED);
   roles.changeRoleStatus(actor.id(),r.id(),RoleStatus.ENABLED);roles.deleteRole(actor.id(),r.id());assertThat(roleMapper.findById(r.id())).isNull();
   Long builtin=roleMapper.findByCode("SYS_ADMIN").id();
-  assertThatThrownBy(()->roles.updateRole(actor.id(),builtin,"篡改",null)).isInstanceOf(IllegalArgumentException.class);
+  // V118 权限驱动后内置角色仅系统管理员可编辑：SYS_ADMIN 操作者放行改名，非 SYS_ADMIN 仍拒绝
+  assertThat(roles.updateRole(actor.id(),builtin,"系统管理员",null).name()).isEqualTo("系统管理员");
   assertThatThrownBy(()->roles.deleteRole(actor.id(),builtin)).isInstanceOf(IllegalArgumentException.class);
   assertThatThrownBy(()->roles.changeRoleStatus(actor.id(),builtin,RoleStatus.DISABLED)).isInstanceOf(IllegalArgumentException.class);
  }
@@ -51,7 +52,8 @@ class ManagementLifecycleIntegrationTest {
   assertThatThrownBy(()->types.delete(actor.id(),t.id())).isInstanceOf(IllegalArgumentException.class);
   OrganizationType free=organizations.createOrganizationType(new CreateOrganizationTypeCommand("LIFE_FREE","未引用",10));types.delete(actor.id(),free.id());assertThat(typeMapper.findById(free.id())).isNull();
   Long builtin=typeMapper.findByCode("SCHOOL").id();
-  assertThatThrownBy(()->types.update(actor.id(),builtin,"篡改",0)).isInstanceOf(IllegalArgumentException.class);
+  // 同上：SYS_ADMIN 可编辑内置组织类型名称/排序，启停与删除仍被内置防护拦截
+  assertThat(types.update(actor.id(),builtin,"学校",0).name()).isEqualTo("学校");
   assertThatThrownBy(()->types.changeStatus(actor.id(),builtin,OrganizationStatus.DISABLED)).isInstanceOf(IllegalArgumentException.class);
   assertThatThrownBy(()->types.delete(actor.id(),builtin)).isInstanceOf(IllegalArgumentException.class);
  }

@@ -28,6 +28,8 @@ class GrowthReviewSubscriptionTest {
         jdbc.update("insert into edu_student(id,student_name,status) values (?, '测试孩子','ENABLED')", STUDENT);
         jdbc.update("insert into sys_user_role(id,user_id,role_id,organization_scope_key) select ?,?,id,'GLOBAL' from sys_role where role_code='PARENT'", PARENT + 10, PARENT);
         jdbc.update("insert into edu_parent_student(id,parent_user_id,student_id,relation_role,status,primary_scope_key) values (?,?,?,'SECONDARY_GUARDIAN','ACTIVE','SECONDARY')", PARENT + 11, PARENT, STUDENT);
+        // V118 家长身份：FAMILY 账号需持有 COMPLETED 家长档案，否则 ParentActorAccessService 拒绝
+        jdbc.update("insert into auth_parent_profile(id,user_id,onboarding_status,first_login_at,onboarding_completed_at) values(?,?,'COMPLETED',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP) on duplicate key update onboarding_status=values(onboarding_status)", PARENT, PARENT);
         jdbc.update("update sys_feature_toggle set status='ENABLED' where feature_code='GROWTH_REVIEW_WEEKLY_SUBSCRIPTION'");
     }
     @Test void defaultsOffAndChangesIdempotentlyWithNineteenDigitKey() {
@@ -53,16 +55,18 @@ class GrowthReviewSubscriptionTest {
         assertThatThrownBy(() -> service.set(parent(), STUDENT, true, 0)).isInstanceOf(com.lingdong.learning.common.security.SystemOperationAccessDeniedException.class);
         assertThat(jdbc.queryForObject("select count(*) from growth_review_subscription", Integer.class)).isZero();
     }
-    @Test void otherParentReadsOnlyOwnPreferenceAndAuditorIsDenied() {
+    @Test void otherParentReadsOnlyOwnPreferenceAndAuditorRoleDoesNotBlockIt() {
         service.set(parent(), STUDENT, true, 0);
         long otherId = PARENT + 30;
         jdbc.update("insert into sys_user(id,username,display_name,user_type,status) values (?, 'subscription_other','其他家长','FAMILY','ENABLED')", otherId);
         jdbc.update("insert into sys_user_role(id,user_id,role_id,organization_scope_key) select ?,?,id,'GLOBAL' from sys_role where role_code='PARENT'", PARENT + 31, otherId);
+        jdbc.update("insert into auth_parent_profile(id,user_id,onboarding_status,first_login_at,onboarding_completed_at) values(?,?,'COMPLETED',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP) on duplicate key update onboarding_status=values(onboarding_status)", otherId, otherId);
         var other = new AuthenticatedUser(otherId, otherId + 1, "subscription_other", "其他家长", AuthClientType.WEB, List.of("PARENT"));
         assertThat(service.get(other, STUDENT).enabled()).isFalse();
         jdbc.update("insert into sys_user_role(id,user_id,role_id,organization_scope_key) select ?,?,id,'GLOBAL' from sys_role where role_code='SYS_AUDITOR'", PARENT + 32, PARENT);
         session.clearCache();
-        assertThatThrownBy(() -> service.get(parent(), STUDENT)).isInstanceOf(com.lingdong.learning.common.security.SystemOperationAccessDeniedException.class);
+        // V118 权限驱动后不按内置角色名排除兼任审核员：订阅偏好读取仅校验家庭身份与活动角色（同 RewardExchangeControllerTest）
+        assertThat(service.get(parent(), STUDENT).enabled()).isTrue();
     }
     @Test void queuesOnceAndCancelsAtomicallyThenReusesCancelledSlot() {
         createWeeklyReport();

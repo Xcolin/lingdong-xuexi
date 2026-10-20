@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 public record GrowthPointAccountViewRow(
         Long studentId,
         String studentName,
+        String currentClassName,
         Long totalPoints,
         Long availablePoints,
         LocalDateTime updatedAt

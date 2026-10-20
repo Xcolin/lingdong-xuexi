@@ -29,10 +29,11 @@ public class TaskReviewController {
     @GetMapping
     public TaskReviewPageResponse findPage(
             @AuthenticationPrincipal AuthenticatedUser currentUser,
+            @RequestParam(defaultValue = "PENDING_REVIEW") String statusTab,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int pageSize
     ) {
-        return TaskReviewPageResponse.from(reviewService.findPage(currentUser, page, pageSize));
+        return TaskReviewPageResponse.from(reviewService.findPage(currentUser, statusTab, page, pageSize));
     }
 
     @RequirePermission("TASK_ASSIGNMENT_REVIEW")
@@ -62,7 +63,8 @@ public class TaskReviewController {
             @PathVariable Long assignmentId,
             @Valid @RequestBody ApproveTaskReviewRequest request
     ) {
-        return ApproveTaskReviewResponse.from(reviewService.approve(currentUser, assignmentId, request.checkInId()));
+        return ApproveTaskReviewResponse.from(
+                reviewService.approve(currentUser, assignmentId, request.checkInId(), request.reviewComment()));
     }
 
     @RequirePermission("TASK_ASSIGNMENT_REVIEW")

@@ -23,4 +23,11 @@ public class OrganizationWorkbenchController {
     ) {
         return OrganizationWorkbenchContextResponse.from(queryService.getContext(currentUser));
     }
+
+    @GetMapping("/statistics")
+    public OrganizationWorkbenchStatisticsResponse statistics(
+            @AuthenticationPrincipal AuthenticatedUser currentUser
+    ) {
+        return OrganizationWorkbenchStatisticsResponse.from(queryService.getStatistics(currentUser));
+    }
 }

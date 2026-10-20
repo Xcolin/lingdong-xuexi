@@ -107,6 +107,8 @@ public interface StudentOrganizationMapper {
     );
     List<StudentOrganizationSummaryRow> findActiveSummariesByOrganizationAdministratorScope(
             @Param("scope") com.lingdong.learning.datascope.application.OrganizationDataScope scope);
+    long countActiveEnrollmentGroups(
+            @Param("scope") com.lingdong.learning.datascope.application.OrganizationDataScope scope);
     List<StudentOrganizationClassOptionRow> findEnabledClassOptionsByOrganizationAdministratorScope(
             @Param("scope") com.lingdong.learning.datascope.application.OrganizationDataScope scope);
 }

@@ -27,8 +27,15 @@ public record LearningTask(
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
         LearningTaskRecurrenceStatus recurrenceStatus,
-        String recurrenceFrequency, java.util.List<Integer> recurrenceWeekdays
+        String recurrenceFrequency, java.util.List<Integer> recurrenceWeekdays,
+        String description, java.util.List<String> requirementItems, java.util.List<Long> exampleFileIds,
+        String taskType, LocalDate endDate, String visibility
 ) {
+    public LearningTask {
+        requirementItems = requirementItems == null ? java.util.List.of() : java.util.List.copyOf(requirementItems);
+        exampleFileIds = exampleFileIds == null ? java.util.List.of() : java.util.List.copyOf(exampleFileIds);
+    }
+
     public LearningTask(
         Long id,
         LearningTaskSourceType sourceType,
@@ -50,7 +57,7 @@ public record LearningTask(
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
         LearningTaskRecurrenceStatus recurrenceStatus
-) { this(id, sourceType, sourceOrganizationId, creatorUserId, title, difficultyLevel, basePoints, durationMinutes, scheduledDate, categoryCode, remark, reviewerUserId, reviewTimeoutHours, recurrenceEnabled, recurrenceEndDate, status, publishedAt, createdAt, updatedAt, recurrenceStatus, "DAILY", java.util.List.of()); }
+    ) { this(id, sourceType, sourceOrganizationId, creatorUserId, title, difficultyLevel, basePoints, durationMinutes, scheduledDate, categoryCode, remark, reviewerUserId, reviewTimeoutHours, recurrenceEnabled, recurrenceEndDate, status, publishedAt, createdAt, updatedAt, recurrenceStatus, "DAILY", java.util.List.of(), null, java.util.List.of(), java.util.List.of(), null, null, null); }
 
     public static LearningTask draft(
             Long id,
@@ -65,7 +72,9 @@ public record LearningTask(
                 draft.difficultyLevel(), draft.basePoints(), draft.durationMinutes(), draft.scheduledDate(),
                 draft.categoryCode(), draft.remark(), reviewerUserId, 72,
                 draft.recurrenceEnabled(), draft.recurrenceEndDate(), LearningTaskStatus.DRAFT,
-                null, null, null, null, draft.recurrenceFrequency(), draft.recurrenceWeekdays());
+                null, null, null, null, draft.recurrenceFrequency(), draft.recurrenceWeekdays(),
+                draft.description(), draft.requirementItems(), draft.exampleFileIds(),
+                draft.taskType(), draft.endDate(), draft.visibility());
     }
 
     public LearningTask withDraft(ValidatedLearningTaskDraft draft, Long reviewerUserId) {
@@ -74,6 +83,8 @@ public record LearningTask(
                 draft.difficultyLevel(), draft.basePoints(), draft.durationMinutes(), draft.scheduledDate(),
                 draft.categoryCode(), draft.remark(), reviewerUserId, reviewTimeoutHours,
                 draft.recurrenceEnabled(), draft.recurrenceEndDate(), status,
-                publishedAt, createdAt, updatedAt, recurrenceStatus, draft.recurrenceFrequency(), draft.recurrenceWeekdays());
+                publishedAt, createdAt, updatedAt, recurrenceStatus, draft.recurrenceFrequency(), draft.recurrenceWeekdays(),
+                draft.description(), draft.requirementItems(), draft.exampleFileIds(),
+                draft.taskType(), draft.endDate(), draft.visibility());
     }
 }

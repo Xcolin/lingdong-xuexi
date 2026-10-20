@@ -163,8 +163,8 @@ class ActivityTrendApiIntegrationTest {
         jdbcTemplate.update("INSERT INTO sys_organization(id,organization_code,organization_name,organization_type,organization_path,sort_order,status) VALUES(?,'ACT_SCHOOL','活跃学校','SCHOOL','/ACT_SCHOOL/',1,'ENABLED')", school);
         jdbcTemplate.update("INSERT INTO sys_organization(id,parent_id,organization_code,organization_name,organization_type,organization_path,sort_order,status) VALUES(?,?,'ACT_CLASS_A','活跃班级甲','CLASS','/ACT_SCHOOL/ACT_CLASS_A/',1,'ENABLED')", classA, school);
         jdbcTemplate.update("INSERT INTO sys_organization(id,parent_id,organization_code,organization_name,organization_type,organization_path,sort_order,status) VALUES(?,?,'ACT_CLASS_B','活跃班级乙','CLASS','/ACT_SCHOOL/ACT_CLASS_B/',2,'ENABLED')", classB, school);
-        jdbcTemplate.update("INSERT INTO sys_organization(id,organization_code,organization_name,organization_type,organization_path,sort_order,status) VALUES(?,'ACT_OUTSIDE','范围外学校','SCHOOL','/ACT_OUTSIDE/',1,'ENABLED')", outsideSchool);
-        jdbcTemplate.update("INSERT INTO sys_organization(id,parent_id,organization_code,organization_name,organization_type,organization_path,sort_order,status) VALUES(?,?,'ACT_OUT_CLASS','范围外班级','CLASS','/ACT_OUTSIDE/ACT_OUT_CLASS/',1,'ENABLED')", outsideClass, outsideSchool);
+        jdbcTemplate.update("INSERT INTO sys_organization(id,organization_code,organization_name,organization_type,organization_path,sort_order,status) VALUES(?,'ACT_OUTSIDE','活跃趋势范围外学校','SCHOOL','/ACT_OUTSIDE/',1,'ENABLED')", outsideSchool);
+        jdbcTemplate.update("INSERT INTO sys_organization(id,parent_id,organization_code,organization_name,organization_type,organization_path,sort_order,status) VALUES(?,?,'ACT_OUT_CLASS','活跃趋势范围外班','CLASS','/ACT_OUTSIDE/ACT_OUT_CLASS/',1,'ENABLED')", outsideClass, outsideSchool);
         jdbcTemplate.update("INSERT INTO edu_student(id,student_name,status) VALUES(?,'活跃学生一','ENABLED')", studentS1);
         jdbcTemplate.update("INSERT INTO edu_student(id,student_name,status) VALUES(?,'活跃学生二','ENABLED')", studentS2);
         jdbcTemplate.update("INSERT INTO edu_student(id,student_name,status) VALUES(?,'范围外学生','ENABLED')", studentS3);
@@ -244,6 +244,8 @@ class ActivityTrendApiIntegrationTest {
     private Login setPasswordAndLogin(User administrator, User user, String deviceId) throws Exception {
         authenticationService.setPlatformUserPassword(new SetPlatformUserPasswordCommand(
                 administrator.id(), user.id(), "Password123"));
+        // bf34c6a 管理员设密后要求首登改密，业务测试直接清除首登改密标记
+        jdbcTemplate.update("UPDATE auth_initial_password_state SET change_required=false WHERE user_id=?", user.id());
         MvcResult result = mockMvc.perform(post("/api/v1/auth/sessions/password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""

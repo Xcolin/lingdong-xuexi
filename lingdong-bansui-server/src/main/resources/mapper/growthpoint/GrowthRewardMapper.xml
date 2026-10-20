@@ -8,6 +8,9 @@
             <arg column="created_by_parent_id" javaType="java.lang.Long"/>
             <arg column="reward_name" javaType="java.lang.String"/>
             <arg column="required_points" javaType="java.lang.Long"/>
+            <arg column="category" javaType="com.lingdong.learning.growthpoint.domain.GrowthRewardCategory"/>
+            <arg column="stock_quantity" javaType="java.lang.Integer"/>
+            <arg column="image_url" javaType="java.lang.String"/>
             <arg column="description" javaType="java.lang.String"/>
             <arg column="expires_at" javaType="java.time.LocalDateTime"/>
             <arg column="status" javaType="com.lingdong.learning.growthpoint.domain.GrowthRewardStatus"/>
@@ -20,16 +23,19 @@
 
     <sql id="RewardColumns">
         id, student_id, created_by_parent_id, reward_name, required_points,
+        category, stock_quantity, image_url,
         description, expires_at, status, version_no, created_at, updated_at, deleted_at
     </sql>
 
     <insert id="insert">
         INSERT INTO growth_reward (
             id, student_id, created_by_parent_id, reward_name, required_points,
+            category, stock_quantity, image_url,
             description, expires_at, status, version_no, created_at, updated_at, deleted_at
         ) VALUES (
             #{reward.id}, #{reward.studentId}, #{reward.createdByParentId},
-            #{reward.rewardName}, #{reward.requiredPoints}, #{reward.description},
+            #{reward.rewardName}, #{reward.requiredPoints}, #{reward.category},
+            #{reward.stockQuantity}, #{reward.imageUrl}, #{reward.description},
             #{reward.expiresAt}, #{reward.status}, #{reward.versionNo},
             #{reward.createdAt}, #{reward.updatedAt}, #{reward.deletedAt}
         )
@@ -78,6 +84,9 @@
         UPDATE growth_reward
         SET reward_name = #{reward.rewardName},
             required_points = #{reward.requiredPoints},
+            category = #{reward.category},
+            stock_quantity = #{reward.stockQuantity},
+            image_url = #{reward.imageUrl},
             description = #{reward.description},
             expires_at = #{reward.expiresAt},
             status = #{reward.status},

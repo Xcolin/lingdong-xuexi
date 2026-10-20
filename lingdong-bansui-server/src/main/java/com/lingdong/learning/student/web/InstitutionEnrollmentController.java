@@ -11,6 +11,8 @@ public class InstitutionEnrollmentController {
     private final InstitutionEnrollmentService service;
     public InstitutionEnrollmentController(InstitutionEnrollmentService service){this.service=service;}
     public record InvitationRequest(Long classOrganizationId,Integer validDays){}
+    public record ExpiryRequest(Integer validDays){}
+    @PutMapping("/invitations/{id}/expiry") public InstitutionEnrollmentService.InvitationExpiryUpdated updateExpiry(@AuthenticationPrincipal AuthenticatedUser actor,@PathVariable Long id,@RequestBody ExpiryRequest request){return service.updateInvitationExpiry(actor,id,request.validDays());}
     public record ResolveRequest(String code){@Override public String toString(){return "ResolveRequest[code=REDACTED]";}}
     public record EnrollmentRequest(Long studentUserId,String code,Long familyOrganizationId){@Override public String toString(){return "EnrollmentRequest[code=REDACTED]";}}
     public record ReviewRequest(String reason){}

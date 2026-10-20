@@ -28,6 +28,10 @@ public interface ParentStudentMapper {
             @Param("parentUserId") Long parentUserId
     );
 
+    List<com.lingdong.learning.student.application.ParentInactiveRelationshipView> findInactiveByParent(
+            @Param("parentUserId") Long parentUserId
+    );
+
     int insertPrimary(
             @Param("id") Long id,
             @Param("parentUserId") Long parentUserId,

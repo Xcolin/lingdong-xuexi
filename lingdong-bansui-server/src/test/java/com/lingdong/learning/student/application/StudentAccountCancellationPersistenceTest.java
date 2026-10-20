@@ -94,7 +94,7 @@ class StudentAccountCancellationPersistenceTest {
                 INSERT INTO auth_student_qr_ticket (
                     id, student_id, student_user_id, token_hash, status,
                     expires_at, issued_by_user_id
-                ) VALUES (?, ?, ?, ?, 'ACTIVE', DATEADD('DAY', 1, CURRENT_TIMESTAMP), ?)
+                ) VALUES (?, ?, ?, ?, 'ACTIVE', DATE_ADD(NOW(), INTERVAL 1 DAY), ?)
                 """, QR_TICKET_ID, STUDENT_ID, STUDENT_USER_ID, "c".repeat(64), OPERATOR_ID);
         jdbcTemplate.update("""
                 INSERT INTO auth_device_session (
@@ -102,8 +102,8 @@ class StudentAccountCancellationPersistenceTest {
                     access_token_hash, refresh_token_hash, access_expires_at,
                     refresh_expires_at, status, last_active_at
                 ) VALUES (?, ?, 'MINIAPP', 'student-device', '学生设备', ?, ?,
-                    DATEADD('HOUR', 1, CURRENT_TIMESTAMP),
-                    DATEADD('DAY', 1, CURRENT_TIMESTAMP), 'ACTIVE', CURRENT_TIMESTAMP)
+                    DATE_ADD(NOW(), INTERVAL 1 HOUR),
+                    DATE_ADD(NOW(), INTERVAL 1 DAY), 'ACTIVE', NOW())
                 """, SESSION_ID, STUDENT_USER_ID, "d".repeat(64), "e".repeat(64));
         jdbcTemplate.update("""
                 UPDATE sys_feature_toggle SET status = 'ENABLED'

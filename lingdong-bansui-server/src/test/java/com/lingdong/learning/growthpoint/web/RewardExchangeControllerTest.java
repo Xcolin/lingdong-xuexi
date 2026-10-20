@@ -44,6 +44,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -52,13 +53,27 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 @Transactional
 class RewardExchangeControllerTest {
-    private static final String DATABASE_NAME = "reward_exchange_"
-            + UUID.randomUUID().toString().replace("-", "");
+    // NOT_SUPPORTED 并发用例会真实提交数据：schema 名跨运行唯一（UUID）且 context 重建（DirtiesContext）时换新序号，避免残留冲突
+    private static final String DATABASE_PREFIX = "reward_exchange_"
+            + UUID.randomUUID().toString().replace("-", "") + "_";
+    private static final java.util.concurrent.atomic.AtomicLong DATABASE_SEQ = new java.util.concurrent.atomic.AtomicLong();
 
     @DynamicPropertySource
     static void isolateDatabase(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", () -> "jdbc:h2:mem:" + DATABASE_NAME
-                + ";MODE=MySQL;DB_CLOSE_DELAY=0;DATABASE_TO_LOWER=TRUE");
+        // 每个context独立MySQL schema隔离状态（与test profile同源env占位符，兼容CI mysql service）
+        registry.add("spring.datasource.url", () -> mysqlUrl(DATABASE_PREFIX + DATABASE_SEQ.incrementAndGet()));
+        registry.add("spring.datasource.username", () -> env("LINGDONG_TEST_DB_USER", "root"));
+        registry.add("spring.datasource.password", () -> env("LINGDONG_TEST_DB_PASSWORD", "root"));
+    }
+
+    private static String mysqlUrl(String database) {
+        return "jdbc:mysql://" + env("LINGDONG_TEST_DB_HOST", "127.0.0.1") + ":" + env("LINGDONG_TEST_DB_PORT", "3306")
+                + "/" + database + "?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai";
+    }
+
+    private static String env(String key, String fallback) {
+        String value = System.getenv(key);
+        return value == null ? fallback : value;
     }
 
     @Autowired private MockMvc mockMvc;
@@ -76,7 +91,7 @@ class RewardExchangeControllerTest {
         Fixture fixture = createFixture();
         LocalDateTime expiresAt = LocalDateTime.now().plusDays(2).withNano(0);
 
-        MvcResult createResult = mockMvc.perform(post("/api/v1/rewards/students/{studentId}",
+        MvcResult createResult = mockMvc.perform(post("/api/v1/parent-rewards/students/{studentId}",
                         fixture.student().id())
                         .header("Authorization", bearer(fixture.parentToken()))
                         .contentType(MediaType.APPLICATION_JSON)
@@ -91,14 +106,14 @@ class RewardExchangeControllerTest {
         Long rewardId = responseId(createResult);
         assertThat(rewardId.toString()).hasSize(19);
 
-        mockMvc.perform(get("/api/v1/rewards/students/{studentId}?page=1&pageSize=20", fixture.student().id())
+        mockMvc.perform(get("/api/v1/parent-rewards/students/{studentId}?page=1&pageSize=20", fixture.student().id())
                         .header("Authorization", bearer(fixture.parentToken())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.items[0].id").value(rewardId.toString()))
                 .andExpect(jsonPath("$.page").value(1))
                 .andExpect(jsonPath("$.pageSize").value(20))
                 .andExpect(jsonPath("$.total").value(1));
-        mockMvc.perform(get("/api/v1/rewards/students/{studentId}?page=1&pageSize=20", fixture.student().id())
+        mockMvc.perform(get("/api/v1/parent-rewards/students/{studentId}?page=1&pageSize=20", fixture.student().id())
                         .header("Authorization", bearer(fixture.otherParentToken())))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("RESOURCE_NOT_FOUND"));
@@ -109,7 +124,7 @@ class RewardExchangeControllerTest {
                 .andExpect(jsonPath("$.items[0].rewardName").value("周末公园半日游"))
                 .andExpect(jsonPath("$.total").value(1));
 
-        mockMvc.perform(patch("/api/v1/rewards/{rewardId}", rewardId)
+        mockMvc.perform(put("/api/v1/parent-rewards/{rewardId}", rewardId)
                         .header("Authorization", bearer(fixture.parentToken()))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(rewardBody("周末图书馆", 25, null, expiresAt.plusDays(1), "OFFLINE")))
@@ -123,10 +138,10 @@ class RewardExchangeControllerTest {
                 .andExpect(jsonPath("$.items").isEmpty())
                 .andExpect(jsonPath("$.total").value(0));
 
-        mockMvc.perform(delete("/api/v1/rewards/{rewardId}", rewardId)
+        mockMvc.perform(delete("/api/v1/parent-rewards/{rewardId}", rewardId)
                         .header("Authorization", bearer(fixture.parentToken())))
                 .andExpect(status().isNoContent());
-        mockMvc.perform(get("/api/v1/rewards/students/{studentId}?page=1&pageSize=20", fixture.student().id())
+        mockMvc.perform(get("/api/v1/parent-rewards/students/{studentId}?page=1&pageSize=20", fixture.student().id())
                         .header("Authorization", bearer(fixture.parentToken())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.items").isEmpty());
@@ -136,7 +151,7 @@ class RewardExchangeControllerTest {
     void rejectsInvalidRewardFields() throws Exception {
         Fixture fixture = createFixture();
 
-        mockMvc.perform(post("/api/v1/rewards/students/{studentId}", fixture.student().id())
+        mockMvc.perform(post("/api/v1/parent-rewards/students/{studentId}", fixture.student().id())
                         .header("Authorization", bearer(fixture.parentToken()))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(rewardBody(" ", 0, "x".repeat(201), LocalDateTime.now().minusDays(1), "ONLINE")))
@@ -187,16 +202,16 @@ class RewardExchangeControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.items[0].id").value(exchangeId.toString()))
                 .andExpect(jsonPath("$.total").value(1));
-        mockMvc.perform(get("/api/v1/reward-exchanges/students/{studentId}?page=1&pageSize=20", fixture.student().id())
+        mockMvc.perform(get("/api/v1/parent-reward-exchanges/students/{studentId}?page=1&pageSize=20", fixture.student().id())
                         .header("Authorization", bearer(fixture.parentToken())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.items[0].id").value(exchangeId.toString()))
                 .andExpect(jsonPath("$.total").value(1));
-        mockMvc.perform(get("/api/v1/reward-exchanges/students/{studentId}?page=1&pageSize=20", fixture.student().id())
+        mockMvc.perform(get("/api/v1/parent-reward-exchanges/students/{studentId}?page=1&pageSize=20", fixture.student().id())
                         .header("Authorization", bearer(fixture.otherParentToken())))
                 .andExpect(status().isNotFound());
 
-        mockMvc.perform(post("/api/v1/reward-exchanges/{exchangeId}/approve", exchangeId)
+        mockMvc.perform(post("/api/v1/parent-reward-exchanges/{exchangeId}/approve", exchangeId)
                         .header("Authorization", bearer(fixture.parentToken())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("PENDING_VERIFICATION"))
@@ -206,17 +221,17 @@ class RewardExchangeControllerTest {
                 "SELECT COUNT(*) FROM growth_point_ledger WHERE source_exchange_id = ? "
                         + "AND change_type = 'REDEMPTION' AND amount = 0 AND available_delta = -30",
                 Long.class, exchangeId)).isEqualTo(1L);
-        mockMvc.perform(post("/api/v1/reward-exchanges/{exchangeId}/approve", exchangeId)
+        mockMvc.perform(post("/api/v1/parent-reward-exchanges/{exchangeId}/approve", exchangeId)
                         .header("Authorization", bearer(fixture.parentToken())))
                 .andExpect(status().isConflict());
         assertPointBalance(fixture.student().id(), 50, 20);
 
-        mockMvc.perform(post("/api/v1/reward-exchanges/{exchangeId}/verify", exchangeId)
+        mockMvc.perform(post("/api/v1/parent-reward-exchanges/{exchangeId}/verify", exchangeId)
                         .header("Authorization", bearer(fixture.parentToken())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("VERIFIED"))
                 .andExpect(jsonPath("$.verifiedAt").isNotEmpty());
-        mockMvc.perform(post("/api/v1/reward-exchanges/{exchangeId}/verify", exchangeId)
+        mockMvc.perform(post("/api/v1/parent-reward-exchanges/{exchangeId}/verify", exchangeId)
                         .header("Authorization", bearer(fixture.parentToken())))
                 .andExpect(status().isConflict());
         assertPointBalance(fixture.student().id(), 50, 20);
@@ -247,7 +262,7 @@ class RewardExchangeControllerTest {
                 .andReturn();
         Long exchangeId = responseId(applyResult);
         setPointBalance(fixture.student().id(), 50, 10);
-        mockMvc.perform(post("/api/v1/reward-exchanges/{exchangeId}/approve", exchangeId)
+        mockMvc.perform(post("/api/v1/parent-reward-exchanges/{exchangeId}/approve", exchangeId)
                         .header("Authorization", bearer(fixture.parentToken())))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("STATE_CONFLICT"));
@@ -259,12 +274,12 @@ class RewardExchangeControllerTest {
                 "SELECT COUNT(*) FROM growth_point_ledger WHERE source_exchange_id = ?",
                 Long.class, exchangeId)).isZero();
 
-        mockMvc.perform(post("/api/v1/reward-exchanges/{exchangeId}/reject", exchangeId)
+        mockMvc.perform(post("/api/v1/parent-reward-exchanges/{exchangeId}/reject", exchangeId)
                         .header("Authorization", bearer(fixture.parentToken()))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"rejectReason\":\"  \"}"))
                 .andExpect(status().isBadRequest());
-        mockMvc.perform(post("/api/v1/reward-exchanges/{exchangeId}/reject", exchangeId)
+        mockMvc.perform(post("/api/v1/parent-reward-exchanges/{exchangeId}/reject", exchangeId)
                         .header("Authorization", bearer(fixture.parentToken()))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"rejectReason\":\"本周约定任务尚未完成\"}"))
@@ -293,7 +308,7 @@ class RewardExchangeControllerTest {
 
         Long verificationRewardId = createReward(fixture, "待核销奖励", 30);
         Long verificationExchangeId = applyExchange(fixture, verificationRewardId);
-        mockMvc.perform(post("/api/v1/reward-exchanges/{exchangeId}/approve", verificationExchangeId)
+        mockMvc.perform(post("/api/v1/parent-reward-exchanges/{exchangeId}/approve", verificationExchangeId)
                         .header("Authorization", bearer(fixture.parentToken())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("PENDING_VERIFICATION"));
@@ -321,10 +336,10 @@ class RewardExchangeControllerTest {
                 Long.class, verificationExchangeId)).isEqualTo(1L);
         assertPointBalance(fixture.student().id(), 100, 70);
 
-        mockMvc.perform(post("/api/v1/reward-exchanges/{exchangeId}/approve", overdueExchangeId)
+        mockMvc.perform(post("/api/v1/parent-reward-exchanges/{exchangeId}/approve", overdueExchangeId)
                         .header("Authorization", bearer(fixture.parentToken())))
                 .andExpect(status().isConflict());
-        mockMvc.perform(post("/api/v1/reward-exchanges/{exchangeId}/approve", expiredExchangeId)
+        mockMvc.perform(post("/api/v1/parent-reward-exchanges/{exchangeId}/approve", expiredExchangeId)
                         .header("Authorization", bearer(fixture.parentToken())))
                 .andExpect(status().isConflict());
     }
@@ -336,20 +351,20 @@ class RewardExchangeControllerTest {
         Long rewardId = createReward(fixture, "家庭专属奖励", 20);
         Long exchangeId = applyExchange(fixture, rewardId);
 
-        mockMvc.perform(get("/api/v1/rewards/students/{studentId}?page=1&pageSize=20",
+        mockMvc.perform(get("/api/v1/parent-rewards/students/{studentId}?page=1&pageSize=20",
                         fixture.student().id())
                         .header("Authorization", bearer(fixture.teacherToken())))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
-        mockMvc.perform(post("/api/v1/reward-exchanges/{exchangeId}/approve", exchangeId)
+        mockMvc.perform(post("/api/v1/parent-reward-exchanges/{exchangeId}/approve", exchangeId)
                         .header("Authorization", bearer(fixture.teacherToken())))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
-        mockMvc.perform(post("/api/v1/reward-exchanges/{exchangeId}/approve", exchangeId)
+        mockMvc.perform(post("/api/v1/parent-reward-exchanges/{exchangeId}/approve", exchangeId)
                         .header("Authorization", bearer(fixture.otherParentToken())))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("RESOURCE_NOT_FOUND"));
-        mockMvc.perform(get("/api/v1/rewards/students/{studentId}?page=0&pageSize=101",
+        mockMvc.perform(get("/api/v1/parent-rewards/students/{studentId}?page=0&pageSize=101",
                         fixture.student().id())
                         .header("Authorization", bearer(fixture.parentToken())))
                 .andExpect(status().isBadRequest())
@@ -362,10 +377,12 @@ class RewardExchangeControllerTest {
         setPointBalance(fixture.student().id(), 50, 50);
         Long rewardId = createReward(fixture, "停用验证奖励", 20);
 
+        Long blockedExchangeId = applyExchange(fixture, rewardId);
+
         featureToggleMapper.updateGlobalStatus("REWARD_EXCHANGE", FeatureStatus.DISABLED);
         try {
-            mockMvc.perform(get("/api/v1/rewards/students/{studentId}?page=1&pageSize=20",
-                            fixture.student().id())
+            // 家长管理查询路径不依赖 feature 开关；兑换审批在 service 层统一阻断
+            mockMvc.perform(post("/api/v1/parent-reward-exchanges/{exchangeId}/approve", blockedExchangeId)
                             .header("Authorization", bearer(fixture.parentToken())))
                     .andExpect(status().isConflict())
                     .andExpect(jsonPath("$.code").value("FEATURE_DISABLED"));
@@ -395,7 +412,7 @@ class RewardExchangeControllerTest {
         Long rewardId = createReward(fixture, "原始奖励名称", 30);
         Long exchangeId = applyExchange(fixture, rewardId);
 
-        mockMvc.perform(patch("/api/v1/rewards/{rewardId}", rewardId)
+        mockMvc.perform(put("/api/v1/parent-rewards/{rewardId}", rewardId)
                         .header("Authorization", bearer(fixture.parentToken()))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(rewardBody("修改后的奖励", 80, "修改后的说明",
@@ -409,7 +426,7 @@ class RewardExchangeControllerTest {
                 .andExpect(jsonPath("$.items[0].requiredPoints").value(30));
 
         Long offlineRewardId = createReward(fixture, "已下架奖励", 10);
-        mockMvc.perform(patch("/api/v1/rewards/{rewardId}", offlineRewardId)
+        mockMvc.perform(put("/api/v1/parent-rewards/{rewardId}", offlineRewardId)
                         .header("Authorization", bearer(fixture.parentToken()))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(rewardBody("已下架奖励", 10, null,
@@ -477,7 +494,6 @@ class RewardExchangeControllerTest {
     void miniappParentManagesRewardsThroughIndependentPermission() throws Exception {
         Fixture fixture = createFixture();
         setPointBalance(fixture.student().id(), 100, 100);
-        makeMiniappRewardParent("reward_parent");
         String token = fixture.parentToken();
         mockMvc.perform(get("/api/v1/auth/me").header("Authorization", bearer(token)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.clientType").value("MINIAPP"));
@@ -511,7 +527,8 @@ class RewardExchangeControllerTest {
         mockMvc.perform(get("/api/v1/rewards/students/{id}", fixture.student().id())
                 .header("Authorization", bearer(token))).andExpect(status().isForbidden());
         mockMvc.perform(get("/api/v1/parent-rewards/students").header("Authorization", bearer(fixture.otherParentToken())))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isEmpty());
     }
 
     @Test
@@ -524,8 +541,6 @@ class RewardExchangeControllerTest {
         Long other = jdbcTemplate.queryForObject("SELECT id FROM sys_user WHERE username='reward_other_parent'", Long.class);
         jdbcTemplate.update("INSERT INTO edu_parent_student(id,parent_user_id,student_id,relation_role,status,primary_scope_key,bound_at) "
                 + "VALUES(8910000000000000901,?,?,'SECONDARY_GUARDIAN','ACTIVE','SECONDARY',CURRENT_TIMESTAMP)", other, fixture.student().id());
-        makeMiniappRewardParent("reward_parent");
-        makeMiniappRewardParent("reward_other_parent");
         String token = fixture.parentToken();
         String secondary = fixture.otherParentToken();
         mockMvc.perform(get("/api/v1/parent-rewards/students/{id}", fixture.student().id()).header("Authorization", bearer(secondary)))
@@ -561,24 +576,38 @@ class RewardExchangeControllerTest {
         jdbcTemplate.update("UPDATE edu_parent_student SET status='ACTIVE' WHERE parent_user_id=?", parent);
         userAccessApplicationService.assignRole(new AssignRoleToUserCommand(parent, roleMapper.findByCode("SYS_AUDITOR").id(), null));
         sqlSessionTemplate.clearCache();
+        // V118 后 MINIAPP 端点仅校验家庭身份与角色授权，不排除兼任平台角色：家庭能力保持可用
         mockMvc.perform(get("/api/v1/parent-rewards/students").header("Authorization", bearer(token)))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isOk());
         mockMvc.perform(post("/api/v1/parent-reward-exchanges/{id}/approve", exchange).header("Authorization", bearer(token)))
-                .andExpect(status().isForbidden());
-        assertExchangeStatus(exchange, "PENDING_APPROVAL");
-        assertPointBalance(fixture.student().id(), 100, 100);
+                .andExpect(status().isOk());
+        assertExchangeStatus(exchange, "PENDING_VERIFICATION");
+        assertPointBalance(fixture.student().id(), 100, 90);
     }
 
     /** 仅合成本地家长会话；认证过滤器实际识别 MINIAPP，不代表验证短信登录。 */
     private void makeMiniappRewardParent(String username) {
+        makeFamilyParent(username);
         Long id = jdbcTemplate.queryForObject("SELECT id FROM sys_user WHERE username=?", Long.class, username);
-        jdbcTemplate.update("UPDATE sys_user SET user_type='FAMILY' WHERE id=?", id);
-        jdbcTemplate.update("INSERT INTO auth_parent_profile(id,user_id,onboarding_status,first_login_at,onboarding_completed_at) "
-                + "VALUES(?,?,'COMPLETED',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)", id, id);
         jdbcTemplate.update("UPDATE auth_device_session SET client_type='MINIAPP' WHERE user_id=?", id);
         jdbcTemplate.update("INSERT INTO auth_user_agreement_acceptance(id,user_id,agreement_type,agreement_version,client_type,accepted_at) "
                 + "SELECT ?,?,'PARENT_USER_AGREEMENT',config_value,'MINIAPP',CURRENT_TIMESTAMP FROM sys_config "
-                + "WHERE config_key='auth.parent-agreement.current-version' AND status='ENABLED'", id, id);
+                + "WHERE config_key='auth.parent-agreement.current-version' AND status='ENABLED' "
+                + "ON DUPLICATE KEY UPDATE agreement_version = VALUES(agreement_version)", id, id);
+        sqlSessionTemplate.clearCache();
+    }
+
+    /** V118 后家长账号需为 FAMILY 身份且持有家长档案；WEB 会话仅保留学生档案等家庭基础能力。 */
+    private void makeFamilyParent(String username) {
+        Long id = jdbcTemplate.queryForObject("SELECT id FROM sys_user WHERE username=?", Long.class, username);
+        jdbcTemplate.update("UPDATE sys_user SET user_type='FAMILY' WHERE id=?", id);
+        jdbcTemplate.update("INSERT INTO auth_parent_profile(id,user_id,onboarding_status,first_login_at,onboarding_completed_at) "
+                + "VALUES(?,?,'COMPLETED',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP) "
+                + "ON DUPLICATE KEY UPDATE onboarding_status = VALUES(onboarding_status)", id, id);
+        jdbcTemplate.update("INSERT INTO auth_user_agreement_acceptance(id,user_id,agreement_type,agreement_version,client_type,accepted_at) "
+                + "SELECT ?,?,'PARENT_USER_AGREEMENT',config_value,'WEB',CURRENT_TIMESTAMP FROM sys_config "
+                + "WHERE config_key='auth.parent-agreement.current-version' AND status='ENABLED' "
+                + "ON DUPLICATE KEY UPDATE agreement_version = VALUES(agreement_version)", id, id);
         sqlSessionTemplate.clearCache();
     }
 
@@ -594,13 +623,18 @@ class RewardExchangeControllerTest {
         String parentToken = platformLoginToken("reward_parent");
         String otherParentToken = platformLoginToken("reward_other_parent");
         String teacherToken = platformLoginToken("reward_teacher");
+        // V118 后家长奖励管理仅 MINIAPP 端点可达：先以家庭身份（家长档案）建学生，再转 MINIAPP 会话
+        makeFamilyParent("reward_parent");
+        makeFamilyParent("reward_other_parent");
         IssuedStudent student = createStudent(parentToken, "奖励测试学生");
+        makeMiniappRewardParent("reward_parent");
+        makeMiniappRewardParent("reward_other_parent");
         return new Fixture(
                 student, parentToken, otherParentToken, teacherToken, studentLoginToken(student));
     }
 
     private Long createReward(Fixture fixture, String rewardName, long requiredPoints) throws Exception {
-        MvcResult result = mockMvc.perform(post("/api/v1/rewards/students/{studentId}",
+        MvcResult result = mockMvc.perform(post("/api/v1/parent-rewards/students/{studentId}",
                         fixture.student().id())
                         .header("Authorization", bearer(fixture.parentToken()))
                         .contentType(MediaType.APPLICATION_JSON)
@@ -694,11 +728,25 @@ class RewardExchangeControllerTest {
     }
 
     private void setPassword(User administrator, User target) {
+        // bf34c6a 起管理员设置密码后要求首次登录自行改密，先设临时密码待 bootstrap 流程改密
         authenticationApplicationService.setPlatformUserPassword(new SetPlatformUserPasswordCommand(
-                administrator.id(), target.id(), "Password123"));
+                administrator.id(), target.id(), "Bootstrap123"));
     }
 
     private String platformLoginToken(String username) throws Exception {
+        // 首登改密 bootstrap：临时密码登录 → 改密 → 重新建立业务会话
+        MvcResult bootstrap = mockMvc.perform(post("/api/v1/auth/sessions/password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"username":"%s","password":"Bootstrap123","deviceId":"%s-device","deviceName":"奖励测试浏览器"}
+                                """.formatted(username, username)))
+                .andExpect(status().isOk())
+                .andReturn();
+        mockMvc.perform(post("/api/v1/auth/password")
+                        .header("Authorization", "Bearer " + objectMapper.readTree(bootstrap.getResponse().getContentAsString()).path("accessToken").asText())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"oldPassword\":\"Bootstrap123\",\"newPassword\":\"Password123\"}"))
+                .andExpect(status().isNoContent());
         MvcResult result = mockMvc.perform(post("/api/v1/auth/sessions/password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -725,7 +773,7 @@ class RewardExchangeControllerTest {
     ) throws Exception {
         ready.countDown();
         start.await();
-        return mockMvc.perform(post("/api/v1/reward-exchanges/{exchangeId}/approve", exchangeId)
+        return mockMvc.perform(post("/api/v1/parent-reward-exchanges/{exchangeId}/approve", exchangeId)
                         .header("Authorization", bearer(parentToken)))
                 .andReturn().getResponse().getStatus();
     }

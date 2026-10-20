@@ -9,6 +9,7 @@ import com.lingdong.learning.auth.domain.AuthClientType;
 import com.lingdong.learning.common.web.ResourceNotFoundException;
 import com.lingdong.learning.feature.application.FeatureAccessService;
 import com.lingdong.learning.feature.application.FeatureDisabledException;
+import com.lingdong.learning.learningtask.infrastructure.persistence.LearningTaskAssignmentMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -42,7 +43,8 @@ class TaskAttachmentApplicationServiceTest {
         contentService = mock(ManagedAttachmentContentService.class);
         featureAccessService = mock(FeatureAccessService.class);
         service = new TaskAttachmentApplicationService(
-                fileService, fileMapper, relationMapper, contentService, featureAccessService);
+                fileService, fileMapper, relationMapper, contentService, featureAccessService,
+                mock(LearningTaskAssignmentMapper.class));
         student = new AuthenticatedUser(
                 1874244142494647001L, 1874244142494647002L,
                 "student", "学生", AuthClientType.MINIAPP, List.of("STUDENT"));

@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.lingdong.learning.learningtask.application.TaskReviewView;
 import com.lingdong.learning.learningtask.domain.LearningTaskSourceType;
 
+import java.time.LocalDate;
+
 /** Web 当前审核人待办响应。 */
 public record TaskReviewResponse(
         @JsonSerialize(using = ToStringSerializer.class) Long assignmentId,
@@ -19,6 +21,9 @@ public record TaskReviewResponse(
         String currentStatus,
         @JsonSerialize(using = ToStringSerializer.class) Long currentReviewerId,
         String reviewerDisplayName,
+        LocalDate scheduledDate,
+        String currentClassName,
+        String taskType,
         TaskCheckInResponse latestCheckIn
 ) {
     static TaskReviewResponse from(TaskReviewView view) {
@@ -26,6 +31,7 @@ public record TaskReviewResponse(
                 view.assignmentId(), view.taskId(), view.title(), view.basePoints(), view.studentId(),
                 view.studentName(), view.sourceType(), view.sourceOrganizationId(),
                 view.sourceOrganizationName(), view.currentStatus(), view.currentReviewerId(),
-                view.reviewerDisplayName(), TaskCheckInResponse.from(view.latestCheckIn()));
+                view.reviewerDisplayName(), view.scheduledDate(), view.currentClassName(),
+                view.taskType(), TaskCheckInResponse.from(view.latestCheckIn()));
     }
 }

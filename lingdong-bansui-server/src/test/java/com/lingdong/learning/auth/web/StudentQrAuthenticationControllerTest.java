@@ -128,8 +128,9 @@ class StudentQrAuthenticationControllerTest {
                 .andExpect(jsonPath("$.studentQrLoginEnabled").value(false));
         mockMvc.perform(post("/api/v1/students/{id}/login-qr-tickets", STUDENT_ID)
                         .header("Authorization", "Bearer " + parentToken))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.code").value("FEATURE_DISABLED"));
+                // V118 后 feature 先行拒绝：开关关闭时权限链直接 403，不再到达业务层的 409 FEATURE_DISABLED
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
         mockMvc.perform(post("/api/v1/auth/student-sessions/qr")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(qrLoginBody(qrContent, credential.plainLoginCode())))
@@ -192,6 +193,8 @@ class StudentQrAuthenticationControllerTest {
     private void setPassword(User systemAdministrator, User targetUser) {
         authenticationService.setPlatformUserPassword(new SetPlatformUserPasswordCommand(
                 systemAdministrator.id(), targetUser.id(), "Password123"));
+        // bf34c6a 管理员设密后要求首登改密，业务测试直接清除首登改密标记
+        jdbcTemplate.update("UPDATE auth_initial_password_state SET change_required=false WHERE user_id=?", targetUser.id());
     }
 
     private String loginAccessToken(String username) throws Exception {

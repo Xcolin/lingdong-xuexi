@@ -59,10 +59,66 @@ public class LearningTaskValidator {
             throw new IllegalArgumentException("任务标签不存在或已停用");
         }
         List<LearningTaskTargetInput> targets = normalizeTargets(input.targets());
+        String description = optionalText(input.description(), "任务描述", 500);
+        List<String> requirementItems = normalizeRequirementItems(input.requirementItems());
+        List<Long> exampleFileIds = normalizeExampleFileIds(input.exampleFileIds());
+        String taskType = normalizeOptionalIn(input.taskType(), "任务类型",
+                List.of("STUDY", "LIFE", "SPORT", "HOBBY", "CHORE", "OTHER"));
+        LocalDate endDate = input.endDate();
+        if (endDate != null && endDate.isBefore(scheduledDate)) {
+            throw new IllegalArgumentException("任务结束日期不能早于开始日期");
+        }
+        String visibility = normalizeOptionalIn(input.visibility(), "可见范围",
+                List.of("FAMILY_ONLY", "FAMILY_CLASS_PARTNER", "FAMILY_SCHOOL_PARTNER", "CUSTOM"));
         return new ValidatedLearningTaskDraft(
                 title, difficulty, difficulty * 10, duration, scheduledDate, categoryCode,
                 tagCodes, optionalText(input.remark(), "任务备注", 200), targets,
-                input.recurrenceEnabled(), recurrenceEndDate, input.recurrenceEnabled()?frequency:"DAILY", days);
+                input.recurrenceEnabled(), recurrenceEndDate, input.recurrenceEnabled()?frequency:"DAILY", days,
+                description, requirementItems, exampleFileIds, taskType, endDate, visibility);
+    }
+
+    /** 原型向导的可选枚举字段：空值合法，非空必须在白名单内（02-03 类型六选 / 02-04 可见范围四选）。 */
+    private String normalizeOptionalIn(String value, String label, List<String> allowed) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        String normalized = value.trim().toUpperCase(java.util.Locale.ROOT);
+        if (!allowed.contains(normalized)) {
+            throw new IllegalArgumentException(label + "不合法");
+        }
+        return normalized;
+    }
+
+    private static final int MAX_REQUIREMENT_ITEM_COUNT = 5;
+
+    private List<String> normalizeRequirementItems(List<String> values) {
+        if (values == null || values.isEmpty()) {
+            return List.of();
+        }
+        if (values.size() > MAX_REQUIREMENT_ITEM_COUNT) {
+            throw new IllegalArgumentException("任务要求清单不能超过 5 项");
+        }
+        for (String value : values) {
+            if (optionalText(value, "任务要求项", 100) == null) {
+                throw new IllegalArgumentException("任务要求项不能为空");
+            }
+        }
+        return List.copyOf(values);
+    }
+
+    private List<Long> normalizeExampleFileIds(List<Long> values) {
+        if (values == null || values.isEmpty()) {
+            return List.of();
+        }
+        if (values.size() > 9) {
+            throw new IllegalArgumentException("参考示例图不能超过 9 张");
+        }
+        for (Long value : values) {
+            if (value == null || value <= 0) {
+                throw new IllegalArgumentException("参考示例图标识不合法");
+            }
+        }
+        return List.copyOf(values);
     }
 
     private List<String> normalizeTags(List<String> values) {

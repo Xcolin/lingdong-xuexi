@@ -121,7 +121,7 @@ class ParentAccountLifecycleServiceTest {
         when(parentStudentMapper.countActiveStudentsByParent(USER_ID)).thenReturn(1L);
 
         assertThatThrownBy(() -> service.requestCancellation(
-                USER_ID, AuthClientType.MINIAPP, "384291", "确认注销"))
+                USER_ID, AuthClientType.MINIAPP, "384291", "确认注销", "UNUSED", null))
                 .isInstanceOf(ParentAccountCancellationConflictException.class)
                 .hasMessageContaining("学生关系");
 
@@ -133,10 +133,10 @@ class ParentAccountLifecycleServiceTest {
     void createsSevenDayCoolingOffRequestAndReturnsExistingRequestIdempotently() {
         when(parentStudentMapper.countActiveStudentsByParent(USER_ID)).thenReturn(0L);
         when(lifecycleMapper.findActiveCancellationForUpdate(USER_ID)).thenReturn(null);
-        when(lifecycleMapper.insertCancellation(any(ParentAccountCancellationRecord.class))).thenReturn(1);
+        when(lifecycleMapper.insertCancellation(any(ParentAccountCancellationRecord.class), any(), any())).thenReturn(1);
 
         ParentAccountCancellationRecord created = service.requestCancellation(
-                USER_ID, AuthClientType.WEB, "384291", "确认注销");
+                USER_ID, AuthClientType.WEB, "384291", "确认注销", "UNUSED", null);
 
         assertThat(created.status()).isEqualTo(ParentAccountCancellationStatus.COOLING_OFF);
         assertThat(created.coolingEndsAt()).isEqualTo(created.requestedAt().plusDays(7));
@@ -145,8 +145,8 @@ class ParentAccountLifecycleServiceTest {
 
         when(lifecycleMapper.findActiveCancellationForUpdate(USER_ID)).thenReturn(created);
         assertThat(service.requestCancellation(
-                USER_ID, AuthClientType.WEB, "unused", "确认注销")).isEqualTo(created);
-        verify(lifecycleMapper).insertCancellation(any(ParentAccountCancellationRecord.class));
+                USER_ID, AuthClientType.WEB, "unused", "确认注销", "OTHER", "其他说明")).isEqualTo(created);
+        verify(lifecycleMapper).insertCancellation(any(ParentAccountCancellationRecord.class), any(), any());
     }
 
     @Test

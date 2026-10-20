@@ -13,6 +13,7 @@ public record TaskCheckIn(
         LocalDateTime submittedAt,
         Long reviewedByUserId,
         LocalDateTime reviewedAt,
-        String reviewComment
+        String reviewComment,
+        String completion
 ) {
 }

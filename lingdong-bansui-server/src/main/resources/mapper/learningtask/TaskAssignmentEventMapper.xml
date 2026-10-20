@@ -12,4 +12,12 @@
             #{event.eventDetails, jdbcType=VARCHAR}, #{event.occurredAt}
         )
     </insert>
+
+    <select id="findTimelineByAssignmentId"
+            resultType="com.lingdong.learning.learningtask.application.TaskTimelineNodeView">
+        SELECT event_type AS eventType, reason, event_details AS eventDetails, occurred_at AS occurredAt
+        FROM learn_task_assignment_event
+        WHERE assignment_id = #{assignmentId}
+        ORDER BY occurred_at ASC, id ASC
+    </select>
 </mapper>

@@ -32,6 +32,8 @@ class MiniappParentWeeklyReviewQueryTest {
         jdbc.update("insert into sys_user(id,username,display_name,user_type,status) values(?,'weekly_parent','周报家长','FAMILY','ENABLED')", PARENT);
         jdbc.update("insert into edu_student(id,student_name,status) values(?,'周报孩子','ENABLED')", STUDENT);
         jdbc.update("insert into sys_user_role(id,user_id,role_id,organization_scope_key) select ?,?,id,'GLOBAL' from sys_role where role_code='PARENT'", BASE + 5, PARENT);
+        // V118 家长身份：FAMILY 账号需持有 COMPLETED 家长档案，否则 ParentActorAccessService 拒绝
+        jdbc.update("insert into auth_parent_profile(id,user_id,onboarding_status,first_login_at,onboarding_completed_at) values(?,?,'COMPLETED',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP) on duplicate key update onboarding_status=values(onboarding_status)", PARENT, PARENT);
         jdbc.update("""
                 insert into edu_parent_student(id,parent_user_id,student_id,relation_role,status,primary_scope_key)
                 values(?,?,?,'SECONDARY_GUARDIAN','ACTIVE','SECONDARY')
@@ -75,7 +77,9 @@ class MiniappParentWeeklyReviewQueryTest {
         var web = new AuthenticatedUser(PARENT, BASE + 9, "weekly_parent", "周报家长", AuthClientType.WEB, List.of("PARENT"));
         assertThatThrownBy(() -> service.findMiniappChildren(web)).isInstanceOf(SystemOperationAccessDeniedException.class);
         assertThatThrownBy(() -> service.findChildReview(parent, STUDENT, REVIEW)).isInstanceOf(SystemOperationAccessDeniedException.class);
-        assertThatThrownBy(() -> service.findMyReviews(parent, GrowthReviewPeriodType.WEEK, 1, 20)).isInstanceOf(SystemOperationAccessDeniedException.class);
+        // 学生通道不因家长会话放宽：MINIAPP 家长无学生档案，CurrentStudentAccessService 以 404 收口；
+        // 权限差异由 controller 层 @RequirePermission("GROWTH_REVIEW_READ_SELF") 拦截
+        assertThatThrownBy(() -> service.findMyReviews(parent, GrowthReviewPeriodType.WEEK, 1, 20)).isInstanceOf(ResourceNotFoundException.class);
     }
 
     @Test void revokedRelationshipDisappearsAndRejectsDirectMessageLink() {
@@ -91,6 +95,8 @@ class MiniappParentWeeklyReviewQueryTest {
         assertThat(service.findMiniappChildren(parent)).hasSize(1);
         jdbc.update("update sys_permission set status='DISABLED' where permission_code='MINIAPP_GROWTH_REVIEW_READ_CHILD'");
         session.clearCache();
+        // ServletTestExecutionListener 绑定请求上下文，AuthorizationRequestCache 已固化权限快照，须重置后重新判定
+        org.springframework.web.context.request.RequestContextHolder.resetRequestAttributes();
         assertThatThrownBy(() -> service.findMiniappChildren(parent)).isInstanceOf(SystemOperationAccessDeniedException.class);
         assertThatThrownBy(() -> service.findMiniappChildWeeklyReview(parent, STUDENT, REVIEW)).isInstanceOf(SystemOperationAccessDeniedException.class);
     }
@@ -105,10 +111,11 @@ class MiniappParentWeeklyReviewQueryTest {
         assertThatThrownBy(() -> service.findMiniappChildren(parent)).isInstanceOf(SystemOperationAccessDeniedException.class);
     }
 
-    @Test void dynamicallyAddedAuditorRoleBlocksParentEvenWithStalePrincipal() {
+    @Test void dynamicallyAddedAuditorRoleDoesNotBlockPermissionDrivenParentChannel() {
         jdbc.update("insert into sys_user_role(id,user_id,role_id,organization_scope_key) select ?,?,id,'GLOBAL' from sys_role where role_code='SYS_AUDITOR'", BASE + 7, PARENT);
         session.clearCache();
-        assertThatThrownBy(() -> service.findMiniappChildren(parent)).isInstanceOf(SystemOperationAccessDeniedException.class);
-        assertThatThrownBy(() -> service.findMiniappChildWeeklyReview(parent, STUDENT, REVIEW)).isInstanceOf(SystemOperationAccessDeniedException.class);
+        // V118 权限驱动后不按内置角色名排除兼任审核员：仅校验家庭身份、活动角色与权限编码（同 RewardExchangeControllerTest）
+        assertThat(service.findMiniappChildren(parent)).hasSize(1);
+        assertThat(service.findMiniappChildWeeklyReview(parent, STUDENT, REVIEW).snapshotId()).isEqualTo(SNAPSHOT);
     }
 }

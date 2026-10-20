@@ -7,12 +7,14 @@ import com.lingdong.learning.common.id.IdGenerator;
 import com.lingdong.learning.common.security.SystemOperationAccessDeniedException;
 import com.lingdong.learning.common.web.ResourceNotFoundException;
 import com.lingdong.learning.feature.application.FeatureAccessService;
+import com.lingdong.learning.growthpoint.domain.GrowthReviewGenerationSource;
 import com.lingdong.learning.growthpoint.domain.GrowthReviewPeriodType;
 import com.lingdong.learning.growthpoint.domain.GrowthReviewSupplementType;
 import com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthReviewCategoryRow;
 import com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthReviewDailyTrendRow;
 import com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthReviewDetailRow;
 import com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthReviewMapper;
+import com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthReviewRow;
 import com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthReviewSummaryRow;
 import com.lingdong.learning.growthpoint.infrastructure.persistence.GrowthReviewSupplementRow;
 import com.lingdong.learning.learningtask.application.CurrentStudentAccessService;
@@ -44,6 +46,7 @@ public class GrowthReviewQueryService {
     private final Clock clock;
     private final PermissionDecisionService permissions;
     private final UserRoleMapper roles;
+    private final GrowthReviewGenerationService generationService;
 
     private final ParentActorAccessService parentActors;
 
@@ -56,7 +59,8 @@ public class GrowthReviewQueryService {
             Clock clock,
             PermissionDecisionService permissions,
             UserRoleMapper roles,
-            ParentActorAccessService parentActors
+            ParentActorAccessService parentActors,
+            GrowthReviewGenerationService generationService
     ) {
         this.parentActors = parentActors;
         this.reviewMapper = reviewMapper;
@@ -67,6 +71,7 @@ public class GrowthReviewQueryService {
         this.clock = clock;
         this.permissions = permissions;
         this.roles = roles;
+        this.generationService = generationService;
     }
 
     public record ChildOption(String studentId, String studentName) { }
@@ -153,9 +158,30 @@ public class GrowthReviewQueryService {
     @Transactional
     public List<GrowthReviewSupplementView> saveMyDailyReflection(AuthenticatedUser currentUser, Long reviewId, List<AddGrowthReviewSupplementCommand> commands) {
         Student student = requireMiniappStudent(currentUser);
+        validateReflectionCommands(commands);
+        return commands.stream().map(command->addSupplement(student.id(),reviewId,currentUser.userId(),"STUDENT",command)).toList();
+    }
+
+    /** 无既有当日复盘时直接填写：确保当日复盘与快照存在后原子追加三个栏目。 */
+    @Transactional
+    public List<GrowthReviewSupplementView> saveMyDailyReflectionForToday(AuthenticatedUser currentUser, List<AddGrowthReviewSupplementCommand> commands) {
+        Student student = requireMiniappStudent(currentUser);
+        requirePeriodFeature(GrowthReviewPeriodType.DAY);
+        validateReflectionCommands(commands);
+        LocalDate today = LocalDate.now(clock.withZone(BUSINESS_ZONE));
+        generationService.generate(student.id(), GrowthReviewPeriodType.DAY, today, today,
+                GrowthReviewGenerationSource.AUTO, LocalDateTime.now(clock.withZone(BUSINESS_ZONE)));
+        GrowthReviewRow review = reviewMapper.findForUpdate(student.id(), GrowthReviewPeriodType.DAY, today, today);
+        if (review == null) {
+            throw new IllegalStateException("当日成长复盘未能创建");
+        }
+        Long reviewId = review.id();
+        return commands.stream().map(command->addSupplement(student.id(),reviewId,currentUser.userId(),"STUDENT",command)).toList();
+    }
+
+    private void validateReflectionCommands(List<AddGrowthReviewSupplementCommand> commands) {
         if(commands==null||commands.size()!=3||commands.stream().anyMatch(java.util.Objects::isNull)||commands.get(0).supplementType()!=GrowthReviewSupplementType.INSIGHT||commands.get(1).supplementType()!=GrowthReviewSupplementType.STRENGTH_WEAKNESS||commands.get(2).supplementType()!=GrowthReviewSupplementType.NEXT_PLAN)throw new IllegalArgumentException("每日复盘需填写三个栏目");
         for(var command:commands){String content=normalizeContent(command.content());if(content.length()>200)throw new IllegalArgumentException("每个栏目最多200字");}
-        return commands.stream().map(command->addSupplement(student.id(),reviewId,currentUser.userId(),"STUDENT",command)).toList();
     }
 
     @Transactional
@@ -218,7 +244,7 @@ public class GrowthReviewQueryService {
         if (row == null || (requiredPeriod != null && row.periodType() != requiredPeriod)) {
             throw notFound();
         }
-        if (requiredPeriod == null) requirePeriodFeature(row.periodType());
+        // 历史详情始终可读：开关仅拦截列表与新补录（addSupplement 单独校验），避免关闭后历史不可回看
         List<GrowthReviewCategoryView> categories = reviewMapper.findCategories(row.snapshotId())
                 .stream().map(this::toCategory).toList();
         List<GrowthReviewDailyTrendView> trends = reviewMapper.findDailyTrends(row.snapshotId())

@@ -25,6 +25,6 @@ public class StudentClassQueryController {
     private List<StudentOptionResponse> query(AuthenticatedUser user, Long classId, boolean membersOnly) {
         return service.options(user, classId, membersOnly).stream().map(option -> new StudentOptionResponse(
                 option.id(), option.studentName(), option.studentAccountMasked(), option.currentClassId(),
-                option.currentClassName(), option.relationshipRole())).toList();
+                option.currentClassName(), option.relationshipRole(), option.schoolName())).toList();
     }
 }

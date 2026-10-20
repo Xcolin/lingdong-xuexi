@@ -82,4 +82,6 @@ public interface LearningTaskAssignmentMapper {
             @Param("operatorUserId") Long operatorUserId,
             @Param("expectedVersion") int expectedVersion
     );
+
+    List<String> findExampleFileJsonByStudentUserId(@Param("studentUserId") Long studentUserId);
 }

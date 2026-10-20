@@ -22,9 +22,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -35,6 +37,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+// 测试数据需回滚：非事务会在共享 MySQL 库提交，重跑遭遇 DuplicateUserAccount
+@Transactional
 class OrganizationManagementControllerTest {
     @Autowired private MockMvc mockMvc;
     @Autowired private ObjectMapper objectMapper;
@@ -44,6 +48,7 @@ class OrganizationManagementControllerTest {
     @Autowired private RoleApplicationService roleApplicationService;
     @Autowired private PermissionMapper permissionMapper;
     @Autowired private PermissionAdministrationService permissionAdministrationService;
+    @Autowired private JdbcTemplate jdbcTemplate;
 
     @Test
     void letsSystemAdministratorsCreateOrganizationTypesAndOrganizationTrees() throws Exception {
@@ -166,6 +171,8 @@ class OrganizationManagementControllerTest {
         authenticationApplicationService.setPlatformUserPassword(new SetPlatformUserPasswordCommand(
                 administrator.id(), targetUser.id(), "Password123"
         ));
+        // bf34c6a 管理员设密后要求首登改密，业务测试直接清除首登改密标记
+        jdbcTemplate.update("UPDATE auth_initial_password_state SET change_required=false WHERE user_id=?", targetUser.id());
     }
 
     private String loginAccessToken(String username) throws Exception {
