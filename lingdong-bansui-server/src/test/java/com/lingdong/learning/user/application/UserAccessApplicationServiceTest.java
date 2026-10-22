@@ -49,14 +49,18 @@ class UserAccessApplicationServiceTest {
         jdbcTemplate.update("delete from sys_user_organization where user_id in (select id from sys_user where username in (" + userIn + "))");
         jdbcTemplate.update("delete from sys_organization_admin where user_id in (select id from sys_user where username in (" + userIn + "))");
         jdbcTemplate.update("delete from sys_user where username in (" + userIn + ")");
-        String[] orgCodes = {"REGION_USER_A", "SCHOOL_USER_A", "REGION_USER_B", "SCHOOL_USER_B", "REGION_USER_INEFFECTIVE", "SCHOOL_USER_INEFFECTIVE"};
-        String orgIn = String.join(",", java.util.Arrays.stream(orgCodes).map(o -> "'" + o + "'").toArray(String[]::new));
-        jdbcTemplate.update("delete from sys_role_data_scope where organization_id in (select id from sys_organization where organization_code in (" + orgIn + "))");
-        jdbcTemplate.update("delete from sys_user_role where organization_id in (select id from sys_organization where organization_code in (" + orgIn + "))");
-        jdbcTemplate.update("delete from sys_user_organization where organization_id in (select id from sys_organization where organization_code in (" + orgIn + "))");
-        jdbcTemplate.update("delete from sys_organization_admin where organization_id in (select id from sys_organization where organization_code in (" + orgIn + "))");
-        jdbcTemplate.update("delete from sys_organization_owner where organization_id in (select id from sys_organization where organization_code in (" + orgIn + "))");
-        jdbcTemplate.update("delete from sys_organization where organization_code in (" + orgIn + ")");
+        // 自引用外键 fk_sys_organization_parent：先删子（SCHOOL）再删父（REGION）。
+        String[] schoolCodes = {"SCHOOL_USER_A", "SCHOOL_USER_B", "SCHOOL_USER_INEFFECTIVE"};
+        String[] regionCodes = {"REGION_USER_A", "REGION_USER_B", "REGION_USER_INEFFECTIVE"};
+        for (String[] batch : new String[][]{schoolCodes, regionCodes}) {
+            String orgIn = String.join(",", java.util.Arrays.stream(batch).map(o -> "'" + o + "'").toArray(String[]::new));
+            jdbcTemplate.update("delete from sys_role_data_scope where organization_id in (select id from sys_organization where organization_code in (" + orgIn + "))");
+            jdbcTemplate.update("delete from sys_user_role where organization_id in (select id from sys_organization where organization_code in (" + orgIn + "))");
+            jdbcTemplate.update("delete from sys_user_organization where organization_id in (select id from sys_organization where organization_code in (" + orgIn + "))");
+            jdbcTemplate.update("delete from sys_organization_admin where organization_id in (select id from sys_organization where organization_code in (" + orgIn + "))");
+            jdbcTemplate.update("delete from sys_organization_owner where organization_id in (select id from sys_organization where organization_code in (" + orgIn + "))");
+            jdbcTemplate.update("delete from sys_organization where organization_code in (" + orgIn + ")");
+        }
     }
 
     @Test

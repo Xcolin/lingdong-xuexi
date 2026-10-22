@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { App } from './App';
 
-const auth = vi.hoisted(() => ({ currentUser: vi.fn(), hasLocalSession: vi.fn(), clearLocalSession: vi.fn(), changePassword: vi.fn() }));
+const auth = vi.hoisted(() => ({ accountSettings: vi.fn().mockResolvedValue({passwordChangeRequired:false}), currentUser: vi.fn(), hasLocalSession: vi.fn(), clearLocalSession: vi.fn(), changePassword: vi.fn() }));
 const capability = vi.hoisted(() => ({ web: vi.fn() }));
 const menus = vi.hoisted(() => ({ current: vi.fn() }));
 vi.mock('../api/auth', () => ({ authApi: auth }));
@@ -16,7 +16,7 @@ vi.mock('../features/auth/LoginPage', () => ({ LoginPage: () => <div>登录页�
 vi.mock('../features/users/UserManagementPage', () => ({ UserManagementPage: () => <div>用户列表内容</div> }));
 
 beforeEach(() => {
-  vi.clearAllMocks();
+  vi.clearAllMocks(); auth.accountSettings.mockResolvedValue({passwordChangeRequired:false});
   auth.hasLocalSession.mockReturnValue(true);
   auth.currentUser.mockResolvedValue({ userId: '1', sessionId: '2', username: 'admin', displayName: '系统管理员', clientType: 'WEB', roleCodes: ['SYS_ADMIN'], permissionCodes: ['DASHBOARD_READ', 'IAM_USER_LIST'] });
   capability.web.mockResolvedValue({ client: 'WEB' });

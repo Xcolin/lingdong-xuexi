@@ -1,5 +1,5 @@
 <template>
-  <view class="teacher-page"><view class="teacher-navigation"><NativeStatusSpacer/><view class="teacher-nav-line" :style="{paddingRight:(navReservedRight+76)+'px'}"><button class="teacher-back" aria-label="返回" @tap="backTeacherPage">‹</button><text>{{mode === 'LIST' ? '教师列表' : formTitle}}</text><button v-if="mode==='LIST'&&canCreate" class="teacher-add" :style="{right:navReservedRight+'px'}" @tap="openCreate">＋ 新增教师</button></view></view>
+  <view class="teacher-page" :class="{configuring:mode==='CLASSES'}"><view class="teacher-navigation"><NativeStatusSpacer/><view class="teacher-nav-line" :style="{paddingRight:(navReservedRight+76)+'px'}"><button class="teacher-back" aria-label="返回" @tap="backTeacherPage">‹</button><text>{{mode === 'LIST' ? '教师列表' : formTitle}}</text><button v-if="mode==='LIST'&&canCreate" class="teacher-add" :style="{right:navReservedRight+'px'}" @tap="openCreate">＋ 新增教师</button></view></view>
     <view v-if="mode === 'LIST'" class="search-band">
       <input v-model="keyword" class="search-input" maxlength="64" placeholder="搜索教师姓名或账号" confirm-type="search" @confirm="search" />
       <button class="search-button" @tap="search">查询</button>
@@ -54,12 +54,12 @@
         </template>
 
         <template v-else-if="mode === 'CLASSES'"><view class="teacher-config-profile"><PrototypeIcon name="user" :size="52"/><view><text class="teacher-name">{{selectedTeacher?.displayName}}</text><text class="teacher-account">{{selectedTeacher?.schoolName}}</text></view></view><view class="class-select-header"><text>选择班级（可多选）</text><checkbox-group @change="toggleAllTeacherClasses"><label><checkbox value="all" :checked="allTeacherClassesSelected" :disabled="submitting||!availableTeacherClasses.length" color="#184f40"/>全选本校班级</label></checkbox-group></view>
-          <checkbox-group class="check-list" @change="selectTeacherClasses">
+          <scroll-view class="class-tree-scroll" scroll-y><checkbox-group class="check-list" @change="selectTeacherClasses">
             <view v-for="(group,index) in teacherClassGroups" :key="group.id" class="class-tree-group"><text v-if="group.campusName&&(index===0||teacherClassGroups[index-1].campusId!==group.campusId)" class="class-campus-heading" @tap="toggleTeacherCampus(group.campusId)">{{collapsedTeacherCampuses.includes(group.campusId)?"›":"⌄"}} {{group.campusName}}</text><view v-if="group.gradeName" v-show="!collapsedTeacherCampuses.includes(group.campusId)" class="class-grade-controls"><button class="grade-select" :disabled="submitting" :aria-label="'选择'+group.gradeName" @tap.stop="toggleGradeSelection(group.id)">{{gradeSelected(group.id)?'☑':'☐'}}</button><text class="class-grade-heading" @tap="toggleTeacherGrade(group.id)">{{collapsedTeacherGrades.includes(group.id)?"›":"⌄"}} {{group.gradeName}}</text></view><label v-show="!collapsedTeacherCampuses.includes(group.campusId)&&!collapsedTeacherGrades.includes(group.id)" v-for="item in group.items" :key="item.id" class="check-row class-tree-row">
               <checkbox :disabled="submitting" :value="item.id" :checked="teacherClassIds.includes(item.id)" color="#167c5a" />
               <text>{{ item.name }}</text>
             </label></view>
-          </checkbox-group>
+          </checkbox-group></scroll-view>
           <view v-if="availableTeacherClasses.length === 0" class="empty-text">该学校暂无可用班级</view>
         </template>
 
@@ -221,7 +221,7 @@ const formTitle = computed(() => {
   if (mode.value === 'CREATE') return '新增教师';
   if (mode.value === 'EDIT') return `编辑${selectedTeacher.value?.displayName || '教师'}`;
   if (mode.value === 'PASSWORD') return `重置${selectedTeacher.value?.displayName || '教师'}的密码`;
-  if (mode.value === 'CLASSES') return `${selectedTeacher.value?.displayName || '教师'}的班级范围`;
+  if (mode.value === 'CLASSES') return '配置教师班级';
   return '';
 });
 
@@ -527,3 +527,22 @@ async function leavePage(): Promise<void> {
 <style scoped>.class-tree-group{padding:8rpx 0}.class-campus-heading,.class-grade-heading{display:block;font-size:27rpx;color:#244f3e;padding:12rpx 0}.class-grade-heading{padding-left:28rpx}.class-tree-row{padding-left:52rpx}</style>
 
 <style scoped>.class-grade-controls{display:flex;align-items:center;padding-left:24rpx}.class-grade-controls .class-grade-heading{padding-left:8rpx}.grade-select{margin:0;padding:0;width:44rpx;line-height:48rpx;background:transparent;color:#17674d;font-size:34rpx}.grade-select::after{border:0}</style>
+
+<style scoped>
+.configuring .teacher-form-band{border:0;padding:12rpx 0;background:transparent}
+.configuring .teacher-config-profile{padding:20rpx;border-radius:18rpx;gap:18rpx}
+.teacher-config-profile>view{flex:1;min-width:0;overflow:hidden}
+.teacher-config-profile .teacher-name,.teacher-config-profile .teacher-account{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.configuring .class-tree-scroll{height:46vh;border:1rpx solid #e3ece6;border-radius:18rpx;box-sizing:border-box;margin:18rpx 0}
+.configuring .check-list{margin:0;padding:12rpx 18rpx;box-sizing:border-box}
+.configuring .class-campus-heading{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.configuring .class-grade-controls{min-width:0}
+.configuring .grade-select{flex-shrink:0}
+.configuring .class-grade-heading{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.configuring .class-tree-row{min-width:0;box-sizing:border-box;padding-left:44rpx}
+.configuring .class-tree-row checkbox{flex-shrink:0}
+.configuring .class-tree-row>text{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:26rpx}
+.configuring .form-actions{flex-direction:column;gap:12rpx;margin-top:20rpx}
+.configuring .form-actions button{width:100%;box-sizing:border-box;min-height:80rpx}
+.configuring .form-actions .save-button{order:-1;background:linear-gradient(120deg,#1a7657,#10503f)}
+</style>

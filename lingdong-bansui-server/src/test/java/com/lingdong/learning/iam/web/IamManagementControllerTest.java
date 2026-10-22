@@ -92,6 +92,11 @@ class IamManagementControllerTest {
         jdbcTemplate.update("delete from sys_organization_admin where organization_id in (select id from sys_organization where organization_code in ('IAM_API_SCHOOL','IAM_OPS_CREATE_ORG','IAM_SCOPE_SCHOOL','IAM_NOT_FOUND_SCHOOL','IAM_AUDIT_CREATE_ORG'))");
         jdbcTemplate.update("delete from sys_organization_owner where organization_id in (select id from sys_organization where organization_code in ('IAM_API_SCHOOL','IAM_OPS_CREATE_ORG','IAM_SCOPE_SCHOOL','IAM_NOT_FOUND_SCHOOL','IAM_AUDIT_CREATE_ORG'))");
         jdbcTemplate.update("delete from sys_organization where organization_code in ('IAM_API_SCHOOL','IAM_OPS_CREATE_ORG','IAM_SCOPE_SCHOOL','IAM_NOT_FOUND_SCHOOL','IAM_AUDIT_CREATE_ORG')");
+        // UserAccessApplicationServiceTest 先于/后于本类执行时留下的固定用户会污染关键字唯一性断言。
+        jdbcTemplate.update("delete from sys_user_role where user_id in (select id from sys_user where username = 'teacher_zhang')");
+        jdbcTemplate.update("delete from sys_user_organization where user_id in (select id from sys_user where username = 'teacher_zhang')");
+        jdbcTemplate.update("delete from auth_initial_password_state where user_id in (select id from sys_user where username = 'teacher_zhang')");
+        jdbcTemplate.update("delete from sys_user where username = 'teacher_zhang'");
     }
 
     @Test

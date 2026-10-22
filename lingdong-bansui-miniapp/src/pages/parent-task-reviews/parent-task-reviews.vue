@@ -225,6 +225,7 @@ function confirmSubmit(approve: boolean) {
 }
 async function submit(approve: boolean) {
   if (busy.value || stale.value || !detail.value?.latestCheckIn) return;
+  if (!approve && !comment.value.trim()) { error.value = '驳回时必须填写评语'; return; }
   const current = detail.value, expectedCheckInId = detail.value.latestCheckIn.id, token = getParentSession()?.accessToken; if (!token) { clear(); return; }
   const n = epoch.next(); busy.value = true; error.value = '';
   try {

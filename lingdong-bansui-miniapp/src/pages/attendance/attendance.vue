@@ -1,5 +1,5 @@
 <template>
-  <view class="prototype-workspace has-tabbar page-shell"><view class="prototype-section-header"><PrototypeIcon name="school" :size="22" /><text>班级考勤</text></view>
+  <view class="prototype-workspace has-tabbar page-shell"><view class="local-navigation"><NativeStatusSpacer /><view class="local-nav-line"><button class="local-back" aria-label="返回" @tap="backPage">‹</button><text>人工考勤记录</text></view></view>
     <view v-if="loading" class="state">正在核验考勤权限</view>
     <template v-else-if="enabled">
       <view v-if="!detail" class="heading-band">
@@ -60,11 +60,7 @@
             <text class="meta">签到 {{ record.checkinTime || '未填写' }} · 签退 {{ record.checkoutTime || '未填写' }}</text>
             <text class="meta">{{ record.recorderName }} · {{ formatTime(record.updatedAt) }}</text>
           </view>
-          <view class="pagination">
-            <button class="outline" :disabled="busy || page <= 1" @tap="queryRecords(page - 1)">上一页</button>
-            <text>{{ page }} / {{ Math.max(1, Math.ceil(total / pageSize)) }} · 共 {{ total }} 条</text>
-            <button class="outline" :disabled="busy || page * pageSize >= total" @tap="queryRecords(page + 1)">下一页</button>
-          </view>
+          <view class="pagination"><text v-if="busy">正在加载</text><button v-else-if="errorMessage" class="outline" @tap="queryRecords(page + 1)">加载失败，点击重试</button><text v-else>{{ exhausted || records.length >= total ? '已全部加载' : '上滑加载更多' }} · 共 {{ total }} 条</text></view>
         </view>
       </template>
 
@@ -105,11 +101,11 @@
 </template>
 
 <script setup lang="ts">
-import PrototypeIcon from '@/components/PrototypeIcon.vue';
+import NativeStatusSpacer from '@/components/NativeStatusSpacer.vue';
 import AppTabBar from '@/components/AppTabBar.vue';
 import { TEACHER_TABS, ORG_TABS } from '@/config/tabbar';
 import { computed, ref } from 'vue';
-import { onLoad, onShow, onHide, onUnload, onPullDownRefresh } from '@dcloudio/uni-app';
+import { onLoad, onShow, onHide, onUnload, onPullDownRefresh, onReachBottom } from '@dcloudio/uni-app';
 import { getMiniappCapabilities } from '@/api/capability';
 import { ApiError } from '@/api/http';
 import { getAttendanceUser, listAttendanceClasses, listAttendanceRecords, getAttendanceRoster,
@@ -148,7 +144,9 @@ const selectedCount = computed(() => drafts.value.filter((row) => row.selected).
 const queryClasses = computed(() => [{ classOrganizationId: '', className: '全部班级' }, ...classes.value]);
 const queryStatuses = [{ value: '', label: '全部状态' }, ...attendanceStatuses.slice(1)];
 // 生命周期序号阻止旧请求在恢复、退出或身份失效后回写。
+const exhausted=ref(false);
 let epoch = 0;
+let committedFilters: typeof filters.value | null = null;
 
 onLoad((query) => {
   const value = query?.identity ?? hashQueryIdentity();
@@ -158,6 +156,7 @@ onLoad((query) => {
   }
 });
 onShow(refresh);
+onReachBottom(() => { if (!loading.value && !detail.value && mode.value === 'list' && !errorMessage.value && !exhausted.value && records.value.length < total.value) void queryRecords(page.value + 1); });
 onHide(invalidate);
 onUnload(invalidate);
 onPullDownRefresh(async () => { await refresh(); uni.stopPullDownRefresh(); });
@@ -179,7 +178,7 @@ function token(): string {
 }
 function clearRoster(): void { drafts.value = []; rosterLoaded.value = false; }
 function invalidate(): void {
-  epoch++;
+  epoch++; page.value = 0; exhausted.value=false; errorMessage.value='';
   enabled.value = false; user.value = null; records.value = []; detail.value = null;
   classes.value = []; recordClasses.value = []; clearRoster(); total.value = 0;
   busy.value = false; submitting.value = false;
@@ -243,20 +242,24 @@ async function refresh(): Promise<void> {
 }
 async function queryRecords(nextPage = 1): Promise<void> {
   if (!enabled.value || busy.value) return;
-  const { dateFrom, dateTo } = filters.value;
+  const query = nextPage > 1 && committedFilters ? committedFilters : { ...filters.value };
+  const { dateFrom, dateTo } = query;
   if (!!dateFrom !== !!dateTo || (dateFrom && dateFrom > dateTo)) {
     errorMessage.value = '请同时选择开始和结束日期，且开始日期不得晚于结束日期'; return;
   }
-  const current = epoch;
-  busy.value = true; errorMessage.value = ''; records.value = []; detail.value = null;
+  if(nextPage === 1) committedFilters = { ...query };
+  const current = epoch; const requestToken = token(); const requestScope = JSON.stringify(uni.getStorageSync('lingdong.selected-organization'));
+  busy.value = true; errorMessage.value = ''; if (nextPage === 1) { exhausted.value=false; records.value = []; page.value = 0; total.value = 0; } detail.value = null;
   try {
     const response = await listAttendanceRecords(token(), {
-      ...filters.value, keyword: filters.value.keyword.trim(), status: filters.value.status || undefined,
+      ...query, keyword: query.keyword.trim(), status: query.status || undefined,
       dateFrom: dateFrom || undefined, dateTo: dateTo || undefined, page: nextPage, pageSize
     });
     if (current !== epoch) return;
-    records.value = response.items; page.value = response.page; total.value = response.total;
-  } catch (error) { await handleError(error, current); }
+    if(requestToken !== token() || requestScope !== JSON.stringify(uni.getStorageSync('lingdong.selected-organization'))) { invalidate(); return; }
+    const previousCount=records.value.length;
+    records.value = [...new Map((nextPage > 1 ? [...records.value, ...response.items] : response.items).map(item => [item.id, item])).values()]; page.value = response.page; total.value = response.total; exhausted.value=!response.items.length || (nextPage>1&&records.value.length===previousCount) || nextPage*pageSize>=response.total;
+  } catch (error) { if(requestToken === token() && requestScope === JSON.stringify(uni.getStorageSync('lingdong.selected-organization'))) await handleError(error, current); }
   finally { if (current === epoch) busy.value = false; }
 }
 async function loadRoster(): Promise<void> {
@@ -329,8 +332,32 @@ function changeRowStatus(row: AttendanceDraft, event: { detail: { value: string 
   if (row.status === 'ABSENT' || row.status === 'LEAVE') { row.checkinTime = ''; row.checkoutTime = ''; }
 }
 function formatTime(value: string): string { return value ? value.replace('T', ' ').slice(0, 19) : ''; }
+function backPage(): void { uni.navigateBack({ fail: () => { uni.reLaunch({ url: `/pages/${identity.value}-home/${identity.value}-home` }); } }); }
 </script>
 
 <style scoped>
 .secondary-page,.prototype-workspace{padding:24rpx 28rpx 60rpx;min-height:calc(100vh - var(--window-top,0px));box-sizing:border-box;background:#f6f9f5;color:#172e25}.has-footer,.has-tabbar{padding-bottom:160rpx}.prototype-section-header{display:flex;justify-content:center;align-items:center;gap:12rpx;margin:-24rpx -28rpx 24rpx;padding:28rpx;background:linear-gradient(120deg,#206b52,#0c4f3e);color:white;font-size:32rpx;font-weight:650}.section,.form-band,.band,.heading-band{background:#fff;border:1rpx solid #e4ece3;border-radius:24rpx;padding:26rpx;margin-bottom:22rpx}.segmented,.mode-control,.tabs,.action-grid,.form-actions,.paging,.search-row,.two-columns{display:flex;align-items:center;gap:14rpx;margin:18rpx 0}.segmented button,.mode-control button,.tab,.action-grid button{flex:1}.active{background:#e2f2e6;color:#0a774d}.field-label{display:block;font-size:26rpx;margin:20rpx 0 12rpx}.picker-field,.picker-value,.field,input,textarea{background:#f7faf6;border:1rpx solid #dfe8dc;border-radius:16rpx;padding:18rpx;font-size:26rpx;box-sizing:border-box}.picker-field{display:flex;justify-content:space-between}.search-row input{flex:1;min-width:0}textarea{width:100%;min-height:180rpx}.row,.request-person,.invitation-class{display:flex;align-items:center;gap:18rpx;padding:24rpx 0;border-bottom:1rpx solid #e8eee6}.person{width:80rpx;height:80rpx;border-radius:50%;background:#e2eee3;display:flex;align-items:center;justify-content:center;flex-shrink:0}.person-copy{flex:1;min-width:0}.row-top,.section-heading,.detail-line,.list-head{display:flex;justify-content:space-between;align-items:center;gap:12rpx}.name,.section-title,.title,.form-title{font-size:30rpx;font-weight:650}.meta,.small,.counter{display:block;font-size:23rpx;color:#778179;line-height:1.7}.badge,.status{border-radius:12rpx;background:#e2f4e7;color:#13734d;padding:4rpx 12rpx;font-size:23rpx}.PENDING,.submitted{background:#fff0cb;color:#b37a20}.detail-line{font-size:25rpx;padding:15rpx 0}.error,.danger{color:#ac4e42}.empty,.state,.state-text{padding:30rpx;text-align:center;font-size:25rpx;color:#7c867d}.empty text{display:block}.bottom-actions{position:fixed;bottom:0;left:0;right:0;background:#fff;padding:24rpx 28rpx calc(24rpx + env(safe-area-inset-bottom));border-top:1rpx solid #e2ebe0;z-index:4}.qr-content{text-align:center;padding:28rpx 0}.invite-code{display:block;font-size:38rpx;font-weight:700;letter-spacing:2rpx;margin:20rpx 0}.block-action{width:100%;margin-top:24rpx}.list-band{background:#fff;border-radius:24rpx;padding:20rpx}.list-row,.record-row,.history-row{border-bottom:1rpx solid #e6ede4;padding:24rpx 0}button{font-size:26rpx;line-height:1.5;margin:0;padding:16rpx 22rpx;background:#eaf2e8;color:#24583d;border-radius:16rpx}button::after{border:0}.primary,.submit-button,.save-button{background:#176f50;color:white}.secondary,.outline{background:#f2f6ef;color:#28563e}.required{color:#ba5b4c}.reason-input,.textarea{width:100%}
+
+/* Keep the roster and date range usable on narrow screens. */
+.heading-band .title{display:none}
+.tabs{margin:0;border-bottom:1rpx solid #e4ece3;gap:0}
+.tab{padding:20rpx 8rpx;text-align:center;font-size:27rpx;min-width:0}
+.tab.active{background:transparent;border-bottom:4rpx solid #176f50;font-weight:650}
+.two-columns{align-items:stretch}
+.two-columns>picker,.two-columns>view,.two-columns>button{flex:1;min-width:0}
+.field{overflow-wrap:anywhere;min-height:76rpx}
+.row-head{display:flex;align-items:center;justify-content:space-between;gap:14rpx}
+.row-head .name{flex:1;min-width:0;overflow-wrap:anywhere}
+.row-head .meta,.status{flex-shrink:0}
+.pagination{display:flex;align-items:center;justify-content:space-between;gap:12rpx;margin-top:24rpx;font-size:23rpx;flex-wrap:wrap}
+.pagination button{flex-shrink:0}
+.submit-band{margin-top:24rpx;padding-top:20rpx;border-top:1rpx solid #e4ece3}
+.submit-band .primary{width:100%;margin-top:12rpx}
+.record-row .field{margin-top:14rpx}
+.status.ABSENT,.status.LEAVE{background:#fff0cb;color:#b37a20}
+
+.local-navigation{margin:-32rpx -32rpx 24rpx;background:linear-gradient(120deg,#206b52,#0c4f3e);color:#fff}
+.local-nav-line{position:relative;box-sizing:border-box;min-height:88rpx;display:flex;align-items:center;justify-content:center;padding:12rpx 210rpx;font-size:30rpx;font-weight:650}
+.local-nav-line>text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.local-nav-line .local-back{position:absolute;left:8rpx;top:0;width:76rpx;height:88rpx;padding:0;background:transparent;color:#fff;font-size:56rpx;font-weight:400;line-height:80rpx}
 </style>

@@ -34,3 +34,5 @@ export function hierarchyTreeRows<T extends TreeNode>(nodes:T[],rootId:string,ex
   visit(rootId,0);return result;
 }
 
+
+export function hierarchyMemberCountLabel(value:unknown):string{return typeof value==='number'&&Number.isSafeInteger(value)&&value>=0?`${value}人`:'—';}

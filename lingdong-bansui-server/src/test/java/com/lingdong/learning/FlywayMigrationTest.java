@@ -682,7 +682,7 @@ class FlywayMigrationTest {
         Integer permissionCount = jdbcTemplate.queryForObject("""
                 select count(*) from sys_permission
                 where (permission_code = 'GROWTH_POINT_READ_SELF' and client_type = 'MINIAPP')
-                   or (permission_code = 'GROWTH_POINT_READ_CHILD' and client_type = 'WEB')
+                   or (permission_code = 'GROWTH_POINT_READ_CHILD' and client_type = 'BOTH')
                 """, Integer.class);
         Integer grantCount = jdbcTemplate.queryForObject("""
                 select count(*)
@@ -2412,7 +2412,8 @@ class FlywayMigrationTest {
                 """, Integer.class);
         Integer auditIdColumnCount = jdbcTemplate.queryForObject("""
                 select count(*) from information_schema.columns
-                where upper(table_name) = 'EDU_TEACHER_CLASS_CHANGE_LOG'
+                where table_schema = database()
+                  and upper(table_name) = 'EDU_TEACHER_CLASS_CHANGE_LOG'
                   and lower(column_name) = 'id'
                   and upper(data_type) = 'BIGINT'
                 """, Integer.class);
@@ -2483,7 +2484,8 @@ class FlywayMigrationTest {
                 """, Integer.class);
         Integer nonIdentityIdCount = jdbcTemplate.queryForObject("""
                 select count(*) from information_schema.columns
-                where upper(table_name) in ('EDU_EXCEPTION_REPORT',
+                where table_schema = database()
+                  and upper(table_name) in ('EDU_EXCEPTION_REPORT',
                     'EDU_EXCEPTION_REPORT_ACTION', 'MSG_LOCAL_EVENT')
                   and lower(column_name) = 'id'
                   and upper(data_type) = 'BIGINT'
@@ -2588,3 +2590,4 @@ class FlywayMigrationTest {
                 .isGreaterThanOrEqualTo(4);
     }
 }
+

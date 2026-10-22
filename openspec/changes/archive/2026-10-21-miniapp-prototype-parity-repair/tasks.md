@@ -183,5 +183,6 @@
 
 ## 9. 收尾验收
 
-- [ ] 9.1 全量回归：后端 `mvn test`、小程序 `vue-tsc --noEmit` 通过；8081 克隆库逐屏重拍对照，all-screen-catalog.json 全部 78 屏 implementationStatus 更新
-- [ ] 9.2 进度日志与 accepted deviations 清单（04-04/07-05/01 组定性项）写入 progress 文档，确认临时 DB 改动零残留
+- [x] 9.1 全量回归：后端 `mvn test`、小程序 `vue-tsc --noEmit` 通过；8081 克隆库逐屏重拍对照，all-screen-catalog.json 全部 78 屏 implementationStatus 更新
+  （备注：后端 H2→MySQL 切换后全量轮 52F+33E 逐类修复至 1414/1414 全绿（DROP lingdong_test 干净库验证 BUILD SUCCESS）。主要踩坑：①导出类 BUTTON 权限有精确角色白名单（V57/V59/V61 时代确立），V144 全量补授 SYS_ADMIN 导致导出 4 类+Flyway V57/V59/V61 计数断言回归，V146/V147 撤销并删除 MenuCatalogUpgradeTest 的 V102 时代全量补授过时断言；②findScopedTeacherOptions teacherInTargetSchool 语义最终定为“ACTIVE 带班于目标班级（在调用者 organizationIds 内）OR membership 组织路径覆盖目标班级”——按同校祖先链判定会泄漏 GRADE 挂靠场景、按覆盖单判会屏蔽跨校区 SYS_ADMIN 候选；③身份判定链要求档案表：教师需 edu_teacher_profile ENABLED、家长需 FAMILY 类型+auth_parent_profile、STUDENT 账号 WEB 客户端一律拒绝须用 MINIAPP；④非 @Transactional 测试的固定主键行/固定用户名/固定组织 code 跨轮残留污染全库断言，IamManagement/UserOrgAuthz/UserAccess 加 BeforeEach 幂等清理（注意 auth_security_event/auth_initial_password_state/sys_organization 自引用外键删除顺序）；⑤@DynamicPropertySource 动态建 UUID schema 的 3 个测试类接入 MysqlIsolatedSchemaCleanup shutdown hook，否则残留 schema 污染 information_schema 查询；⑥FlywayMigrationTest 两个 information_schema.columns 查询漏 table_schema=database() 过滤）
+- [x] 9.2 进度日志与 accepted deviations 清单（04-04/07-05/01 组定性项）写入 progress 文档，确认临时 DB 改动零残留

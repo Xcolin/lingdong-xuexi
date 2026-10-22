@@ -1,8 +1,9 @@
 const assert=require('node:assert/strict');
 const fs=require('node:fs'),ts=require('typescript'),vm=require('node:vm');
 const source=fs.readFileSync('src/api/parent-reward.ts','utf8');
+const identity={};vm.runInNewContext(ts.transpileModule(fs.readFileSync('src/models/parent-identity.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText,{exports:identity});
 const moduleResult={exports:{}};
-vm.runInNewContext(ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText,{exports:moduleResult.exports,require:()=>({request:()=>{throw new Error('模型验证不得发请求');}})});
+vm.runInNewContext(ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText,{exports:moduleResult.exports,require:n=>n==='@/models/parent-identity'?identity:({request:()=>{throw new Error('模型验证不得发请求');}})});
 const {canUseParentRewards,MANAGE_REWARDS,REVIEW_EXCHANGES}=moduleResult.exports;
 const parent={clientType:'MINIAPP',roleCodes:['PARENT'],permissionCodes:[MANAGE_REWARDS]};
 assert.equal(canUseParentRewards(parent),true);

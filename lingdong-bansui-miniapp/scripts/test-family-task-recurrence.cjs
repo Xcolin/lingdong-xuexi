@@ -31,7 +31,7 @@ assert.equal(retained.recurrenceFrequency,'WEEKLY');assert.deepEqual(retained.re
 const managedSource=fs.readFileSync('src/pages/managed-tasks/managed-tasks.vue','utf8');
 assert.match(managedSource,/\.\.\.recurrenceFields\(form\)/);
 assert.match(managedSource,/recurrenceWeekdays:\[\.\.\.\(task\.recurrenceWeekdays\?\?\[\]\)\]/);
-assert.match(managedSource,/originalDraft\.value\.targets\?\?\[\]/);
+assert.match(managedSource,/managedTargets\(originalDraft\.value\?\.targets,preserving,studentMode\.value,targetId,selectedStudents\.value\)/);
 console.log('managed recurrence payload and edit retention checks passed');
 
 assert.ok(recurrenceError({...base,recurrenceFrequency:"WEEKLY",recurrenceWeekdays:[3]}));

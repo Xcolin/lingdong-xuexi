@@ -35,12 +35,16 @@
       "path": "pages/organization-members/organization-members",
       "style": {
         "navigationBarTitleText": "组织成员",
+        "navigationStyle": "custom",
+        "navigationBarTextStyle": "white",
         "navigationBarBackgroundColor": "#F6F8F5"
       }
     },
     {
       "path": "pages/institution-enrollment/institution-enrollment",
       "style": {
+        "navigationStyle": "custom",
+        "navigationBarTextStyle": "white",
         "navigationBarTitleText": "入学管理",
         "navigationBarBackgroundColor": "#F6F8F5"
       }
@@ -215,6 +219,8 @@
       "path": "pages/exception-reports/exception-reports",
       "style": {
         "navigationBarTitleText": "异常报备",
+        "navigationStyle": "custom",
+        "navigationBarTextStyle": "white",
         "enablePullDownRefresh": true
       }
     },
@@ -228,13 +234,16 @@
       "path": "pages/attendance/attendance",
       "style": {
         "navigationBarTitleText": "考勤记录",
+        "navigationStyle": "custom",
+        "navigationBarTextStyle": "white",
         "enablePullDownRefresh": true
       }
     },
     {
       "path": "pages/organization-classes/organization-classes",
       "style": {
-        "navigationBarTitleText": "班级管理"
+        "navigationStyle": "custom",
+          "navigationBarTitleText": "班级列表"
       }
     },
     {
@@ -382,6 +391,7 @@
       "path": "pages/organization-class-members/organization-class-members",
       "style": {
         "navigationStyle": "custom",
+        "navigationBarTextStyle": "white",
         "navigationBarTitleText": "新增班级成员"
       }
     },

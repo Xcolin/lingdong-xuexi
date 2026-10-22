@@ -1,16 +1,8 @@
 <template>
-  <view class="prototype-workspace page-shell"><view class="prototype-section-header"><PrototypeIcon name="school" :size="22" /><text>{{formVisible ? (editingClass ? "班级详情" : "新增班级") : "班级列表"}}</text></view>
-    <view class="mode-control">
-      <button :class="{ active: mode === 'CLASSES' }" @tap="setMode('CLASSES')">班级维护</button>
-      <button :class="{ active: mode === 'TEACHERS' }" @tap="setMode('TEACHERS')">教师班级</button>
-    </view>
-
+  <view class="class-list-page"><view class="class-navigation"><NativeStatusSpacer/><view class="class-nav-line" :style="{paddingRight:(navReservedRight+76)+'px'}"><button class="class-back" aria-label="返回" @tap="backClassPage">‹</button><text>{{formVisible?(editingClass?'编辑班级':'新增班级'):mode==='CLASSES'?'班级列表':'教师班级'}}</text><button v-if="!formVisible&&mode==='CLASSES'&&entryPermissions.includes('CLASS_CREATE')" class="class-add" :style="{right:navReservedRight+'px'}" @tap="openCreate">＋ 新增班级</button></view></view>
     <view v-if="loading" class="state-text">正在加载</view>
     <template v-else-if="mode === 'CLASSES'">
-      <view class="action-band"><button v-if="entryPermissions.includes('ORG_MEMBER_READ')" class="secondary-button" @tap="openMembers">组织成员</button><button v-if="entryPermissions.some(p=>['STUDENT_ENROLLMENT_INVITE_CREATE','STUDENT_ENROLLMENT_REVIEW'].includes(p))" class="secondary-button" @tap="openEnrollment">班级入学</button>
-        <button class="secondary-button" @tap="openStudents">学员关系</button>
-        <button class="primary-button" @tap="openCreate">新增班级</button>
-      </view>
+
 
       <view v-if="formVisible" class="form-band">
         <text class="form-title">{{ editingClass ? '编辑班级' : '新增班级' }}</text>
@@ -36,28 +28,26 @@
         </view>
       </view>
 
-      <view v-if="!formVisible" class="list-band"><text class="class-meta">共 {{classes.length}} 个班级</text>
-        <view v-for="item in classes" :key="item.id" class="class-card">
+      <view v-if="!formVisible" class="class-list-filters"><picker :disabled="loading||!!campusFilterError" :range="campusFilterLabels" :value="campusFilterIndex" @change="filterCampus"><view class="class-filter-value">{{campusFilterLabels[campusFilterIndex]}} ⌄</view></picker><picker :disabled="loading" :range="listGradeLabels" :value="listGradeIndex" @change="filterGrade"><view class="class-filter-value">{{listGradeLabels[listGradeIndex]}} ⌄</view></picker><picker :range="listStatusLabels" :value="listStatusIndex" @change="filterStatus"><view class="class-filter-value">{{listStatusLabels[listStatusIndex]}} ⌄</view></picker></view><text v-if="campusFilterError" class="filter-error">{{campusFilterError}}</text>
+      <view v-if="!formVisible" class="class-list-content"><text class="class-meta">共 {{filteredClasses.length}} 个班级</text>
+        <view v-for="item in filteredClasses" :key="item.id" class="class-card">
           <view class="class-card-top">
             <view class="class-badge"><PrototypeIcon name="people" :size="28"/></view>
             <view class="class-main" @tap="openDetail(item)">
               <text class="class-name">{{ item.name }}</text>
               <text class="class-meta">{{ memberSummary(item) }}</text>
-              <text class="class-code">{{ item.schoolName || schoolName(item.schoolOrganizationId || item.parentId) }} · {{ item.gradeName || '待归属年级' }}</text>
+
             </view>
             <text :class="['status-badge', item.status === 'ENABLED' ? 'normal' : 'off']">
               {{ item.status === 'ENABLED' ? '正常' : '停用' }}
-            </text>
+            </text><button class="class-detail-arrow" :aria-label="'进入'+item.name" @tap="openDetail(item)">›</button>
           </view>
-          <view class="card-actions">
-            <button class="row-button" @tap="openEdit(item)">编辑</button>
-            <button
-              :class="['row-button', item.status === 'ENABLED' ? 'danger' : 'enable']"
-              @tap="confirmStatus(item)"
-            >{{ item.status === 'ENABLED' ? '停用' : '启用' }}</button>
-          </view>
+
         </view>
-        <view v-if="classes.length === 0" class="empty-text">暂无班级</view>
+        <view v-if="filteredClasses.length === 0" class="empty-text">暂无班级</view>
+      </view>
+      <view v-if="!formVisible" class="action-band secondary-tools"><button v-if="entryPermissions.includes('ORG_MEMBER_READ')" class="secondary-button" @tap="openMembers">组织成员</button><button v-if="entryPermissions.some(p=>['STUDENT_ENROLLMENT_INVITE_CREATE','STUDENT_ENROLLMENT_REVIEW'].includes(p))" class="secondary-button" @tap="openEnrollment">班级入学</button>
+        <button class="secondary-button" @tap="openStudents">学员关系</button>
       </view>
     </template>
 
@@ -75,10 +65,17 @@
         <button class="bind-button" :disabled="submitting" @tap="updateTeacher(true)">确认绑定</button>
       </view>
     </view>
+    <view v-if="!formVisible" class="secondary-mode"><view class="mode-control">
+      <button :class="{ active: mode === 'CLASSES' }" @tap="setMode('CLASSES')">班级维护</button>
+      <button :class="{ active: mode === 'TEACHERS' }" @tap="setMode('TEACHERS')">教师班级</button>
+    </view></view>
   </view>
 </template>
 
 <script setup lang="ts">
+import NativeStatusSpacer from '@/components/NativeStatusSpacer.vue';
+import {teacherNavReservedRight} from '@/models/teacher-nav-layout';
+import {filterClassList} from '@/models/class-list-filter';
 import {classDetailRoute} from '@/models/class-detail';
 function openDetail(item:OrganizationClass){uni.navigateTo({url:classDetailRoute(item.id)});}
 import PrototypeIcon from '@/components/PrototypeIcon.vue';
@@ -89,11 +86,12 @@ import { getMiniappCapabilities } from '@/api/capability';
 import { ApiError } from '@/api/http';
 import {
   bindOrganizationTeacher,
-  changeManagedClassStatus,
   createManagedClass,
   listClassHeadTeachers,
   listClassStudentCounts,
   listManageableSchools,
+  listManageableCampuses,
+  type OrganizationCampus,
   listManageableGrades,
   listManagedClasses,
   listOrganizationTeachers,
@@ -108,11 +106,31 @@ type PageMode = 'CLASSES' | 'TEACHERS';
 
 let requestedEdit='';onLoad(q=>{requestedEdit=typeof q?.editClassId==='string'?q.editClassId:'';});
 const mode = ref<PageMode>('CLASSES');
+const navReservedRight=ref(112);
+// #ifdef MP-WEIXIN
+try{navReservedRight.value=teacherNavReservedRight(uni.getSystemInfoSync().windowWidth,uni.getMenuButtonBoundingClientRect());}catch{}
+// #endif
+const listCampuses=ref<OrganizationCampus[]>([]),campusFilterId=ref(''),listGradeId=ref(''),listStatus=ref(''),campusFilterError=ref('');
+const campusFilterLabels=computed(()=>['全部校区',...listCampuses.value.map(c=>c.name)]);
+const campusFilterIndex=computed(()=>Math.max(0,listCampuses.value.findIndex(c=>c.id===campusFilterId.value)+1));
+const filterGrades=computed(()=>grades.value.filter(g=>!campusFilterId.value||g.parentId===campusFilterId.value));
+const listGradeLabels=computed(()=>['全部年级',...filterGrades.value.map(g=>g.name)]);
+const listGradeIndex=computed(()=>Math.max(0,filterGrades.value.findIndex(g=>g.id===listGradeId.value)+1));
+const listStatusLabels=['全部状态','正常','停用'],listStatusValues=['','ENABLED','DISABLED'];
+const listStatusIndex=computed(()=>Math.max(0,listStatusValues.indexOf(listStatus.value)));
+const filteredClasses=computed(()=>filterClassList(classes.value,grades.value,campusFilterId.value,listGradeId.value,listStatus.value));
+function filterCampus(e:{detail:{value:string|number}}){const i=Number(e.detail.value);if(!Number.isInteger(i)||i<0||i>listCampuses.value.length)return;campusFilterId.value=listCampuses.value[i-1]?.id||'';listGradeId.value='';}
+function filterGrade(e:{detail:{value:string|number}}){const i=Number(e.detail.value);if(!Number.isInteger(i)||i<0||i>filterGrades.value.length)return;listGradeId.value=filterGrades.value[i-1]?.id||'';}
+function filterStatus(e:{detail:{value:string|number}}){const i=Number(e.detail.value);if(Number.isInteger(i)&&i>=0&&i<listStatusValues.length)listStatus.value=listStatusValues[i];}
+function backClassPage(){if(formVisible.value){closeForm();return;}uni.navigateBack();}
+
 const schools = ref<OrganizationClass[]>([]);
 const grades = ref<OrganizationClass[]>([]);
 const classes = ref<OrganizationClass[]>([]);
 const teachers = ref<OrganizationTeacherOption[]>([]);
-const entryPermissions=ref<string[]>([]);let entryEpoch=0;function clearEntries(){entryEpoch++;entryPermissions.value=[];}onHide(clearEntries);onUnload(clearEntries);onShow(async()=>{const s=getOrganizationSession(),n=++entryEpoch;entryPermissions.value=[];if(!s)return;try{const me=await getOrganizationWorkbenchContext(s.accessToken);if(n===entryEpoch&&getOrganizationSession()?.accessToken===s.accessToken)entryPermissions.value=me.permissionCodes;}catch{/* Existing page displays its own authorization error. */}});function openMembers(){uni.navigateTo({url:"/pages/organization-members/organization-members"});}function openEnrollment(){uni.navigateTo({url:"/pages/institution-enrollment/institution-enrollment"});}
+let classListViewEpoch=0,classListRequest=0,classTeacherRequest=0;
+function classListScope(){const selected=uni.getStorageSync('lingdong.selected-organization') as {accessToken?:string;organizationId?:string}|undefined;return `${selected?.accessToken||''}:${selected?.organizationId||''}`;}
+const entryPermissions=ref<string[]>([]);let entryEpoch=0;function clearEntries(){entryEpoch++;classListViewEpoch++;classListRequest++;classTeacherRequest++;entryPermissions.value=[];schools.value=[];grades.value=[];classes.value=[];teachers.value=[];classCounts.value={};headTeacherNames.value={};listCampuses.value=[];campusFilterId.value='';listGradeId.value='';listStatus.value='';campusFilterError.value='';submitting.value=false;closeForm();}onHide(clearEntries);onUnload(clearEntries);onShow(async()=>{const s=getOrganizationSession(),n=++entryEpoch;entryPermissions.value=[];if(!s)return;try{const me=await getOrganizationWorkbenchContext(s.accessToken);if(n===entryEpoch&&getOrganizationSession()?.accessToken===s.accessToken)entryPermissions.value=me.permissionCodes;}catch{/* Existing page displays its own authorization error. */}});function openMembers(){uni.navigateTo({url:"/pages/organization-members/organization-members"});}function openEnrollment(){uni.navigateTo({url:"/pages/institution-enrollment/institution-enrollment"});}
 const loading = ref(true);
 const submitting = ref(false);
 const formVisible = ref(false);
@@ -123,19 +141,25 @@ const className = ref('');
 const sortOrderText = ref('100');
 const teacherClassIndex = ref(-1);
 const teacherIndex = ref(-1);
-// 班级卡字段（对照原型 03-06）：有效学员数与班主任名，加载失败回退空展示
+// 班级卡使用真实统计；缺失或失败保持未知，不伪造零人数或未设置。
 const classCounts = ref<Record<string, number>>({});
 const headTeacherNames = ref<Record<string, string | null>>({});
 function memberSummary(item: OrganizationClass): string {
-  const count = classCounts.value[item.id] ?? 0;
+  const actualCount=classCounts.value[item.id];
+  const count=Number.isSafeInteger(actualCount)&&actualCount>=0?actualCount:'—';
   const teacher = headTeacherNames.value[item.id];
-  return `${count} 名成长小主人 ｜ 班主任：${teacher || '未设置'}`;
+  return `${count} 名成长小主人 ｜ 班主任：${teacher === undefined ? '—' : teacher || '未设置'}`;
 }
 
 const schoolLabels = computed(() => schools.value.map((item) => `${item.name}（${item.code}）`));
 const selectedSchool = computed(() => schools.value[schoolIndex.value] || null);
 const selectedSchoolLabel = computed(() => schoolLabels.value[schoolIndex.value] || '');
-const availableGrades = computed(() => grades.value.filter(item => item.parentId === selectedSchool.value?.id && item.effectiveStatus === 'ENABLED'));
+const availableGrades = computed(() => {
+  const schoolId=selectedSchool.value?.id;
+  if(!schoolId)return [];
+  return grades.value.filter(item=>(item.schoolOrganizationId
+    ?item.schoolOrganizationId===schoolId:item.parentId===schoolId)&&item.effectiveStatus==='ENABLED');
+});
 const gradeLabels = computed(() => availableGrades.value.map(item => item.name));
 const selectedGrade = computed(() => availableGrades.value[gradeIndex.value] || null);
 const activeClasses = computed(() => classes.value.filter((item) => item.status === 'ENABLED'));
@@ -147,6 +171,7 @@ const selectedTeacher = computed(() => teachers.value[teacherIndex.value] || nul
 const selectedTeacherLabel = computed(() => teacherLabels.value[teacherIndex.value] || '');
 
 onShow(async () => {
+  const viewEpoch=classListViewEpoch,scope=classListScope();
   const session = getOrganizationSession();
   if (!session) {
     await leavePage(true);
@@ -155,19 +180,22 @@ onShow(async () => {
   loading.value = true;
   try {
     const capabilities = await getMiniappCapabilities();
+    if(viewEpoch!==classListViewEpoch||scope!==classListScope()||getOrganizationSession()?.accessToken!==session.accessToken)return;
     if (!capabilities.organizationMiniappAuthEnabled || !capabilities.classManagementEnabled) {
       return leavePage(false);
     }
     await loadClasses(session.accessToken);
+    if(viewEpoch!==classListViewEpoch||scope!==classListScope()||getOrganizationSession()?.accessToken!==session.accessToken)return;
     if(requestedEdit){const target=classes.value.find(item=>item.id===requestedEdit);if(target&&getOrganizationSession()?.accessToken===session.accessToken)openEdit(target);requestedEdit='';}
   } catch (error) {
+    if(viewEpoch!==classListViewEpoch||scope!==classListScope()||getOrganizationSession()?.accessToken!==session.accessToken)return;
     if (error instanceof ApiError
         && (error.statusCode === 401 || error.statusCode === 403 || error.code === 'FEATURE_DISABLED')) {
       return leavePage(error.statusCode === 401);
     }
     showError('班级信息加载失败');
   } finally {
-    loading.value = false;
+    if(viewEpoch===classListViewEpoch&&scope===classListScope())loading.value = false;
   }
 });
 
@@ -207,6 +235,8 @@ function selectGrade(event: { detail: { value: string } }): void {
 }
 
 async function saveClass(): Promise<void> {
+  if(submitting.value)return;
+  const viewEpoch=classListViewEpoch,scope=classListScope();
   const session = getOrganizationSession();
   const normalizedName = className.value.trim();
   const sortOrder = Number(sortOrderText.value);
@@ -219,6 +249,7 @@ async function saveClass(): Promise<void> {
   if (!normalizedName) return showError('请输入班级名称');
   if (!Number.isInteger(sortOrder) || sortOrder < 0) return showError('排序必须是非负整数');
 
+  const current=()=>viewEpoch===classListViewEpoch&&scope===classListScope()&&getOrganizationSession()?.accessToken===session.accessToken;
   submitting.value = true;
   try {
     if (editingClass.value) {
@@ -226,57 +257,39 @@ async function saveClass(): Promise<void> {
         session.accessToken, editingClass.value.id, normalizedName,
         sortOrder, editingClass.value.versionNo
       );
+      if(!current())return;
       uni.showToast({ title: '班级已更新', icon: 'success' });
     } else {
       await createManagedClass(
         session.accessToken, selectedSchool.value!.id, normalizedName, sortOrder, selectedGrade.value!.id
       );
+      if(!current())return;
       uni.showToast({ title: '班级已创建', icon: 'success' });
     }
     closeForm();
     await loadClasses(session.accessToken);
   } catch (error) {
-    showError(error instanceof Error ? error.message : '保存失败');
+    if(current())showError(error instanceof Error ? error.message : '保存失败');
   } finally {
-    submitting.value = false;
+    if(viewEpoch===classListViewEpoch)submitting.value = false;
   }
 }
 
-async function confirmStatus(item: OrganizationClass): Promise<void> {
-  const session = getOrganizationSession();
-  if (!session) {
-    await leavePage(true);
-    return;
-  }
-  const disabling = item.status === 'ENABLED';
-  const confirmed = await showConfirm(
-    disabling ? '确认停用班级？' : '确认启用班级？',
-    disabling
-      ? '班内未完成的机构和教师任务将失效，历史记录继续保留。'
-      : '已失效的历史任务不会恢复。',
-    disabling ? '确认停用' : '确认启用',
-    disabling ? '#b42318' : '#167c5a'
-  );
-  if (!confirmed) return;
-  try {
-    await changeManagedClassStatus(session.accessToken, item);
-    uni.showToast({ title: disabling ? '班级已停用' : '班级已启用', icon: 'success' });
-    await loadClasses(session.accessToken);
-  } catch (error) {
-    showError(error instanceof Error ? error.message : '状态更新失败');
-  }
-}
 
 async function selectTeacherClass(event: { detail: { value: string } }): Promise<void> {
-  teacherClassIndex.value = Number(event.detail.value);
-  teacherIndex.value = -1;
-  const session = getOrganizationSession();
-  const selectedClass = selectedTeacherClass.value;
-  if (!session || !selectedClass) return;
+  if(submitting.value)return;
+  const index=Number(event.detail.value);
+  if(!Number.isInteger(index)||index<0||index>=activeClasses.value.length)return;
+  teacherClassIndex.value=index;teacherIndex.value=-1;teachers.value=[];
+  const session=getOrganizationSession(),selectedClass=selectedTeacherClass.value;
+  if(!session||!selectedClass)return;
+  const n=++classTeacherRequest,viewEpoch=classListViewEpoch,scope=classListScope();
+  const current=()=>n===classTeacherRequest&&viewEpoch===classListViewEpoch&&scope===classListScope()&&getOrganizationSession()?.accessToken===session.accessToken&&selectedTeacherClass.value?.id===selectedClass.id;
   try {
-    teachers.value = await listOrganizationTeachers(session.accessToken, selectedClass.id);
-  } catch (error) {
-    showError(error instanceof Error ? error.message : '教师候选加载失败');
+    const candidates=await listOrganizationTeachers(session.accessToken,selectedClass.id);
+    if(current())teachers.value=candidates;
+  } catch(error) {
+    if(current())showError(error instanceof Error?error.message:'教师候选加载失败');
   }
 }
 
@@ -285,44 +298,40 @@ function selectTeacher(event: { detail: { value: string } }): void {
 }
 
 async function updateTeacher(active: boolean): Promise<void> {
-  const session = getOrganizationSession();
-  const selectedClass = selectedTeacherClass.value;
-  const teacher = selectedTeacher.value;
-  if (!session) {
-    await leavePage(true);
-    return;
-  }
-  if (!selectedClass) return showError('请选择班级');
-  if (!teacher) return showError('请选择教师');
-  if (!active) {
-    const confirmed = await showConfirm(
-      '确认解除教师班级？', `${teacher.displayName} 将不再关联 ${selectedClass.name}。`,
-      '确认解除', '#b42318'
-    );
-    if (!confirmed) return;
-  }
-  submitting.value = true;
+  if(submitting.value)return;
+  const session=getOrganizationSession(),selectedClass=selectedTeacherClass.value,teacher=selectedTeacher.value;
+  if(!session){await leavePage(true);return;}
+  if(!selectedClass)return showError('请选择班级');
+  if(!teacher)return showError('请选择教师');
+  const viewEpoch=classListViewEpoch,scope=classListScope();
+  const current=()=>viewEpoch===classListViewEpoch&&scope===classListScope()&&getOrganizationSession()?.accessToken===session.accessToken&&selectedTeacherClass.value?.id===selectedClass.id&&selectedTeacher.value?.userId===teacher.userId;
+  submitting.value=true;
   try {
-    if (active) {
-      await bindOrganizationTeacher(session.accessToken, teacher.userId, selectedClass.id);
-    } else {
-      await unbindOrganizationTeacher(session.accessToken, teacher.userId, selectedClass.id);
+    if(!active){
+      const confirmed=await showConfirm('确认解除教师班级？',`${teacher.displayName} 将不再关联 ${selectedClass.name}。`,'确认解除','#b42318');
+      if(!confirmed||!current())return;
     }
-    uni.showToast({ title: active ? '教师班级已绑定' : '教师班级已解除', icon: 'success' });
-  } catch (error) {
-    showError(error instanceof Error ? error.message : '教师班级更新失败');
+    if(active)await bindOrganizationTeacher(session.accessToken,teacher.userId,selectedClass.id);
+    else await unbindOrganizationTeacher(session.accessToken,teacher.userId,selectedClass.id);
+    if(current())uni.showToast({title:active?'教师班级已绑定':'教师班级已解除',icon:'success'});
+  } catch(error) {
+    if(current())showError(error instanceof Error?error.message:'教师班级更新失败');
   } finally {
-    submitting.value = false;
+    if(viewEpoch===classListViewEpoch)submitting.value=false;
   }
 }
 
 async function loadClasses(accessToken: string): Promise<void> {
-  const [schoolList, gradeList, classList, counts, headTeachers] = await Promise.all([
+  const n=++classListRequest,viewEpoch=classListViewEpoch,scope=classListScope();
+  const [schoolList, gradeList, classList, counts, headTeachers,campusResult] = await Promise.all([
     listManageableSchools(accessToken), listManageableGrades(accessToken), listManagedClasses(accessToken),
     listClassStudentCounts(accessToken).catch(() => [] as { organizationId: string; memberCount: number }[]),
-    listClassHeadTeachers(accessToken).catch(() => [] as { organizationId: string; headTeacherName: string | null }[])
+    listClassHeadTeachers(accessToken).catch(() => [] as { organizationId: string; headTeacherName: string | null }[]),
+    listManageableCampuses(accessToken).then(items=>({items,error:''}),()=>({items:[] as OrganizationCampus[],error:'校区筛选加载失败，请返回后重试'}))
   ]);
+  if(n!==classListRequest||viewEpoch!==classListViewEpoch||scope!==classListScope()||getOrganizationSession()?.accessToken!==accessToken)return;
   schools.value = schoolList;grades.value = gradeList;classes.value = classList;
+  listCampuses.value=campusResult.items;campusFilterError.value=campusResult.error;
   const countMap: Record<string, number> = {};
   for (const entry of counts) countMap[entry.organizationId] = entry.memberCount;
   classCounts.value = countMap;
@@ -380,3 +389,12 @@ function showConfirm(
 .row-button.danger{background:#b42318;color:#fff}
 .row-button.enable{background:#167c5a;color:#fff}
 </style>
+
+<style scoped>
+.class-list-page{min-height:100vh;box-sizing:border-box;padding:0 24rpx calc(32rpx + env(safe-area-inset-bottom));background:#fff;color:#192f27}
+.class-navigation{margin:0 -24rpx;background:#fff}.class-nav-line{height:88rpx;position:relative;box-sizing:border-box;display:flex;align-items:center;justify-content:center;font-size:30rpx;font-weight:650}.class-nav-line>text{white-space:nowrap}.class-back{position:absolute;left:16rpx;top:0;width:56rpx;height:88rpx;padding:0;line-height:78rpx;font-size:52rpx;background:transparent}.class-add{position:absolute;top:0;padding:0;line-height:88rpx;font-size:25rpx;color:#17674d;background:transparent}
+.class-list-filters{display:flex;gap:12rpx;padding:12rpx 0 18rpx}.class-list-filters picker{flex:1;min-width:0}.class-list-filters .class-filter-value{border:1rpx solid #dfe7e2;border-radius:12rpx;padding:12rpx 14rpx;font-size:24rpx;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.filter-error{display:block;font-size:23rpx;color:#b24a36;margin-bottom:12rpx}
+.class-list-content{padding:0;background:transparent;border:0;border-radius:0}.class-list-content>.class-meta{font-size:23rpx;color:#77857c;margin:0 0 12rpx}.class-card{padding:16rpx 4rpx 8rpx;border:0;border-bottom:1rpx solid #e8eeea;border-radius:0;margin:0}.class-card-top{gap:14rpx}.class-badge{width:60rpx;height:60rpx;flex-shrink:0;border-radius:12rpx;background:#e6f2fa;margin-right:0}.class-card .class-name{font-size:27rpx;font-weight:650}.class-card .class-meta{font-size:22rpx;margin-top:5rpx;color:#7d8790}.class-card .status-badge{padding:4rpx 14rpx;font-size:22rpx}.class-card .card-actions{margin:4rpx 0 0;padding:0;min-height:0;border:0;gap:16rpx}.class-card .card-actions button{background:transparent;padding:2rpx 4rpx;font-size:21rpx;border-radius:0}.class-card .card-actions .danger{color:#af5f4e}.secondary-tools{margin-top:24rpx;padding-top:18rpx;border-top:1rpx solid #edf1ee;gap:10rpx}.secondary-tools button{font-size:22rpx;padding:8rpx 12rpx}.secondary-mode{margin-top:16rpx}.secondary-mode .mode-control button{font-size:23rpx;padding:10rpx}.form-band>.form-title{display:none}.form-band .picker-value{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+</style>
+
+<style scoped>.class-detail-arrow{padding:0 0 0 4rpx;background:transparent;line-height:1;font-size:36rpx;color:#728379;flex-shrink:0}</style>

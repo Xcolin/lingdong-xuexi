@@ -2,3 +2,4 @@ const fs=require('fs'),vm=require('vm'),ts=require('typescript'),assert=require(
 
 const counts=out.hierarchyDescendantCounts(nodes,'s');assert.equal(counts.grades,1);assert.equal(counts.classes,1);console.log('PASS actual descendant counts exclude other roots');
 
+assert.equal(out.hierarchyMemberCountLabel(33),'33人');assert.equal(out.hierarchyMemberCountLabel(0),'0人');for(const count of [undefined,null,-1,NaN,1.5])assert.equal(out.hierarchyMemberCountLabel(count),'—');console.log('PASS missing counts are not fabricated zeroes');

@@ -61,7 +61,9 @@ class RewardExchangeControllerTest {
     @DynamicPropertySource
     static void isolateDatabase(DynamicPropertyRegistry registry) {
         // 每个context独立MySQL schema隔离状态（与test profile同源env占位符，兼容CI mysql service）
-        registry.add("spring.datasource.url", () -> mysqlUrl(DATABASE_PREFIX + DATABASE_SEQ.incrementAndGet()));
+        final String database = DATABASE_PREFIX + DATABASE_SEQ.incrementAndGet();
+        com.lingdong.learning.testsupport.MysqlIsolatedSchemaCleanup.register(database);
+        registry.add("spring.datasource.url", () -> mysqlUrl(database));
         registry.add("spring.datasource.username", () -> env("LINGDONG_TEST_DB_USER", "root"));
         registry.add("spring.datasource.password", () -> env("LINGDONG_TEST_DB_PASSWORD", "root"));
     }

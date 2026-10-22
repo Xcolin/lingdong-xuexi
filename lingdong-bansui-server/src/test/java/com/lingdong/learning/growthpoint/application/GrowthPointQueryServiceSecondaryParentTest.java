@@ -50,4 +50,12 @@ class GrowthPointQueryServiceSecondaryParentTest {
         assertThat(result.studentId()).isEqualTo(studentId);
         assertThat(result.availablePoints()).isEqualTo(80L);
     }
+    @Test void miniappParentReadsOnlyAnActiveRelatedChild() {
+        var actor=new AuthenticatedUser(1L,2L,"parent","Parent",AuthClientType.MINIAPP,List.of("PARENT"));
+        when(parentStudentMapper.existsActiveByParentAndStudent(1L,10L)).thenReturn(true);
+        when(queryMapper.findAccountByStudentId(10L)).thenReturn(new GrowthPointAccountViewRow(10L,"Child","Class",100L,80L,LocalDateTime.of(2026,10,21,10,0)));
+        assertThat(service.findChildAccount(actor,10L).availablePoints()).isEqualTo(80L);
+        org.assertj.core.api.Assertions.assertThatThrownBy(()->service.findChildAccount(actor,99L)).isInstanceOf(com.lingdong.learning.common.web.ResourceNotFoundException.class);
+        org.mockito.Mockito.verify(queryMapper,org.mockito.Mockito.never()).findAccountByStudentId(99L);
+    }
 }

@@ -1,6 +1,7 @@
 const assert=require('node:assert/strict'),ts=require('typescript'),fs=require('node:fs');
 const moduleValue={exports:{}};
-new Function('exports','module',ts.transpileModule(fs.readFileSync('src/models/family-task-draft.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText)(moduleValue.exports,moduleValue);
+const identity={};new Function('exports',ts.transpileModule(fs.readFileSync('src/models/parent-identity.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText)(identity);
+new Function('exports','module','require',ts.transpileModule(fs.readFileSync('src/models/family-task-draft.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText)(moduleValue.exports,moduleValue,n=>{assert.equal(n,'@/models/parent-identity');return identity;});
 const {draftInput,canManageFamily}=moduleValue.exports;
 const user={clientType:'MINIAPP',roleCodes:['PARENT'],permissionCodes:['LEARNING_TASK_READ_MANAGED']};
 assert.equal(canManageFamily(user,'LEARNING_TASK_READ_MANAGED'),true);

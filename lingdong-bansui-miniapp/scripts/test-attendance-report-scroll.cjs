@@ -1,0 +1,1 @@
+const assert=require('node:assert/strict'),fs=require('node:fs');for(const name of ['attendance','exception-reports']){const s=fs.readFileSync(`src/pages/${name}/${name}.vue`,'utf8');assert.match(s,/onReachBottom\(/,'必须监听触底');assert.doesNotMatch(s,/>上一页<|>下一页</,'取消翻页按钮');assert.match(s,/new Map/,'追加结果编号去重');console.log(name==='attendance'?'考勤滚动结构通过':'报备滚动结构通过');}

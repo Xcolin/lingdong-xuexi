@@ -1,8 +1,8 @@
-<template><view class="qr-frame"><canvas :canvas-id="canvasId" class="qr-canvas"/><text v-if="error" class="qr-error">二维码未能生成，请复制邀请码</text></view></template>
+<template><view class="qr-frame" :style="{width:(size+24)+'rpx'}"><canvas :canvas-id="canvasId" class="qr-canvas" :style="{width:size+'rpx',height:size+'rpx'}"/><text v-if="error" class="qr-error">二维码未能生成，请复制邀请码</text></view></template>
 <script setup lang="ts">
 import {getCurrentInstance,nextTick,onBeforeUnmount,onMounted,watch,ref} from 'vue';
 import {QrCode,Ecc} from '@/vendor/qrcodegen';
-const props=defineProps<{value:string}>();
+const props=withDefaults(defineProps<{value:string;size?:number}>(),{size:360});
 const canvasId=`invite-qr-${getCurrentInstance()?.uid||0}`;
 const component=getCurrentInstance()?.proxy;
 const error=ref('');let revision=0;
@@ -11,7 +11,7 @@ async function draw(value:string){
  await nextTick();if(current!==revision)return;
  try{
   const qr=QrCode.encodeText(value,Ecc.MEDIUM),border=4,total=qr.size+border*2;
-  const pixels=Math.round(uni.getSystemInfoSync().windowWidth*360/750);
+  const pixels=Math.round(uni.getSystemInfoSync().windowWidth*props.size/750);
   const canvas=uni.createCanvasContext(canvasId,component);
   canvas.setFillStyle('#ffffff');canvas.fillRect(0,0,pixels,pixels);canvas.setFillStyle('#172d23');
   for(let y=0;y<qr.size;y++)for(let x=0;x<qr.size;x++)if(qr.getModule(x,y)){
@@ -22,7 +22,7 @@ async function draw(value:string){
   if(current===revision)canvas.draw();
  }catch{if(current===revision)error.value='二维码生成失败';}
 }
-watch(()=>props.value,draw);
+watch(()=>[props.value,props.size],()=>draw(props.value));
 onMounted(()=>{void draw(props.value);});
 onBeforeUnmount(()=>{revision++;});
 /** 导出当前二维码到相册（保存图片操作）。 */

@@ -4,7 +4,7 @@ import { menuApi } from '../../api/menus';
 import { MenuManagementPage } from './MenuManagementPage';
 const refresh=vi.fn();
 vi.mock('../../components/ConfiguredButton',()=>({ConfiguredButton:({actionKey,...props}:any)=><button {...props}/>}));
-vi.mock('../../app/MenuConfiguration',()=>({useMenuConfiguration:()=>({refresh})}));
+vi.mock('../../app/MenuConfiguration',async()=>({...await vi.importActual<typeof import('../../app/MenuConfiguration')>('../../app/MenuConfiguration'),useMenuConfiguration:()=>({refresh,permissionCodes:['MENU_MANAGE'],nodes:[{code:'MENU_MANAGE',type:'BUTTON',status:'ENABLED',id:'manage',parentId:null}]})}));
 vi.mock('../../api/menus',()=>({menuApi:{list:vi.fn(),reorder:vi.fn(),move:vi.fn()}}));
 vi.mock('antd',async()=>{
  const actual=await vi.importActual<typeof import('antd')>('antd');

@@ -1156,5 +1156,38 @@
     "label": "转交负责人",
     "route": "/my-organizations",
     "permissionCode": "ORGANIZATION_OWNER_TRANSFER"
+  },
+  {
+    "code": "STUDENT_TRANSFER_VIEW",
+    "name": "转学申请 · 查看申请",
+    "source": "student/web/TransferApplicationController.java",
+    "route": "/organizations",
+    "label": "转学申请 · 查看申请",
+    "pagePermissionCode": "ORG_NODE_READ",
+    "features": [
+      "STUDENT_ORGANIZATION_RELATIONSHIP"
+    ]
+  },
+  {
+    "code": "STUDENT_TRANSFER_REQUEST_CREATE",
+    "name": "转学申请 · 提交与撤销",
+    "source": "student/web/TransferApplicationController.java",
+    "route": "/organizations",
+    "label": "转学申请 · 提交与撤销",
+    "pagePermissionCode": "ORG_NODE_READ",
+    "features": [
+      "STUDENT_ORGANIZATION_RELATIONSHIP"
+    ]
+  },
+  {
+    "code": "STUDENT_TRANSFER_REVIEW",
+    "name": "转学申请 · 审核申请",
+    "source": "student/web/TransferApplicationController.java",
+    "route": "/organizations",
+    "label": "转学申请 · 审核申请",
+    "pagePermissionCode": "ORG_NODE_READ",
+    "features": [
+      "STUDENT_ORGANIZATION_RELATIONSHIP"
+    ]
   }
 ]

@@ -19,12 +19,12 @@
 
 <view v-if="loading" class="ld-loading">正在加载</view>
 <view class="workspace-shortcuts">
-<button v-if="context?.permissionCodes.includes('STUDENT_TRANSFER_VIEW')" class="workspace-shortcut" @tap="openTransferRecords"><view class="shortcut-symbol"><PrototypeIcon name="school" tone="white" :size="44"/></view><view class="shortcut-copy"><text class="shortcut-title">转学申请</text><text>查看申请 · 审核与处理</text></view><text class="shortcut-arrow">›</text></button>
 <button v-if="context?.permissionCodes.includes('CLASS_READ')" class="workspace-shortcut" @tap="openHierarchy"><view class="shortcut-symbol"><PrototypeIcon name="people" tone="white" :size="44"/></view><view class="shortcut-copy"><text class="shortcut-title">组织管理</text><text>校区 · 年级 · 班级 · 成员</text></view><text class="shortcut-arrow">›</text></button>
 <button v-if="context?.permissionCodes.includes('CLASS_READ')" class="workspace-shortcut" @tap="openCourseCategories"><view class="shortcut-symbol"><PrototypeIcon name="leaf" tone="white" :size="44"/></view><view class="shortcut-copy"><text class="shortcut-title">课程分类</text><text>管理课程与教学分类</text></view><text class="shortcut-arrow">›</text></button>
-<button v-if="context?.permissionCodes.includes('CLASS_READ')" class="workspace-shortcut" @tap="openStatistics"><view class="shortcut-symbol"><PrototypeIcon name="chart" tone="white" :size="44"/></view><view class="shortcut-copy"><text class="shortcut-title">数据概览</text><text>教学组织与成员统计</text></view><text class="shortcut-arrow">›</text></button>
-<button v-if="taskManagementEnabled" class="workspace-shortcut" @tap="openTasks"><view class="shortcut-symbol"><PrototypeIcon name="book" tone="white" :size="44"/></view><view class="shortcut-copy"><text class="shortcut-title">教学任务</text><text>发布与查看任务进度</text></view><text class="shortcut-arrow">›</text></button>
 <button v-if="teacherManagementEnabled" class="workspace-shortcut" @tap="openTeacherManagement"><view class="shortcut-symbol"><PrototypeIcon name="user" tone="white" :size="44"/></view><view class="shortcut-copy"><text class="shortcut-title">教师管理</text><text>成长伙伴账号与任教</text></view><text class="shortcut-arrow">›</text></button>
+<button v-if="context?.permissionCodes.includes('CLASS_READ')" class="workspace-shortcut" @tap="openStatistics"><view class="shortcut-symbol"><PrototypeIcon name="chart" tone="white" :size="44"/></view><view class="shortcut-copy"><text class="shortcut-title">数据概览</text><text>教学组织与成员统计</text></view><text class="shortcut-arrow">›</text></button>
+<button v-if="context?.permissionCodes.includes('STUDENT_TRANSFER_VIEW')" class="workspace-shortcut" @tap="openTransferRecords"><view class="shortcut-symbol"><PrototypeIcon name="school" tone="white" :size="44"/></view><view class="shortcut-copy"><text class="shortcut-title">转学申请</text><text>查看申请 · 审核与处理</text></view><text class="shortcut-arrow">›</text></button>
+<button v-if="taskManagementEnabled" class="workspace-shortcut" @tap="openTasks"><view class="shortcut-symbol"><PrototypeIcon name="book" tone="white" :size="44"/></view><view class="shortcut-copy"><text class="shortcut-title">教学任务</text><text>发布与查看任务进度</text></view><text class="shortcut-arrow">›</text></button>
 </view>
 <AppTabBar :items="ORG_TABS" :active="0" />
   </view>
@@ -76,7 +76,7 @@ const introCaption = computed(() => isTrainingWorkbench.value ? '专业成长 ·
 const workspaceStats = computed(() => {
   const stats = statistics.value;
   if (isTrainingWorkbench.value) {
-    // 培训机构无校区层级，GRADE/CLASS 语义为课程分类/课程班（与组织层级页 label 映射一致）
+    // 培训机构的 GRADE/CLASS 显示为课程分类/课程班；校区仍按真实层级管理。
     return [
       { label: '课程分类', value: formatCount(stats?.gradeCount) },
       { label: '课程班', value: formatCount(stats?.classCount) },
@@ -103,10 +103,16 @@ const parentMobileManualRecoveryEnabled = ref(false);
 const studentAccountCancellationEnabled = ref(false);
 
 let homeRevision=0;
-function hideWorkspace(){homeRevision++;context.value=null;statistics.value=null;loading.value=false;}
+function resetWorkspaceCapabilities(){
+  accountSecurityEnabled.value=false;studentRelationshipEnabled.value=false;
+  classManagementEnabled.value=false;teacherManagementEnabled.value=false;
+  taskManagementEnabled.value=false;exceptionReportEnabled.value=false;
+  parentMobileManualRecoveryEnabled.value=false;studentAccountCancellationEnabled.value=false;
+}
+function hideWorkspace(){homeRevision++;context.value=null;statistics.value=null;loading.value=false;resetWorkspaceCapabilities();}
 onHide(hideWorkspace);onUnload(hideWorkspace);
 onShow(async () => {
-  const n=++homeRevision;context.value=null;
+  const n=++homeRevision;context.value=null;resetWorkspaceCapabilities();
   const session = getOrganizationSession();
   if (!session) return leaveWorkbench();
   loading.value = true;
@@ -198,3 +204,5 @@ function organizationTypeName(typeCode: string): string {
 </style>
 
 <style scoped>.school-reference-art{width:150rpx;height:150rpx;display:block;flex-shrink:0}.school-art{width:150rpx;height:150rpx;flex-shrink:0}</style>
+
+<style scoped>.ld-topbar .space-switch{max-width:100%;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.shortcut-copy{min-width:0}.shortcut-copy text{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}</style>

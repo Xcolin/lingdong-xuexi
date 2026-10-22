@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const ts = require('typescript');
 const source = require('node:fs').readFileSync('src/models/parent-task-reviews.ts', 'utf8');
 const out = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
-const model = { exports: {} }; new Function('exports', 'module', out)(model.exports, model);
+const model = { exports: {} }; const identity={};new Function('exports',ts.transpileModule(require('node:fs').readFileSync('src/models/parent-identity.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText)(identity);new Function('exports','module','require',out)(model.exports,model,n=>{assert.equal(n,'@/models/parent-identity');return identity;});
 const { canReview, requestEpoch } = model.exports;
 const user = { clientType: 'MINIAPP', roleCodes: ['PARENT'], permissionCodes: ['TASK_ASSIGNMENT_REVIEW'] };
 assert.equal(canReview(user, true), true);

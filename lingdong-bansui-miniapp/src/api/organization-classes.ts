@@ -138,3 +138,8 @@ export function unbindOrganizationTeacher(
     method: 'DELETE', header: authorization(accessToken)
   });
 }
+
+export interface OrganizationCampus {id:string;name:string;schoolOrganizationId:string|null;sortOrder:number}
+export function listManageableCampuses(accessToken:string):Promise<OrganizationCampus[]>{
+  return request<OrganizationCampus[]>('/classes/campuses',{header:authorization(accessToken)});
+}

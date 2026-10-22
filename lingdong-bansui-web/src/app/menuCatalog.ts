@@ -1106,7 +1106,7 @@ export const menuActionCatalog = [
   },
   {
     "code": "CLASS_CREATE",
-    "name": "组织层级 · 新增校区、年级、班级 / 课程分类、课程班",
+    "name": "班级管理 · 新增班级",
     "route": "/organizations",
     "source": "organizations/ClassManagementPanel.tsx",
     "label": "新增班级",
@@ -1115,7 +1115,7 @@ export const menuActionCatalog = [
   },
   {
     "code": "CLASS_UPDATE",
-    "name": "组织层级 · 编辑校区、年级、班级 / 课程分类、课程班",
+    "name": "班级管理 · 编辑",
     "route": "/organizations",
     "source": "organizations/ClassManagementPanel.tsx",
     "label": "编辑",
@@ -1124,7 +1124,7 @@ export const menuActionCatalog = [
   },
   {
     "code": "CLASS_STATUS_CHANGE",
-    "name": "组织层级 · 启停校区、年级、班级 / 课程分类、课程班",
+    "name": "班级管理 · 停用 / 启用",
     "route": "/organizations",
     "source": "organizations/ClassManagementPanel.tsx",
     "label": "停用 / 启用",
@@ -1133,7 +1133,7 @@ export const menuActionCatalog = [
   },
   {
     "code": "CLASS_READ",
-    "name": "组织层级 · 查询校区、年级、班级 / 课程分类、课程班",
+    "name": "班级管理 · 查询班级",
     "route": "/organizations",
     "source": "API controller",
     "label": "查询班级",
@@ -1342,5 +1342,38 @@ export const menuActionCatalog = [
     "label": "转交负责人",
     "route": "/my-organizations",
     "permissionCode": "ORGANIZATION_OWNER_TRANSFER"
+  },
+  {
+    "code": "STUDENT_TRANSFER_VIEW",
+    "name": "转学申请 · 查看申请",
+    "source": "student/web/TransferApplicationController.java",
+    "route": "/organizations",
+    "label": "转学申请 · 查看申请",
+    "pagePermissionCode": "ORG_NODE_READ",
+    "features": [
+      "STUDENT_ORGANIZATION_RELATIONSHIP"
+    ]
+  },
+  {
+    "code": "STUDENT_TRANSFER_REQUEST_CREATE",
+    "name": "转学申请 · 提交与撤销",
+    "source": "student/web/TransferApplicationController.java",
+    "route": "/organizations",
+    "label": "转学申请 · 提交与撤销",
+    "pagePermissionCode": "ORG_NODE_READ",
+    "features": [
+      "STUDENT_ORGANIZATION_RELATIONSHIP"
+    ]
+  },
+  {
+    "code": "STUDENT_TRANSFER_REVIEW",
+    "name": "转学申请 · 审核申请",
+    "source": "student/web/TransferApplicationController.java",
+    "route": "/organizations",
+    "label": "转学申请 · 审核申请",
+    "pagePermissionCode": "ORG_NODE_READ",
+    "features": [
+      "STUDENT_ORGANIZATION_RELATIONSHIP"
+    ]
   }
 ] as const;

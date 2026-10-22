@@ -37,7 +37,7 @@ V141（奖励分类/库存/图片/上架）+ 学生端商城展示与家长端�
 - 8.5 修改密码增强：三输入可见性 toggle（PrototypeIcon 新增 eye/eye-off 4 色）+ 4 段强度条（长度≥8/字母数字/≥12/特殊字符）+ 安全提示条（verify-85 12/12，弱/中/强三档断言）。
 
 ### 第 9 组 收尾验收（9.1-9.2）
-- 9.1：application-test.yml 切本地 MySQL 后全量 `mvn test` 通过（详见下方验证记录）；小程序 vue-tsc --noEmit 0 错误；8081 克隆库逐屏重拍：01-01/01-02（登录页）、01-07（?identity=organization 家庭入驻）、01-08（&kind=institution 机构入驻）、01-09（?id=<真实申请单 2109149485585137664> APPROVED 态申请详情三节点时间线）5 屏 phase3 实拍；01-03/01-10/02-01/02-09/02-10 既有截图补写状态；LAYOUT-01/02/04/05/08 状态收口"已通过原生截图对照"；all-screen-catalog.json 78 屏 implementationStatus 全部非空（仅 01-04/01-05/01-06 按定性无截图）。
+- 9.1：小程序 vue-tsc --noEmit 0 错误；后端全量回归在 MySQL 测试库最终达成 1414/1414 全绿（0F 0E，DROP lingdong_test 干净库全量验证 BUILD SUCCESS，逐类修复过程见 tasks.md 9.1 备注）；8081 克隆库逐屏重拍：01-01/01-02（登录页）、01-07（?identity=organization 家庭入驻）、01-08（&kind=institution 机构入驻）、01-09（?id=<真实申请单 2109149485585137664> APPROVED 态申请详情三节点时间线）5 屏 phase3 实拍；01-03/01-10/02-01/02-09/02-10 既有截图补写状态；LAYOUT-01/02/04/05/08 状态收口"已通过原生截图对照"；all-screen-catalog.json 78 屏 implementationStatus 全部非空（仅 01-04/01-05/01-06 按定性无截图）。
 - 9.2：本 progress 文档 + accepted deviations 清单 + 临时 DB 变更零残留确认。
 
 ## 临时 DB 变更零残留确认（9.2）
@@ -48,6 +48,7 @@ V141（奖励分类/库存/图片/上架）+ 学生端商城展示与家长端�
 - 8.4 期间 fixture 家长变更：mobile 补设 13800008484、补授 PARENT_ACCOUNT_LIFECYCLE_MANAGE、27 条学生关系置 INACTIVE、1 条注销冷静期记录——均为验证 fixture 状态变更（非产品数据），fixture 库按惯例保留供复跑；不涉及生产数据。
 - 9.1 期间 01-09 重拍将申请单 2109149485585137664 的 applicant_id 临时改为 fixture manager（1791858814796036）——fixture 数据变更，随库保留；flyway checksum 经官方 repair 校准（非手工值）。
 - 远程验证库 flyway_schema_history 与迁移文件一一对应，validate 通过（V142 success=true）。
+- **本地 MySQL 测试实例（9.1 后端全量轮）零残留确认**：动态隔离 schema（system_task_query_*/feature_management_*/reward_exchange_*）由 MysqlIsolatedSchemaCleanup shutdown hook 自动 drop（实测跑后仅剩 lingdong_test）；共享 lingdong_test 的固定业务数据残留由各非事务测试类 BeforeEach 幂等清理覆盖，跨轮不累积；临时诊断类（AttendanceAccessDiagTest）已删除；.local-verification 下运行脚本/日志为本地验证痕迹，不入库不提交。
 
 ## Accepted Deviations（与原型不一致且经确认保留）
 
