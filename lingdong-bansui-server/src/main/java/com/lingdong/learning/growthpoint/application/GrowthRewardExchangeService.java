@@ -104,15 +104,33 @@ public class GrowthRewardExchangeService {
         featureAccessService.requireEnabled(FEATURE_CODE, null);
         Student student = requireMiniappStudent(currentUser);
         PageRequest pagination = requirePage(page, pageSize);
-        return exchangePage(student.id(), pagination);
+        return exchangePage(student.id(), pagination, null);
     }
 
     @Transactional(readOnly = true)
     public GrowthRewardExchangePage findManaged(
             AuthenticatedUser currentUser, Long studentId, int page, int pageSize
     ) {
+        return findManaged(currentUser, studentId, page, pageSize, null);
+    }
+
+    @Transactional(readOnly = true)
+    public GrowthRewardExchangePage findManaged(
+            AuthenticatedUser currentUser, Long studentId, int page, int pageSize, String status
+    ) {
         requireReadableChild(currentUser, studentId);
-        return exchangePage(studentId, requirePage(page, pageSize));
+        return exchangePage(studentId, requirePage(page, pageSize), normalizedExchangeStatus(status));
+    }
+
+    /** 可选兑换状态筛选：仅接受既有状态机取值，其余视为不过滤，非法值显式拒绝。 */
+    private String normalizedExchangeStatus(String status) {
+        if (status == null || status.isBlank() || "ALL".equals(status)) {
+            return null;
+        }
+        return switch (status) {
+            case "PENDING_APPROVAL", "PENDING_VERIFICATION", "VERIFIED", "REJECTED", "AUTO_REJECTED", "EXPIRED" -> status;
+            default -> throw new IllegalArgumentException("兑换状态筛选不合法");
+        };
     }
 
     public record PendingSummary(long pendingApprovalCount, long pendingVerificationCount) { }
@@ -254,11 +272,11 @@ public class GrowthRewardExchangeService {
         return new ResourceNotFoundException("奖励兑换不存在或不可访问");
     }
 
-    private GrowthRewardExchangePage exchangePage(Long studentId, PageRequest pagination) {
+    private GrowthRewardExchangePage exchangePage(Long studentId, PageRequest pagination, String status) {
         return new GrowthRewardExchangePage(
                 exchangeMapper.findByStudentId(
-                        studentId, pagination.offset(), pagination.pageSize()),
-                pagination.page(), pagination.pageSize(), exchangeMapper.countByStudentId(studentId));
+                        studentId, status, pagination.offset(), pagination.pageSize()),
+                pagination.page(), pagination.pageSize(), exchangeMapper.countByStudentId(studentId, status));
     }
 
     private PageRequest requirePage(int page, int pageSize) {

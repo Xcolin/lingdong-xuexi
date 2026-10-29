@@ -1,0 +1,11 @@
+const fs=require('node:fs'),vm=require('node:vm'),ts=require('typescript'),assert=require('node:assert/strict');
+const source=fs.readFileSync('src/pages/parent-relationships/paged-section.ts','utf8');const out={};
+vm.runInNewContext(ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}}).outputText,{exports:out,require:name=>name==='vue'?{ref:value=>({value})}:{},Error});
+const deferred=()=>{let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b});return {promise,resolve,reject}};
+const timer=setTimeout(()=>{console.error('关系分页测试超时');process.exit(1)},10000);
+(async()=>{let scope={token:'隔离账号',organizationId:'家庭一'},calls=[];const tail=deferred();let reader=async(s,page)=>{calls.push(page);return page===1?{items:[{id:'孩子甲'}],total:45,page:1,pageSize:20}:tail.promise;};const state=out.useRelationshipSection((s,page)=>reader(s,page),item=>item.id,()=>scope);
+await state.first();assert.equal(state.rows.value.length,1);assert.equal(state.total.value,45);assert.equal(state.hasMore.value,true);const pending=state.more();state.more();assert.equal(calls.length,2);tail.reject(Error('尾页失败'));await pending;assert.ok(state.error.value);await state.more();assert.equal(calls.length,2);reader=async(s,page)=>({items:[{id:'孩子甲'},{id:'孩子乙'}],total:45,page:2,pageSize:20});await state.more(true);assert.equal(state.rows.value.length,2);assert.equal(state.page.value,2);assert.equal(state.error.value,'');
+const stale=deferred();reader=()=>stale.promise;const old=state.first();scope={...scope,organizationId:'家庭二'};stale.resolve({items:[{id:'旧家庭'}],total:1,page:1,pageSize:20});await old;assert.equal(state.rows.value.length,0);
+const hidden=deferred();reader=()=>hidden.promise;const request=state.first();state.clear();hidden.resolve({items:[{id:'隐藏旧响应'}],total:1,page:1,pageSize:20});await request;assert.equal(state.rows.value.length,0);assert.equal(state.total.value,0);assert.equal(state.busy.value,false);
+reader=async()=>({items:[],total:0,page:1,pageSize:20});await state.first();assert.equal(state.loaded.value,true);assert.equal(state.hasMore.value,false);console.log('关系三分区分页去重、同页重试、组织切换及隐藏旧响应验证通过');
+})().catch(e=>{console.error(e);process.exitCode=1}).finally(()=>clearTimeout(timer));

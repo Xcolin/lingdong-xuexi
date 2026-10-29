@@ -1437,6 +1437,61 @@
       "features": [
         "STUDENT_ORGANIZATION_RELATIONSHIP"
       ]
+    },
+    {
+      "code": "STUDENT_TRAINING_REQUEST_CREATE",
+      "name": "培训申请 · 提交与撤回",
+      "source": "API controller",
+      "route": "/parent-relationships",
+      "label": "提交与撤回",
+      "pagePermissionCode": "PARENT_RELATIONSHIP_READ",
+      "features": [
+        "STUDENT_ORGANIZATION_RELATIONSHIP"
+      ]
+    },
+    {
+      "code": "STUDENT_TRAINING_REQUEST_REVIEW",
+      "name": "培训申请 · 审核",
+      "source": "API controller",
+      "route": "/organizations",
+      "label": "审核",
+      "pagePermissionCode": "ORG_NODE_READ",
+      "features": [
+        "STUDENT_ORGANIZATION_RELATIONSHIP"
+      ]
+    },
+    {
+      "code": "STUDENT_TRAINING_PROGRAM_MANAGE",
+      "name": "培训项目 · 登记与启停",
+      "source": "API controller",
+      "route": "/organizations",
+      "label": "登记与启停",
+      "pagePermissionCode": "ORG_NODE_READ",
+      "features": [
+        "STUDENT_ORGANIZATION_RELATIONSHIP"
+      ]
+    },
+    {
+      "code": "STUDENT_RESPONSIBILITY_READ",
+      "name": "学员负责人 · 查看与记录",
+      "source": "API controller",
+      "route": "/organizations",
+      "label": "查看与记录",
+      "pagePermissionCode": "ORG_NODE_READ",
+      "features": [
+        "CLASS_MANAGEMENT"
+      ]
+    },
+    {
+      "code": "STUDENT_RESPONSIBILITY_TRANSFER",
+      "name": "学员负责人 · 转交",
+      "source": "API controller",
+      "route": "/organizations",
+      "label": "转交",
+      "pagePermissionCode": "ORG_NODE_READ",
+      "features": [
+        "CLASS_MANAGEMENT"
+      ]
     }
   ],
   "policies": [
@@ -3314,6 +3369,82 @@
       ],
       "miniappImpliedReads": [
         "STUDENT_TRANSFER_VIEW"
+      ]
+    },
+    {
+      "code": "STUDENT_TRAINING_REQUEST_CREATE",
+      "features": [
+        "STUDENT_ORGANIZATION_RELATIONSHIP"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": [],
+      "impliedReads": [
+        "PARENT_RELATIONSHIP_READ"
+      ],
+      "miniappImpliedReads": [
+        "PARENT_RELATIONSHIP_READ"
+      ]
+    },
+    {
+      "code": "STUDENT_TRAINING_REQUEST_REVIEW",
+      "features": [
+        "STUDENT_ORGANIZATION_RELATIONSHIP"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": [],
+      "impliedReads": [
+        "CLASS_READ"
+      ],
+      "miniappImpliedReads": [
+        "CLASS_READ"
+      ]
+    },
+    {
+      "code": "STUDENT_TRAINING_PROGRAM_MANAGE",
+      "features": [
+        "STUDENT_ORGANIZATION_RELATIONSHIP"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": [],
+      "impliedReads": [
+        "CLASS_READ"
+      ],
+      "miniappImpliedReads": [
+        "CLASS_READ"
+      ]
+    },
+    {
+      "code": "STUDENT_RESPONSIBILITY_READ",
+      "features": [
+        "CLASS_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": [],
+      "impliedReads": [
+        "CLASS_READ",
+        "STUDENT_READ"
+      ],
+      "miniappImpliedReads": [
+        "CLASS_READ",
+        "STUDENT_READ"
+      ]
+    },
+    {
+      "code": "STUDENT_RESPONSIBILITY_TRANSFER",
+      "features": [
+        "CLASS_MANAGEMENT"
+      ],
+      "allowedUserTypes": [],
+      "scopeKinds": [],
+      "impliedReads": [
+        "CLASS_READ",
+        "STUDENT_READ",
+        "STUDENT_RESPONSIBILITY_READ"
+      ],
+      "miniappImpliedReads": [
+        "CLASS_READ",
+        "STUDENT_READ",
+        "STUDENT_RESPONSIBILITY_READ"
       ]
     }
   ]

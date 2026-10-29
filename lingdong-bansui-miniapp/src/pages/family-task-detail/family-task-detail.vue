@@ -46,6 +46,7 @@
   </view>
 </template>
 <script setup lang="ts">
+import {familyTaskVisibilitySummary} from '@/models/family-task-visibility';
 import PixelPageHeader from '@/components/pixel/PixelPageHeader.vue';
 import PrototypeIcon from '@/components/PrototypeIcon.vue';
 import { ref, computed } from 'vue';
@@ -80,13 +81,7 @@ const frequencySummary = computed(() => {
   return base;
 });
 const memberSummary = computed(() => overview.value?.memberNames || (task.value?.targets.length ? `${task.value.targets.length} 名成员` : '未选择'));
-const visibilitySummary = computed(() => {
-  const value = task.value?.visibility;
-  if (!value) return '未设置';
-  const titles: Record<string, string> = { FAMILY_ONLY: '仅家庭', FAMILY_CLASS_PARTNER: '家庭 + 班级成长伙伴', FAMILY_SCHOOL_PARTNER: '家庭 + 本校成长伙伴', CUSTOM: '自定义范围' };
-  const descs: Record<string, string> = { FAMILY_ONLY: '仅自己可见', FAMILY_CLASS_PARTNER: '班级成长伙伴可见', FAMILY_SCHOOL_PARTNER: '本校成长伙伴可见', CUSTOM: '自定义可见范围' };
-  return `${titles[value] || value}（${descs[value] || ''}）`;
-});
+const visibilitySummary = computed(() => familyTaskVisibilitySummary(task.value?.visibility));
 const progressCompleted = computed(() => overview.value?.assignmentCompleted ?? records.value.filter(r => r.status === 'APPROVED').length);
 const progressTotal = computed(() => overview.value?.assignmentTotal ?? 0);
 const progressPercent = computed(() => progressTotal.value > 0 ? Math.min(100, Math.round(progressCompleted.value / progressTotal.value * 100)) : 0);

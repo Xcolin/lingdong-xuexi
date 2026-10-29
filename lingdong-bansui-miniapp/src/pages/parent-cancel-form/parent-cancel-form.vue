@@ -30,7 +30,7 @@
         <button class="text-command" @tap="goBack">返回</button>
       </view>
 
-      <template v-else>
+      <template v-else-if="canRequestCancellation">
         <!-- 注销原因四选 -->
         <view class="form-band">
           <text class="band-title">请选择注销原因（单选）</text>
@@ -64,10 +64,11 @@
 
         <button
           class="danger-command"
-          :disabled="!reason || !agreed || !sixDigits(code) || confirmation !== '确认注销' || submitting"
+          :disabled="!validForm() || submitting"
           @tap="submitCancellation"
         >提交注销申请</button>
       </template>
+      <view v-else class="state-view">当前注销资格无法确认，请返回后重试。</view>
     </template>
   </view>
 </template>
@@ -75,7 +76,7 @@
 <script setup lang="ts">
 import PrototypePageHeader from '@/components/PrototypePageHeader.vue';
 import PrototypeIcon from '@/components/PrototypeIcon.vue';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { getMiniappCapabilities } from '@/api/capability';
 import {
@@ -105,8 +106,20 @@ const note = ref('');
 const agreed = ref(false);
 const code = ref('');
 const confirmation = ref('');
+const enabled = ref(false);
+const canRequestCancellation = computed(() => enabled.value && !loading.value && !errorMessage.value
+  && state.value?.cancellationStatus === 'NONE' && state.value.activeStudentRelationshipCount === 0);
+function validForm(): boolean {
+  return canRequestCancellation.value && agreed.value && sixDigits(code.value)
+    && confirmation.value === '确认注销' && note.value.length <= 200 && REASONS.some(option => option.value === reason.value);
+}
 
 onShow(async () => {
+  enabled.value = false;
+  state.value = null;
+  agreed.value = false;
+  code.value = '';
+  confirmation.value = '';
   session.value = getParentSession();
   if (!session.value) {
     await uni.reLaunch({ url: '/pages/index/index' });
@@ -118,6 +131,7 @@ onShow(async () => {
       await uni.redirectTo({ url: '/pages/parent-home/parent-home' });
       return;
     }
+    enabled.value = true;
     await loadState();
   } catch (error) {
     errorMessage.value = toMessage(error);
@@ -125,7 +139,7 @@ onShow(async () => {
 });
 
 async function loadState(): Promise<void> {
-  if (!session.value) return;
+  if (!enabled.value || !session.value) return;
   loading.value = true;
   errorMessage.value = '';
   try {
@@ -138,6 +152,7 @@ async function loadState(): Promise<void> {
 }
 
 async function sendCode(): Promise<void> {
+  if (!canRequestCancellation.value) return;
   await execute(async () => {
     await issueParentCancellationCode(requireToken());
     toast('验证码已发送');
@@ -145,6 +160,7 @@ async function sendCode(): Promise<void> {
 }
 
 async function submitCancellation(): Promise<void> {
+  if (!validForm()) return;
   await execute(async () => {
     await requestParentCancellation(requireToken(), code.value, confirmation.value, reason.value, note.value);
     toast('注销申请已进入冷静期');
@@ -185,7 +201,7 @@ async function execute(action: () => Promise<void>): Promise<void> {
 }
 
 function requireToken(): string {
-  if (!session.value) throw new Error('家长会话已失效');
+  if (!session.value || getParentSession()?.accessToken !== session.value.accessToken) throw new Error('家长会话已失效');
   return session.value.accessToken;
 }
 

@@ -293,6 +293,17 @@ public class AuthenticationApplicationService {
                 .toList();
     }
 
+    public DeviceSessionPage pageCurrentUserDevices(Long currentUserId, int page, int pageSize) {
+        featureAccessService.requireEnabled(ACCOUNT_SECURITY_FEATURE, null);
+        requireUser(currentUserId);
+        if (page < 1 || pageSize < 1 || pageSize > 100) throw new IllegalArgumentException("分页参数不合法");
+        LocalDateTime now = LocalDateTime.now();
+        long total = sessionMapper.countActiveByUserId(currentUserId, now);
+        var items = sessionMapper.findActivePageByUserId(currentUserId, now, ((long) page - 1) * pageSize, pageSize)
+                .stream().map(this::toDeviceSession).toList();
+        return new DeviceSessionPage(items, total, page, pageSize);
+    }
+
     AuthenticatedSession createSession(Long userId, AuthClientType clientType, String deviceId, String deviceName) {
         // A Web-created parent account carries the parent identity, even before its first mobile visit.
         // Initialize only its profile; this never adds organizations, roles or accepted agreements.

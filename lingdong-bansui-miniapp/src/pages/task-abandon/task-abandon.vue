@@ -204,4 +204,25 @@ function toMessage(error: unknown): string {
 .ghost-action { width: 100%; height: 88rpx; margin: 22rpx 0 0; border-radius: 44rpx; background: #ffffff; color: #167c5a; font-size: 29rpx; }
 .ghost-action::after { border-color: #a9cbbf; }
 .inline-error { margin-top: 22rpx; padding: 18rpx 24rpx; background: #fff1ed; border-radius: 14rpx; color: #9a4b38; font-size: 24rpx; }
+
+/* 05-10: keep both decisions visible instead of using textarea's native 150px default. */
+.prototype-workspace.page-shell{padding-bottom:calc(24rpx + env(safe-area-inset-bottom));}
+.warn-symbol{width:84rpx;height:84rpx;margin-top:12rpx;}
+.warn-symbol text{font-size:48rpx;}
+.guide-title{margin-top:16rpx;font-size:31rpx;}
+.guide-subtitle{margin-top:8rpx;font-size:23rpx;line-height:1.5;}
+.info-table{margin-top:20rpx;padding:12rpx 24rpx;background:#edf3ef;}
+.prototype-workspace .info-table .info-row{min-height:58rpx;background:transparent!important;box-shadow:none!important;border-radius:0!important;border-bottom:0;gap:18rpx;}
+.prototype-workspace .info-table .type-row{padding:12rpx 0;gap:12rpx;}
+.info-label,.info-value{font-size:24rpx;line-height:1.45;}
+.info-value{min-width:0;overflow-wrap:anywhere;}
+.type-options{gap:12rpx;}
+.type-text{font-size:25rpx;}
+.note-box{margin-top:18rpx;padding:18rpx 22rpx;}
+.note-heading{font-size:25rpx;}
+.note-input{height:150rpx;min-height:150rpx;margin-top:12rpx;font-size:25rpx;line-height:1.5;}
+.note-counter{margin-top:8rpx;font-size:21rpx;}
+.danger-action,.ghost-action{height:80rpx;font-size:28rpx;line-height:80rpx;}
+.danger-action{margin-top:24rpx;}
+.ghost-action{margin-top:16rpx;}
 </style>

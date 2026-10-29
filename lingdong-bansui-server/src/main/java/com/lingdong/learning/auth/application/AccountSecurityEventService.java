@@ -85,6 +85,16 @@ public class AccountSecurityEventService {
         eventMapper.markReadIfUnread(eventId, userId, LocalDateTime.now());
     }
 
+    @Transactional(readOnly = true)
+    public AccountSecurityEventPage findPage(Long userId, boolean unreadOnly, int page, int pageSize) {
+        requireEnabled();
+        if (page < 1 || pageSize < 1 || pageSize > 100) throw new IllegalArgumentException("分页参数不合法");
+        long total = eventMapper.countByUser(userId, unreadOnly);
+        var items = eventMapper.findPageByUser(userId, unreadOnly, ((long) page - 1) * pageSize, pageSize)
+                .stream().map(this::toView).toList();
+        return new AccountSecurityEventPage(items, total, page, pageSize, eventMapper.countUnreadWarningsByUser(userId));
+    }
+
     @Transactional
     public void markAllRead(Long userId) {
         requireEnabled();

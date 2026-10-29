@@ -54,6 +54,19 @@
         LIMIT #{limit}
     </select>
 
+    <select id="countByUser" resultType="long">
+        SELECT COUNT(*) FROM auth_security_event WHERE user_id = #{userId}
+        <if test="unreadOnly">AND status = 'UNREAD'</if>
+    </select>
+    <select id="countUnreadWarningsByUser" resultType="long">
+        SELECT COUNT(*) FROM auth_security_event
+        WHERE user_id = #{userId} AND status = 'UNREAD' AND risk_level = 'WARNING'
+    </select>
+    <select id="findPageByUser" resultMap="AccountSecurityEventMap">
+        SELECT <include refid="eventColumns"/> FROM auth_security_event WHERE user_id = #{userId}
+        <if test="unreadOnly">AND status = 'UNREAD'</if>
+        ORDER BY occurred_at DESC, id DESC LIMIT #{limit} OFFSET #{offset}
+    </select>
     <select id="findByIdAndUserId" resultMap="AccountSecurityEventMap">
         SELECT <include refid="eventColumns"/>
         FROM auth_security_event

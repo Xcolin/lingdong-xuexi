@@ -32,9 +32,10 @@ public class ParentRewardController {
     @GetMapping("/students/{studentId}")
     public GrowthRewardPageResponse list(@AuthenticationPrincipal AuthenticatedUser user,
             @PathVariable Long studentId, @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "20") int pageSize) {
+            @RequestParam(defaultValue = "20") int pageSize,
+            @RequestParam(required = false) String status) {
         requireMiniappParent(user,parentActors);
-        return GrowthRewardPageResponse.from(service.findManaged(user, studentId, page, pageSize));
+        return GrowthRewardPageResponse.from(service.findManaged(user, studentId, page, pageSize, status));
     }
 
     @RequirePermission("MINIAPP_REWARD_MANAGE_CHILD")

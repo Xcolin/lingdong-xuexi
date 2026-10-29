@@ -22,6 +22,10 @@ public interface AccountSecurityEventMapper {
             @Param("id") Long id,
             @Param("userId") Long userId
     );
+    long countByUser(@Param("userId") Long userId, @Param("unreadOnly") boolean unreadOnly);
+    long countUnreadWarningsByUser(@Param("userId") Long userId);
+    List<AccountSecurityEvent> findPageByUser(@Param("userId") Long userId,
+            @Param("unreadOnly") boolean unreadOnly, @Param("offset") long offset, @Param("limit") int limit);
 
     int markReadIfUnread(
             @Param("id") Long id,

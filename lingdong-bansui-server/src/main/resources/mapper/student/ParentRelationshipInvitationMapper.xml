@@ -92,4 +92,18 @@
                OR (#{mobile} IS NOT NULL AND i.invitee_mobile = #{mobile}))
         ORDER BY i.created_at DESC
     </select>
+    <select id="countReceivedPending" resultType="long">
+        SELECT COUNT(*) FROM edu_parent_relationship_invitation i JOIN edu_student s ON s.id=i.student_id
+        WHERE i.status='PENDING' AND i.expires_at &gt; #{now}
+        AND (i.invitee_user_id=#{userId} OR (#{mobile,jdbcType=VARCHAR} IS NOT NULL AND i.invitee_mobile=#{mobile,jdbcType=VARCHAR}))
+    </select>
+    <select id="findReceivedPendingPage" resultMap="receivedInvitationMap">
+        SELECT i.id AS invitation_id,s.student_name,COALESCE(NULLIF(u.display_name,''),u.username) AS inviter_name,
+               i.invitation_type,i.created_at,i.expires_at
+        FROM edu_parent_relationship_invitation i JOIN edu_student s ON s.id=i.student_id
+        LEFT JOIN sys_user u ON u.id=i.inviter_user_id
+        WHERE i.status='PENDING' AND i.expires_at &gt; #{now}
+        AND (i.invitee_user_id=#{userId} OR (#{mobile,jdbcType=VARCHAR} IS NOT NULL AND i.invitee_mobile=#{mobile,jdbcType=VARCHAR}))
+        ORDER BY i.created_at DESC,i.id DESC LIMIT #{limit} OFFSET #{offset}
+    </select>
 </mapper>

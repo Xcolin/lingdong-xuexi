@@ -20,8 +20,8 @@ export const parentRewardApi={
  summary:(token:string)=>request<{pendingApprovalCount:number;pendingVerificationCount:number}>('/parent-reward-exchanges/summary',{header:header(token)}),
  me:(token:string)=>request<RewardIdentity>('/auth/me',{header:header(token)}),
  children:(token:string)=>request<RewardChild[]>('/parent-rewards/students',{header:header(token)}),
- rewards:(token:string,studentId:string,page:number)=>request<RewardPage<ParentReward>>(`/parent-rewards/students/${id(studentId)}?page=${page}&pageSize=20`,{header:header(token)}),
- exchanges:(token:string,studentId:string,page:number)=>request<RewardPage<StudentRewardExchange>>(`/parent-reward-exchanges/students/${id(studentId)}?page=${page}&pageSize=20`,{header:header(token)}),
+ rewards:(token:string,studentId:string,page:number,status?:string)=>request<RewardPage<ParentReward>>(`/parent-rewards/students/${id(studentId)}?page=${page}&pageSize=20${status&&status!=='ALL'?`&status=${id(status)}`:''}`,{header:header(token)}),
+ exchanges:(token:string,studentId:string,page:number,status?:string)=>request<RewardPage<StudentRewardExchange>>(`/parent-reward-exchanges/students/${id(studentId)}?page=${page}&pageSize=20${status&&status!=='ALL'?`&status=${id(status)}`:''}`,{header:header(token)}),
  save:(token:string,studentId:string,rewardId:string|null,data:RewardInput)=>request<ParentReward>(rewardId?`/parent-rewards/${id(rewardId)}`:`/parent-rewards/students/${id(studentId)}`,{header:header(token),method:rewardId?'PUT':'POST',data}),
  remove:(token:string,rewardId:string)=>request<void>(`/parent-rewards/${id(rewardId)}`,{header:header(token),method:'DELETE'}),
  process:(token:string,exchangeId:string,action:'approve'|'reject'|'verify',rejectReason?:string)=>request<StudentRewardExchange>(`/parent-reward-exchanges/${id(exchangeId)}/${action}`,{header:header(token),method:'POST',data:action==='reject'?{rejectReason}:{} })

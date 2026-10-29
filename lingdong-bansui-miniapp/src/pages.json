@@ -9,6 +9,47 @@
       }
     },
     {
+      "path": "pages/institution-training-management/institution-training-management",
+      "style": {
+        "navigationBarTitleText": "培训项目与申请",
+        "navigationStyle": "custom",
+        "navigationBarTextStyle": "white",
+        "navigationBarBackgroundColor": "#17684F"
+      }
+    },
+    {
+      "path": "pages/student-responsibility-transfer/student-responsibility-transfer",
+      "style": {
+        "navigationBarTitleText": "转交成长负责人",
+        "navigationStyle": "custom",
+        "navigationBarTextStyle": "white",
+        "navigationBarBackgroundColor": "#17684F"
+      }
+    },
+    {
+      "path": "pages/training-application/training-application",
+      "style": {
+        "navigationBarTitleText": "培训报名",
+        "navigationStyle": "custom",
+        "navigationBarTextStyle": "white",
+        "navigationBarBackgroundColor": "#17684F"
+      }
+    },
+    {
+      "path": "pages/institution-student-list/institution-student-list",
+      "style": {
+        "navigationBarTitleText": "成长小主人",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/institution-student-detail/institution-student-detail",
+      "style": {
+        "navigationBarTitleText": "成长小主人详情",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/organization-class-detail/organization-class-detail",
       "style": {
         "navigationBarTitleText": "班级详情",
@@ -26,6 +67,7 @@
     {
       "path": "pages/account-settings/account-settings",
       "style": {
+        "navigationStyle": "custom",
         "navigationBarTitleText": "账号设置",
         "navigationBarBackgroundColor": "#F6F8F5",
         "backgroundColor": "#F6F8F5"
@@ -243,7 +285,7 @@
       "path": "pages/organization-classes/organization-classes",
       "style": {
         "navigationStyle": "custom",
-          "navigationBarTitleText": "班级列表"
+        "navigationBarTitleText": "班级列表"
       }
     },
     {
@@ -268,6 +310,7 @@
     {
       "path": "pages/parent-relationships/parent-relationships",
       "style": {
+        "navigationStyle": "custom",
         "navigationBarTitleText": "陪伴关系"
       }
     },
@@ -355,7 +398,8 @@
     {
       "path": "pages/rewards/rewards",
       "style": {
-        "navigationBarTitleText": "奖励兑换",
+        "navigationBarTitleText": "奖品商城",
+        "navigationStyle": "custom",
         "enablePullDownRefresh": true
       }
     },
@@ -416,6 +460,7 @@
         {
           "path": "student-dashboard",
           "style": {
+            "navigationStyle": "custom",
             "navigationBarTitleText": "",
             "navigationBarBackgroundColor": "#F6F8F5",
             "backgroundColor": "#F6F8F5"

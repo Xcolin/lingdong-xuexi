@@ -18,13 +18,13 @@ export const PARENT_TABS: TabItem[] = [
 export const TEACHER_TABS: TabItem[] = [
  {icon:'首',label:'首页',url:'/pages/teacher-home/teacher-home'},
  {icon:'任',label:'任务',url:'/pages/managed-tasks/managed-tasks?identity=teacher'},
- {icon:'报',label:'报备',url:'/pages/exception-reports/exception-reports?identity=teacher'},
+ {icon:'成',label:'成长',url:'/pages/organization-statistics/organization-statistics?identity=teacher'},
  {icon:'我',label:'我的',url:'/pages/organization-me/organization-me?identity=teacher'}
 ];
 
 export const ORG_TABS: TabItem[] = [
   { icon: '首', label: '首页', url: '/pages/organization-home/organization-home' },
   { icon: '任', label: '任务', url: '/pages/managed-tasks/managed-tasks?identity=organization' },
-  { icon: '勤', label: '考勤', url: '/pages/attendance/attendance?identity=organization' },
+  { icon: '成', label: '成长', url: '/pages/organization-statistics/organization-statistics?identity=organization' },
   { icon: '我', label: '我的', url: '/pages/organization-me/organization-me?identity=organization' }
 ];

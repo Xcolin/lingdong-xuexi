@@ -1,5 +1,5 @@
 <template>
-  <view class="prototype-workspace page-shell">
+  <view class="prototype-workspace page-shell" :class="{ 'compact-detail': compactView }">
     <PixelPageHeader title="任务详情" back fallback="/pages/task-list/task-list" />
     <view v-if="loading" class="state-view"><text>正在加载任务</text></view>
     <view v-else-if="!learningTaskEnabled" class="state-view unavailable">
@@ -10,11 +10,15 @@
       <button class="retry-button" @tap="reload">重试</button>
     </view>
     <template v-else-if="task">
-      <view class="title-band"><view class="detail-symbol"><PrototypeIcon name="book" :size="42"/></view><view class="title-copy"><text class="task-title">{{task.title}}</text><view class="title-meta"><text class="source-label" :class="`source-${task.sourceType.toLowerCase()}`">{{sourceLabel(task.sourceType)}}</text><text class="status-label" :class="`status-${task.effectiveStatus.toLowerCase()}`">{{statusLabel(task.effectiveStatus)}}</text><text v-if="task.overnightMigrated" class="migration-label">隔夜迁移</text></view><text v-if="task.sourceOrganizationName" class="source-name">{{task.sourceOrganizationName}}</text></view></view>
+      <view v-if="compactView" class="compact-summary">
+        <view class="compact-heading"><view class="detail-symbol"><PrototypeIcon name="book" :size="42" /></view><view class="title-copy"><text class="task-title">{{ task.title }}</text><text v-if="task.categoryCode" class="compact-category">{{ task.categoryCode }}</text></view><text class="compact-points">+{{ task.basePoints }} 积分</text></view>
+        <text v-if="task.description" class="compact-description">{{ task.description }}</text>
+      </view>
+      <view v-else class="title-band"><view class="detail-symbol"><PrototypeIcon name="book" :size="42"/></view><view class="title-copy"><text class="task-title">{{task.title}}</text><view class="title-meta"><text class="source-label" :class="`source-${task.sourceType.toLowerCase()}`">{{sourceLabel(task.sourceType)}}</text><text class="status-label" :class="`status-${task.effectiveStatus.toLowerCase()}`">{{statusLabel(task.effectiveStatus)}}</text><text v-if="task.overnightMigrated" class="migration-label">隔夜迁移</text></view><text v-if="task.sourceOrganizationName" class="source-name">{{task.sourceOrganizationName}}</text></view></view>
 
       <view v-if="errorMessage" class="error-band"><text>{{ errorMessage }}</text></view>
 
-      <view class="detail-band metadata-band">
+      <view v-if="!compactView" class="detail-band metadata-band">
         <view class="detail-row"><text class="detail-label">计划日期</text><text>{{ task.scheduledDate }}</text></view>
         <view class="detail-row"><text class="detail-label">截止时间</text><text>{{ formatTime(task.dueAt) }}</text></view>
         <view class="detail-row"><text class="detail-label">任务难度</text><text>{{ task.difficultyLevel }} 级</text></view>
@@ -24,23 +28,23 @@
         <view v-if="task.categoryCode" class="detail-row"><text class="detail-label">任务分类</text><text>{{ task.categoryCode }}</text></view>
       </view>
 
-      <view v-if="task.tagCodes.length" class="detail-band tag-band">
+      <view v-if="!compactView && task.tagCodes.length" class="detail-band tag-band">
         <text class="section-title">任务标签</text>
         <view class="tag-list"><text v-for="tag in task.tagCodes" :key="tag" class="task-tag">{{ tag }}</text></view>
       </view>
 
-      <view v-if="task.remark" class="detail-band">
+      <view v-if="!compactView && task.remark" class="detail-band">
         <text class="section-title">任务备注</text>
         <text class="remark-text">{{ task.remark }}</text>
       </view>
 
-      <view v-if="task.description" class="detail-band">
+      <view v-if="!compactView && task.description" class="detail-band">
         <text class="section-title">任务内容</text>
         <text class="remark-text">{{ task.description }}</text>
       </view>
 
       <view v-if="task.requirementItems.length" class="detail-band requirement-band">
-        <text class="section-title">任务要求</text>
+        <text class="section-title">{{ compactView ? '目标要求' : '任务要求' }}</text>
         <view class="requirement-list">
           <view v-for="(item, index) in task.requirementItems" :key="index" class="requirement-item">
             <view class="requirement-check"><PrototypeIcon name="check" tone="green" :size="24"/></view>
@@ -49,7 +53,7 @@
         </view>
       </view>
 
-      <view v-if="examplePreviewList.length" class="detail-band example-band">
+      <view v-if="!compactView && examplePreviewList.length" class="detail-band example-band">
         <text class="section-title">参考示例</text>
         <view class="history-image-grid">
           <view
@@ -63,7 +67,7 @@
         </view>
       </view>
 
-      <view v-if="timelineSteps.length" class="detail-band timeline-band">
+      <view v-if="!compactView && timelineSteps.length" class="detail-band timeline-band">
         <text class="section-title">执行时间线</text>
         <view class="timeline-list">
           <view
@@ -88,7 +92,7 @@
         </view>
       </view>
 
-      <view v-if="task.latestCheckIn" class="detail-band checkin-history">
+      <view v-if="!compactView && task.latestCheckIn" class="detail-band checkin-history">
         <view class="section-heading">
           <text class="section-title">最近打卡</text>
           <text class="submission-number">第 {{ task.latestCheckIn.submissionNo }} 次</text>
@@ -114,7 +118,7 @@
         </text>
       </view>
 
-      <view class="action-band" :class="{'awaiting-claim':task.effectiveStatus==='PENDING_CLAIM'}"><text v-if="task.effectiveStatus!=='PENDING_CLAIM'" class="section-title">我的任务行动</text>
+      <view class="action-band" :class="{'awaiting-claim':task.effectiveStatus==='PENDING_CLAIM'}"><text v-if="!compactView && task.effectiveStatus!=='PENDING_CLAIM'" class="section-title">我的任务行动</text>
         <button
           v-if="task.effectiveStatus === 'PENDING_CLAIM'"
           class="primary-action"
@@ -124,7 +128,7 @@
         >认领任务</button>
 
         <template v-else-if="task.effectiveStatus === 'IN_PROGRESS'">
-          <text class="form-heading">完成情况</text>
+          <text class="form-heading">{{ compactView ? '我的完成记录' : '完成情况' }}</text>
           <view class="completion-options">
             <view class="completion-option" @tap="checkInCompletion = 'FULL'">
               <view class="radio-dot" :class="{ on: checkInCompletion === 'FULL' }"/>
@@ -135,7 +139,7 @@
               <text class="completion-label">部分完成</text>
             </view>
           </view>
-          <text class="form-heading">文字记录</text>
+          <text v-if="!compactView" class="form-heading">文字记录</text>
           <textarea
             v-model="checkInContent"
             class="checkin-input"
@@ -143,8 +147,8 @@
             placeholder="记录本次完成情况"
             :disabled="working"
           />
-          <view v-if="attachmentServiceEnabled" class="upload-section"><text class="form-heading">上传图片</text>
-            <view class="pending-image-grid">
+          <view v-if="attachmentServiceEnabled" class="upload-section"><text v-if="!compactView" class="form-heading">上传图片</text>
+            <view class="pending-image-grid" :class="{ 'empty-upload': !pendingImages.length }">
               <view v-for="item in pendingImages" :key="item.localId" class="pending-image-item">
                 <image :src="item.filePath" mode="aspectFill" @tap="previewPendingImage(item.filePath)" />
                 <view v-if="item.status === 'UPLOADING'" class="upload-mask">
@@ -165,7 +169,7 @@
                 class="add-image"
                 :disabled="working"
                 @tap="chooseImages"
-              ><PrototypeIcon name="plus" :size="24" /><text>添加图片</text></button>
+              ><PrototypeIcon name="plus" :size="24" /><text>{{ compactView ? '上传记录' : '添加图片' }}</text></button>
             </view>
             <text class="upload-hint">支持 JPG、PNG，最多 3 张，单张不超过 10MB</text>
           </view>
@@ -175,7 +179,9 @@
             :loading="working"
             :disabled="working || hasUploading || (!checkInContent.trim() && !uploadedFileIds.length)"
             @tap="submitCheckIn"
-          >提交打卡</button>
+          >{{ compactView ? '提交完成' : '提交打卡' }}</button>
+          <view v-if="compactView" class="compact-links"><button @tap="showFullDetails = true">任务详情</button><button @tap="showMoreActions = !showMoreActions">{{ showMoreActions ? '收起操作' : '更多操作' }}</button></view>
+          <template v-if="!compactView || showMoreActions">
           <picker
             mode="selector"
             :range="pauseDurations"
@@ -193,6 +199,7 @@
             <button :disabled="working" @tap="openDeferPage">任务顺延</button>
           </view>
           <button class="danger-action" :disabled="working" @tap="openAbandonPage">放弃任务</button>
+          </template>
         </template>
 
         <template v-else-if="task.effectiveStatus === 'PAUSED'">
@@ -218,6 +225,7 @@
 import PixelPageHeader from '@/components/pixel/PixelPageHeader.vue';
 import PrototypeIcon from '@/components/PrototypeIcon.vue';
 import { computed, ref } from 'vue';
+import { isCompactTaskDetail } from './task-detail-presentation';
 import { onLoad, onShow, onHide, onUnload } from '@dcloudio/uni-app';
 import { getMiniappCapabilities } from '@/api/capability';
 import {
@@ -251,8 +259,12 @@ const pauseDurations = [
   { label: '60 分钟', value: 60 },
   { label: '120 分钟', value: 120 }
 ];
+const requestedLayout = ref<unknown>('');
+const showFullDetails = ref(false);
+const showMoreActions = ref(false);
 const assignmentId = ref('');
 const task = ref<StudentTaskAssignment | null>(null);
+const compactView = computed(() => !showFullDetails.value && isCompactTaskDetail(requestedLayout.value, task.value?.effectiveStatus));
 const loading = ref(true);
 const working = ref(false);
 const learningTaskEnabled = ref(false);
@@ -329,6 +341,7 @@ onHide(() => { if (nativePickerOpen) pickerReturnPending = true; else invalidate
 onUnload(invalidate);
 
 onLoad((options) => {
+  requestedLayout.value = options?.layout;
   assignmentId.value = typeof options?.id === 'string' ? options.id : '';
 });
 
@@ -721,4 +734,33 @@ function toMessage(error: unknown): string {
 .radio-dot.on{border-width:11rpx;border-color:#167c5a;}.checkin-input{background:#fcfdfb!important;border:1rpx solid #d9e3dc!important;border-radius:18rpx!important;padding:22rpx!important;box-sizing:border-box;}.primary-action{position:fixed!important;bottom:calc(24rpx + env(safe-area-inset-bottom));left:32rpx;right:32rpx;z-index:20;color:white!important;box-shadow:0 8rpx 24rpx #184c3420;}.secondary-actions{margin-top:24rpx!important;gap:18rpx!important;}.secondary-actions button{background:#edf6ee!important;color:#185b41!important;border-radius:18rpx!important;}.duration-picker{background:#f4f7f2;padding:22rpx;border-radius:16rpx;margin-top:24rpx;}.terminal-state,.pause-summary{padding:26rpx!important;background:#eef6ed;border-radius:22rpx!important;}.add-image{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10rpx;}
 .title-band{display:flex;align-items:flex-start;gap:22rpx;}.detail-symbol{flex-shrink:0;margin:0!important;}.title-copy{flex:1;min-width:0;}.task-title{display:block;line-height:1.5;}.title-meta{margin-top:12rpx;}.source-name{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:23rpx;}.metadata-band{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28rpx 30rpx;padding:28rpx!important;}.metadata-band .detail-row{display:flex;flex-direction:column;align-items:flex-start;gap:8rpx;padding:0;border:0;font-size:26rpx;}.metadata-band .detail-label{font-size:22rpx;color:#8a9981;}.primary-action{width:auto!important;margin:0!important;box-sizing:border-box;background:linear-gradient(120deg,#184f40,#256b50)!important;}.awaiting-claim{background:transparent!important;border:0!important;padding:0!important;margin:0!important;}
 .prototype-workspace{background:#f7faf6!important;color:#172b25}.task-symbol{border-radius:50%!important;background:#e7f6ed!important}.task-card,.task-list-card{border:0!important;border-radius:22rpx!important;box-shadow:none!important}.task-title{font-size:30rpx!important}.primary-action{border-radius:44rpx!important}.prototype-header{background:#fff!important;color:#172b25!important;justify-content:center;border-radius:0!important;padding:28rpx!important}.prototype-header-title{font-size:34rpx}.publish-actions{position:fixed!important;bottom:0;left:0;right:0;padding:20rpx 24rpx calc(20rpx + env(safe-area-inset-bottom));box-sizing:border-box}.page>.task-editor{padding-bottom:180rpx!important}.task-list-card>.heading{display:block;margin-bottom:12rpx}.task-list-card>text:not(.heading){font-size:24rpx;color:#7c8981}.task-list-card button{display:inline-flex;margin:18rpx 12rpx 0 0;line-height:58rpx;padding:0 22rpx}.page-shell{padding:24rpx 28rpx 170rpx!important;box-sizing:border-box}.metadata-band .detail-row{min-height:0}.detail-symbol{background:#fff0d7!important;color:#eea12a!important}.action-band{border:0!important}.checkin-input{height:180rpx}.ld-heading{text-align:center;background:white;margin:0 -32rpx;padding:28rpx}.source-filter-inner{display:flex;width:100%;gap:0;background:#eff3ee;border-radius:24rpx}.source-button{flex:1;min-width:0;padding:0;box-shadow:none;background:transparent}.source-button.active{background:transparent!important;color:#075e43!important;border-bottom:4rpx solid #075e43}.task-row-top{justify-content:space-between}.task-meta{font-size:23rpx}.task-list-card{min-height:148rpx}
+
+.compact-detail .compact-summary{background:#fff;border-radius:24rpx;padding:24rpx;margin-top:12rpx;}
+.compact-heading{display:flex;align-items:center;gap:24rpx;}
+.compact-detail .task-title{margin:0;font-size:32rpx!important;line-height:1.4;overflow-wrap:anywhere;}
+.compact-points{color:#ef961b;font-size:27rpx;flex-shrink:0;}
+.compact-category{display:inline-block;margin-top:10rpx;padding:4rpx 12rpx;border-radius:10rpx;background:#f1f3f0;color:#69736c;font-size:22rpx;}
+.compact-description{display:block;margin-top:22rpx;color:#778079;font-size:26rpx;line-height:1.5;white-space:pre-wrap;}
+.compact-detail .requirement-band{background:transparent!important;margin:12rpx 0 0!important;padding:0 16rpx 8rpx!important;}
+.compact-detail .section-title{color:#172b25;font-size:28rpx;padding:12rpx 0;}
+.compact-detail .requirement-list{gap:8rpx;padding-top:0;}
+.compact-detail .requirement-check{width:30rpx;height:30rpx;background:transparent;border:1rpx solid #448566;}
+.compact-detail .requirement-text{color:#778079;font-size:25rpx;line-height:1.5;}
+.compact-detail .action-band{padding:0 8rpx!important;margin-top:20rpx;background:transparent!important;}
+.compact-detail .form-heading{margin:12rpx 0;font-size:28rpx;}
+.compact-detail .completion-options{gap:40rpx;padding:4rpx 0 14rpx;}
+.compact-detail .completion-label{font-size:24rpx;}
+.compact-detail .radio-dot{width:28rpx;height:28rpx;}
+.compact-detail .radio-dot.on{border-width:9rpx;}
+.compact-detail .checkin-input{height:132rpx;padding:16rpx!important;font-size:25rpx;}
+.compact-detail .input-counter{margin:8rpx 0 12rpx;}
+.compact-detail .pending-image-grid{padding:0;}
+.compact-detail .pending-image-grid.empty-upload{display:block;}
+.compact-detail .add-image{min-height:96rpx;aspect-ratio:auto;border-style:dashed;}
+.compact-detail .upload-hint{font-size:20rpx;margin-top:8rpx;}
+.compact-detail .primary-action{position:static!important;width:100%!important;margin:16rpx 0 0!important;}
+.compact-detail.page-shell{padding-bottom:calc(48rpx + env(safe-area-inset-bottom))!important;}
+.compact-links{display:flex;justify-content:center;gap:30rpx;margin:16rpx 0;}
+.compact-links button{margin:0;padding:0 12rpx;background:transparent;color:#557263;font-size:23rpx;line-height:48rpx;}
+.compact-links button::after{border:0;}
 </style>

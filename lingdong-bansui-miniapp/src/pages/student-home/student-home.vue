@@ -84,7 +84,7 @@ function openSettings(): void { uni.navigateTo({url:'/pages/account-settings/acc
 
 
 <style lang="scss" scoped>
-.profile-hero{padding:42rpx 6rpx 58rpx;gap:24rpx;}.child-avatar{width:140rpx;height:140rpx;border-radius:50%;background:#c8e8d5;flex-shrink:0;}.profile-copy{flex:1;}.ld-heading-title{display:block;}.growth-badge{display:inline-block;background:#127548;color:white;border-radius:24rpx;font-size:22rpx;padding:5rpx 14rpx;margin-top:9rpx;}.profile-hero .ld-heading-sub{margin-top:12rpx;color:#667169;font-size:21rpx;}.profile-settings{background:transparent;padding:0 4rpx;font-size:36rpx;color:#29372e;}.profile-settings::after{border:0;}.ld-cell{min-height:80rpx;padding:14rpx 22rpx;}.ld-cell+.ld-cell{border-top:1rpx solid #eef2ed;}.ld-cell-title{font-size:26rpx;}.security-group{margin-top:12rpx;}
+.profile-hero{padding:42rpx 6rpx 58rpx;gap:24rpx;}.child-avatar{width:140rpx;height:140rpx;border-radius:50%;background:#c8e8d5;flex-shrink:0;}.profile-copy{flex:1;min-width:0;}.ld-heading-title{display:block;white-space:normal;overflow-wrap:anywhere;word-break:break-all;line-height:1.35;}.growth-badge{display:inline-block;background:#127548;color:white;border-radius:24rpx;font-size:22rpx;padding:5rpx 14rpx;margin-top:9rpx;}.profile-hero .ld-heading-sub{margin-top:12rpx;color:#667169;font-size:21rpx;}.profile-settings{flex-shrink:0;margin:0;background:transparent;padding:0 4rpx;font-size:36rpx;color:#29372e;}.profile-settings::after{border:0;}.ld-cell{min-height:80rpx;padding:14rpx 22rpx;}.ld-cell+.ld-cell{border-top:1rpx solid #eef2ed;}.ld-cell-title{font-size:26rpx;}.security-group{margin-top:12rpx;}
 </style>
 
 <style scoped>.prototype-workspace{min-height:calc(100vh - var(--window-top,0px));box-sizing:border-box}</style>

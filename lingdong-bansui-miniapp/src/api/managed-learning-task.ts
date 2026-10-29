@@ -85,10 +85,11 @@ export interface ManagedTaskInput {
 export function listManagedTasks(
   accessToken: string,
   page = 1,
-  sourceType?: ManagedTaskSource
+  sourceType?: ManagedTaskSource,
+  status?: ManagedTaskStatus
 ): Promise<ManagedLearningTaskPage> {
   return authenticated<ManagedLearningTaskPage>(
-    accessToken, `/learning-tasks?page=${page}&pageSize=20${sourceType?'&sourceType='+sourceType:''}`);
+    accessToken, `/learning-tasks?page=${page}&pageSize=20${sourceType?'&sourceType='+sourceType:''}${status?'&status='+status:''}`);
 }
 
 export function getManagedTask(

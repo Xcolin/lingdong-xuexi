@@ -2,13 +2,15 @@
   <view class="prototype-workspace page-shell">
     <PrototypePageHeader title="陪伴关系邀请" icon="people"/>
     <view v-if="loading" class="state-view">正在加载</view>
+    <view v-else-if="errorMessage && !enabled" class="state-view disabled-state">{{ errorMessage }}</view>
     <view v-else-if="!enabled" class="state-view disabled-state">家长关系功能未启用</view>
-    <view v-else class="invitation-form"><text class="invitation-intro">验证受邀手机号，确认陪伴关系</text>
+    <view v-else class="invitation-form"><text class="invitation-intro">接收陪伴邀请：验证受邀手机号，确认陪伴关系</text>
       <view class="field-group">
         <text class="field-label">手机号</text>
         <input v-model="mobile" class="field-input" type="number" maxlength="11"
                placeholder="请输入手机号" :disabled="submitting" />
       </view>
+      <text class="invitation-intro">邀请发起时已向受邀手机号发送验证码。若邀请已过期，请联系发起人重新邀请。</text>
       <view class="field-group">
         <text class="field-label">验证码</text>
         <input v-model="smsCode" class="field-input" type="number" maxlength="6"
@@ -55,6 +57,11 @@ const errorMessage = ref('');
 
 onLoad(async (options) => {
   invitationId.value = typeof options?.invitationId === 'string' ? options.invitationId : '';
+  if (!validInvitationId(invitationId.value)) {
+    errorMessage.value = '邀请编号无效，请重新扫描或填写';
+    loading.value = false;
+    return;
+  }
   try {
     const [capabilities, context] = await Promise.all([
       getMiniappCapabilities(), getParentAuthContext()
@@ -120,6 +127,7 @@ function payload(accepted: boolean) {
 
 function validateCommon(): boolean {
   errorMessage.value = '';
+  if (!enabled.value || loading.value || submitting.value) return false;
   if (!/^1[3-9]\d{9}$/.test(mobile.value)) {
     errorMessage.value = '手机号格式不正确';
     return false;

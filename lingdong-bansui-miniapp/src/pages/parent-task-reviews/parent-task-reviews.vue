@@ -72,10 +72,10 @@
           <image v-if="thumbOf(item)" class="review-thumb" :src="thumbOf(item)" mode="aspectFill" />
           <view v-else class="review-thumb placeholder"><PrototypeIcon name="task" :size="22" /></view>
         </view>
-        <view v-if="items.length" class="paging">
-          <button :disabled="page <= 1" @tap="load(page - 1)">上一页</button>
-          <text>第 {{ page }} 页</text>
-          <button :disabled="page * 20 >= total" @tap="load(page + 1)">下一页</button>
+        <view v-if="items.length" class="load-more">
+          <text v-if="loadingMore" class="load-more-text">正在加载更多</text>
+          <button v-else-if="appendError" class="load-more-retry" @tap="loadMore">加载失败，点击重试</button>
+          <text v-else-if="!hasMore" class="load-more-text">已经到底了</text>
         </view>
       </template>
     </template>
@@ -85,7 +85,7 @@
 import PixelPageHeader from '@/components/pixel/PixelPageHeader.vue';
 import PrototypeIcon from '@/components/PrototypeIcon.vue';
 import { ref, computed } from 'vue';
-import { onShow, onHide, onUnload } from '@dcloudio/uni-app';
+import { onShow, onHide, onUnload, onReachBottom } from '@dcloudio/uni-app';
 import { parentReviewApi, type ParentTaskReview, type ReviewStatusTab } from '@/api/parent-task-review';
 import { getMiniappCapabilities } from '@/api/capability';
 import { getParentSession } from '@/session/parent-session';
@@ -94,6 +94,7 @@ import { ApiError } from '@/api/http';
 const items = ref<ParentTaskReview[]>([]), detail = ref<ParentTaskReview | null>(null);
 const page = ref(1), total = ref(0), busy = ref(false), allowed = ref(false), stale = ref(false);
 const loaded = ref(false);
+const loadingMore = ref(false), hasMore = ref(false), appendError = ref('');
 const statusTab = ref<ReviewStatusTab>('PENDING_REVIEW');
 const statusCounts = ref<Record<string, number>>({});
 const stage = ref<'detail' | 'success'>('detail'), resultApproved = ref(false);
@@ -167,7 +168,7 @@ async function previewDetailImage(index: number) {
   const urls = detailImages.value.map(image => thumbs.value[image.id]).filter(Boolean);
   if (urls.length) void uni.previewImage({ urls, current: urls[index] });
 }
-function clear() { stage.value = 'detail'; loaded.value = false; items.value = []; detail.value = null; total.value = 0; allowed.value = false; }
+function clear() { stage.value = 'detail'; loaded.value = false; items.value = []; detail.value = null; total.value = 0; allowed.value = false; loadingMore.value = false; hasMore.value = false; appendError.value = ''; }
 function valid(n: number, token: string) { return epoch.current(n) && getParentSession()?.accessToken === token; }
 async function access(n: number, token: string) {
   const [user, capabilities] = await Promise.all([parentReviewApi.me(token), getMiniappCapabilities()]);
@@ -185,6 +186,25 @@ function back() {
   uni.navigateBack({ fail: () => uni.reLaunch({ url: '/pages/family-tasks/family-tasks' }) });
 }
 function backToList() { void load(page.value); }
+async function loadMore() {
+  if (loadingMore.value || busy.value || detail.value || stage.value === 'success' || !loaded.value || !hasMore.value) return;
+  const n = epoch.next(), token = getParentSession()?.accessToken; if (!token) return;
+  loadingMore.value = true; appendError.value = '';
+  try {
+    const result = await parentReviewApi.list(token, page.value + 1, statusTab.value);
+    if (!valid(n, token)) return;
+    const previousCount = items.value.length;
+    const ids = new Set(items.value.map(row => row.assignmentId));
+    const fresh = result.items.filter(row => { if (ids.has(row.assignmentId)) return false; ids.add(row.assignmentId); return true; });
+    items.value = [...items.value, ...fresh];
+    page.value = result.page; total.value = result.total;
+    hasMore.value = items.value.length > previousCount && result.page * (result.pageSize || 20) < result.total;
+    statusCounts.value = result.statusCounts || statusCounts.value;
+    void loadThumbs(fresh);
+  } catch (e) { if (valid(n, token)) appendError.value = e instanceof Error ? e.message : '加载未完成'; }
+  finally { loadingMore.value = false; }
+}
+onReachBottom(() => { if (!appendError.value && !detail.value && stage.value !== 'success') void loadMore(); });
 function switchTab(tab: ReviewStatusTab) {
   if (statusTab.value === tab) return;
   statusTab.value = tab;
@@ -198,6 +218,7 @@ async function load(target = 1) {
     const result = await parentReviewApi.list(token, target, statusTab.value);
     if (!valid(n, token)) return;
     loaded.value = true; items.value = result.items; total.value = result.total; page.value = result.page;
+    hasMore.value = result.items.length > 0 && result.page * (result.pageSize || 20) < result.total;
     statusCounts.value = result.statusCounts || {}; stale.value = false;
     void loadThumbs(result.items);
   } catch (e) { if (valid(n, token)) failed(e); }
@@ -251,6 +272,10 @@ onShow(() => load(1)); onHide(hide); onUnload(hide);
 button { margin:16rpx 0; font-size:28rpx; }.muted,.error { display:block; margin:20rpx 0; }.error { color:#a33c2e; }
 textarea { width:100%; box-sizing:border-box; border:1px solid #ccc; padding:16rpx; height:160rpx; }
 .paging { display:flex; align-items:center; justify-content:space-between; gap:12rpx; }
+.load-more { text-align:center; margin-top:20rpx; }
+.load-more-text { margin:0; color:#78847e; font-size:24rpx; }
+.load-more-retry { margin:0 auto; max-width:460rpx; }
+.review-main .review-meta{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.review-top .heading{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.45;}
 </style>
 
 <style lang="scss" scoped>@import "@/styles/workspace-prototype.scss";</style>

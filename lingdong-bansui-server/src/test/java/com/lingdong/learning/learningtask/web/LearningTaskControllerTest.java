@@ -1236,11 +1236,92 @@ class LearningTaskControllerTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.currentStatus").value("COMPLETED"))
                 .andExpect(jsonPath("$.checkInStatus").value("APPROVED"));
-        // 四状态 Tab 语义下 total=SUBMITTED+APPROVED+REJECTED 之和，完成后最新打卡计入 APPROVED
+        // total 与 statusTab 口径对齐：默认 PENDING_REVIEW 取 SUBMITTED 计数（完成后为 0）；ALL 为三状态合计
         mockMvc.perform(get("/api/v1/task-reviews").header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(1))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(0))
                 .andExpect(jsonPath("$.statusCounts.APPROVED").value(1))
                 .andExpect(jsonPath("$.statusCounts.PENDING_REVIEW").doesNotExist());
+        mockMvc.perform(get("/api/v1/task-reviews?statusTab=ALL").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(1))
+                .andExpect(jsonPath("$.items.length()").value(1));
+        mockMvc.perform(get("/api/v1/task-reviews?statusTab=APPROVED").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(1))
+                .andExpect(jsonPath("$.items.length()").value(1));
+    }
+
+    @Test
+    void taskReviewTotalMatchesRequestedStatusTab() throws Exception {
+        Fixture fixture = createFixture();
+        makeMiniappParentSession(fixture.parent());
+        String token = fixture.parentToken();
+        String studentToken = studentLoginToken(fixture.familyStudent());
+        LocalDate tomorrow = LocalDate.now(ZoneId.of("Asia/Shanghai")).plusDays(1);
+        // 三个中文隔离任务：一个保持待审核、一个通过、一个驳回，验证 total 与 statusTab 口径一致
+        String[] titles = {"口径验证-待审核任务", "口径验证-已通过任务", "口径验证-已驳回任务"};
+        Long[] assignmentIds = new Long[titles.length];
+        for (int i = 0; i < titles.length; i++) {
+            MvcResult created = mockMvc.perform(post("/api/v1/learning-tasks")
+                            .header("Authorization", "Bearer " + token)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(taskBody("FAMILY", null, titles[i], 2, tomorrow, null,
+                                    target("STUDENT", fixture.familyStudent().id()))))
+                    .andExpect(status().isCreated()).andReturn();
+            publish(token, responseId(created, "id"), 1);
+            assignmentIds[i] = jdbcTemplate.queryForObject(
+                    "SELECT id FROM learn_task_assignment WHERE task_id=?",
+                    Long.class, responseId(created, "id"));
+            mockMvc.perform(post("/api/v1/task-assignments/{id}/claim", assignmentIds[i])
+                            .header("Authorization", "Bearer " + studentToken))
+                    .andExpect(status().isOk());
+            submitReviewCheckIn(studentToken, assignmentIds[i]);
+        }
+        mockMvc.perform(post("/api/v1/task-reviews/{id}/approve", assignmentIds[1])
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(reviewBody(assignmentIds[1], null)))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/api/v1/task-reviews/{id}/reject", assignmentIds[2])
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(reviewBody(assignmentIds[2], "口径验证驳回意见")))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/v1/task-reviews?statusTab=PENDING_REVIEW")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(1))
+                .andExpect(jsonPath("$.statusCounts.SUBMITTED").value(1))
+                .andExpect(jsonPath("$.statusCounts.APPROVED").value(1))
+                .andExpect(jsonPath("$.statusCounts.REJECTED").value(1))
+                .andExpect(jsonPath("$.items.length()").value(1))
+                .andExpect(jsonPath("$.items[0].title").value("口径验证-待审核任务"));
+        mockMvc.perform(get("/api/v1/task-reviews?statusTab=APPROVED")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(1))
+                .andExpect(jsonPath("$.items.length()").value(1))
+                .andExpect(jsonPath("$.items[0].title").value("口径验证-已通过任务"));
+        mockMvc.perform(get("/api/v1/task-reviews?statusTab=REJECTED")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(1))
+                .andExpect(jsonPath("$.items.length()").value(1))
+                .andExpect(jsonPath("$.items[0].title").value("口径验证-已驳回任务"));
+        mockMvc.perform(get("/api/v1/task-reviews?statusTab=ALL")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(3))
+                .andExpect(jsonPath("$.items.length()").value(3));
+        // 分页边界：PENDING_REVIEW 仅 1 条时第 2 页为空，total 不因其他状态而夸大
+        mockMvc.perform(get("/api/v1/task-reviews?statusTab=PENDING_REVIEW&page=1&pageSize=1")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(1));
+        mockMvc.perform(get("/api/v1/task-reviews?statusTab=PENDING_REVIEW&page=2&pageSize=1")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(1))
+                .andExpect(jsonPath("$.items").isEmpty());
     }
 
     @Test

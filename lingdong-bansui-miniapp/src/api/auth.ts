@@ -295,6 +295,16 @@ export function listAccountDevices(
   return accountSecurityRequest('/auth/devices', identity, accessToken);
 }
 
+export interface AccountDevicePage { items: AccountDeviceSession[]; total: number; page: number; pageSize: number }
+export function listAccountDevicesPage(identity:MiniappAuthIdentity,accessToken:string,page:number):Promise<AccountDevicePage>{
+  return accountSecurityRequest(`/auth/devices/page?page=${page}&pageSize=20`,identity,accessToken);
+}
+
+export interface AccountSecurityEventPage { items: AccountSecurityEvent[]; total: number; page: number; pageSize: number; unreadWarningTotal: number }
+export function listAccountSecurityEventsPage(identity:MiniappAuthIdentity,accessToken:string,page:number):Promise<AccountSecurityEventPage>{
+  return accountSecurityRequest(`/auth/security-events/page?page=${page}&pageSize=20`,identity,accessToken);
+}
+
 export function listAccountSecurityEvents(
   identity: MiniappAuthIdentity,
   accessToken: string

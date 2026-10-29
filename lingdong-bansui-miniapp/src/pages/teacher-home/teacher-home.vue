@@ -1,7 +1,7 @@
 <template><view class="ld-page has-tabbar prototype-workspace"><NativeStatusSpacer/>
 <view class="ld-topbar"><view class="ld-topbar-brand"><text class="ld-topbar-name">灵动伴随</text></view><button class="space-switch" @tap="switchOrganization">{{ context?.classes[0]?.schoolName || '切换组织' }} ⌄</button></view>
 <view v-if="loading" class="ld-loading">正在加载</view>
-<view v-else class="workspace-intro"><view class="ld-topbar-brand"><view class="profile-avatar"><PrototypeIcon name="user" :size="40"/></view><view><text class="workspace-intro-title">{{context?.displayName || '教师'}}</text><text class="workspace-intro-caption">成长伙伴 · {{context?.classes.length || 0}} 个任教班级</text></view></view></view>
+<view v-else class="workspace-intro"><view class="ld-topbar-brand"><view class="profile-avatar"><PrototypeIcon name="user" :size="40"/></view><view><view class="intro-name-row"><text class="workspace-intro-title">{{context?.displayName || '教师'}}</text><text class="teacher-badge">成长伙伴</text></view><text class="workspace-intro-caption">成长伙伴 · {{context?.classes.length || 0}} 个任教班级</text></view></view><view class="workspace-stats"><view v-for="item in teacherStats" :key="item.label"><text class="stats-value">{{ item.value }}</text><text>{{ item.label }}</text></view></view></view>
 <view class="workspace-shortcuts">
 <view class="workspace-shortcut"><view class="shortcut-symbol"><PrototypeIcon name="school" :size="25"/></view>我的教学班级<text>查看班级与成员</text><view v-for="item in context?.classes || []" :key="item.classId" class="class-row"><view class="class-main"><text class="class-name">{{item.className}}</text><text class="school-name">{{item.schoolName}}</text></view></view></view>
 <button v-if="taskEnabled" class="workspace-shortcut" @tap="openTasks"><view class="shortcut-symbol"><PrototypeIcon name="book" :size="25"/></view>教学任务<text>备课 · 发布 · 完成情况</text></button>
@@ -17,7 +17,7 @@ import NativeStatusSpacer from "@/components/NativeStatusSpacer.vue";
 function switchOrganization(){uni.navigateTo({url:"/pages/my-organizations/my-organizations?identity=organization&choose=1"});}
 
 import PrototypeIcon from '@/components/PrototypeIcon.vue';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import AppTabBar from '@/components/AppTabBar.vue';
 import { TEACHER_TABS } from '@/config/tabbar';
 import { onShow,onHide,onUnload } from '@dcloudio/uni-app';
@@ -26,6 +26,8 @@ import { getMiniappCapabilities } from '@/api/capability';
 import { useAttendanceEntry } from '@/composables/use-attendance-entry';
 const { attendanceEnabled, openAttendance } = useAttendanceEntry('teacher');
 import { getTeacherWorkbenchContext, type TeacherWorkbenchContext } from '@/api/teacher-workbench';
+import { getAttendanceRoster } from '@/api/attendance';
+import { listManagedTasks } from '@/api/managed-learning-task';
 import { clearOrganizationSession, getOrganizationSession } from '@/session/organization-session';
 
 const context = ref<TeacherWorkbenchContext | null>(null);
@@ -34,12 +36,45 @@ const loggingOut = ref(false);
 const taskEnabled = ref(false);
 const accountSecurityEnabled = ref(false);
 const exceptionReportEnabled = ref(false);
+// 原型 03-03 四项统计：仅真实取数；无聚合来源的计数如实显示占位，不造假。
+const studentTotal = ref<number | null>(null);
+const inProgressTotal = ref<number | null>(null);
+function formatCount(value: number | null | undefined): string {
+  return value == null ? '—' : value.toLocaleString('en-US');
+}
+const teacherStats = computed(() => [
+  { label: '我的班级', value: formatCount(context.value?.classes.length ?? null) },
+  { label: '成长小主人', value: formatCount(studentTotal.value) },
+  { label: '已发布任务', value: formatCount(inProgressTotal.value) },
+  { label: '待完成', value: '—' }
+]);
+function selectedScope(): string {
+  const selection = uni.getStorageSync('lingdong.selected-organization');
+  return JSON.stringify([selection?.accessToken, selection?.organizationId]);
+}
+function isCurrent(n: number, token: string, scope: string): boolean {
+  return n === homeRevision && getOrganizationSession()?.accessToken === token && selectedScope() === scope;
+}
+async function loadRealStats(token: string, n: number, scope: string) {
+  // 成长小主人：教师任教班级花名册人数汇总；无权限或失败时保持占位。
+  try {
+    const rosters = await Promise.all((context.value?.permissionCodes.includes('ATTENDANCE_READ') ? context.value.classes : []).map(c =>
+      getAttendanceRoster(token, c.classId, new Date().toISOString().slice(0, 10)).catch(() => null)));
+    if (isCurrent(n, token, scope) && context.value?.permissionCodes.includes('ATTENDANCE_READ') && rosters.every(r => Array.isArray(r))) studentTotal.value = new Set(rosters.flatMap(r => (r || []).map(s => s.studentId))).size;
+  } catch { if (isCurrent(n, token, scope)) studentTotal.value = null; }
+  // 进行中任务：教师已发布（执行中）任务计数；草稿不计入。
+  try {
+    if (!isCurrent(n, token, scope) || !taskEnabled.value) return;
+    const page = await listManagedTasks(token, 1, 'TEACHER', 'PUBLISHED');
+    if (isCurrent(n, token, scope)) inProgressTotal.value = page.total;
+  } catch { if (isCurrent(n, token, scope)) inProgressTotal.value = null; }
+}
 
 let homeRevision=0;
-function hideWorkspace(){homeRevision++;context.value=null;loading.value=false;}
+function hideWorkspace(){homeRevision++;context.value=null;loading.value=false;taskEnabled.value=false;exceptionReportEnabled.value=false;accountSecurityEnabled.value=false;studentTotal.value=null;inProgressTotal.value=null;}
 onHide(hideWorkspace);onUnload(hideWorkspace);
 onShow(async () => {
-  const n=++homeRevision;context.value=null;
+  hideWorkspace();const n=homeRevision;const scope=selectedScope();
   const session = getOrganizationSession();
   if (!session) return leave();
   loading.value = true;
@@ -47,18 +82,20 @@ onShow(async () => {
     const [capabilities, workbench] = await Promise.all([
       getMiniappCapabilities(), getTeacherWorkbenchContext(session.accessToken)
     ]);
-    if(n!==homeRevision||getOrganizationSession()?.accessToken!==session.accessToken)return;
+    if(!isCurrent(n,session.accessToken,scope))return;
     context.value = workbench;
     taskEnabled.value = capabilities.learningTaskManagementEnabled
       && workbench.permissionCodes.includes('LEARNING_TASK_READ_MANAGED');
     exceptionReportEnabled.value = capabilities.studentExceptionReportEnabled === true
       && workbench.permissionCodes.includes('EXCEPTION_REPORT_READ');
     accountSecurityEnabled.value = capabilities.accountSecurityManagementEnabled;
+    studentTotal.value = null;inProgressTotal.value = null;
+    void loadRealStats(session.accessToken,n,scope);
   } catch {
-    if(n!==homeRevision||getOrganizationSession()?.accessToken!==session.accessToken)return;
+    if(!isCurrent(n,session.accessToken,scope))return;
     await leave();
   } finally {
-    if(n===homeRevision)loading.value = false;
+    if(isCurrent(n,session.accessToken,scope))loading.value = false;
   }
 });
 
@@ -91,4 +128,16 @@ async function leave(): Promise<void> {
 /* 对齐原型 03-03：标题与切换组织控件上下堆叠，控件不再与胶囊区域重叠遮挡标题 */
 .prototype-workspace .ld-topbar{flex-direction:column;gap:8rpx;align-items:stretch;padding-bottom:106rpx}
 .prototype-workspace .ld-topbar .space-switch{background:transparent;color:#ffffffdd;padding:0;font-size:26rpx;text-align:left;justify-content:flex-start}
+/* 原型 03-03：姓名+成长伙伴徽章同行；四项统计行样式与学校工作台一致 */
+.intro-name-row{display:flex;align-items:center;gap:14rpx;min-width:0}
+.teacher-badge{flex-shrink:0;background:#f6e9c8;color:#8a6d2f;border-radius:10rpx;padding:4rpx 14rpx;font-size:21rpx;font-weight:600}
+.workspace-intro{position:relative;margin-top:8rpx;border:1rpx solid #e4ece3}
+.workspace-stats{display:flex;border-top:1rpx solid #eef1eb;margin-top:20rpx;padding-top:16rpx;text-align:center}
+.workspace-stats>view{flex:1;color:#748078;font-size:21rpx}
+.workspace-stats>view+view{border-left:1rpx solid #edf1eb}
+.workspace-stats text{display:block}
+.workspace-stats .stats-value{color:#26362d;font-size:30rpx;font-weight:650;margin-bottom:5rpx}
+/* 长班级名/学校名截断，不撑出卡片 */
+.class-row{min-width:0}
+.class-name,.school-name{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 </style>

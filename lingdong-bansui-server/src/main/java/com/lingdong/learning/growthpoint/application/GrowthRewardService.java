@@ -62,13 +62,32 @@ public class GrowthRewardService {
     public GrowthRewardPage findManaged(
             AuthenticatedUser currentUser, Long studentId, int page, int pageSize
     ) {
+        return findManaged(currentUser, studentId, page, pageSize, null);
+    }
+
+    @Transactional(readOnly = true)
+    public GrowthRewardPage findManaged(
+            AuthenticatedUser currentUser, Long studentId, int page, int pageSize, String status
+    ) {
         requireReadableChild(currentUser, studentId);
         PageRequest pagination = requirePage(page, pageSize);
+        String filtered = normalizedManagedStatus(status);
         return new GrowthRewardPage(
                 rewardMapper.findManagedByStudentId(
-                        studentId, pagination.offset(), pagination.pageSize()),
+                        studentId, filtered, pagination.offset(), pagination.pageSize()),
                 pagination.page(), pagination.pageSize(),
-                rewardMapper.countManagedByStudentId(studentId));
+                rewardMapper.countManagedByStudentId(studentId, filtered));
+    }
+
+    /** 可选上架状态筛选：仅接受 ONLINE/OFFLINE，其余视为不过滤，非法值显式拒绝。 */
+    private String normalizedManagedStatus(String status) {
+        if (status == null || status.isBlank() || "ALL".equals(status)) {
+            return null;
+        }
+        if (!"ONLINE".equals(status) && !"OFFLINE".equals(status)) {
+            throw new IllegalArgumentException("奖励状态筛选不合法");
+        }
+        return status;
     }
 
     @Transactional(readOnly = true)

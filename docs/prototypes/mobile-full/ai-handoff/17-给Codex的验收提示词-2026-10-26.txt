@@ -1,0 +1,45 @@
+你是本项目的项目经理与质检（Codex）。开发AI已完成 T01—T17 开发工作包并提交复验，请对 2026-10-26 批次做独立验收。你的身份是验收方：不采信开发方任何勾选与自测结论，一切以你独立复现的证据为准。
+
+## 一、先读文档（按顺序）
+
+1. docs/prototypes/mobile-full/ai-handoff/11-独立质检报告-2026-10-26.md —— N01—N08 问题基线（你此前出具，勿被开发方转述替代）。
+2. docs/prototypes/mobile-full/ai-handoff/12-质检修复任务计划-2026-10-26.md —— T01—T17 逐项"执行/完成标准"，开发方已勾 Txx-D（除 T07/T08），你只核对 Txx-Q。
+3. docs/prototypes/mobile-full/ai-handoff/14-T17-开发提交报告-2026-10-26.md —— 开发方自述（仅作线索，不作证据）。
+4. docs/prototypes/mobile-full/ai-handoff/15-T17-证据索引-2026-10-26.md —— 证据路径清单（逐条抽验）。
+5. docs/prototypes/mobile-full/ai-handoff/16-T17-遗留问题清单-2026-10-26.md —— 开发方承认的未完成项。
+6. docs/prototypes/mobile-full/ai-handoff/09-QA-05-测试副作用清单-2026-10-23.md —— 测试数据残留（验收时勿误判为业务数据）。
+7. docs/prototypes/mobile-full/ai-handoff/00-执行总纲.md、02-开发提交与质检规则.md —— 验收边界规则。
+
+## 二、环境基线（先核实再动手，勿沿用旧 PID）
+
+- 工作目录 E:\apps\lingdong-xuexi-code；隔离后端 http://127.0.0.1:8081（克隆库 ld_verify_20261011_a121abcd）；真实 8080 不应有部署。
+- 微信开发者工具：**项目目录必须是编译产物 E:\apps\lingdong-xuexi-code\lingdong-bansui-miniapp\dist\dev\mp-weixin**（AppID wx3d45fee10a830cb6），automator ws://127.0.0.1:9439。
+- 重要：dist/dev/mp-weixin 当前以 VITE_API_BASE_URL=8081 烘焙。若你重建，必须显式 `$env:VITE_API_BASE_URL='http://127.0.0.1:8081'; npm run dev:mp-weixin`，否则 api/http.js 会烘焙回 8080 导致全部请求失败（.env.production.local 仍是 8080）。
+- 数据库凭据仅存本地脚本，验收中不得向聊天/报告输出密码、token、密钥。
+
+## 三、独立复验清单（逐项给结论：通过/不通过/阻塞，附你亲测的证据）
+
+N01/T02：运行 .local-verification/codex-review-family-resume-20261026.cjs，必须退出 0（修复前该脚本红）；再检查 family-tasks.vue 是否独立保存已提交 studentId 与 options 核对、失效重置为全部。
+N02/T03：运行 .local-verification/codex-review-progress-hide-20261026.cjs，必须退出 0；检查 managed-tasks.vue 的 epoch/token/scope/taskId 校验在成功、失败、finally 三条路径都生效。
+N03/T04：抽验 2~3 个异步 VM 脚本（如 test-family-tasks-scroll-vm.cjs）确实有受控 deferred、测试级超时、完成哨兵（sentinel）；t15-miniapp-scripts-20261026.log 里 95 个脚本均 exit=0 sentinel=y。
+N04/T05、N05/T06：评审 08-QA-03（07-05 申请域）与 09-QA-04（04-06 负责人多机构归属）方案——是否满足"孩子可同时属于多机构、不能用 edu_student 单一全局字段跨校覆盖"；给出确认/修改意见/驳回。未确认前 T07/T08 保持未实施属正确等待。
+N06/T09/T10/T11/T16：打开 .local-verification/qa-fix-20261026/prototype-diff-matrix-2026-10-26.md，核对 78 行完整性；**实际看图**抽查 06-02（t16-0602-rewards-after2.png vs reference 原图）、LAYOUT-07、04-01、04-04 四行，不能只看文字结论；核 t10/t11 回归日志退出码。
+N07/T12：核对 10-全批次质检初审复验报告 QA-04 节的人工 7 项清单是否仍如实保留（未用 mock 冒充原生签收）；抽查 t12 日志退出码与 SQL 读回记录。
+N08/T14/T15：核实 t14-backend-rerun-20261026.log（127.0.0.1:33306/ld_acceptance_20261026_t14、32/32）；核实 t15 六个终态（后端 BUILD SUCCESS、95 脚本、typecheck、微信/H5/Web 构建）；Web Vitest 抖动项（I-4/I-5）由你判断定性是否成立（三文件隔离复跑 9/9 已过）。
+T16：可抽查运行 t16-tour-student-parent-20261026.cjs / t16-tour-org-login-20261026.cjs，或至少目检 t16-*.png 关键页（0101/0110/0502/0602/0704/0709/0710b）与矩阵结论一致；07-04/07-06/07-09/07-10b/01-10 的断言修正是否确为真实预期行为而非放宽（对照 capability 开关与页面守卫源码）。
+T13：抽查 09-QA-05 第 7 节 SQL 读回是否与库内一致（24 学生 26000083~26000106、24 亲子关系 ACTIVE、9 任务、2 邀请 PENDING）。
+
+## 四、验收纪律
+
+- 只勾你亲自复验通过的任务 Txx-Q；部分通过不勾、不批量签 V 门。
+- 不修改产品代码；如发现缺陷，写复现脚本/截图留证即可，交回开发方修。
+- 不清真实库、不清隔离库既有数据、不提交 Git、不部署真实 8080、不发布外部平台。
+- 你产生的任何测试数据请追加登记到 09-QA-05（新一节）。
+
+## 五、输出
+
+1. 逐项 N01—N08、T01—T17 验收结论表（未开始/进行中/开发完成待验收/阻塞/通过）。
+2. 每项附：你实测的命令/退出码/日志路径/截图路径，或驳回理由。
+3. 对 T05/T06 方案的书面决策（确认后 T07/T08 可开工，或给出修改点）。
+4. 总签收结论：整体签收 / 部分签收（列出缺口）/ 驳回。
+5. 报告追加到 docs/prototypes/mobile-full/handoff-2026-10-21.md（新节"2026-10-26 Codex 验收结论"），不要覆盖历史。

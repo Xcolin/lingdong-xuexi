@@ -30,6 +30,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.util.Map;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -42,6 +43,82 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class AuthenticationControllerTest {
+    @Test
+    void pagesSecurityEventsWithUserScopeAndWholeUnreadWarningCount() throws Exception {
+        String suffix=Long.toUnsignedString(System.nanoTime());
+        User owner=createUser("event_page_"+suffix,"安全事件分页用户"),other=createUser("event_other_"+suffix,"范围外事件用户");
+        for(User user:List.of(owner,other)) jdbcTemplate.update("UPDATE sys_user SET password_hash=? WHERE id=?",passwordEncoder.encode("Password123"),user.id());
+        login(owner.username(),"event-one","中文提醒一");
+        JsonNode current=login(owner.username(),"event-two","中文提醒二");
+        login(other.username(),"event-other","范围外提醒");
+        String header=bearer(current.path("accessToken").asText());
+        JsonNode first=objectMapper.readTree(mockMvc.perform(get("/api/v1/auth/security-events/page").header("Authorization",header).param("pageSize","1"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(2)).andExpect(jsonPath("$.unreadWarningTotal").value(2))
+                .andExpect(jsonPath("$.items.length()").value(1)).andExpect(jsonPath("$.items[0].deviceFingerprintHash").doesNotExist())
+                .andReturn().getResponse().getContentAsString());
+        JsonNode second=objectMapper.readTree(mockMvc.perform(get("/api/v1/auth/security-events/page").header("Authorization",header).param("page","2").param("pageSize","1"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        assertThat(first.path("items").get(0).path("id").asText()).isNotEqualTo(second.path("items").get(0).path("id").asText());
+        mockMvc.perform(post("/api/v1/auth/security-events/{id}/read",first.path("items").get(0).path("id").asText()).header("Authorization",header)).andExpect(status().isNoContent());
+        mockMvc.perform(get("/api/v1/auth/security-events/page").header("Authorization",header).param("unreadOnly","true"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(1)).andExpect(jsonPath("$.unreadWarningTotal").value(1));
+        mockMvc.perform(get("/api/v1/auth/security-events").header("Authorization",header)).andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(2));
+        mockMvc.perform(get("/api/v1/auth/security-events/page")).andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/v1/auth/security-events/page").header("Authorization",header).param("pageSize","101")).andExpect(status().isBadRequest());
+    }
+    @Test
+    void pagesOnlyCurrentUsersActiveDevicesWithoutChangingLegacyList() throws Exception {
+        String suffix = Long.toUnsignedString(System.nanoTime());
+        User owner = createUser("device_page_" + suffix, "分页设备核验用户");
+        User other = createUser("device_other_" + suffix, "范围外设备用户");
+        for (User user : List.of(owner, other)) {
+            jdbcTemplate.update("UPDATE sys_user SET password_hash=? WHERE id=?",
+                    passwordEncoder.encode("Password123"), user.id());
+        }
+        JsonNode first = login(owner.username(), "page-one", "中文设备一");
+        JsonNode current = login(owner.username(), "page-two", "中文设备二");
+        login(other.username(), "other-device", "范围外设备");
+        String header = bearer(current.path("accessToken").asText());
+        JsonNode pageOne = objectMapper.readTree(mockMvc.perform(get("/api/v1/auth/devices/page")
+                .header("Authorization", header).param("page", "1").param("pageSize", "1"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(2))
+                .andExpect(jsonPath("$.items.length()").value(1))
+                .andExpect(jsonPath("$.items[0].accessToken").doesNotExist())
+                .andExpect(jsonPath("$.items[0].deviceId").doesNotExist())
+                .andReturn().getResponse().getContentAsString());
+        JsonNode pageTwo = objectMapper.readTree(mockMvc.perform(get("/api/v1/auth/devices/page")
+                .header("Authorization", header).param("page", "2").param("pageSize", "1"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(2))
+                .andReturn().getResponse().getContentAsString());
+        assertThat(pageOne.path("items").get(0).path("id").asText())
+                .isNotEqualTo(pageTwo.path("items").get(0).path("id").asText());
+        mockMvc.perform(get("/api/v1/auth/devices/page").header("Authorization", header)
+                .param("page", "3").param("pageSize", "1"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.items.length()").value(0));
+        mockMvc.perform(get("/api/v1/auth/devices/page").header("Authorization", header)
+                .param("page", "0")).andExpect(status().isBadRequest());
+        mockMvc.perform(get("/api/v1/auth/devices").header("Authorization", header))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(2));
+        mockMvc.perform(get("/api/v1/auth/devices/page")).andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/v1/auth/devices/page").header("Authorization", header)
+                .param("pageSize", "101")).andExpect(status().isBadRequest());
+        mockMvc.perform(get("/api/v1/auth/devices/page").header("Authorization", header)
+                .param("page", "2147483647").param("pageSize", "100"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.items.length()").value(0));
+        jdbcTemplate.update("UPDATE auth_device_session SET refresh_expires_at=? WHERE id=?",
+                java.time.LocalDateTime.now().minusDays(1), first.path("sessionId").asLong());
+        mockMvc.perform(get("/api/v1/auth/devices/page").header("Authorization", header))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(1))
+                .andExpect(jsonPath("$.items[0].current").value(true));
+        jdbcTemplate.update("UPDATE sys_feature_toggle SET status='DISABLED' WHERE feature_code='ACCOUNT_SECURITY_MANAGEMENT'");
+        try {
+            mockMvc.perform(get("/api/v1/auth/devices/page").header("Authorization", header))
+                    .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("FEATURE_DISABLED"));
+        } finally {
+            jdbcTemplate.update("UPDATE sys_feature_toggle SET status='ENABLED' WHERE feature_code='ACCOUNT_SECURITY_MANAGEMENT'");
+        }
+        assertThat(first.path("sessionId").asText()).isNotBlank();
+    }
     @Autowired private MockMvc mockMvc;
     @Autowired private ObjectMapper objectMapper;
     @Autowired private AuthenticationApplicationService authenticationApplicationService;

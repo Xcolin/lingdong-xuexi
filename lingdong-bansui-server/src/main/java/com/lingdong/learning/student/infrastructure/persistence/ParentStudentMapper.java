@@ -27,6 +27,11 @@ public interface ParentStudentMapper {
     List<ParentRelationshipStudentView> findActiveStudentsByParent(
             @Param("parentUserId") Long parentUserId
     );
+    List<ParentRelationshipStudentView> findActiveStudentsPageByParent(@Param("parentUserId") Long parentUserId,
+            @Param("offset") long offset, @Param("limit") int limit);
+    long countInactiveByParent(@Param("parentUserId") Long parentUserId);
+    List<com.lingdong.learning.student.application.ParentInactiveRelationshipView> findInactivePageByParent(
+            @Param("parentUserId") Long parentUserId, @Param("offset") long offset, @Param("limit") int limit);
 
     List<com.lingdong.learning.student.application.ParentInactiveRelationshipView> findInactiveByParent(
             @Param("parentUserId") Long parentUserId

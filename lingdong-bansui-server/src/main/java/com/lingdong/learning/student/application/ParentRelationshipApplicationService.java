@@ -161,6 +161,34 @@ public class ParentRelationshipApplicationService {
         return List.copyOf(relationshipMapper.findActiveStudentsByParent(operatorUserId));
     }
 
+    @Transactional(readOnly = true)
+    public ParentRelationshipPage<ParentRelationshipStudentView> getRelationshipStudentsPage(Long userId, int page, int pageSize) {
+        requirePage(page,pageSize);
+        return new ParentRelationshipPage<>(relationshipMapper.findActiveStudentsPageByParent(userId,((long)page-1)*pageSize,pageSize),
+                relationshipMapper.countActiveStudentsByParent(userId),page,pageSize);
+    }
+
+    @Transactional(readOnly = true)
+    public ParentRelationshipPage<ParentReceivedInvitationView> getReceivedInvitationsPage(Long userId, int page, int pageSize) {
+        requirePage(page,pageSize);
+        User user=userMapper.findById(userId);
+        String mobile=user==null?null:user.mobile();LocalDateTime now=LocalDateTime.now(clock);
+        return new ParentRelationshipPage<>(invitationMapper.findReceivedPendingPage(userId,mobile,now,((long)page-1)*pageSize,pageSize),
+                invitationMapper.countReceivedPending(userId,mobile,now),page,pageSize);
+    }
+
+    @Transactional(readOnly = true)
+    public ParentRelationshipPage<ParentInactiveRelationshipView> getInactiveRelationshipsPage(Long userId,int page,int pageSize) {
+        requirePage(page,pageSize);
+        return new ParentRelationshipPage<>(relationshipMapper.findInactivePageByParent(userId,((long)page-1)*pageSize,pageSize),
+                relationshipMapper.countInactiveByParent(userId),page,pageSize);
+    }
+
+    private void requirePage(int page,int pageSize) {
+        featureAccessService.requireEnabled(FEATURE_CODE,null);
+        if(page<1||pageSize<1||pageSize>100)throw new IllegalArgumentException("分页参数不合法");
+    }
+
     @Transactional
     public VerifiedParentAccount acceptInvitation(RespondParentRelationshipInvitationCommand command) {
         Objects.requireNonNull(command, "家长关系邀请响应命令不能为空");

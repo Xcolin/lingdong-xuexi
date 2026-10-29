@@ -41,7 +41,7 @@ class GrowthRewardExchangeServiceSecondaryParentTest {
         when(parentStudentMapper.existsActiveByParentAndStudent(parentId, studentId)).thenReturn(true);
         when(parentStudentMapper.existsActivePrimaryByParentAndStudent(parentId, studentId))
                 .thenReturn(false);
-        when(exchangeMapper.findByStudentId(studentId, 0, 20)).thenReturn(List.of());
+        when(exchangeMapper.findByStudentId(studentId, null, 0, 20)).thenReturn(List.of());
         GrowthRewardExchange exchange = mock(GrowthRewardExchange.class);
         when(exchange.studentId()).thenReturn(studentId);
         when(exchangeMapper.findByIdForUpdate(exchangeId)).thenReturn(exchange);

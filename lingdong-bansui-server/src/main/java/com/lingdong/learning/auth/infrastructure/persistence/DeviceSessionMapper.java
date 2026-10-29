@@ -25,6 +25,9 @@ public interface DeviceSessionMapper {
             @Param("userId") Long userId,
             @Param("now") LocalDateTime now
     );
+    long countActiveByUserId(@Param("userId") Long userId, @Param("now") LocalDateTime now);
+    List<DeviceSessionRecord> findActivePageByUserId(@Param("userId") Long userId,
+            @Param("now") LocalDateTime now, @Param("offset") long offset, @Param("limit") int limit);
     int rotateTokens(
             @Param("id") Long id,
             @Param("expectedRefreshTokenHash") String expectedRefreshTokenHash,

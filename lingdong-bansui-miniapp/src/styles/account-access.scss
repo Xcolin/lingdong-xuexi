@@ -9,8 +9,9 @@
 .access-tabs button { margin:0; background:#f1f2e9; color:#526452; font-size:24rpx; padding:0 22rpx; }
 .access-tabs button.active { background:#194f3b; color:white; }
 .access-page { background:#f8faf7; padding-top:0; }
-.access-page::before { content:'灵动伴随'; display:block; color:#125747; text-align:center; font-size:36rpx; font-weight:700; padding:48rpx 0 58rpx 40rpx; margin:0 -32rpx 46rpx; border-bottom:1rpx solid #aabeb0; border-radius:0 0 50% 20%; background:linear-gradient(160deg,#f5faf7,#f7f7f1); }
-.access-page::after { content:''; position:absolute; top:44rpx; left:calc(50% - 112rpx); width:38rpx; height:52rpx; border-radius:85% 0 85% 0; transform:rotate(15deg); background:linear-gradient(135deg,#1a6656 0%,#105145 46%,#f5faf7 47%,#f5faf7 53%,#105145 54%,#236b58 100%); }
+.access-page::before { content:'灵动伴随'; display:block; color:#125747; text-align:center; font-size:36rpx; font-weight:700; padding:48rpx 0 58rpx; margin:0 -32rpx 46rpx; border-bottom:1rpx solid #aabeb0; border-radius:0 0 50% 20%; background:linear-gradient(160deg,#f5faf7,#f7f7f1); }
+/* 品牌叶子图标与「灵动伴随」文字同行垂直居中、组合横向成组（用户 2026-10-23 对齐要求） */
+.access-page::after { content:''; position:absolute; top:70rpx; left:calc(50% - 122rpx); width:38rpx; height:52rpx; border-radius:85% 0 85% 0; transform:rotate(15deg); background:linear-gradient(135deg,#1a6656 0%,#105145 46%,#f5faf7 47%,#f5faf7 53%,#105145 54%,#236b58 100%); }
 .access-page .ld-heading-title { display:block; text-align:center; font-size:46rpx; color:#101e27; font-weight:700; }
 .access-page .ld-heading-sub { display:block; text-align:center; margin:16rpx 0 32rpx; }
 .access-card { border:0; padding:12rpx 12rpx 24rpx; background:transparent; }

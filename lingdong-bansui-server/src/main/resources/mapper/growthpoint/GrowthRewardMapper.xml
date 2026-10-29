@@ -45,6 +45,7 @@
         SELECT <include refid="RewardColumns"/>
         FROM growth_reward
         WHERE student_id = #{studentId} AND status &lt;&gt; 'DELETED'
+        <if test="status != null">AND status = #{status}</if>
         ORDER BY created_at DESC, id DESC
         LIMIT #{limit} OFFSET #{offset}
     </select>
@@ -53,6 +54,7 @@
         SELECT COUNT(*)
         FROM growth_reward
         WHERE student_id = #{studentId} AND status &lt;&gt; 'DELETED'
+        <if test="status != null">AND status = #{status}</if>
     </select>
 
     <select id="findAvailableByStudentId" resultMap="GrowthRewardMap">

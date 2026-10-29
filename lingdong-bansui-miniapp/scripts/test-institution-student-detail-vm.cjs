@@ -1,0 +1,20 @@
+const fs=require('node:fs'),vm=require('node:vm'),ts=require('typescript'),assert=require('node:assert/strict');
+const path='src/pages/institution-student-detail/institution-student-detail.vue';assert.ok(fs.existsSync(path),'机构学生详情页必须存在');
+const source=fs.readFileSync(path,'utf8').match(/<script setup lang="ts">([\s\S]*?)<\/script>/)[1];
+const hooks={};let token='token',selection={accessToken:token,organizationId:'10',typeCode:'SCHOOL'},permissions=['STUDENT_READ'],calls=[];
+const child={studentId:'1',studentName:'小禾',studentNumber:'001',status:'ACTIVE',classNames:'一班',gradeNames:'一年级'};
+const history=n=>({afterVersionNo:n,beforeVersionNo:n-1,toUserId:'u',toName:'老师',createdAt:String(n),reasonType:'OTHER'});
+const directory={detail:async()=>child};const responsibility={current:async()=>{calls.push('current');return {responsibleUser:{id:'u',name:'老师'},source:'ASSIGNED',availability:'AVAILABLE'};},history:async(t,id,org,page)=>{calls.push(page);return {items:[history(page)],page,pageSize:1,total:3};}};
+const modules={vue:{ref:value=>({value}),computed:fn=>({get value(){return fn()}})},'@dcloudio/uni-app':{onLoad:fn=>hooks.load=fn,onShow:fn=>hooks.show=fn,onHide:fn=>hooks.hide=fn,onUnload:fn=>hooks.unload=fn,onReachBottom:fn=>hooks.bottom=fn},'@/api/institution-directory':{institutionDirectoryApi:directory},'@/api/student-responsibility':{responsibilityApi:responsibility},'@/api/http':{request:async()=>({permissionCodes:permissions})},'@/api/capability':{getMiniappCapabilities:async()=>({classManagementEnabled:true})},'@/session/organization-session':{getOrganizationSession:()=>({accessToken:token})}};
+const out={};vm.runInNewContext(ts.transpileModule(source+'\nexports.test={initialize,loadHistory,child,historyRows,historyPage,historyError,historyLoading,loading,error};',{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}}).outputText,{exports:out,Error,require:k=>modules[k]||{},uni:{getStorageSync:()=>selection,navigateBack:()=>{}}});
+const flush=()=>new Promise(r=>setImmediate(r));
+(async()=>{const s=out.test;hooks.load({studentId:'1'});await s.initialize();assert.equal(s.child.value.studentName,'小禾');assert.equal(calls.length,0,'无负责人查看权限不得请求');
+permissions=['STUDENT_READ','STUDENT_RESPONSIBILITY_READ'];await s.initialize();assert.equal(s.historyRows.value.length,1);
+responsibility.history=async(t,id,org,p)=>{assert.equal(p,2);throw Error('网络故障')};await s.loadHistory();assert.equal(s.historyPage.value,1);assert.match(s.historyError.value,/网络故障/);
+responsibility.history=async(t,id,org,p)=>({items:[history(1),history(2)],page:p,pageSize:1,total:2});await s.loadHistory();assert.equal(s.historyRows.value.length,2);await s.loadHistory();assert.equal(s.historyPage.value,2);
+let release;directory.detail=()=>new Promise(r=>release=r);const pending=s.initialize();await flush();selection={...selection,organizationId:'99'};release({...child,studentName:'旧数据'});await pending;assert.equal(s.child.value,null,'切换机构后旧响应不写入');
+selection={...selection,organizationId:'10'};let reject;directory.detail=()=>new Promise((r,j)=>reject=j);const stale=s.initialize();await flush();hooks.hide();reject(Error('旧错误'));await stale;assert.equal(s.error.value,'');assert.equal(s.loading.value,false);
+directory.detail=async()=>child;selection={...selection,organizationId:'10'};responsibility.history=async(t,id,org,p)=>({items:[history(p)],page:p,pageSize:1,total:3});await s.initialize();
+let finishHistory;responsibility.history=()=>new Promise(r=>finishHistory=r);const oldHistory=s.loadHistory();await flush();token='new-token';finishHistory({items:[history(99)],page:2,pageSize:1,total:3});await oldHistory;assert.equal(s.historyRows.value.length,1);assert.equal(s.historyPage.value,1);assert.equal(s.historyLoading.value,true,'旧会话finally不得修改新范围状态');hooks.hide();assert.equal(s.historyLoading.value,false);
+console.log('详情权限隔离、真实数据、历史分页去重与重试、机构切换和隐藏响应守卫通过');})().catch(e=>{console.error(e);process.exitCode=1});
+

@@ -60,7 +60,7 @@
             <text class="meta">签到 {{ record.checkinTime || '未填写' }} · 签退 {{ record.checkoutTime || '未填写' }}</text>
             <text class="meta">{{ record.recorderName }} · {{ formatTime(record.updatedAt) }}</text>
           </view>
-          <view class="pagination"><text v-if="busy">正在加载</text><button v-else-if="errorMessage" class="outline" @tap="queryRecords(page + 1)">加载失败，点击重试</button><text v-else>{{ exhausted || records.length >= total ? '已全部加载' : '上滑加载更多' }} · 共 {{ total }} 条</text></view>
+          <view class="pagination"><text v-if="busy">正在加载</text><button v-else-if="appendFailedPage" class="outline" @tap="queryRecords(appendFailedPage)">加载失败，点击重试</button><text v-else>{{ exhausted || records.length >= total ? '已全部加载' : '上滑加载更多' }} · 共 {{ total }} 条</text></view>
         </view>
       </template>
 
@@ -96,14 +96,11 @@
     </template>
     <view v-else class="state"><text>{{ errorMessage || '考勤暂不可用' }}</text><button class="outline" @tap="refresh">重新加载</button></view>
   
-  <AppTabBar v-if="identity === 'organization'" :items="ORG_TABS" :active="2" />
   </view>
 </template>
 
 <script setup lang="ts">
 import NativeStatusSpacer from '@/components/NativeStatusSpacer.vue';
-import AppTabBar from '@/components/AppTabBar.vue';
-import { TEACHER_TABS, ORG_TABS } from '@/config/tabbar';
 import { computed, ref } from 'vue';
 import { onLoad, onShow, onHide, onUnload, onPullDownRefresh, onReachBottom } from '@dcloudio/uni-app';
 import { getMiniappCapabilities } from '@/api/capability';
@@ -125,6 +122,7 @@ const loading = ref(true);
 const busy = ref(false);
 const submitting = ref(false);
 const errorMessage = ref('');
+const appendFailedPage = ref(0);
 const mode = ref<'list' | 'record'>('list');
 const records = ref<AttendanceRecord[]>([]);
 const detail = ref<AttendanceDetail | null>(null);
@@ -178,7 +176,7 @@ function token(): string {
 }
 function clearRoster(): void { drafts.value = []; rosterLoaded.value = false; }
 function invalidate(): void {
-  epoch++; page.value = 0; exhausted.value=false; errorMessage.value='';
+  epoch++; appendFailedPage.value = 0; page.value = 0; exhausted.value=false; errorMessage.value='';
   enabled.value = false; user.value = null; records.value = []; detail.value = null;
   classes.value = []; recordClasses.value = []; clearRoster(); total.value = 0;
   busy.value = false; submitting.value = false;
@@ -242,6 +240,8 @@ async function refresh(): Promise<void> {
 }
 async function queryRecords(nextPage = 1): Promise<void> {
   if (!enabled.value || busy.value) return;
+  if (nextPage > 1 && errorMessage.value && appendFailedPage.value !== nextPage) return;
+  if (nextPage === 1) appendFailedPage.value = 0;
   const query = nextPage > 1 && committedFilters ? committedFilters : { ...filters.value };
   const { dateFrom, dateTo } = query;
   if (!!dateFrom !== !!dateTo || (dateFrom && dateFrom > dateTo)) {
@@ -249,7 +249,7 @@ async function queryRecords(nextPage = 1): Promise<void> {
   }
   if(nextPage === 1) committedFilters = { ...query };
   const current = epoch; const requestToken = token(); const requestScope = JSON.stringify(uni.getStorageSync('lingdong.selected-organization'));
-  busy.value = true; errorMessage.value = ''; if (nextPage === 1) { exhausted.value=false; records.value = []; page.value = 0; total.value = 0; } detail.value = null;
+  busy.value = true; appendFailedPage.value = 0; errorMessage.value = ''; if (nextPage === 1) { exhausted.value=false; records.value = []; page.value = 0; total.value = 0; } detail.value = null;
   try {
     const response = await listAttendanceRecords(token(), {
       ...query, keyword: query.keyword.trim(), status: query.status || undefined,
@@ -259,7 +259,7 @@ async function queryRecords(nextPage = 1): Promise<void> {
     if(requestToken !== token() || requestScope !== JSON.stringify(uni.getStorageSync('lingdong.selected-organization'))) { invalidate(); return; }
     const previousCount=records.value.length;
     records.value = [...new Map((nextPage > 1 ? [...records.value, ...response.items] : response.items).map(item => [item.id, item])).values()]; page.value = response.page; total.value = response.total; exhausted.value=!response.items.length || (nextPage>1&&records.value.length===previousCount) || nextPage*pageSize>=response.total;
-  } catch (error) { if(requestToken === token() && requestScope === JSON.stringify(uni.getStorageSync('lingdong.selected-organization'))) await handleError(error, current); }
+  } catch (error) { if(current === epoch && requestToken === token() && requestScope === JSON.stringify(uni.getStorageSync('lingdong.selected-organization'))) { await handleError(error, current); if (current === epoch && enabled.value && nextPage > 1) appendFailedPage.value = nextPage; } }
   finally { if (current === epoch) busy.value = false; }
 }
 async function loadRoster(): Promise<void> {
@@ -361,3 +361,4 @@ function backPage(): void { uni.navigateBack({ fail: () => { uni.reLaunch({ url:
 .local-nav-line>text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .local-nav-line .local-back{position:absolute;left:8rpx;top:0;width:76rpx;height:88rpx;padding:0;background:transparent;color:#fff;font-size:56rpx;font-weight:400;line-height:80rpx}
 </style>
+

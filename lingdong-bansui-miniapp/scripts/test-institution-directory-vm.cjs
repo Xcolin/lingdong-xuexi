@@ -1,0 +1,20 @@
+const fs=require('node:fs'),vm=require('node:vm'),ts=require('typescript'),assert=require('node:assert/strict');
+const source=fs.readFileSync('src/pages/institution-student-list/institution-student-list.vue','utf8').match(/<script setup lang="ts">([\s\S]*?)<\/script>/)[1];
+const hooks={},calls=[],navigations=[];let token='机构会话',selection={accessToken:token,organizationId:'10',typeCode:'SCHOOL'};
+const row={studentId:'1',studentName:'小禾',studentNumber:'学号一',status:'ACTIVE',gradeNames:'一年级',classNames:'一班',classOrganizationId:'11'};
+const api={options:async()=>({grades:[{id:'100',name:'一年级'}],classes:[{id:'11',name:'一班',gradeId:'100'}]}),list:async(t,q,page)=>{calls.push({q:{...q},page});return {items:[row],total:40,page,pageSize:20};}};
+const modules={vue:{ref:value=>({value}),computed:fn=>({get value(){return fn();}})},'@dcloudio/uni-app':{onShow:fn=>hooks.show=fn,onHide:fn=>hooks.hide=fn,onUnload:fn=>hooks.unload=fn,onReachBottom:fn=>hooks.bottom=fn},'@/api/institution-directory':{institutionDirectoryApi:api},'@/api/http':{request:async()=>({permissionCodes:['STUDENT_READ']})},'@/api/capability':{getMiniappCapabilities:async()=>({classManagementEnabled:true})},'@/session/organization-session':{getOrganizationSession:()=>({accessToken:token})},'@/config/tabbar':{ORG_TABS:[]}};
+const out={};
+vm.runInNewContext(ts.transpileModule(source+'\nexports.test={initialize,search,loadMore,openChild,rows,page,keyword,gradeId,loadingMore,hasMore,appendError};',{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}}).outputText,{exports:out,Error,require:k=>modules[k]||{},uni:{getStorageSync:()=>selection,navigateTo:value=>navigations.push(value.url),showToast:()=>{}}});
+const flush=()=>new Promise(r=>setImmediate(r));
+const timer=setTimeout(()=>{console.error('目录测试超时');process.exit(1)},10000);
+(async()=>{
+ const s=out.test;await s.initialize();assert.equal(s.rows.value.length,1);assert.equal(calls[0].q.institutionOrganizationId,'10');s.openChild('1');assert.equal(navigations[0],'/pages/institution-student-detail/institution-student-detail?studentId=1');s.openChild('未加载的学员');assert.equal(navigations.length,1);selection={...selection,organizationId:'99'};s.openChild('1');assert.equal(navigations.length,1,'换组织不得使用旧名单跳转');selection={...selection,organizationId:'10'};
+ let release;const old=new Promise(r=>release=r);api.list=async(t,q,p)=>{calls.push({q:{...q},page:p});if(p===2){await old;return {items:[{...row,studentId:'旧学生'}],total:40,page:p,pageSize:20};}return {items:[{...row,studentId:'新学生'}],total:40,page:p,pageSize:20};};
+ const pending=s.loadMore();await flush();assert.equal(s.loadingMore.value,true);s.keyword.value='新';await s.search();release();await pending;assert.equal(s.page.value,1);assert.equal(s.rows.value.length,1);assert.equal(s.rows.value[0].studentId,'新学生');
+ api.list=async()=>{throw Error('网络故障')};await s.loadMore();assert.equal(s.page.value,1);assert.equal(s.loadingMore.value,false);assert.match(s.appendError.value,/网络故障/);
+ let retries=0;api.list=async(t,q,p)=>{retries++;assert.equal(p,2);assert.equal(q.keyword,'新');return {items:[{...row,studentId:'新学生'},{...row,studentId:'第二个'}],total:40,page:p,pageSize:20};};
+ hooks.bottom();await flush();assert.equal(retries,0);await s.loadMore();assert.equal(retries,1);assert.equal(s.rows.value.length,2);
+ hooks.hide();s.openChild('新学生');assert.equal(navigations.length,1,'隐藏后不得使用旧名单跳转');assert.equal(s.rows.value.length,0);assert.equal(s.hasMore.value,false);token='另一个会话';await s.loadMore();assert.equal(retries,1);
+ console.log('完成哨兵：机构全局目录真实分页参数、受控旧响应、去重、同页重试及会话范围守卫通过');
+})().catch(e=>{console.error(e);process.exitCode=1}).finally(()=>clearTimeout(timer));

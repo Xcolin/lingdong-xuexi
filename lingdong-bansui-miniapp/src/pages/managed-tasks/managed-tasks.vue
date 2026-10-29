@@ -17,6 +17,7 @@
     <view v-else-if="reviewMode && reviews.length === 0" class="state-text">暂无审核待办</view>
     <view v-else-if="!reviewMode && tasks.length === 0" class="state-text">暂无任务</view>
     <view v-else-if="!reviewMode" class="task-list">
+      <text class="task-meta">共 {{ taskTotal }} 项任务</text>
       <view v-for="task in tasks" :key="task.id" class="task-row">
         <view class="task-main">
           <view class="task-heading">
@@ -56,7 +57,9 @@
       </view>
     </view>
 
-    <view v-if="reviewMode && !loading && !errorMessage && reviewTotal > 20" class="toolbar-actions"><button :disabled="reviewing || reviewPage <= 1" @tap="loadReviews(reviewPage - 1)">上一页</button><text>第 {{ reviewPage }} 页</text><button :disabled="reviewing || reviewPage * 20 >= reviewTotal" @tap="loadReviews(reviewPage + 1)">下一页</button></view>
+    <view v-if="reviewMode && !loading && !errorMessage && reviews.length" class="state-text review-load-more"><text v-if="reviewLoadingMore">正在加载更多</text><button v-else-if="reviewAppendError" class="text-button" @tap="loadMoreReviews">加载失败，点击重试</button><text v-else-if="!reviewHasMore">已经到底了</text></view>
+
+    <view v-if="!reviewMode && !loading && !errorMessage && tasks.length" class="state-text review-load-more"><text v-if="taskLoadingMore">正在加载更多</text><button v-else-if="taskAppendError" class="text-button" @tap="loadMoreTasks">加载失败，点击重试</button><text v-else-if="!taskHasMore">已经到底了</text></view>
 
     <view v-if="editorVisible" class="editor-band">
       <text class="section-title">{{ editingId ? '编辑任务' : '新增任务' }}</text>
@@ -102,7 +105,7 @@
     <view v-if="progressTask" class="progress-band">
       <view class="progress-heading">
         <text class="section-title">{{ progressTask.title }} · 完成进度</text>
-        <button class="close-button" @tap="progressTask = null">关闭</button>
+        <button class="close-button" @tap="closeProgress">关闭</button>
       </view>
       <view v-if="progressLoading" class="state-text compact">正在加载</view>
       <view v-else-if="progressItems.length === 0" class="state-text compact">暂无进度</view>
@@ -127,7 +130,7 @@ import AppTabBar from '@/components/AppTabBar.vue';
 import { TEACHER_TABS, ORG_TABS } from '@/config/tabbar';
 import { computed, reactive, ref } from 'vue';
 import { managedTargets } from '@/model/managed-task-targets';
-import { onLoad, onShow, onHide, onUnload, onPullDownRefresh } from '@dcloudio/uni-app';
+import { onLoad, onShow, onHide, onUnload, onPullDownRefresh, onReachBottom } from '@dcloudio/uni-app';
 import { ApiError, apiUrl } from '@/api/http';
 import { requireManagedAccess } from '@/api/managed-review-access';
 import {
@@ -160,16 +163,19 @@ let studentRevision=0;
 const progressTask = ref<ManagedLearningTask | null>(null);
 const progressItems = ref<ManagedTaskProgress[]>([]);
 const progressLoading = ref(false);
+// 进度请求独立序列：关闭/换任务/隐藏/换组织都会自增，旧响应不得回填或清新请求状态
+let progressRevision=0;
 const reviews = ref<ManagedTaskReview[]>([]);
 const reviewMode = ref(false);
 const createRequested=ref(false);
-const reviewPage = ref(1), reviewTotal = ref(0), reviewing = ref(false);
+const reviewPage = ref(1), reviewTotal = ref(0), reviewing = ref(false), reviewLoadingMore = ref(false), reviewHasMore = ref(false), reviewAppendError = ref('');
+const taskPage = ref(1), taskTotal = ref(0), taskLoadingMore = ref(false), taskHasMore = ref(false), taskAppendError = ref('');
 let revision = 0;
 let selectedScope = '';
 function scopeKey(){const selected=uni.getStorageSync('lingdong.selected-organization') as {organizationId?:string;accessToken?:string}|undefined;return `${selected?.accessToken||''}:${selected?.organizationId||''}`;}
-function clearVisible() { studentRevision++;studentOptions.value=[];selectedStudents.value=[];studentMode.value=false;studentsLoading.value=false; tasks.value=[]; reviews.value=[]; permissionCodes.value=[]; targets.value=[]; contextName.value=''; editorVisible.value=false; progressTask.value=null; progressItems.value=[]; cancelReject(); }
+function clearVisible() { studentRevision++;studentOptions.value=[];selectedStudents.value=[];studentMode.value=false;studentsLoading.value=false; tasks.value=[]; reviews.value=[]; permissionCodes.value=[]; targets.value=[]; contextName.value=''; editorVisible.value=false; progressRevision++;progressLoading.value=false;progressTask.value=null; progressItems.value=[]; cancelReject(); }
 function active(n: number, token: string) { return n===revision && getOrganizationSession()?.accessToken===token && selectedScope===scopeKey(); }
-function hide() { revision++;editRevision++;editingLoading.value=false; clearVisible(); loading.value=false; reviewing.value=false;saving.value=false;publishing.value=false; }
+function hide() { revision++;editRevision++;editingLoading.value=false; clearVisible(); loading.value=false; reviewing.value=false;saving.value=false;publishing.value=false;reviewLoadingMore.value=false;reviewHasMore.value=false;reviewAppendError.value='';taskLoadingMore.value=false;taskHasMore.value=false;taskAppendError.value=''; }
 onHide(hide); onUnload(hide);
 const rejectingAssignmentId = ref<string | null>(null);
 const rejectComment = ref('');
@@ -195,7 +201,7 @@ async function initialize(): Promise<void> {
   selectedScope=scopeKey();
   if (reviewMode.value) { await loadReviews(1); return; }
   const token=getOrganizationSession()?.accessToken, n=++revision;
-  clearVisible(); errorMessage.value=''; loading.value=true;
+  clearVisible(); errorMessage.value=''; loading.value=true;taskLoadingMore.value=false;taskHasMore.value=false;taskAppendError.value='';
   if (!token) { loading.value=false; await leave(); return; }
   try {
     weekdayCapability.value=false;
@@ -211,7 +217,7 @@ async function initialize(): Promise<void> {
     if (!active(n,token)) return;
     targets.value=options;
     const result=await listManagedTasks(token,1,identity.value==='teacher'?'TEACHER':'ORGANIZATION');
-    if (active(n,token)){tasks.value=result.items;if(createRequested.value&&canCreate.value){startCreate();createRequested.value=false;}}
+    if (active(n,token)){tasks.value=result.items;taskPage.value=result.page;taskTotal.value=result.total;taskHasMore.value=result.items.length>0&&result.page*(result.pageSize||20)<result.total;if(createRequested.value&&canCreate.value){startCreate();createRequested.value=false;}}
   } catch(error) { if(active(n,token)) { clearVisible(); errorMessage.value=error instanceof Error ? error.message : '任务加载失败，请刷新重试'; } }
   finally { if(n===revision) loading.value=false; }
 }
@@ -231,7 +237,24 @@ async function loadTasks(): Promise<void> {
   const session = getOrganizationSession();
   if (!session) { await leave(); return; }
   const n=revision;const result = await listManagedTasks(session.accessToken,1,identity.value==='teacher'?'TEACHER':'ORGANIZATION');
-  if(active(n,session.accessToken))tasks.value = result.items;
+  if(active(n,session.accessToken)){tasks.value=result.items;taskPage.value=result.page;taskTotal.value=result.total;taskHasMore.value=result.items.length>0&&result.page*(result.pageSize||20)<result.total;taskAppendError.value='';}
+}
+
+async function loadMoreTasks(): Promise<void> {
+  if(taskLoadingMore.value||loading.value||saving.value||publishing.value||editorVisible.value||progressTask.value||!taskHasMore.value)return;
+  const token=getOrganizationSession()?.accessToken,n=revision;
+  if(!token||!active(n,token))return;
+  const requestTarget=taskPage.value+1;
+  taskLoadingMore.value=true;taskAppendError.value='';
+  try {
+    const result=await listManagedTasks(token,requestTarget,identity.value==='teacher'?'TEACHER':'ORGANIZATION');
+    if(!active(n,token))return;
+    const previousCount=tasks.value.length;const ids=new Set(tasks.value.map(row=>row.id));
+    tasks.value=[...tasks.value,...result.items.filter(row=>{if(ids.has(row.id))return false;ids.add(row.id);return true;})];
+    taskPage.value=result.page;taskTotal.value=result.total;
+    taskHasMore.value=tasks.value.length>previousCount&&result.page*(result.pageSize||20)<result.total;
+  } catch(error) { if(active(n,token))taskAppendError.value=error instanceof Error?error.message:'加载未完成'; }
+  finally { if(n===revision)taskLoadingMore.value=false; }
 }
 
 function startCreate(): void {
@@ -316,13 +339,19 @@ async function publishTask(task: ManagedLearningTask): Promise<void> {
 async function openProgress(task: ManagedLearningTask): Promise<void> {
   const session = getOrganizationSession();
   if (!session) { await leave(); return; }
+  const n=revision, serial=++progressRevision, token=session.accessToken, taskId=task.id;
   progressTask.value = task;
   progressItems.value = [];
   progressLoading.value = true;
-  try { progressItems.value = (await listManagedTaskProgress(session.accessToken, task.id)).items; }
-  catch { show('完成进度加载失败'); }
-  finally { progressLoading.value = false; }
+  try {
+    const result=await listManagedTaskProgress(token, taskId);
+    if(!active(n,token)||serial!==progressRevision||progressTask.value?.id!==taskId)return;
+    progressItems.value = result.items;
+  }
+  catch { if(active(n,token)&&serial===progressRevision&&progressTask.value?.id===taskId)show('完成进度加载失败'); }
+  finally { if(serial===progressRevision)progressLoading.value = false; }
 }
+function closeProgress(){progressRevision++;progressLoading.value=false;progressTask.value=null;progressItems.value=[];}
 
 async function toggleReviews(): Promise<void> {
   if (reviewing.value || loading.value) return;
@@ -332,7 +361,7 @@ async function toggleReviews(): Promise<void> {
 
 async function loadReviews(target=1): Promise<void> {
   const token=getOrganizationSession()?.accessToken,n=++revision;
-  clearVisible(); errorMessage.value=''; loading.value=true;
+  clearVisible(); errorMessage.value=''; loading.value=true;reviewLoadingMore.value=false;reviewHasMore.value=false;reviewAppendError.value='';
   if(!token) { loading.value=false; await leave(); return; }
   try {
     weekdayCapability.value=false;
@@ -343,10 +372,28 @@ async function loadReviews(target=1): Promise<void> {
     if(!active(n,token)) return;
     contextName.value=context.displayName; permissionCodes.value=user.permissionCodes;
     const result=await listManagedTaskReviews(token,target,20);
-    if(active(n,token)) { reviews.value=result.items; reviewPage.value=result.page; reviewTotal.value=result.total; }
+    if(active(n,token)) { reviews.value=result.items; reviewPage.value=result.page; reviewTotal.value=result.total; reviewHasMore.value=result.items.length>0&&result.page*(result.pageSize||20)<result.total; }
   } catch(error) { if(active(n,token)) { clearVisible(); errorMessage.value=error instanceof Error ? error.message : '审核待办加载失败，请刷新重试'; } }
   finally { if(n===revision) loading.value=false; }
 }
+
+async function loadMoreReviews(): Promise<void> {
+  if(reviewLoadingMore.value||loading.value||reviewing.value||editorVisible.value||!reviewHasMore.value)return;
+  const token=getOrganizationSession()?.accessToken,n=revision;
+  if(!token||!active(n,token))return;
+  const requestTarget=reviewPage.value+1;
+  reviewLoadingMore.value=true;reviewAppendError.value='';
+  try {
+    const result=await listManagedTaskReviews(token,requestTarget,20);
+    if(!active(n,token))return;
+    const previousCount=reviews.value.length;const ids=new Set(reviews.value.map(row=>row.assignmentId));
+    reviews.value=[...reviews.value,...result.items.filter(row=>{if(ids.has(row.assignmentId))return false;ids.add(row.assignmentId);return true;})];
+    reviewPage.value=result.page;reviewTotal.value=result.total;
+    reviewHasMore.value=reviews.value.length>previousCount&&result.page*(result.pageSize||20)<result.total;
+  } catch(error) { if(active(n,token))reviewAppendError.value=error instanceof Error ? error.message : '加载未完成'; }
+  finally { if(n===revision)reviewLoadingMore.value=false; }
+}
+onReachBottom(()=>{if(reviewMode.value){if(!reviewAppendError.value&&!editorVisible.value&&!progressTask.value)void loadMoreReviews();}else{if(!taskAppendError.value&&!editorVisible.value&&!progressTask.value)void loadMoreTasks();}});
 
 async function approveReview(review: ManagedTaskReview): Promise<void> {
   if(reviewing.value || loading.value) return;
@@ -442,7 +489,7 @@ function leave(): Promise<unknown> { return uni.reLaunch({ url: '/pages/index/in
 .toolbar-actions { display: flex; gap: 12rpx; }.add-button, .review-button { width: 112rpx; height: 68rpx; margin: 0; border-radius: 8rpx; background: #167c5a; color: #fff; font-size: 27rpx; }.review-button { border: 2rpx solid #167c5a; background: #fff; color: #167c5a; }
 .add-button::after, .review-button::after, .text-button::after, .cancel-button::after, .save-button::after, .close-button::after { border: 0; }
 .state-text { min-height: 320rpx; display: flex; align-items: center; justify-content: center; color: #708078; font-size: 28rpx; }
-.state-text.compact { min-height: 160rpx; }.state-text.error { color: #a54433; }
+.state-text.compact { min-height: 160rpx; }.state-text.error { color: #a54433; }.review-load-more { min-height: 0; padding: 18rpx 0 4rpx; }.review-load-more .text-button { margin: 0; }
 .task-list, .editor-band, .progress-band { margin-top: 24rpx; border-block: 2rpx solid #dbe3df; background: #fff; }
 .task-row { padding: 26rpx 36rpx; border-top: 2rpx solid #edf1ef; }.task-row:first-child { border-top: 0; }
 .task-main { min-width: 0; }.task-heading { display: flex; align-items: center; gap: 12rpx; }

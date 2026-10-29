@@ -1,6 +1,7 @@
 <template>
   <view class="prototype-workspace ld-page has-tabbar">
-    <PrototypePageHeader :title="selectedReward?'兑换确认':selectedExchange?'兑换记录详情':'成长奖励'" icon="gift"/>
+    <RewardShopHeader v-if="!selectedReward&&!selectedExchange" :points="summary?.availablePoints" :title="rewardLayout==='list'?'成长奖励':'奖品商城'" :show-balance="rewardLayout!=='list'" @menu="showRewardMenu" @records="activeTab='exchanges'" />
+    <PrototypePageHeader v-if="selectedReward||selectedExchange" :title="selectedReward?'兑换确认':'兑换记录详情'" icon="gift"/>
     <view v-if="selectedReward||selectedExchange" class="exchange-screen">
       <button class="screen-back" :disabled="!!applyingRewardId" @tap="closeExchange">‹ 返回奖励</button>
       <view v-if="selectedReward" class="exchange-summary"><view class="summary-thumb"><image v-if="selectedReward.imageUrl && !imageFailed[selectedReward.id]" :src="selectedReward.imageUrl" mode="aspectFill" @error="imageFailed[selectedReward.id] = true" /><PrototypeIcon v-else name="gift" tone="amber" :size="52" /></view><view><text class="item-title">{{selectedReward.rewardName}}</text><text class="item-description">{{selectedReward.description}}</text><text class="exchange-price">{{selectedReward.requiredPoints}} 分</text></view></view>
@@ -28,26 +29,12 @@
       <text>正在检查功能状态</text>
     </view>
     <template v-else-if="rewardExchangeEnabled">
-      <view class="ld-heading">
-        <text class="ld-heading-title">奖励兑换</text>
-        <view class="ld-heading-rule" />
-      </view>
-      <view class="balance-band"><PrototypeIcon name="gift" :size="36" />
-        <text class="balance-label">我的成长积分</text>
-        <view class="balance-value-row">
-          <text class="balance-value">{{ summary?.availablePoints ?? '—' }}</text>
-          <text class="balance-unit">分</text>
-        </view>
-        <text class="balance-time">
-          {{ summary ? `更新于 ${formatDateTime(summary.updatedAt)}` : '' }}
-        </text>
-      </view>
+      <view v-if="rewardLayout==='list'" class="growth-reward-banner"><image class="reward-botanical" src="/static/growth-botanical.svg" mode="aspectFit"/><PrototypeIcon name="star" tone="amber" :size="60"/><view><text class="growth-balance-caption">我的成长积分</text><text class="growth-balance">{{summary?.availablePoints??'—'}}<text> 积分</text></text></view></view>
 
-      <view class="tab-bar" role="tablist">
+      <view v-if="activeTab!=='rewards'" class="tab-bar" role="tablist">
         <button
           class="tab-button"
-          :class="{ active: activeTab === 'rewards' }"
-          :aria-selected="activeTab === 'rewards'"
+          :aria-selected="false"
           @tap="activeTab = 'rewards'"
         >全部奖励</button>
         <button
@@ -77,15 +64,15 @@
         <view class="category-chips" role="tablist">
           <button v-for="c in categories" :key="c.value" class="chip" :class="{ active: activeCategory === c.value }" :aria-selected="activeCategory === c.value" @tap="activeCategory = c.value">{{ c.label }}</button>
         </view>
-        <view class="reward-grid">
+        <view class="reward-grid" :class="{'reward-list':rewardLayout==='list'}">
           <view v-for="reward in filteredRewards" :key="reward.id" class="reward-card">
             <view class="card-image">
               <image v-if="reward.imageUrl && !imageFailed[reward.id]" :src="reward.imageUrl" mode="aspectFill" @error="imageFailed[reward.id] = true" />
               <view v-else class="image-placeholder"><PrototypeIcon name="gift" :size="52" tone="amber" /></view>
             </view>
-            <text class="card-title">{{ reward.rewardName }}</text>
+            <view class="card-body"><text class="card-title">{{ reward.rewardName }}</text>
             <view class="card-points"><text class="points-num">{{ reward.requiredPoints }}</text><text class="points-unit">分</text></view>
-            <view class="card-meta-row"><text class="meta-days">{{ daysLeft(reward.expiresAt) }}</text><text class="meta-stock">库存 {{ reward.stockQuantity ?? 0 }}</text></view>
+            <view class="card-meta-row"><text class="meta-days">{{ daysLeft(reward.expiresAt) }}</text><text class="meta-stock">库存 {{ reward.stockQuantity ?? 0 }}</text></view></view>
             <button class="card-exchange" :disabled="isExchangeDisabled(reward)" @tap.stop="confirmExchange(reward)">{{ summary && summary.availablePoints < reward.requiredPoints ? '积分不足' : '立即兑换' }}</button>
           </view>
         </view>
@@ -125,15 +112,17 @@
       <view v-if="loading" class="loading-footer">正在加载奖励数据</view>
     </template>
   </template>
+    <AppTabBar v-if="!selectedReward&&!selectedExchange" :items="STUDENT_TABS" :active="2" />
   </view>
 </template>
 
 <script setup lang="ts">
 import {createExchangeFlight} from './exchange-flight';
 import PrototypePageHeader from "@/components/PrototypePageHeader.vue";
+import RewardShopHeader from '@/components/RewardShopHeader.vue';
 import PrototypeIcon from '@/components/PrototypeIcon.vue';
 import { ref, computed } from 'vue';
-import { onPullDownRefresh, onShow, onHide, onUnload } from '@dcloudio/uni-app';
+import { onLoad, onPullDownRefresh, onShow, onHide, onUnload } from '@dcloudio/uni-app';
 import { getMiniappCapabilities } from '@/api/capability';
 import {
   applyRewardExchange,
@@ -163,6 +152,12 @@ const loading = ref(false);
 const applyingRewardId = ref('');
 const errorMessage = ref('');
 const activeTab = ref<'rewards' | 'exchanges' | 'points'>('rewards');
+function showRewardMenu(){uni.showActionSheet({itemList:['我的兑换','积分明细'],success:result=>{activeTab.value=result.tapIndex===0?'exchanges':'points';}});}
+const rewardLayout = ref<'shop'|'list'>('shop');
+onLoad(options => {
+  activeTab.value = options?.tab === 'exchanges' ? 'exchanges' : options?.tab === 'points' ? 'points' : 'rewards';
+  rewardLayout.value = options?.layout === 'list' ? 'list' : 'shop';
+});
 const summary = ref<RewardAccountSummary | null>(null);
 const rewards = ref<StudentReward[]>([]);
 const exchanges = ref<StudentRewardExchange[]>([]);
@@ -338,6 +333,23 @@ function toMessage(error: unknown): string {
   box-shadow: 0 10rpx 30rpx rgba(22, 124, 90, 0.25);
   color: #ffffff;
 }
+.points-compact {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20rpx;
+  margin-top: 8rpx;
+  padding: 20rpx 28rpx;
+  border-radius: 20rpx;
+  background: #ffffff;
+  box-shadow: 0 4rpx 16rpx rgba(24, 79, 64, 0.05);
+}
+.points-compact-label { color: $ld-text-secondary; font-size: $ld-font-caption; font-weight: 600; }
+.points-compact-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4rpx; }
+.points-compact-value-row { display: flex; align-items: baseline; gap: 6rpx; }
+.points-compact-value { font-size: 40rpx; font-weight: 700; color: #13674e; line-height: 1; }
+.points-compact-unit { font-size: $ld-font-caption; color: $ld-text-secondary; }
+.points-compact-time { font-size: $ld-font-mini; color: $ld-text-muted; }
 .balance-label { display: block; font-size: $ld-font-caption; opacity: 0.88; }
 .balance-value-row { display: flex; align-items: baseline; gap: 10rpx; margin-top: 12rpx; }
 .balance-value { font-size: 64rpx; font-weight: 700; line-height: 1; }
@@ -425,7 +437,7 @@ function toMessage(error: unknown): string {
 
 .reward-item,.ledger-card{position:relative;padding-left:116rpx!important;min-height:100rpx;}.visual-tile{position:absolute;left:22rpx;top:26rpx;width:74rpx;height:74rpx;border-radius:18rpx;background:#fff2d6;display:flex;align-items:center;justify-content:center;}.exchange-button{background:linear-gradient(110deg,#ffb43e,#ed920c)!important;color:white!important;border-radius:32rpx!important;}.points-badge{color:#ec9315!important;background:#fff6e8!important;}
 .prototype-workspace{background:#F6F8F5!important;padding:28rpx 28rpx calc(160rpx + env(safe-area-inset-bottom))!important;box-sizing:border-box;}.ld-heading{display:none;}.summary-band,.section-band,.balance-band,.reward-item,.exchange-item{border:1rpx solid #e1e9e2!important;border-radius:24rpx!important;background:#fffefa!important;box-sizing:border-box;}.metric-grid{min-width:0;}.category-row{gap:14rpx;}.category-row>text:first-child{max-width:180rpx;overflow-wrap:anywhere;}.category-track{min-width:0;}.date-option{flex-shrink:0;}.tab-button{min-width:0;padding-left:8rpx;padding-right:8rpx;}.item-title{overflow-wrap:anywhere;}.supplement-form textarea{box-sizing:border-box;width:100%;}.state-view{background:#fffefa;border-radius:24rpx;color:#809486;}
-.prototype-workspace{padding:24rpx 28rpx 80rpx!important;background:#f5f8f3!important;}.balance-band{background:linear-gradient(110deg,#679472,#d8e9c8)!important;color:white!important;min-height:180rpx;padding:30rpx 32rpx 24rpx 166rpx!important;position:relative;}.balance-band>.prototype-icon{position:absolute;left:36rpx;top:46rpx;}.balance-label{color:white!important;font-size:26rpx;}.balance-value{font-size:44rpx!important;color:white!important;}.balance-time{font-size:18rpx;color:#f2f8ef;}.tab-bar{background:transparent;border:0;gap:18rpx;margin:24rpx 0;}.tab-button{font-size:23rpx;border-radius:30rpx;background:#edf2ec;padding:10rpx 16rpx;}.tab-button.active{background:white;color:#145940;}.reward-item{min-height:190rpx;padding:24rpx 22rpx 24rpx 188rpx!important;border:0!important;background:white!important;border-radius:24rpx!important;}.visual-tile{left:22rpx;top:30rpx;width:140rpx;height:140rpx;border-radius:22rpx;}.item-heading{display:block;}.item-title{display:block;font-size:28rpx;}.points-badge{display:block;margin-top:12rpx;background:transparent!important;color:#f89c0f!important;font-size:28rpx;padding:0;}.item-description{font-size:23rpx;color:#80877f;margin-top:8rpx;}.item-meta{font-size:18rpx;color:#818b84;}.exchange-button{width:140rpx;margin:12rpx 0 0 auto;font-size:24rpx;padding:0;line-height:60rpx;}.exchange-item{padding:26rpx!important;}.ld-heading{display:none;}
+.prototype-workspace{padding:24rpx 28rpx 80rpx!important;background:#f5f8f3!important;}.balance-band{background:linear-gradient(110deg,#679472,#d8e9c8)!important;color:white!important;min-height:180rpx;padding:30rpx 32rpx 24rpx 166rpx!important;position:relative;}.balance-band>.prototype-icon{position:absolute;left:36rpx;top:46rpx;}.balance-label{color:white!important;font-size:26rpx;}.balance-value{font-size:44rpx!important;color:white!important;}.balance-time{font-size:18rpx;color:#f2f8ef;}.tab-bar{background:transparent;border:0;gap:14rpx;margin:14rpx 0;}.tab-button{font-size:23rpx;border-radius:30rpx;background:#edf2ec;padding:10rpx 16rpx;}.tab-button.active{background:white;color:#145940;}.reward-item{min-height:190rpx;padding:24rpx 22rpx 24rpx 188rpx!important;border:0!important;background:white!important;border-radius:24rpx!important;}.visual-tile{left:22rpx;top:30rpx;width:140rpx;height:140rpx;border-radius:22rpx;}.item-heading{display:block;}.item-title{display:block;font-size:28rpx;}.points-badge{display:block;margin-top:12rpx;background:transparent!important;color:#f89c0f!important;font-size:28rpx;padding:0;}.item-description{font-size:23rpx;color:#80877f;margin-top:8rpx;}.item-meta{font-size:18rpx;color:#818b84;}.exchange-button{width:140rpx;margin:12rpx 0 0 auto;font-size:24rpx;padding:0;line-height:60rpx;}.exchange-item{padding:26rpx!important;}.ld-heading{display:none;}
 .exchange-summary{display:flex;align-items:center;gap:28rpx;background:white;border-radius:24rpx;padding:28rpx;margin:24rpx 0;}.exchange-price{display:block;color:#f69508;font-size:34rpx;font-weight:600;margin-top:14rpx;}
 .summary-thumb{width:120rpx;height:120rpx;border-radius:20rpx;background:#fff2d6;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0;}.summary-thumb image{width:100%;height:100%;}
 .exchange-info{background:white;border-radius:24rpx;padding:8rpx 28rpx;margin:24rpx 0;font-size:26rpx;}.info-row{display:flex;align-items:center;justify-content:space-between;gap:20rpx;padding:26rpx 0;border-bottom:1rpx solid #edf0e8;}.info-row-last{border-bottom:none;}.info-label{color:#809486;flex-shrink:0;}.info-value{display:flex;align-items:center;gap:14rpx;min-width:0;}.student-avatar{width:56rpx;height:56rpx;border-radius:50%;background:#e4f1ea;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;}.student-name{font-weight:500;color:#333c37;}.student-class{color:#809486;font-size:24rpx;}.info-static{color:#333c37;text-align:right;}
@@ -444,22 +456,30 @@ function toMessage(error: unknown): string {
 .timeline-node.rejected .node-desc{color:#c4562f;}
 .summary-title-row{display:flex;align-items:center;gap:14rpx;flex-wrap:wrap;}
 
-.category-chips{display:flex;gap:14rpx;margin-top:24rpx;}
-.chip{flex-shrink:0;margin:0;padding:0 30rpx;height:62rpx;line-height:62rpx;border-radius:999rpx;background:#edf2ec;color:#5c6f63;font-size:24rpx;font-weight:500;}
+.category-chips{display:flex;gap:12rpx;margin-top:16rpx;}
+.chip{flex-shrink:0;margin:0;padding:0 26rpx;height:56rpx;line-height:56rpx;border-radius:999rpx;background:#edf2ec;color:#5c6f63;font-size:23rpx;font-weight:500;}
 .chip::after{border:0;}
 .chip.active{background:#13674e;color:#ffffff;font-weight:600;}
-.reward-grid{display:flex;flex-wrap:wrap;gap:20rpx;margin-top:24rpx;}
-.reward-card{width:calc((100% - 20rpx) / 2);box-sizing:border-box;background:#ffffff;border-radius:24rpx;padding:18rpx 18rpx 22rpx;box-sizing:border-box;box-shadow:0 6rpx 20rpx rgba(24,79,64,0.06);}
-.card-image{width:100%;height:240rpx;border-radius:18rpx;background:#f2f6ef;overflow:hidden;}
+.reward-grid{display:flex;flex-wrap:wrap;gap:16rpx;margin-top:16rpx;}
+.reward-card{width:calc((100% - 16rpx) / 2);box-sizing:border-box;background:#ffffff;border-radius:20rpx;padding:12rpx 12rpx 16rpx;box-sizing:border-box;box-shadow:0 4rpx 14rpx rgba(24,79,64,0.05);}
+.card-image{width:100%;height:176rpx;border-radius:14rpx;background:#f2f6ef;overflow:hidden;}
 .card-image image{width:100%;height:100%;}
 .image-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(150deg,#f0f6ec,#e4f0e2);}
-.card-title{display:block;margin-top:14rpx;font-size:26rpx;font-weight:600;color:#1c3a2c;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.card-points{display:flex;align-items:baseline;gap:4rpx;margin-top:8rpx;color:#f89c0f;}
-.points-num{font-size:30rpx;font-weight:700;}
-.points-unit{font-size:22rpx;font-weight:500;}
-.card-meta-row{display:flex;justify-content:space-between;gap:10rpx;margin-top:6rpx;font-size:20rpx;color:#8a968d;}
+.card-title{display:block;margin-top:10rpx;font-size:24rpx;font-weight:600;color:#1c3a2c;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.card-points{display:flex;align-items:baseline;gap:4rpx;margin-top:6rpx;color:#f89c0f;}
+.points-num{font-size:28rpx;font-weight:700;}
+.points-unit{font-size:20rpx;font-weight:500;}
+.card-meta-row{display:flex;justify-content:space-between;gap:8rpx;margin-top:4rpx;font-size:19rpx;color:#8a968d;}
 .meta-days,.meta-stock{white-space:nowrap;}
-.card-exchange{width:100%;height:64rpx;display:flex;align-items:center;justify-content:center;margin:14rpx 0 0;padding:0;border-radius:999rpx;background:#13674e;color:#ffffff;font-size:25rpx;font-weight:600;}
+.card-exchange{width:100%;height:56rpx;display:flex;align-items:center;justify-content:center;margin:10rpx 0 0;padding:0;border-radius:999rpx;background:#13674e;color:#ffffff;font-size:24rpx;font-weight:600;}
 .card-exchange::after{border:0;}
 .card-exchange[disabled]{background:#e2e9e6;color:#9aa79e;}
+.card-body{min-width:0;}
+.growth-reward-banner{display:flex;align-items:center;gap:24rpx;padding:28rpx;background:linear-gradient(110deg,#8fbc99,#d6e7d3);border-radius:24rpx;color:#fff;}
+.growth-reward-banner{position:relative;overflow:hidden;}.growth-reward-banner>.prototype-icon,.growth-reward-banner>view{position:relative;z-index:1;}.reward-botanical{position:absolute;right:-14rpx;bottom:-16rpx;width:210rpx;height:190rpx;opacity:.72;pointer-events:none;}
+.growth-balance-caption{display:block;font-size:24rpx;}.growth-balance{display:block;font-size:46rpx;font-weight:650;}.growth-balance text{font-size:24rpx;font-weight:400;}
+.growth-reward-banner button{margin:0 0 0 auto;padding:8rpx;background:transparent;color:#fff;font-size:24rpx;}.growth-reward-banner button::after{border:0;}
+.reward-list{display:flex;flex-direction:column;}.reward-list .reward-card{width:100%;display:grid;grid-template-columns:100rpx minmax(0,1fr) 118rpx;gap:18rpx;align-items:center;padding:22rpx;}
+.reward-list .card-image{width:100rpx;height:110rpx;}.reward-list .card-title{margin-top:0;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.5;}
+.reward-list .card-meta-row{flex-wrap:wrap;}.reward-list .card-exchange{background:#f5a20a;width:118rpx;align-self:end;}
 </style>

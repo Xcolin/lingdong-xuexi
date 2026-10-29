@@ -1,0 +1,13 @@
+const fs=require('node:fs'),vm=require('node:vm'),ts=require('typescript'),assert=require('node:assert/strict');
+const source=fs.readFileSync('src/pages/account-settings/account-settings.vue','utf8').match(/<script setup lang="ts">([\s\S]*?)<\/script>/)[1];
+const hooks={},calls=[],out={};
+const imports={vue:{ref:value=>({value}),computed:fn=>({get value(){return fn()}})},'@dcloudio/uni-app':{onLoad:fn=>hooks.load=fn,onHide:fn=>hooks.hide=fn,onUnload:fn=>hooks.unload=fn},'@/session/onboarding-session':{onboardingIdentity:value=>value,resolveOnboardingSession:async()=>({accessToken:'隔离会话'})},'@/api/account-settings':{accountSettingsRequest:async(t,suffix,data)=>{calls.push({suffix,data});return {hasPassword:true,passwordChangeRequired:false,mobile:'13812345678',email:'ceshi@example.com',wechatBound:false}}},'@/session/student-session':{getStudentSession:()=>null},'@/api/auth':{},'@/api/http':{}};
+vm.runInNewContext(ts.transpileModule(source+'\nexports.test={contactEditing,channel,destination,code,oldCode,currentPassword,settings,editContact,cancelContact,maskedContact};',{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}}).outputText,{exports:out,require:name=>imports[name]||{},uni:{getStorageSync:()=>null,showToast:()=>{}},Error});
+const timer=setTimeout(()=>{console.error('联系概览测试超时');process.exit(1)},10000);
+(async()=>{hooks.load({identity:'parent',panel:'contact'});await new Promise(r=>setImmediate(r));const p=out.test;
+assert.equal(p.contactEditing.value,false);assert.equal(p.channel.value,'EMAIL');assert.equal(calls.length,1);assert.equal(calls[0].data,undefined);
+assert.equal(p.maskedContact('13812345678','SMS'),'138****5678');assert.equal(p.maskedContact('ceshi@example.com','EMAIL'),'c***@example.com');assert.equal(p.maskedContact(null,'EMAIL'),'未绑定');
+p.editContact('SMS');assert.equal(p.contactEditing.value,true);assert.equal(p.channel.value,'SMS');p.currentPassword.value='测试草稿';p.code.value='测试验证码';p.destination.value='测试目标';p.cancelContact();assert.equal(p.contactEditing.value,false);assert.equal(p.currentPassword.value,'');assert.equal(p.code.value,'');assert.equal(p.destination.value,'');assert.equal(calls.length,1);
+p.editContact('EMAIL');p.currentPassword.value='敏感草稿';p.oldCode.value='旧码';hooks.hide();assert.equal(p.contactEditing.value,false);assert.equal(p.currentPassword.value,'');assert.equal(p.oldCode.value,'');assert.equal(calls.length,1);
+console.log('邮箱优先双卡概览、脱敏、编辑取消及隐藏清草稿验证通过');
+})().catch(e=>{console.error(e);process.exitCode=1}).finally(()=>clearTimeout(timer));

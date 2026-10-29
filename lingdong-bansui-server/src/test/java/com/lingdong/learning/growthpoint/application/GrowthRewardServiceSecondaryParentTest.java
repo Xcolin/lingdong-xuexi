@@ -36,7 +36,8 @@ class GrowthRewardServiceSecondaryParentTest {
                 parentId, 1L, "secondary", "副家长", AuthClientType.WEB, List.of("CUSTOM_PARENT"));
         when(parentStudentMapper.existsActiveByParentAndStudent(parentId, studentId)).thenReturn(true);
         when(parentStudentMapper.existsActivePrimaryByParentAndStudent(parentId, studentId)).thenReturn(false);
-        when(rewardMapper.findManagedByStudentId(studentId, 0, 20)).thenReturn(List.of());
+        when(rewardMapper.findManagedByStudentId(studentId, null, 0, 20)).thenReturn(List.of());
+        when(rewardMapper.countManagedByStudentId(studentId, null)).thenReturn(0L);
 
         assertThat(service.findManaged(secondaryParent, studentId, 1, 20).items()).isEmpty();
         assertThatThrownBy(() -> service.create(

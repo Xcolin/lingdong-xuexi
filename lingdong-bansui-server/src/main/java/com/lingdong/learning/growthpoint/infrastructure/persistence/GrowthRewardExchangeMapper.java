@@ -21,11 +21,12 @@ public interface GrowthRewardExchangeMapper {
 
     List<GrowthRewardExchange> findByStudentId(
             @Param("studentId") Long studentId,
+            @Param("status") String status,
             @Param("offset") int offset,
             @Param("limit") int limit
     );
 
-    long countByStudentId(@Param("studentId") Long studentId);
+    long countByStudentId(@Param("studentId") Long studentId, @Param("status") String status);
 
     long countPendingByParent(@Param("parentUserId") Long parentUserId, @Param("status") String status);
 

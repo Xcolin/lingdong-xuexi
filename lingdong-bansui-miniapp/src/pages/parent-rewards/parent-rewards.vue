@@ -25,20 +25,20 @@
    <template v-else-if="ready&&!busy">
     <text>共 {{ total }} 项{{ tab==='rewards'?'奖励':'兑换记录' }}</text>
     <text v-if="!total">暂无{{ tab==='rewards'?'奖励':'兑换记录' }}</text>
-    <template v-if="tab==='rewards'"><view class="tabs"><button @tap="rewardFilter='ALL'">全部</button><button @tap="rewardFilter='ONLINE'">上架中</button><button @tap="rewardFilter='OFFLINE'">已下架</button></view>
-     <view v-for="reward in visibleRewards" :key="reward.id" class="card">
+    <template v-if="tab==='rewards'"><view class="tabs"><button @tap="setRewardFilter('ALL')">全部</button><button @tap="setRewardFilter('ONLINE')">上架中</button><button @tap="setRewardFilter('OFFLINE')">已下架</button></view>
+     <view v-for="reward in rewards" :key="reward.id" class="card">
       <text class="heading">{{ reward.rewardName }}</text><text>{{ reward.requiredPoints }} 积分 · {{ reward.status==='ONLINE'?'上架':'下架' }}</text><text>{{ reward.description||'暂无说明' }}</text><text>有效期：{{ reward.expiresAt?.replace('T',' ').slice(0,19)||'不限' }}</text>
       <template v-if="primary&&manage"><button class="reward-edit" :disabled="busy" @tap="edit(reward)">编辑奖励</button><button class="reward-delete" :disabled="busy" @tap="remove(reward)">删除奖励</button></template>
      </view>
     </template>
-    <template v-else><view class="tabs"><button @tap="exchangeFilter='PENDING_APPROVAL'">待审批</button><button @tap="exchangeFilter='PENDING_VERIFICATION'">待兑现</button><button @tap="exchangeFilter='VERIFIED'">已核销</button><button @tap="exchangeFilter='REJECTED'">已拒绝</button><button @tap="exchangeFilter='ALL'">全部</button></view>
-     <view v-for="exchange in visibleExchanges" :key="exchange.id" class="card">
+    <template v-else><view class="tabs"><button @tap="setExchangeFilter('PENDING_APPROVAL')">待审批</button><button @tap="setExchangeFilter('PENDING_VERIFICATION')">待兑现</button><button @tap="setExchangeFilter('VERIFIED')">已核销</button><button @tap="setExchangeFilter('REJECTED')">已拒绝</button><button @tap="setExchangeFilter('ALL')">全部</button></view>
+     <view v-for="exchange in exchanges" :key="exchange.id" class="card">
       <text class="heading">{{ exchange.rewardName }}</text><text>{{ exchange.requiredPoints }} 积分 · {{ statusName(exchange.status) }}</text><text>{{ exchange.description||'暂无说明' }}</text><text>审批截止：{{ exchange.approvalDeadline.replace('T',' ').slice(0,19) }}</text><text v-if="exchange.rejectReason">驳回原因：{{ exchange.rejectReason }}</text>
       <template v-if="primary&&review&&exchange.status==='PENDING_APPROVAL'"><button class="exchange-approve" :disabled="busy" @tap="process(exchange,'approve')">同意兑换</button><textarea :disabled="busy" v-model="reasons[exchange.id]" maxlength="500" placeholder="驳回原因（必填）" /><button class="exchange-reject" :disabled="busy||!reasons[exchange.id]?.trim()" @tap="process(exchange,'reject')">驳回兑换</button></template>
       <button class="exchange-verify" :disabled="busy" v-if="primary&&review&&exchange.status==='PENDING_VERIFICATION'" @tap="process(exchange,'verify')">确认已兑现</button>
      </view>
     </template>
-    <view v-if="total" class="tabs"><button :disabled="page<=1" @tap="loadPage(page-1)">上一页</button><text>第 {{ page }} 页</text><button :disabled="page*20>=total" @tap="loadPage(page+1)">下一页</button></view>
+    <view v-if="total" class="load-more"><text v-if="loadingMore">正在加载更多</text><button v-else-if="appendError" @tap="loadMore">加载失败，点击重试</button><text v-else-if="!hasMore">已经到底了</text></view>
    </template>
   </view>
  </template>
@@ -47,14 +47,14 @@
 <script setup lang="ts">
 import PrototypeIcon from '@/components/PrototypeIcon.vue';
 import {ref,reactive,computed} from 'vue';
-import {onShow,onHide,onUnload} from '@dcloudio/uni-app';
+import {onShow,onHide,onUnload,onReachBottom} from '@dcloudio/uni-app';
 import {parentRewardApi,canUseParentRewards,MANAGE_REWARDS,REVIEW_EXCHANGES,REWARD_CATEGORY_LABELS,type RewardIdentity,type RewardChild,type ParentReward,type RewardInput,type RewardCategoryValue} from '@/api/parent-reward';
 import {uploadRewardImage,downloadTaskAttachmentAs} from '@/api/attachment';
 import type {StudentRewardExchange} from '@/api/reward';
 import {getMiniappCapabilities} from '@/api/capability';
 import {getParentSession} from '@/session/parent-session';
 import {ApiError} from '@/api/http';
-const rewardFilter=ref('ALL'),exchangeFilter=ref('ALL');const visibleRewards=computed(()=>rewards.value.filter(r=>rewardFilter.value==='ALL'||r.status===rewardFilter.value));const visibleExchanges=computed(()=>exchanges.value.filter(r=>exchangeFilter.value==='ALL'||r.status===exchangeFilter.value));
+const rewardFilter=ref('ALL'),exchangeFilter=ref('ALL'),loadingMore=ref(false),hasMore=ref(false),appendError=ref('');
 const verification=ref<StudentRewardExchange|null>(null),verifiedDelivery=ref(false);
 const children=ref<RewardChild[]>([]),childIndex=ref(0),user=ref<RewardIdentity|null>(null);
 const child=computed(()=>children.value[childIndex.value]);
@@ -70,7 +70,7 @@ const categoryIndex=ref(0);
 const imagePreviewPath=ref(''),imageError=ref(''),uploadingImage=ref(false);
 let epoch=0;
 function current(n:number,token:string){return n===epoch&&getParentSession()?.accessToken===token;}
-function clearRows(){verification.value=null;verifiedDelivery.value=false;rewards.value=[];exchanges.value=[];total.value=0;ready.value=false;editing.value=false;for(const key of Object.keys(reasons))delete reasons[key];}
+function clearRows(){verification.value=null;verifiedDelivery.value=false;rewards.value=[];exchanges.value=[];total.value=0;ready.value=false;editing.value=false;loadingMore.value=false;hasMore.value=false;appendError.value='';for(const key of Object.keys(reasons))delete reasons[key];}
 function clear(){clearRows();children.value=[];user.value=null;}
 function failure(cause:unknown){if(cause instanceof ApiError&&([401,403,404].includes(cause.statusCode)||cause.code==='FEATURE_DISABLED'))clear();error.value=cause instanceof Error?cause.message:'操作未完成，请刷新核对结果';}
 async function access(n:number,token:string,permission?:string){
@@ -89,11 +89,29 @@ async function reload(){
 async function loadPage(target=1){
  const selected=child.value;if(!selected)return;const n=++epoch,token=getParentSession()?.accessToken;clearRows();busy.value=true;error.value='';
  try{if(!token){clear();return;}if(!await access(n,token,tab.value==='rewards'?MANAGE_REWARDS:REVIEW_EXCHANGES))return;
- const result=tab.value==='rewards'?await parentRewardApi.rewards(token,selected.studentId,target):await parentRewardApi.exchanges(token,selected.studentId,target);
+ const status=tab.value==='rewards'?rewardFilter.value:exchangeFilter.value;
+ const result=tab.value==='rewards'?await parentRewardApi.rewards(token,selected.studentId,target,status):await parentRewardApi.exchanges(token,selected.studentId,target,status);
  if(!current(n,token))return;if(tab.value==='rewards')rewards.value=result.items as ParentReward[];else exchanges.value=result.items as StudentRewardExchange[];
- page.value=result.page;total.value=result.total;ready.value=true;
+ page.value=result.page;total.value=result.total;hasMore.value=result.items.length>0&&result.page*(result.pageSize||20)<result.total;ready.value=true;
  }catch(cause){if(n===epoch)failure(cause);}finally{if(n===epoch)busy.value=false;}
 }
+async function loadMore(){
+ if(loadingMore.value||busy.value||editing.value||!ready.value||!hasMore.value)return;
+ const selected=child.value;if(!selected)return;const n=epoch,token=getParentSession()?.accessToken;if(!token||!current(n,token))return;
+ const status=tab.value==='rewards'?rewardFilter.value:exchangeFilter.value;
+ loadingMore.value=true;appendError.value='';
+ try{
+  const result=tab.value==='rewards'?await parentRewardApi.rewards(token,selected.studentId,page.value+1,status):await parentRewardApi.exchanges(token,selected.studentId,page.value+1,status);
+  if(!current(n,token))return;
+  if(tab.value==='rewards'){const previousCount=rewards.value.length;const ids=new Set(rewards.value.map(row=>row.id));rewards.value=[...rewards.value,...(result.items as ParentReward[]).filter(row=>{if(ids.has(row.id))return false;ids.add(row.id);return true;})];hasMore.value=rewards.value.length>previousCount&&result.page*(result.pageSize||20)<result.total;}
+  else{const previousCount=exchanges.value.length;const ids=new Set(exchanges.value.map(row=>row.id));exchanges.value=[...exchanges.value,...(result.items as StudentRewardExchange[]).filter(row=>{if(ids.has(row.id))return false;ids.add(row.id);return true;})];hasMore.value=exchanges.value.length>previousCount&&result.page*(result.pageSize||20)<result.total;}
+  page.value=result.page;total.value=result.total;
+ }catch(cause){if(current(n,token))appendError.value=cause instanceof Error?cause.message:'加载未完成';}
+ finally{if(n===epoch)loadingMore.value=false;}
+}
+function setRewardFilter(value:'ALL'|'ONLINE'|'OFFLINE'){if(rewardFilter.value===value)return;rewardFilter.value=value;void loadPage(1);}
+function setExchangeFilter(value:string){if(exchangeFilter.value===value)return;exchangeFilter.value=value;void loadPage(1);}
+onReachBottom(()=>{if(!appendError.value&&!editing.value)void loadMore();});
 function changeChild(event:Event){childIndex.value=Number((event as unknown as {detail:{value:string}}).detail.value);void loadPage(1);}
 function expiryDate(event:Event){const d=(event as unknown as {detail:{value:string}}).detail.value;form.expiresAt=d+'T'+(form.expiresAt.slice(11)||'23:59:59');}
 function expiryTime(event:Event){const t=(event as unknown as {detail:{value:string}}).detail.value;form.expiresAt=form.expiresAt.slice(0,10)+'T'+t+':00';}
@@ -179,6 +197,7 @@ button{border-radius:18rpx!important;font-size:26rpx!important;}button::after{bo
 
 .card>text{display:block;line-height:1.65;margin-bottom:12rpx;overflow-wrap:anywhere;}.reward-edit{background:#edf4ee!important;color:#184f40!important;}.reward-delete,.exchange-reject{background:#fff3f0!important;color:#b65a4d!important;border:1rpx solid #f0d4cd;}.exchange-approve,.exchange-verify,.reward-save{background:#184f40!important;color:#fff!important;}.card>button{margin-top:16rpx;}.card>textarea{margin:22rpx 0 12rpx;min-height:150rpx;}.reward-editor-actions{display:flex;gap:16rpx;}.reward-editor-actions button{flex:1;min-width:0;}.expiry-controls{display:flex;gap:14rpx;}.expiry-controls picker{flex:1;min-width:0;}.tabs{align-items:center;}.tabs button{min-width:0;}.field{overflow-wrap:anywhere;}button[disabled]{opacity:.45;}
 
+.load-more{margin:24rpx 0 0;text-align:center;}.load-more text{margin:0;color:#78847e;font-size:24rpx;}.load-more button{background:#edf4ee!important;color:#184f40!important;margin:0 auto;max-width:460rpx;}
 .verification-screen{padding:24rpx 0;}.verification-title{font-size:34rpx;text-align:center;font-weight:600;}.verification-card{background:white;border-radius:24rpx;padding:28rpx;margin:26rpx 0;}.verification-price{color:#f7940b;font-size:36rpx;font-weight:600;}.verification-row{display:flex;justify-content:space-between;gap:24rpx;border-bottom:1rpx solid #edf0e8;font-size:26rpx;}.delivery-check{display:flex;align-items:center;font-size:25rpx;line-height:1.6;margin:28rpx 0;}.verification-submit{background:#176c51;color:white;border-radius:20rpx;font-size:30rpx;}
 .editor-title{display:block;font-size:32rpx;font-weight:650;color:#162b24;margin-bottom:10rpx;}
 .form-row{margin-bottom:0;}

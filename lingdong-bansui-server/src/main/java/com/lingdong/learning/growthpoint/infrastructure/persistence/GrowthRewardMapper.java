@@ -14,11 +14,12 @@ public interface GrowthRewardMapper {
 
     List<GrowthReward> findManagedByStudentId(
             @Param("studentId") Long studentId,
+            @Param("status") String status,
             @Param("offset") int offset,
             @Param("limit") int limit
     );
 
-    long countManagedByStudentId(@Param("studentId") Long studentId);
+    long countManagedByStudentId(@Param("studentId") Long studentId, @Param("status") String status);
 
     List<GrowthReward> findAvailableByStudentId(
             @Param("studentId") Long studentId,

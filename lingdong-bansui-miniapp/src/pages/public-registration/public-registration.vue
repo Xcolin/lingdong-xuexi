@@ -1,6 +1,6 @@
 <template>
  <view class="ld-page access-page registration-page">
-  <text class="ld-heading-title">注册成长伙伴账号</text>
+  <AccessBrand/><text class="ld-heading-title">注册成长伙伴账号</text>
   <view class="registration-steps"><view v-for="(label,index) in ['填写信息','验证身份','确认注册']" :key="label" :class="['registration-step',{active:step===index+1,complete:step>index+1}]"><text class="step-number">{{index+1}}</text><text>{{label}}</text></view></view>
   <view class="access-card">
    <view v-if="step===1">
@@ -28,6 +28,7 @@
  </view>
 </template>
 <script setup lang="ts">
+import AccessBrand from '@/components/AccessBrand.vue';
 import {accountError,contactError,registrationPayload,advanceRegistrationStep} from './registration-flow';
 import LoginConsent from '@/components/LoginConsent.vue';
 import {ref,watch} from 'vue';
@@ -80,4 +81,5 @@ async function submit(){if(busy.value||!context.value)return;error.value=account
 
 .registration-page{background:#f5f9f3;padding:32rpx 28rpx 60rpx;}.ld-heading-title{font-size:34rpx;text-align:center;display:block;margin-bottom:35rpx;}.registration-steps{padding:0 20rpx;margin-bottom:30rpx;}.step-number{width:42rpx;height:42rpx;font-size:24rpx;}.registration-step{font-size:23rpx;}.access-card{border:0;border-radius:26rpx;background:white;padding:26rpx;box-shadow:none;}.registration-field{display:flex;align-items:center;gap:20rpx;margin-top:20rpx;}.field-label{width:130rpx;flex-shrink:0;font-size:26rpx;}.registration-field>input,.registration-code-row{flex:1;min-width:0;}.registration-field input{background:#fafcfb;border:1rpx solid #dfe7e1;border-radius:16rpx;height:84rpx;padding:0 20rpx;box-sizing:border-box;}.registration-code-button{padding:0 10rpx;font-size:22rpx;}.access-primary{height:96rpx;line-height:96rpx;border-radius:18rpx;background:#14664c;}.access-tip{font-size:23rpx;line-height:1.6;}
 .registration-steps{justify-content:space-between;gap:10rpx;}.review-row{display:flex;justify-content:space-between;gap:24rpx;padding:24rpx 0;border-bottom:1rpx solid #edf0e8;font-size:27rpx;}.review-row text:last-child{overflow-wrap:anywhere;text-align:right;}
+.registration-page::before,.registration-page::after{display:none!important;}
 </style>

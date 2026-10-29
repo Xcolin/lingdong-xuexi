@@ -107,6 +107,17 @@ public class AuthenticationController {
                 .toList();
     }
 
+    public record DevicePageResponse(List<DeviceSessionResponse> items, long total, int page, int pageSize) { }
+
+    @GetMapping("/devices/page")
+    public DevicePageResponse pageCurrentUserDevices(@AuthenticationPrincipal AuthenticatedUser currentUser,
+            @RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int pageSize) {
+        var result = authenticationApplicationService.pageCurrentUserDevices(currentUser.userId(), page, pageSize);
+        return new DevicePageResponse(result.items().stream()
+                .map(session -> toDeviceSessionResponse(session, currentUser.sessionId())).toList(),
+                result.total(), result.page(), result.pageSize());
+    }
+
     @DeleteMapping("/devices/{sessionId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void signOutDevice(@AuthenticationPrincipal AuthenticatedUser currentUser, @PathVariable Long sessionId) {
@@ -127,6 +138,18 @@ public class AuthenticationController {
         return accountSecurityEventService.findRecent(currentUser.userId(), unreadOnly).stream()
                 .map(this::toSecurityEventResponse)
                 .toList();
+    }
+
+    public record SecurityEventPageResponse(List<AccountSecurityEventResponse> items, long total,
+            int page, int pageSize, long unreadWarningTotal) { }
+
+    @GetMapping("/security-events/page")
+    public SecurityEventPageResponse pageSecurityEvents(@AuthenticationPrincipal AuthenticatedUser currentUser,
+            @RequestParam(defaultValue = "false") boolean unreadOnly,
+            @RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int pageSize) {
+        var result=accountSecurityEventService.findPage(currentUser.userId(), unreadOnly, page, pageSize);
+        return new SecurityEventPageResponse(result.items().stream().map(this::toSecurityEventResponse).toList(),
+                result.total(), result.page(), result.pageSize(), result.unreadWarningTotal());
     }
 
     @PostMapping("/security-events/{eventId}/read")

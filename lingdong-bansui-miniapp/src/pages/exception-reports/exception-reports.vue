@@ -40,14 +40,12 @@
         <view v-if="total || error" class="pager"><text v-if="loading">正在加载</text><button v-else-if="error" class="pager-button" @tap="load(page + 1)">加载失败，点击重试</button><text v-else>{{ exhausted || reports.length >= total ? '已全部加载' : '上滑加载更多' }}</text></view>
       </view>
     </template>
-  <AppTabBar v-if="identity === 'teacher'" :items="TEACHER_TABS" :active="2" />
   </view>
 </template>
 
 <script setup lang="ts">
 import NativeStatusSpacer from '@/components/NativeStatusSpacer.vue';
-import AppTabBar from '@/components/AppTabBar.vue';
-import { TEACHER_TABS, ORG_TABS } from '@/config/tabbar';
+import { prepareSubmission, confirmSubmission, stableSubmissionOwner, migratePending, type SubmissionEntry } from '@/models/exception-report-submission';
 import { computed, ref } from 'vue';
 import { onLoad, onPullDownRefresh, onReachBottom, onShow, onHide, onUnload } from '@dcloudio/uni-app';
 import { requireExceptionAccess } from '@/api/exception-access';
@@ -68,6 +66,8 @@ const enabled = ref(false);
 const error=ref(''),page=ref(1),total=ref(0),statusFilter=ref<ExceptionReportStatus>();
 const exhausted=ref(false);
 let revision=0; let loadingPage=false;
+let formOwner='';
+function submissionOwner(){return JSON.stringify([getOrganizationSession()?.sessionId,identity.value,uni.getStorageSync('lingdong.selected-organization')]);}
 function reset(){exhausted.value=false;error.value='';loadingPage=false;page.value=0;creating.value=false;revision++;reports.value=[];total.value=0;permissionCodes.value=[];enabled.value=false;classes.value=[];students.value=[];selectedClass.value=undefined;selectedStudent.value=undefined;handlingId.value='';handlingNote.value='';content.value='';submitting.value=false;loading.value=false;}
 function active(n:number,token:string){return n===revision&&getOrganizationSession()?.accessToken===token;}
 function failed(cause:unknown,message:string){if(cause instanceof ApiError&&([401,403,404].includes(cause.statusCode)||cause.code==='FEATURE_DISABLED'))reset();error.value=cause instanceof Error?cause.message:message;}
@@ -98,6 +98,7 @@ async function load(target=1): Promise<void> {
     const result=await listExceptionReports(session.accessToken,target,20,statusFilter.value);
     if(!active(n,session.accessToken))return;
     if(scope!==JSON.stringify(uni.getStorageSync('lingdong.selected-organization'))){reset();return;}
+      formOwner=submissionOwner();
     if(active(n,session.accessToken)){const previousCount=reports.value.length;reports.value=[...new Map((target > 1 ? [...reports.value,...result.items] : result.items).map(item=>[item.id,item])).values()];page.value=result.page;total.value=result.total;exhausted.value=!result.items.length||(target>1&&reports.value.length===previousCount)||target*20>=result.total;}
   } catch(cause) { if(active(n,session.accessToken)&&scope===JSON.stringify(uni.getStorageSync('lingdong.selected-organization')))failed(cause,'报备记录加载失败'); }
   finally { if(n===revision){loading.value = false;loadingPage=false;} }
@@ -117,17 +118,36 @@ async function submit(): Promise<void> {
   if (!session || !selectedClass.value || !selectedStudent.value || !content.value.trim()) {
     return void uni.showToast({ title: '请完整填写报备内容', icon: 'none' });
   }
+  const owner=submissionOwner();
+  if(owner!==formOwner){reset();return;}
+  const sameOwner=()=>owner===submissionOwner();
+  const snapshot={classOrganizationId:selectedClass.value.classId,studentId:selectedStudent.value.studentId,exceptionType:typeOptions[typeIndex.value].value,content:content.value.trim()};
   submitting.value = true;
   const n=revision;
   try {
-    await requireExceptionAccess(session.accessToken,identity.value,'EXCEPTION_REPORT_CREATE');if(!active(n,session.accessToken))return;
-    await createExceptionReport(session.accessToken, { classOrganizationId: selectedClass.value.classId,
-      studentId: selectedStudent.value.studentId, exceptionType: typeOptions[typeIndex.value].value,
-      content: content.value.trim(), idempotencyKey: `mini-${Date.now()}-${Math.random().toString(36).slice(2, 8)}` });
-    if(!active(n,session.accessToken))return;content.value = ''; selectedStudent.value = undefined; await load();
+    const access=await requireExceptionAccess(session.accessToken,identity.value,'EXCEPTION_REPORT_CREATE');if(!active(n,session.accessToken))return;
+    if(!sameOwner())return;
+    const selected=uni.getStorageSync('lingdong.selected-organization');
+    const stableOwner=stableSubmissionOwner(access.user.userId,identity.value,selected?.accessToken===session.accessToken?selected.organizationId:'');
+    const storageKey='lingdong.exception-report.pending.v2';
+    const stored=uni.getStorageSync(storageKey);
+    let entries:SubmissionEntry[]=Array.isArray(stored)?stored:[];
+    const legacy=uni.getStorageSync('lingdong.exception-report.pending.v1');
+    if(Array.isArray(legacy)&&legacy.length){
+      entries=[...entries,...migratePending(legacy,session.sessionId,access.user.userId)];
+      uni.setStorageSync(storageKey,entries);
+      uni.removeStorageSync('lingdong.exception-report.pending.v1');
+    }
+    const attempt=prepareSubmission(entries,stableOwner,snapshot);
+    // Persist before sending; a storage failure must not send an untracked request.
+    uni.setStorageSync(storageKey,attempt.entries);
+    await createExceptionReport(session.accessToken,attempt.request);
+    const latest=uni.getStorageSync(storageKey);
+    uni.setStorageSync(storageKey,confirmSubmission(Array.isArray(latest)?latest:[],attempt.request.idempotencyKey));
+    if(!active(n,session.accessToken)||!sameOwner())return;content.value = ''; selectedStudent.value = undefined; await load();
     uni.showToast({ title: '报备已提交', icon: 'success' });
-  } catch(cause) { if(active(n,session.accessToken))failed(cause,'报备提交失败'); }
-  finally { if(active(n,session.accessToken))submitting.value = false; }
+  } catch(cause) { if(active(n,session.accessToken)&&sameOwner())failed(cause,'报备提交失败'); }
+  finally { if(active(n,session.accessToken)&&sameOwner())submitting.value = false; }
 }
 function startHandle(id: string): void { handlingId.value = id; handlingNote.value = ''; }
 async function confirmHandle(item: ExceptionReport): Promise<void> {

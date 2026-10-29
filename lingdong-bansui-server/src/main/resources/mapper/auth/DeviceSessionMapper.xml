@@ -58,6 +58,16 @@
         ORDER BY last_active_at DESC, id DESC
     </select>
 
+    <select id="countActiveByUserId" resultType="long">
+        SELECT COUNT(*) FROM auth_device_session
+        WHERE user_id = #{userId} AND status = 'ACTIVE' AND refresh_expires_at &gt; #{now}
+    </select>
+    <select id="findActivePageByUserId" resultMap="DeviceSessionMap">
+        SELECT <include refid="sessionColumns"/> FROM auth_device_session
+        WHERE user_id = #{userId} AND status = 'ACTIVE' AND refresh_expires_at &gt; #{now}
+        ORDER BY last_active_at DESC, id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
     <update id="rotateTokens">
         UPDATE auth_device_session
         SET access_token_hash = #{accessTokenHash},

@@ -100,15 +100,21 @@ public class TaskReviewService {
         for (TaskReviewStatusCountRow row : reviewMapper.countByStatus(currentUser.userId())) {
             statusCounts.put(row.checkinStatus(), row.cnt());
         }
+        // total 与 statusTab 口径一致：PENDING_REVIEW 取 SUBMITTED 计数，ALL 为三状态合计，
+        // 避免 items 按 tab 筛选而 total 恒为全状态合计导致的分页总数失真。
+        long total = switch (normalizedTab) {
+            case "PENDING_REVIEW" -> statusCounts.getOrDefault("SUBMITTED", 0L);
+            case "APPROVED" -> statusCounts.getOrDefault("APPROVED", 0L);
+            case "REJECTED" -> statusCounts.getOrDefault("REJECTED", 0L);
+            default -> statusCounts.getOrDefault("SUBMITTED", 0L)
+                    + statusCounts.getOrDefault("APPROVED", 0L)
+                    + statusCounts.getOrDefault("REJECTED", 0L);
+        };
         return new TaskReviewPage(
                 reviewMapper.findPage(currentUser.userId(), normalizedTab,
                                 (normalizedPage - 1) * normalizedPageSize, normalizedPageSize)
                         .stream().map(this::toView).toList(),
-                normalizedPage, normalizedPageSize,
-                statusCounts.getOrDefault("SUBMITTED", 0L)
-                        + statusCounts.getOrDefault("APPROVED", 0L)
-                        + statusCounts.getOrDefault("REJECTED", 0L),
-                statusCounts);
+                normalizedPage, normalizedPageSize, total, statusCounts);
     }
 
     @Transactional(readOnly = true)

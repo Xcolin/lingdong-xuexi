@@ -1,4 +1,4 @@
-<template><view class="stats-page"><NativeStatusSpacer/>
+<template><view class="stats-page has-tabbar"><NativeStatusSpacer/>
   <view class="header"><button @tap="back">‹</button><text>数据概览</text></view>
   <text v-if="error" class="error">{{ error }}</text>
   <view v-if="loading" class="loading">正在加载</view>
@@ -20,13 +20,16 @@
     </view>
     <text v-if="!hasAnyValue" class="empty">暂无可显示的统计数据</text>
   </template>
+<AppTabBar v-if="tabItems" :items="tabItems" :active="2"/>
 </view></template>
 
 <script setup lang="ts">
 import NativeStatusSpacer from '@/components/NativeStatusSpacer.vue';
+import AppTabBar from '@/components/AppTabBar.vue';
 import PrototypeIcon from '@/components/PrototypeIcon.vue';
 import { ref, computed } from 'vue';
-import { onShow, onHide, onUnload } from '@dcloudio/uni-app';
+import { onLoad, onShow, onHide, onUnload } from '@dcloudio/uni-app';
+import { ORG_TABS, TEACHER_TABS, type TabItem } from '@/config/tabbar';
 import {
   getOrganizationWorkbenchStatistics,
   type OrganizationWorkbenchStatistics
@@ -39,6 +42,9 @@ const loading = ref(true);
 const allowed = ref(false);
 const error = ref('');
 let revision = 0;
+const identity = ref<'organization' | 'teacher' | ''>('');
+const tabItems = computed<TabItem[] | null>(() => identity.value === 'teacher' ? TEACHER_TABS : identity.value === 'organization' ? ORG_TABS : null);
+onLoad((q?: Record<string, string>) => { const id = q?.identity; identity.value = id === 'teacher' ? 'teacher' : id === 'organization' ? 'organization' : ''; });
 
 function formatCount(value: number | null | undefined): string {
   return value == null ? '—' : value.toLocaleString('en-US');
@@ -80,6 +86,12 @@ onShow(async () => {
   } catch (e) {
     if (n !== revision || getOrganizationSession()?.accessToken !== session.accessToken) return;
     if (e instanceof ApiError && (e.statusCode === 401 || e.statusCode === 403)) {
+      if (identity.value === 'teacher') {
+        // 教师身份无数据概览权限时不取消会话，回教师首页并如实提示。
+        uni.showToast({ title: '数据概览暂不可用', icon: 'none' });
+        await uni.reLaunch({ url: '/pages/teacher-home/teacher-home' });
+        return;
+      }
       clearOrganizationSession();
       await uni.reLaunch({ url: '/pages/index/index' });
       return;
@@ -93,12 +105,14 @@ onHide(clear);
 onUnload(clear);
 
 function back() {
-  uni.navigateBack();
+  // 页签进入时（redirectTo 后页面栈只有本页）返回首页而非空栈回退。
+  if (getCurrentPages().length > 1) uni.navigateBack();
+  else uni.reLaunch({ url: identity.value === 'teacher' ? '/pages/teacher-home/teacher-home' : '/pages/organization-home/organization-home' });
 }
 </script>
 
 <style scoped>
-.stats-page{min-height:100vh;box-sizing:border-box;background:#f5f8f4;color:#182d26;padding:0 24rpx 48rpx}
+.stats-page{min-height:100vh;box-sizing:border-box;background:#f5f8f4;color:#182d26;padding:0 24rpx 150rpx}
 .header{height:88rpx;margin:0 -24rpx 12rpx;padding:0 112px;position:relative;display:flex;align-items:center;justify-content:center;background:#fff;font-size:30rpx;font-weight:650}
 .header>button{position:absolute;left:14rpx;top:0;margin:0;padding:0;width:56rpx;height:88rpx;line-height:80rpx;background:transparent;font-size:50rpx}
 .summary-card{display:flex;align-items:center;gap:18rpx;background:linear-gradient(120deg,#21664f,#0b4b3d);border-radius:24rpx;padding:28rpx 26rpx;margin-bottom:20rpx;color:#fff}

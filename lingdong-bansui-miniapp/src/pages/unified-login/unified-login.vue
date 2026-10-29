@@ -1,6 +1,6 @@
 <template>
  <view class="ld-page access-page compact-login" :class="{'wechat-landing':mode==='WECHAT'&&!bindingTicket}">
-  <view class="login-heading"><text class="ld-heading-title">一起陪伴，让成长发生</text><text class="brand-caption">记录每一步成长，连接每一份陪伴</text></view>
+  <AccessBrand compact/><view class="login-heading"><text class="ld-heading-title">一起陪伴，让成长发生</text><text class="brand-caption">记录每一步成长，连接每一份陪伴</text></view>
   <view class="login-panel"><view v-if="mode==='WECHAT'&&!bindingTicket" class="panel-heading"><text class="panel-title">账号登录</text><view class="panel-rule"/></view>
   <button v-if="mode==='WECHAT'&&!bindingTicket" class="access-link student-entry hero-student" @tap="openStudent"><view class="entry-copy"><text class="entry-title">成长小主人登录</text><text class="entry-subtitle">专属成长空间 · 登录码 / 扫码</text></view><text class="entry-arrow">›</text></button>
   <view v-if="bindingTicket&&!bindingChoice" class="binding-choice"><text class="binding-title">首次微信关联账号</text><text class="access-tip">关联已有成长伙伴账号，保留原来的成长记录。</text><button class="binding-option" :disabled="busy" @tap="chooseBinding('EMAIL')"><text>邮箱验证码绑定</text><text>使用已绑定邮箱验证身份 ›</text></button><button class="binding-option" :disabled="busy" @tap="chooseBinding('PASSWORD')"><text>已有账号密码绑定</text><text>使用账号与密码验证身份 ›</text></button><button class="access-link" :disabled="busy" @tap="restartWechat">重新微信授权 / 切换账号</button></view>
@@ -24,6 +24,7 @@
 </template>
 <script setup lang="ts">
 import {ref,watch,onBeforeUnmount} from 'vue';
+import AccessBrand from '@/components/AccessBrand.vue';
 import {onLoad} from '@dcloudio/uni-app';
 import {request,ApiError} from '@/api/http';
 import {routeRequiredPasswordChange,routeTeacherAccount} from '@/session/account-login-routing';
@@ -85,7 +86,7 @@ async function submit(){if(busy.value||!requireConsent())return;if(mode.value===
 .compact-login .login-heading {flex:none;margin-top:24rpx;}
 .compact-login .login-footer {flex:none;padding-top:24rpx;}
 .compact-login::before {flex:none;padding-top:28rpx;padding-bottom:36rpx;margin-bottom:0;}
-.compact-login::after {top:24rpx;}
+.compact-login::after {top:70rpx;}
 .compact-login .ld-heading-title {font-size:40rpx;line-height:1.25;}
 .compact-login .ld-heading-sub {margin:8rpx 0 12rpx;font-size:26rpx;}
 .compact-login .access-card {flex:none;margin-top:28rpx;margin-bottom:0;padding:16rpx 12rpx;}
@@ -146,7 +147,7 @@ async function submit(){if(busy.value||!requireConsent())return;if(mode.value===
 
 .compact-login {padding-left:28rpx;padding-right:28rpx;padding-bottom:max(24rpx,env(safe-area-inset-bottom));}
 .compact-login::before {padding-top:36rpx;padding-bottom:40rpx;margin-left:-28rpx;margin-right:-28rpx;font-size:38rpx;}
-.compact-login::after {top:30rpx;}
+.compact-login::after {top:70rpx;}
 .compact-login .login-heading,.wechat-landing .login-heading {margin-top:36rpx;margin-bottom:32rpx;}
 .compact-login .ld-heading-title {font-size:38rpx;letter-spacing:1rpx;}
 .brand-caption {display:block;text-align:center;font-size:24rpx;color:#849389;margin-top:16rpx;line-height:1.6;}
@@ -161,7 +162,7 @@ async function submit(){if(busy.value||!requireConsent())return;if(mode.value===
 .signature-line {height:1rpx;width:36rpx;background:#bdcec1;}
 @media (max-height:650px) {
 .compact-login::before {padding-top:24rpx;padding-bottom:28rpx;}
-.compact-login::after {top:20rpx;}
+.compact-login::after {top:25rpx;}
 .compact-login .login-heading,.wechat-landing .login-heading {margin-top:22rpx;margin-bottom:24rpx;}
 .login-panel {padding-top:24rpx;padding-bottom:24rpx;}
 .wechat-landing .access-primary,.compact-login .student-entry {height:132rpx!important;}
@@ -182,4 +183,5 @@ async function submit(){if(busy.value||!requireConsent())return;if(mode.value===
 
 .compact-login{background:#f3f9f2;padding:70rpx 40rpx 48rpx;}.login-heading{padding:30rpx 0 55rpx;margin:0;}.login-heading .ld-heading-title{font-size:44rpx;color:#144d39;}.brand-caption{font-size:25rpx;color:#748276;}.login-panel{border-radius:28rpx;background:#fff;padding:30rpx;}.panel-title{font-size:36rpx;}.panel-rule{display:none;}.compact-login .hero-student{background:#184f40!important;color:#fff!important;border:1rpx solid #184f40!important;box-shadow:0 10rpx 24rpx #184f4018;}.compact-login .hero-student .entry-title,.compact-login .hero-student .entry-arrow{color:#fff!important;}.compact-login .hero-student .entry-subtitle{color:#c1d9ce!important;}.access-card{box-shadow:none;border:0;padding:0;background:transparent;}.access-primary{background:#14664c;border-radius:20rpx;min-height:100rpx;}.entry-title{font-size:30rpx;}.entry-subtitle{font-size:23rpx;}.login-consent{margin-top:30rpx;}.login-signature{margin-top:40rpx;}
 .binding-choice{padding:10rpx 0;}.binding-title{display:block;font-size:36rpx;font-weight:600;color:#164d39;margin-bottom:18rpx;}.binding-option{display:flex;flex-direction:column;align-items:flex-start;gap:12rpx;width:100%;background:#eef7ee;color:#184f40;border:1rpx solid #dcebdc;border-radius:20rpx;padding:24rpx;margin:22rpx 0;text-align:left;}.binding-option text:first-child{font-size:30rpx;font-weight:600;}.binding-option text:last-child{font-size:23rpx;color:#728376;}.binding-heading{display:flex;align-items:center;gap:16rpx;margin-bottom:24rpx;}.binding-heading button{background:transparent;font-size:24rpx;padding:0;color:#176c51;margin:0;}.binding-heading>text{font-size:28rpx;font-weight:600;}
+.compact-login::before,.compact-login::after{display:none!important;}
 </style>

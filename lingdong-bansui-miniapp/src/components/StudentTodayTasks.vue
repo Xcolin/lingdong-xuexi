@@ -34,6 +34,7 @@ import { request } from '@/api/http';
 import { getMiniappCapabilities } from '@/api/capability';
 import { listStudentTaskAssignments, type StudentTaskAssignment } from '@/api/learning-task';
 import { getStudentSession } from '@/session/student-session';
+import { studentTodayTaskUrl } from '@/pages/task-detail/task-detail-presentation';
 const tasks = ref<StudentTaskAssignment[]>([]), total = ref(0), busy = ref(false), allowed = ref(false), error = ref('');
 const completed = computed(() => tasks.value.filter(t => t.effectiveStatus === 'COMPLETED').length);
 const underway = computed(() => tasks.value.filter(t => ['IN_PROGRESS', 'NEEDS_IMPROVEMENT'].includes(t.effectiveStatus)).length);
@@ -74,7 +75,7 @@ async function load() {
 }
 function viewAll(){if(allowed.value&&!busy.value)void uni.navigateTo({url:'/pages/task-list/task-list'});}
 function open(id: string) {
-  if (allowed.value && !busy.value) void uni.navigateTo({ url: `/pages/task-detail/task-detail?id=${encodeURIComponent(id)}` });
+  if (allowed.value && !busy.value) void uni.navigateTo({ url: studentTodayTaskUrl(id) });
 }
 function sourceName(source: string) { return ({ FAMILY: '家庭', TEACHER: '教师', ORGANIZATION: '机构' } as Record<string, string>)[source] || '学习任务'; }
 function statusName(status: string) { return ({ PENDING_CLAIM: '待认领', IN_PROGRESS: '进行中', PENDING_REVIEW: '待审核', NEEDS_IMPROVEMENT: '待优化', PAUSED: '暂停中', EXEMPT: '免执行', COMPLETED: '已完成' } as Record<string, string>)[status] || status; }

@@ -25,9 +25,10 @@ public class ParentRewardExchangeController {
     @GetMapping("/students/{studentId}")
     public GrowthRewardExchangePageResponse list(@AuthenticationPrincipal AuthenticatedUser user,
             @PathVariable Long studentId, @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "20") int pageSize) {
+            @RequestParam(defaultValue = "20") int pageSize,
+            @RequestParam(required = false) String status) {
         ParentRewardController.requireMiniappParent(user,parentActors);
-        return GrowthRewardExchangePageResponse.from(service.findManaged(user, studentId, page, pageSize));
+        return GrowthRewardExchangePageResponse.from(service.findManaged(user, studentId, page, pageSize, status));
     }
 
     @RequirePermission("MINIAPP_REWARD_EXCHANGE_REVIEW_CHILD")

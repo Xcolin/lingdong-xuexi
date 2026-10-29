@@ -141,6 +141,11 @@ export function rejectParentRelationshipInvitation(
   });
 }
 
+export interface ParentRelationshipPage<T>{items:T[];total:number;page:number;pageSize:number}
+export function pageParentRelationshipStudents(token:string,page:number){return parentRequest<ParentRelationshipPage<ParentRelationshipStudent>>(`/parent-relationships/students/page?page=${page}&pageSize=20`,token);}
+export function pageReceivedInvitations(token:string,page:number){return parentRequest<ParentRelationshipPage<ParentReceivedInvitation>>(`/parent-relationships/received-invitations/page?page=${page}&pageSize=20`,token);}
+export function pageInactiveRelationships(token:string,page:number){return parentRequest<ParentRelationshipPage<ParentInactiveRelationship>>(`/parent-relationships/inactive/page?page=${page}&pageSize=20`,token);}
+
 function parentRequest<T>(
   path: string,
   accessToken: string,

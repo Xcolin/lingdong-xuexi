@@ -1,12 +1,11 @@
 <template>
   <view class="page has-tabbar prototype-workspace">
-    <PixelPageHeader v-if="!editing" title="我的任务" />
+    <PixelPageHeader v-if="!editing" title="任务" align="start" tone="page" />
     
-    <button v-if="canCreate" :disabled="busy" @tap="edit()">发布任务</button>
     <text v-if="busy">正在处理任务</text><text v-if="error" class="error">{{ error }}</text>
-    <view v-if="editing" class="card task-editor">
-      <PixelPageHeader :title="confirming?'确认发布':scopeStep?'选择范围':original?'编辑草稿':'新建任务'" back intercept-back @back="backStep" />
-      <text class="publish-step">{{confirming?'3 确认发布':scopeStep?'2 选择范围':'1 填写任务'}}</text><view v-if="!confirming">
+    <view v-if="editing" class="task-editor-layer">
+      <PixelPageHeader flush :title="confirming?'确认发布':scopeStep?'选择范围':original?'编辑草稿':'新建任务'" back intercept-back @back="backStep" />
+      <scroll-view scroll-y class="card task-editor"><text class="publish-step">{{confirming?'3 确认发布':scopeStep?'2 选择范围':'1 填写任务'}}</text><view v-if="!confirming">
       <view v-if="!scopeStep" class="form-section"><text class="form-section-title">任务信息</text>
         <view class="required-label">任务标题<text class="req-mark"> *</text></view>
         <input v-model="form.title" :disabled="busy" maxlength="20" placeholder="每天阅读30分钟" />
@@ -34,28 +33,28 @@
         </view>
       </view><view v-if="scopeStep" class="form-section"><text class="form-section-title">参与范围</text>
       <view class="required-label">选择参与的成长小主人<text class="req-mark"> *</text></view>
-      <view v-for="student in students" :key="student.id" class="child-card" :class="{selected:form.studentIds.includes(student.id),disabled:student.relationshipRole!=='PRIMARY_GUARDIAN'}" @tap="toggleStudent(student)">
+      <scroll-view v-if="students.length" class="member-picker" scroll-y :style="{height:Math.min(students.length,3)*176+'rpx'}"><view v-for="student in students" :key="student.id" class="child-card" :class="{selected:form.studentIds.includes(student.id),disabled:student.relationshipRole!=='PRIMARY_GUARDIAN'}" @tap="toggleStudent(student)">
         <view class="child-avatar">{{ student.studentName.slice(0,1) }}</view>
         <view class="child-info">
           <text class="child-name">{{ student.studentName }}</text>
           <text class="child-meta">{{ childMeta(student) }}</text>
         </view>
         <view class="child-check" :class="{on:form.studentIds.includes(student.id)}">✓</view>
-      </view>
+      </view></scroll-view>
       <text v-if="!students.some(item=>item.relationshipRole==='PRIMARY_GUARDIAN')">暂无可创建任务的主监护孩子</text>
       <view class="required-label">可见范围<text class="req-mark"> *</text></view>
-      <text class="hint">仅限本校/本机构的成员，不可跨校选择</text>
-      <view v-for="opt in visibilityOptions" :key="opt.value" class="visibility-option" :class="{selected:form.visibility===opt.value}" @tap="form.visibility=opt.value">
+      <text class="hint">参与成员来自当前家庭，访问仍需符合监护关系与已授予权限</text>
+      <view v-for="opt in visibilityOptions" :key="opt.value" class="visibility-option" :class="{selected:form.visibility===opt.value,unavailable:!familyTaskVisibilityAvailable(opt.value)}" @tap="chooseVisibility(opt.value)">
         <view class="visibility-radio" :class="{on:form.visibility===opt.value}"></view>
         <view class="visibility-body">
-          <text class="visibility-title">{{ visibilityTitle(opt.value) }}</text>
+          <text class="visibility-title">{{ visibilityTitle(opt.value) }}{{familyTaskVisibilityAvailable(opt.value)?'':'（未开放）'}}</text>
           <text class="visibility-desc">{{ visibilityDesc(opt.value) }}</text>
         </view>
       </view>
       <textarea v-model="form.remark" :disabled="busy" maxlength="200" placeholder="任务备注（可选）" />
 
       </view></view><view v-else class="confirmation"><view class="confirm-hero"><view class="confirm-icon"><PrototypeIcon :name="typeIcons[form.taskType||'']||'book'" :size="26" /></view><view class="confirm-hero-main"><text class="confirm-title">{{form.title}}</text><text class="confirm-desc">{{form.description||'未填写任务描述'}}</text></view><view class="type-badge">{{ typeLabel }}</view></view><view class="confirm-table"><view class="confirm-row"><text class="confirm-label">任务日期</text><text class="confirm-value">{{ confirmDateRange }}</text></view><view class="confirm-row"><text class="confirm-label">重复频率</text><text class="confirm-value">{{ frequencySummary }}</text></view><view class="confirm-row"><text class="confirm-label">参与成员</text><text class="confirm-value">{{ memberSummary }}</text></view><view class="confirm-row"><text class="confirm-label">可见范围</text><text class="confirm-value">{{ visibilitySummary }}</text></view></view><view class="confirm-note">发布后，成长小主人即可在任务列表中看到，并可以按任务日期进行打卡。</view></view>
-      <view class="publish-actions"><button :disabled="busy" @tap="backStep">{{confirming?'上一步':(scopeStep?'返回修改':'取消')}}</button><button v-if="!confirming" :disabled="busy||!canCreate||!students.some(x=>x.relationshipRole==='PRIMARY_GUARDIAN')" @tap="save(false)">保存草稿</button><button v-if="canPublish" class="main-action" :disabled="busy||!canCreate||!students.some(x=>x.relationshipRole==='PRIMARY_GUARDIAN')" @tap="nextStep">{{confirming?'确认发布':'下一步'}}</button></view>
+      </scroll-view><view class="publish-actions"><button :disabled="busy" @tap="backStep">{{confirming?'上一步':(scopeStep?'返回修改':'取消')}}</button><button v-if="!confirming" :disabled="busy||!canCreate||!students.some(x=>x.relationshipRole==='PRIMARY_GUARDIAN')" @tap="save(false)">保存草稿</button><button v-if="canPublish" class="main-action" :disabled="busy||!canCreate||!students.some(x=>x.relationshipRole==='PRIMARY_GUARDIAN')" @tap="nextStep">{{confirming?'确认发布':'下一步'}}</button></view>
     </view>
     <template v-else-if="loaded && !busy">
       <view class="status-tabs">
@@ -63,7 +62,7 @@
       </view>
       <view class="filter-row">
         <picker :range="typeFilterLabels" :disabled="busy" @change="typeFilterChanged"><view class="filter-chip">类型：{{ typeFilterLabels[typeFilterIndex] }}</view></picker>
-        <picker :range="studentFilterLabels" :disabled="busy" @change="studentFilterChanged"><view class="filter-chip">孩子：{{ studentFilterLabels[studentFilterIndex] }}</view></picker>
+        <picker :range="studentFilterLabels" :value="studentFilterIndex" :disabled="busy" @change="studentFilterChanged"><view class="filter-chip">孩子：{{ studentFilterLabels[studentFilterIndex] }}</view></picker>
         <view class="filter-chip muted">最新发布</view>
       </view>
       <text>共 {{ total }} 项家庭任务</text><view v-if="!total" class="task-empty"><view class="empty-mark">✓</view><text class="heading">还没有成长任务</text><text>从一个小目标开始，记录每一步进步</text></view>
@@ -79,28 +78,32 @@
           <button v-if="task.status==='DRAFT'&&canPublish" @tap="publish(task)">发布任务</button>
         </view>
       </view>
-      <view v-if="total" class="paging"><button :disabled="page<=1" @tap="load(page-1)">上一页</button><text>第 {{ page }} 页</text><button :disabled="page*20>=total" @tap="load(page+1)">下一页</button></view>
+      <view v-if="total" class="load-more"><text v-if="loadingMore">正在加载更多</text><button v-else-if="appendError" @tap="loadMore">加载失败，点击重试</button><text v-else-if="!hasMore">已经到底了</text></view>
     </template>
+  <button v-if="canCreate&&!editing" class="task-create-entry" :disabled="busy" @tap="edit()">＋ 发布任务</button>
   <AppTabBar v-if="!editing" :items="PARENT_TABS" :active="1" />
   </view>
 </template>
 <script setup lang="ts">
 import PixelPageHeader from '@/components/pixel/PixelPageHeader.vue';
 import PrototypeIcon from '@/components/PrototypeIcon.vue';
-const confirming=ref(false);
-const scopeStep=ref(false);
 import AppTabBar from '@/components/AppTabBar.vue';
+import {familyTaskVisibilityAvailable,selectFamilyTaskVisibility,familyTaskVisibilitySummary} from '@/models/family-task-visibility';
 import { PARENT_TABS } from '@/config/tabbar';
 import { ref,reactive,computed } from 'vue';
-import { onShow,onHide,onUnload } from '@dcloudio/uni-app';
+import { onShow,onHide,onUnload,onReachBottom } from '@dcloudio/uni-app';
 import { familyTaskApi,type FamilyTask,type FamilyTaskOverview,type FamilyStatusTab,type FamilyStudent } from '@/api/family-task';
 import { canManageFamily,draftInput,recurrenceError,step1Error,type FamilyForm,type FamilyIdentity } from '@/models/family-task-draft';
+const confirming=ref(false);
+const scopeStep=ref(false);
 import { getParentSession } from '@/session/parent-session';
 import { getMiniappCapabilities } from '@/api/capability';
 import { ApiError } from '@/api/http';
 const tasks=ref<FamilyTaskOverview[]>([]),students=ref<FamilyStudent[]>([]),original=ref<FamilyTask|null>(null),user=ref<FamilyIdentity|null>(null);
-const busy=ref(false),editing=ref(false),loaded=ref(false),error=ref(''),page=ref(1),total=ref(0);
+const busy=ref(false),editing=ref(false),loaded=ref(false),error=ref(''),page=ref(1),total=ref(0),loadingMore=ref(false),hasMore=ref(false),appendError=ref('');
 const statusTab=ref<FamilyStatusTab>('ALL'),typeFilterIndex=ref(0),studentFilterIndex=ref(0);
+// 已提交查询的孩子快照（独立于 picker 下标，跨 hide/show 保留，用于与刷新后的选项核对）
+const studentFilterId=ref<string|null>(null);
 const statusTabs=[{key:'ALL' as FamilyStatusTab,label:'全部'},{key:'IN_PROGRESS' as FamilyStatusTab,label:'进行中'},{key:'PENDING_REVIEW' as FamilyStatusTab,label:'待审核'},{key:'COMPLETED' as FamilyStatusTab,label:'已完成'}];
 const typeFilterLabels=['全部类型','学习','生活','运动','兴趣','家务','其他'];
 const typeFilterKeys=['','STUDY','LIFE','SPORT','HOBBY','CHORE','OTHER'];
@@ -113,20 +116,26 @@ function badgeLabel(task:FamilyTaskOverview){if(task.assignmentPendingReview>0)r
 function badgeClass(task:FamilyTaskOverview){return badgeLabel(task)==='已完成'?'done':badgeLabel(task)==='待审核'?'pending':'doing';}
 function switchTab(key:FamilyStatusTab){if(statusTab.value===key)return;statusTab.value=key;void load(1);}
 function typeFilterChanged(event:Event){typeFilterIndex.value=Number(value(event));void load(1);}
-function studentFilterChanged(event:Event){studentFilterIndex.value=Number(value(event));void load(1);}
+function studentFilterChanged(event:Event){const index=Number(value(event));studentFilterIndex.value=index;studentFilterId.value=index>0&&students.value[index-1]?students.value[index-1].id:null;void load(1);}
+// 用最新孩子选项核对已提交快照：命中则按 ID 恢复下标，失效则明确重置为全部孩子
+function resolveStudentFilter(options:FamilyStudent[]):string|null{if(studentFilterId.value){const idx=options.findIndex(student=>student.id===studentFilterId.value);if(idx>=0){studentFilterIndex.value=idx+1;return studentFilterId.value;}studentFilterId.value=null;studentFilterIndex.value=0;}return null;}
 const canCreate=computed(()=>!!user.value&&canManageFamily(user.value,'LEARNING_TASK_CREATE'));
 const canPublish=computed(()=>!!user.value&&canManageFamily(user.value,'LEARNING_TASK_PUBLISH'));
 const today=()=>new Date(Date.now()+8*3600000).toISOString().slice(0,10);
 const form=reactive<FamilyForm>({title:'',difficultyLevel:2,durationMinutes:30,scheduledDate:today(),remark:'',studentIds:[],description:'',taskType:null,endDate:null,visibility:null});
 let revision=0;
+// 首屏加载时的会话快照：追加必须与首屏同一查询快照，令牌变化后触底零请求
+let loadedToken='';
 function valid(n:number,token:string){return n===revision&&getParentSession()?.accessToken===token;}
-function clear(){tasks.value=[];students.value=[];original.value=null;user.value=null;editing.value=false;loaded.value=false;total.value=0;}
+function clear(){tasks.value=[];students.value=[];original.value=null;user.value=null;editing.value=false;loaded.value=false;total.value=0;loadedToken='';}
 async function access(n:number,token:string,permission:string){const [identity,capability]=await Promise.all([familyTaskApi.me(token),getMiniappCapabilities()]);if(!valid(n,token))return false;if(!capability.learningTaskManagementEnabled||!canManageFamily(identity,permission)){clear();throw new Error('家庭任务未开启或无操作权限');}weekdayCapability.value=capability.taskWeekdayRecurrenceEnabled===true;user.value=identity;return true;}
 function failed(cause:unknown){if(cause instanceof ApiError&&([401,403].includes(cause.statusCode)||cause.code==='FEATURE_DISABLED'))clear();error.value=cause instanceof Error?cause.message:'操作未完成，请刷新核对后重试';}
-async function load(target=1){const n=++revision,token=getParentSession()?.accessToken;clear();error.value='';busy.value=true;try{if(!token)throw new Error('请先登录家长账号');if(!await access(n,token,'LEARNING_TASK_READ_MANAGED'))return;const taskType=typeFilterKeys[typeFilterIndex.value]||null;const selectedStudent=studentFilterIndex.value>0?students.value[studentFilterIndex.value-1]:null;const [result,options]=await Promise.all([familyTaskApi.listOverview(token,target,statusTab.value,taskType,selectedStudent?selectedStudent.id:null),familyTaskApi.students(token)]);if(valid(n,token)){students.value=options;tasks.value=result.items;page.value=result.page;total.value=result.total;loaded.value=true;}}catch(cause){if(n===revision)failed(cause);}finally{if(n===revision)busy.value=false;}}
+async function load(target=1){const n=++revision,token=getParentSession()?.accessToken;const taskType=typeFilterKeys[typeFilterIndex.value]||null;clear();error.value='';loadingMore.value=false;hasMore.value=false;appendError.value='';busy.value=true;try{if(!token)throw new Error('请先登录家长账号');if(!await access(n,token,'LEARNING_TASK_READ_MANAGED'))return;const options=await familyTaskApi.students(token);if(!valid(n,token))return;students.value=options;const filterId=resolveStudentFilter(options);const result=await familyTaskApi.listOverview(token,target,statusTab.value,taskType,filterId);if(valid(n,token)){tasks.value=result.items;page.value=result.page;total.value=result.total;hasMore.value=result.items.length>0&&result.page*(result.pageSize||20)<result.total;loaded.value=true;loadedToken=token;}}catch(cause){if(n===revision)failed(cause);}finally{if(n===revision)busy.value=false;}}
+async function loadMore(){if(loadingMore.value||busy.value||editing.value||!loaded.value||!hasMore.value)return;const n=revision;const sessionToken=getParentSession()?.accessToken;if(!sessionToken||sessionToken!==loadedToken||!valid(n,sessionToken))return;const taskType=typeFilterKeys[typeFilterIndex.value]||null;const filterId=studentFilterId.value;const requestTab=statusTab.value;loadingMore.value=true;appendError.value='';try{const result=await familyTaskApi.listOverview(sessionToken,page.value+1,requestTab,taskType,filterId);if(!valid(n,sessionToken))return;const previousCount=tasks.value.length;const ids=new Set(tasks.value.map(row=>row.id));tasks.value=[...tasks.value,...result.items.filter(row=>{if(ids.has(row.id))return false;ids.add(row.id);return true;})];page.value=result.page;total.value=result.total;hasMore.value=tasks.value.length>previousCount&&result.page*(result.pageSize||20)<result.total;}catch(cause){if(valid(n,sessionToken))appendError.value=cause instanceof Error?cause.message:'加载未完成';}finally{if(n===revision)loadingMore.value=false;}}
+onReachBottom(()=>{if(!appendError.value&&!editing.value)void loadMore();});
 function backStep(){if(confirming.value){confirming.value=false;scopeStep.value=true;}else if(scopeStep.value){scopeStep.value=false;}else {const n=revision,token=getParentSession()?.accessToken;if(!token)return;uni.showModal({title:'退出任务编辑',content:'未保存的修改将丢失，确认退出吗？',confirmText:'退出',success:result=>{if(result.confirm&&valid(n,token))editing.value=false;}});}}
 function nextStep(){if(recurrenceError(form,weekdayCapability.value)){error.value=recurrenceError(form,weekdayCapability.value);return;}if(confirming.value){void save(true);return;}if(!scopeStep.value){const step1=step1Error(form);if(step1){error.value=step1;uni.showToast({title:step1,icon:'none'});return;}if(!Number.isFinite(Number(form.durationMinutes))||Number(form.durationMinutes)<=0){error.value='请填写有效执行时长';return;}error.value='';scopeStep.value=true;return;}confirmTask();}
-async function edit(id?:string){scopeStep.value=false;confirming.value=false;const n=++revision,token=getParentSession()?.accessToken;if(!token){clear();return;}busy.value=true;error.value='';editing.value=false;original.value=null;try{if(!await access(n,token,'LEARNING_TASK_CREATE'))return;const [options,task]=await Promise.all([familyTaskApi.students(token),id?familyTaskApi.detail(token,id):Promise.resolve(null)]);if(!valid(n,token))return;if(task&&task.status!=='DRAFT')throw new Error('已发布任务不能编辑');students.value=options;original.value=task;Object.assign(form,{title:task?.title||'',difficultyLevel:task?.difficultyLevel||2,durationMinutes:task?.durationMinutes||30,scheduledDate:task?.scheduledDate||today(),remark:task?.remark||'',studentIds:task?task.targets.map(target=>target.targetId):[],recurrenceEnabled:task?.recurrenceEnabled??false,recurrenceFrequency:task?.recurrenceFrequency||'DAILY',recurrenceWeekdays:[...(task?.recurrenceWeekdays??[])],recurrenceEndDate:task?.recurrenceEndDate??null,description:task?.description||'',taskType:task?.taskType||null,endDate:task?.endDate??null,visibility:task?.visibility??null});editing.value=true;}catch(cause){if(valid(n,token))failed(cause);}finally{if(n===revision)busy.value=false;}}
+async function edit(id?:string){scopeStep.value=false;confirming.value=false;const n=++revision,token=getParentSession()?.accessToken;if(!token){clear();return;}busy.value=true;error.value='';editing.value=false;original.value=null;try{if(!await access(n,token,'LEARNING_TASK_CREATE'))return;const [options,task]=await Promise.all([familyTaskApi.students(token),id?familyTaskApi.detail(token,id):Promise.resolve(null)]);if(!valid(n,token))return;if(task&&task.status!=='DRAFT')throw new Error('已发布任务不能编辑');students.value=options;original.value=task;Object.assign(form,{title:task?.title||'',difficultyLevel:task?.difficultyLevel||2,durationMinutes:task?.durationMinutes||30,scheduledDate:task?.scheduledDate||today(),remark:task?.remark||'',studentIds:task?task.targets.map(target=>target.targetId):[],recurrenceEnabled:task?.recurrenceEnabled??false,recurrenceFrequency:task?.recurrenceFrequency||'DAILY',recurrenceWeekdays:[...(task?.recurrenceWeekdays??[])],recurrenceEndDate:task?.recurrenceEndDate??null,description:task?.description||'',taskType:task?.taskType||null,endDate:task?.endDate??null,visibility:task?task.visibility??null:'FAMILY_ONLY'});editing.value=true;}catch(cause){if(valid(n,token))failed(cause);}finally{if(n===revision)busy.value=false;}}
 function confirmTask(){if(recurrenceError(form,weekdayCapability.value)){error.value=recurrenceError(form,weekdayCapability.value);return;}if(!form.title.trim()||!form.studentIds.length||!Number.isInteger(Number(form.durationMinutes))||form.durationMinutes<1||form.durationMinutes>1440){error.value='请填写标题、有效时长并选择成长小主人';uni.showToast({title:'请完整填写任务并选择下发对象',icon:'none'});return;}if(!form.visibility){error.value='请选择可见范围';uni.showToast({title:'请选择可见范围',icon:'none'});return;}confirming.value=true;}
 async function save(publishNow=false){if(recurrenceError(form,weekdayCapability.value)){error.value=recurrenceError(form,weekdayCapability.value);return;}if(busy.value)return;if(publishNow&&!canPublish.value){error.value='无发布权限';return;}if(!form.title.trim()||!form.studentIds.length||form.durationMinutes<1||form.durationMinutes>1440){error.value='请填写标题、有效时长并选择学生';return;}if(form.studentIds.some(id=>!students.value.some(student=>student.id===id&&student.relationshipRole==='PRIMARY_GUARDIAN'))){error.value='学生关系已变化，请重新选择当前主监护孩子';return;}const n=++revision,token=getParentSession()?.accessToken;if(!token){clear();return;}busy.value=true;error.value='';try{if(!await access(n,token,'LEARNING_TASK_CREATE'))return;const saved=await familyTaskApi.save(token,original.value?.id||null,draftInput(form,original.value||undefined));if(!valid(n,token))return;original.value=saved;if(publishNow){if(!await access(n,token,'LEARNING_TASK_PUBLISH'))return;await familyTaskApi.publish(token,saved.id);}if(valid(n,token)){confirming.value=false;await load(1);}}catch(cause){if(valid(n,token))failed(cause);}finally{if(n===revision)busy.value=false;}}
 async function publish(task:FamilyTask|FamilyTaskOverview){if(busy.value)return;const n=++revision,token=getParentSession()?.accessToken;if(!token){clear();return;}busy.value=true;error.value='';try{const confirmed=await new Promise<boolean>(resolve=>uni.showModal({title:'确认发布家庭任务',content:`发布“${task.title}”后学生可认领执行。`,success:result=>resolve(result.confirm),fail:()=>resolve(false)}));if(!confirmed||!valid(n,token))return;if(!await access(n,token,'LEARNING_TASK_PUBLISH'))return;await familyTaskApi.publish(token,task.id);if(valid(n,token))await load(page.value);}catch(cause){if(valid(n,token))failed(cause);}finally{if(n===revision)busy.value=false;}}
@@ -149,22 +158,23 @@ const visibilityOptions=[{value:'FAMILY_ONLY' as const},{value:'FAMILY_CLASS_PAR
 function firstSelectedStudent(){const id=form.studentIds[0];return students.value.find(student=>student.id===id)||null;}
 function selectedSchool(){return firstSelectedStudent()?.schoolName||null;}
 function visibilityTitle(value:string){return ({FAMILY_ONLY:'仅家庭',FAMILY_CLASS_PARTNER:'家庭 + 班级成长伙伴',FAMILY_SCHOOL_PARTNER:'家庭 + 本校成长伙伴',CUSTOM:'自定义范围'} as Record<string,string>)[value]||value;}
-function visibilityDesc(value:string){if(value==='FAMILY_ONLY')return '仅自己可见';if(value==='FAMILY_CLASS_PARTNER'){const student=firstSelectedStudent();const school=selectedSchool();const cls=student?.currentClassName;return cls?`班级：${cls}${school?'（'+school+'）':''}`:'班级：选择孩子后展示';}
+function chooseVisibility(value:string){if(!selectFamilyTaskVisibility(form,value))uni.showToast({title:'当前仅支持家庭范围',icon:'none'});}
+function visibilityDesc(value:string){if(!familyTaskVisibilityAvailable(value))return '暂未开放，不改变现有访问权限';if(value==='FAMILY_ONLY')return '按家庭关联与已授予权限访问';if(value==='FAMILY_CLASS_PARTNER'){const student=firstSelectedStudent();const school=selectedSchool();const cls=student?.currentClassName;return cls?`班级：${cls}${school?'（'+school+'）':''}`:'班级：选择孩子后展示';}
 if(value==='FAMILY_SCHOOL_PARTNER'){const school=selectedSchool();return school?school:'学校：选择孩子后展示';}
 return '可选择本校内的班级或成员';}
-function hide(){revision++;clear();busy.value=false;}
+function hide(){revision++;clear();busy.value=false;loadingMore.value=false;hasMore.value=false;appendError.value='';}
 const typeLabel=computed(()=>({STUDY:'学习',LIFE:'生活',SPORT:'运动',HOBBY:'兴趣',CHORE:'家务',OTHER:'其他'} as Record<string,string>)[form.taskType||'']||'学习');
 const dotDate=(iso:string)=>iso.replace(/-/g,'.');
 const confirmDateRange=computed(()=>{const end=form.endDate||form.scheduledDate;return form.scheduledDate===end?dotDate(form.scheduledDate):`${dotDate(form.scheduledDate)} – ${dotDate(end)}`;});
 const frequencySummary=computed(()=>{if(!form.recurrenceEnabled)return '单次';const base=({DAILY:'每天',WEEKLY:'每周',CUSTOM:'自定义'} as Record<string,string>)[form.recurrenceFrequency||'DAILY']||'重复';if(form.recurrenceFrequency&&form.recurrenceFrequency!=='DAILY'&&form.recurrenceWeekdays?.length)return base+' · '+form.recurrenceWeekdays.map(d=>weekdayLabels[d-1]).join('、');return base;});
 const memberSummary=computed(()=>form.studentIds.map(id=>{const s=students.value.find(x=>x.id===id);return s?(s.currentClassName?`${s.studentName}（${s.currentClassName}）`:s.studentName):id;}).join('、')||'未选择');
-const visibilitySummary=computed(()=>form.visibility?`${visibilityTitle(form.visibility)}（${visibilityDesc(form.visibility)}）`:'未选择');
+const visibilitySummary=computed(()=>form.visibility?familyTaskVisibilitySummary(form.visibility):'未选择');
 onShow(()=>load(1));onHide(hide);onUnload(hide);
 </script>
 <style lang="scss" scoped>
 @import "@/styles/workspace-prototype.scss";
 
-.page{padding:32rpx;min-height:calc(100vh - var(--window-top,0px));box-sizing:border-box;background:#f4f7f5;color:#1c2b28;font-family:system-ui,"Microsoft YaHei",sans-serif}.page text{display:block;margin:16rpx 0;overflow-wrap:anywhere}.title{font-size:38rpx;font-weight:700}.card{padding:24rpx;margin-top:24rpx;background:white;border-radius:12rpx}.heading{font-weight:600}.error{color:#a33c2e}.student{display:block;margin:20rpx 0}input,textarea,.field{width:100%;padding:18rpx;border:1px solid #dce4e1;margin:14rpx 0}input{height:80rpx}button{font-size:28rpx;margin:16rpx 0}.paging{display:flex;align-items:center;gap:12rpx;justify-content:space-between}
+.page{padding:32rpx;min-height:calc(100vh - var(--window-top,0px));box-sizing:border-box;background:#f4f7f5;color:#1c2b28;font-family:system-ui,"Microsoft YaHei",sans-serif}.page text{display:block;margin:16rpx 0;overflow-wrap:anywhere}.title{font-size:38rpx;font-weight:700}.card{padding:24rpx;margin-top:24rpx;background:white;border-radius:12rpx}.heading{font-weight:600}.error{color:#a33c2e}.student{display:block;margin:20rpx 0}input,textarea,.field{width:100%;padding:18rpx;border:1px solid #dce4e1;margin:14rpx 0}input{height:80rpx}button{font-size:28rpx;margin:16rpx 0}.load-more{display:flex;justify-content:center;padding:8rpx 0}.load-more text{color:#78847e;font-size:24rpx;margin:12rpx 0}.load-more button{margin:12rpx 0}
 
 
 
@@ -248,4 +258,39 @@ button{border-radius:18rpx!important;font-size:26rpx!important;}button::after{bo
 .visibility-body{flex:1;min-width:0}
 .visibility-title{display:block;font-size:27rpx;font-weight:650;color:#1d2e27}
 .visibility-desc{display:block;margin-top:6rpx;font-size:23rpx;color:#78847e}
+
+/* LAYOUT-02: compact list rhythm, preserve real metadata and draft actions. */
+.prototype-workspace.has-tabbar{padding-bottom:calc(250rpx + env(safe-area-inset-bottom))!important;}
+.page .task-list-card{padding:20rpx 20rpx 20rpx 108rpx!important;margin-top:16rpx;margin-bottom:16rpx;border-radius:22rpx!important;}
+.task-list-card .task-symbol{left:20rpx;top:22rpx;width:66rpx;height:66rpx;border-radius:16rpx;}
+.task-list-card text{margin:0;}
+.task-list-card .heading{font-size:27rpx;line-height:1.45;}
+.task-list-card .status-badge{margin-top:2rpx;font-size:21rpx;padding:3rpx 12rpx;}
+.task-list-card .status-badge.pending{background:#fff2dd;color:#b46c1d;}
+.task-list-card .task-meta{font-size:23rpx;line-height:1.5;margin-top:6rpx;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.task-list-card .task-progress-row{margin-top:6rpx;}
+.task-list-card .task-progress{font-size:21rpx;line-height:1.4;}
+.page>.task-create-entry{position:fixed;left:28rpx;right:28rpx;bottom:calc(124rpx + env(safe-area-inset-bottom));z-index:91;margin:0;line-height:76rpx;border-radius:44rpx!important;background:linear-gradient(120deg,#20875a,#126242);color:#fff;font-size:28rpx!important;font-weight:600;box-shadow:0 5rpx 16rpx #174c391a;}
+.visibility-option.unavailable{opacity:.5;}
+.page>.task-editor{height:calc(100vh - var(--window-top,0px));box-sizing:border-box;}
+.member-picker{width:100%;}
+.child-card .child-name{margin:0;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.child-card .child-meta{margin:6rpx 0 0;line-height:1.45;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* Keep the three-step behavior while matching the reference's compact form rhythm. */
+.task-editor .publish-step,.task-editor .form-section-title{display:none!important;}
+.task-editor .form-section{padding:0;border:0;}
+.task-editor input,.task-editor textarea{box-sizing:border-box;max-width:100%;min-width:0;border-radius:16rpx;background:#fbfdfb;font-size:26rpx;}
+.task-editor textarea{height:144rpx;min-height:144rpx;}
+.task-editor .required-label{margin:20rpx 0 8rpx;font-size:27rpx;}
+.task-editor .char-count{margin:2rpx 0 12rpx;font-size:21rpx;}
+.task-editor .type-pills{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14rpx;}
+.task-editor .type-pill{text-align:center;padding:12rpx 0;line-height:1.5;}
+.task-editor .date-range>picker{flex:1;min-width:0;}
+.task-editor .publish-actions button{height:80rpx;line-height:80rpx;border-radius:40rpx;}
+.task-editor .publish-actions .main-action{flex:2;}
+.task-editor-layer{position:fixed;inset:0;top:var(--window-top,0px);z-index:110;display:flex;flex-direction:column;background:#f6f8f5;box-sizing:border-box;}
+.task-editor-layer>.task-editor{position:relative;flex:1;height:0;min-height:0;width:100%;margin:0!important;border:0!important;border-radius:0!important;padding:0 28rpx 28rpx!important;box-sizing:border-box;background:#f6f8f5!important;}
+.task-editor-layer>.publish-actions{position:static!important;flex-shrink:0;background:#fff;}
+.task-editor-layer .publish-actions button{height:80rpx;line-height:80rpx;border-radius:40rpx;}
+.task-editor-layer .publish-actions .main-action{flex:2;}
 </style>

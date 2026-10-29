@@ -33,4 +33,8 @@ public interface ParentRelationshipInvitationMapper {
             @Param("userId") Long userId,
             @Param("mobile") String mobile
     );
+    long countReceivedPending(@Param("userId") Long userId, @Param("mobile") String mobile, @Param("now") LocalDateTime now);
+    java.util.List<com.lingdong.learning.student.application.ParentReceivedInvitationView> findReceivedPendingPage(
+            @Param("userId") Long userId, @Param("mobile") String mobile, @Param("now") LocalDateTime now,
+            @Param("offset") long offset, @Param("limit") int limit);
 }

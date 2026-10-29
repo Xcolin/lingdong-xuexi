@@ -3,6 +3,7 @@
     <PrototypePageHeader title="微信绑定管理" icon="shield"/>
 
     <view v-if="loading" class="state-text">正在加载</view>
+    <view v-else-if="errorMessage" class="state-text">{{ errorMessage }}<button @tap="initialize">重试</button></view>
     <view v-else-if="items.length === 0" class="state-text">暂无可管理学生</view>
     <view v-else class="student-list">
       <view v-for="item in items" :key="item.studentId" class="student-row">
@@ -28,7 +29,7 @@
 <script setup lang="ts">
 import PrototypePageHeader from '@/components/PrototypePageHeader.vue';
 import { ref } from 'vue';
-import { onLoad } from '@dcloudio/uni-app';
+import { onShow, onHide } from '@dcloudio/uni-app';
 import { getMiniappCapabilities } from '@/api/capability';
 import {
   listStudentWechatBindings,
@@ -41,23 +42,39 @@ const loading = ref(true);
 const items = ref<StudentWechatBindingSummary[]>([]);
 const submittingId = ref('');
 
-onLoad(async () => {
+const enabled = ref(false);
+const errorMessage = ref('');
+let serial = 0;
+onShow(() => { void initialize(); });
+onHide(() => { serial++; enabled.value = false; items.value = []; });
+async function initialize(): Promise<void> {
+  const request = ++serial;
+  loading.value = true;
+  enabled.value = false;
+  items.value = [];
+  errorMessage.value = '';
   const session = getParentSession();
-  if (!session) return leavePage();
+  if (!session) { leavePage(); return; }
   try {
     const capabilities = await getMiniappCapabilities();
-    if (capabilities.studentWechatAuthEnabled !== true) return leavePage();
-    items.value = await listStudentWechatBindings(session.accessToken);
-  } catch {
-    await uni.showToast({ title: '学生微信绑定加载失败', icon: 'none' });
+    if (request !== serial || getParentSession()?.accessToken !== session.accessToken) return;
+    if (capabilities.studentWechatAuthEnabled !== true) { leavePage(); return; }
+    const result = await listStudentWechatBindings(session.accessToken);
+    if (request !== serial || getParentSession()?.accessToken !== session.accessToken) return;
+    enabled.value = true;
+    items.value = result;
+  } catch (error) {
+    if (request === serial) errorMessage.value = error instanceof Error ? error.message : '学生微信绑定加载失败';
   } finally {
-    loading.value = false;
+    if (request === serial) loading.value = false;
   }
-});
+}
 
 async function confirmUnbind(item: StudentWechatBindingSummary): Promise<void> {
   const session = getParentSession();
-  if (!session || submittingId.value) return;
+  if (!enabled.value || loading.value || !item.bound || !items.value.includes(item) || !session || submittingId.value) return;
+  const request = serial;
+  submittingId.value = item.studentId;
   const confirmed = await new Promise<boolean>((resolve) => {
     uni.showModal({
       title: `解绑${item.studentName}的微信？`,
@@ -68,14 +85,18 @@ async function confirmUnbind(item: StudentWechatBindingSummary): Promise<void> {
       fail: () => resolve(false)
     });
   });
-  if (!confirmed) return;
-  submittingId.value = item.studentId;
+  if (!confirmed || request !== serial || !enabled.value || getParentSession()?.accessToken !== session.accessToken) {
+    submittingId.value = '';
+    return;
+  }
   try {
     await unbindStudentWechat(session.accessToken, item.studentId);
+    if (request !== serial || getParentSession()?.accessToken !== session.accessToken) return;
     item.bound = false;
     item.boundAt = null;
     await uni.showToast({ title: '已解绑', icon: 'success' });
   } catch (error) {
+    if (request !== serial || getParentSession()?.accessToken !== session.accessToken) return;
     await uni.showToast({
       title: error instanceof Error ? error.message : '解绑失败',
       icon: 'none'

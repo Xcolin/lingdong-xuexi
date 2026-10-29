@@ -10,6 +10,10 @@ import com.lingdong.learning.feature.domain.FeatureStatus;
 import com.lingdong.learning.feature.infrastructure.persistence.FeatureToggleMapper;
 import com.lingdong.learning.iam.domain.Role;
 import com.lingdong.learning.iam.infrastructure.persistence.RoleMapper;
+import com.lingdong.learning.permission.application.GrantRolePermissionCommand;
+import com.lingdong.learning.permission.application.PermissionAdministrationService;
+import com.lingdong.learning.permission.domain.Permission;
+import com.lingdong.learning.permission.infrastructure.persistence.PermissionMapper;
 import com.lingdong.learning.user.application.AssignRoleToUserCommand;
 import com.lingdong.learning.user.application.CreateUserCommand;
 import com.lingdong.learning.user.application.UserAccessApplicationService;
@@ -87,6 +91,8 @@ class RewardExchangeControllerTest {
     @Autowired private SqlSessionTemplate sqlSessionTemplate;
     @Autowired private GrowthRewardExchangeCleanupService cleanupService;
     @Autowired private FeatureToggleMapper featureToggleMapper;
+    @Autowired private PermissionAdministrationService permissionAdministrationService;
+    @Autowired private PermissionMapper permissionMapper;
 
     @Test
     void primaryParentManagesStudentRewardAndStudentOnlySeesOnlineReward() throws Exception {
@@ -585,6 +591,170 @@ class RewardExchangeControllerTest {
                 .andExpect(status().isOk());
         assertExchangeStatus(exchange, "PENDING_VERIFICATION");
         assertPointBalance(fixture.student().id(), 100, 90);
+    }
+
+    @Test
+    void statusFilterKeepsCountListConsistentAndPreservesLegacyWebCalls() throws Exception {
+        Fixture fixture = createFixture();
+        setPointBalance(fixture.student().id(), 100, 100);
+
+        // 业务数据全部经 API 创建（家长建奖励、学生申请兑换、家长审批）；SQL 仅用于积分账户前置与监护关系构造
+        Long onlineReward1 = createReward(fixture, "状态筛选-上架奖励一", 10);
+        Long onlineReward2 = createReward(fixture, "状态筛选-上架奖励二", 20);
+        Long offlineReward = createReward(fixture, "状态筛选-下架奖励", 30);
+        mockMvc.perform(put("/api/v1/parent-rewards/{rewardId}", offlineReward)
+                        .header("Authorization", bearer(fixture.parentToken()))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(rewardBody("状态筛选-下架奖励", 30, null,
+                                LocalDateTime.now().plusDays(2).withNano(0), "OFFLINE")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("OFFLINE"));
+        Long pendingApprovalExchange = applyExchange(fixture, onlineReward1);
+        Long pendingVerificationExchange = applyExchange(fixture, onlineReward2);
+        mockMvc.perform(post("/api/v1/parent-reward-exchanges/{exchangeId}/approve", pendingVerificationExchange)
+                        .header("Authorization", bearer(fixture.parentToken())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("PENDING_VERIFICATION"));
+
+        // 奖励状态筛选：count 与 list 同条件
+        mockMvc.perform(get("/api/v1/parent-rewards/students/{studentId}?page=1&pageSize=20&status=ONLINE", fixture.student().id())
+                        .header("Authorization", bearer(fixture.parentToken())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(2))
+                .andExpect(jsonPath("$.items.length()").value(2))
+                .andExpect(jsonPath("$.items[0].status").value("ONLINE"))
+                .andExpect(jsonPath("$.items[1].status").value("ONLINE"));
+        mockMvc.perform(get("/api/v1/parent-rewards/students/{studentId}?page=1&pageSize=20&status=OFFLINE", fixture.student().id())
+                        .header("Authorization", bearer(fixture.parentToken())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(1))
+                .andExpect(jsonPath("$.items.length()").value(1))
+                .andExpect(jsonPath("$.items[0].status").value("OFFLINE"));
+        mockMvc.perform(get("/api/v1/parent-rewards/students/{studentId}?page=1&pageSize=20&status=ALL", fixture.student().id())
+                        .header("Authorization", bearer(fixture.parentToken())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(3))
+                .andExpect(jsonPath("$.items.length()").value(3));
+        mockMvc.perform(get("/api/v1/parent-rewards/students/{studentId}?page=1&pageSize=20", fixture.student().id())
+                        .header("Authorization", bearer(fixture.parentToken())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(3));
+        mockMvc.perform(get("/api/v1/parent-rewards/students/{studentId}?page=1&pageSize=20&status=PENDING", fixture.student().id())
+                        .header("Authorization", bearer(fixture.parentToken())))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+        // 分页边界：ONLINE 共 2 条，pageSize=1 时逐页与 total 均不受筛选失真
+        mockMvc.perform(get("/api/v1/parent-rewards/students/{studentId}?page=1&pageSize=1&status=ONLINE", fixture.student().id())
+                        .header("Authorization", bearer(fixture.parentToken())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(2))
+                .andExpect(jsonPath("$.items.length()").value(1));
+        mockMvc.perform(get("/api/v1/parent-rewards/students/{studentId}?page=2&pageSize=1&status=ONLINE", fixture.student().id())
+                        .header("Authorization", bearer(fixture.parentToken())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(2))
+                .andExpect(jsonPath("$.items.length()").value(1));
+        mockMvc.perform(get("/api/v1/parent-rewards/students/{studentId}?page=3&pageSize=1&status=ONLINE", fixture.student().id())
+                        .header("Authorization", bearer(fixture.parentToken())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(2))
+                .andExpect(jsonPath("$.items").isEmpty());
+
+        // 兑换状态筛选：count 与 list 同条件
+        mockMvc.perform(get("/api/v1/parent-reward-exchanges/students/{studentId}?page=1&pageSize=20&status=PENDING_APPROVAL", fixture.student().id())
+                        .header("Authorization", bearer(fixture.parentToken())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(1))
+                .andExpect(jsonPath("$.items.length()").value(1))
+                .andExpect(jsonPath("$.items[0].id").value(pendingApprovalExchange.toString()))
+                .andExpect(jsonPath("$.items[0].status").value("PENDING_APPROVAL"));
+        mockMvc.perform(get("/api/v1/parent-reward-exchanges/students/{studentId}?page=1&pageSize=20&status=PENDING_VERIFICATION", fixture.student().id())
+                        .header("Authorization", bearer(fixture.parentToken())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(1))
+                .andExpect(jsonPath("$.items.length()").value(1))
+                .andExpect(jsonPath("$.items[0].id").value(pendingVerificationExchange.toString()));
+        mockMvc.perform(get("/api/v1/parent-reward-exchanges/students/{studentId}?page=1&pageSize=20", fixture.student().id())
+                        .header("Authorization", bearer(fixture.parentToken())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(2));
+        mockMvc.perform(get("/api/v1/parent-reward-exchanges/students/{studentId}?page=1&pageSize=20&status=ONLINE", fixture.student().id())
+                        .header("Authorization", bearer(fixture.parentToken())))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+
+        // 外部家长（无监护关系）任何筛选 → 404
+        mockMvc.perform(get("/api/v1/parent-rewards/students/{studentId}?page=1&pageSize=20&status=ONLINE", fixture.student().id())
+                        .header("Authorization", bearer(fixture.otherParentToken())))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("RESOURCE_NOT_FOUND"));
+        mockMvc.perform(get("/api/v1/parent-reward-exchanges/students/{studentId}?page=1&pageSize=20&status=PENDING_APPROVAL", fixture.student().id())
+                        .header("Authorization", bearer(fixture.otherParentToken())))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("RESOURCE_NOT_FOUND"));
+
+        // 次监护人（SQL 构造 SECONDARY 关系，仅关系非业务数据）可读筛选结果
+        Long otherParentId = jdbcTemplate.queryForObject(
+                "SELECT id FROM sys_user WHERE username='reward_other_parent'", Long.class);
+        jdbcTemplate.update("INSERT INTO edu_parent_student(id,parent_user_id,student_id,relation_role,status,primary_scope_key,bound_at) "
+                + "VALUES(8910000000000000933,?,?,'SECONDARY_GUARDIAN','ACTIVE','SECONDARY',CURRENT_TIMESTAMP)",
+                otherParentId, fixture.student().id());
+        sqlSessionTemplate.clearCache();
+        mockMvc.perform(get("/api/v1/parent-rewards/students/{studentId}?page=1&pageSize=20&status=ONLINE", fixture.student().id())
+                        .header("Authorization", bearer(fixture.otherParentToken())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(2));
+        mockMvc.perform(get("/api/v1/parent-reward-exchanges/students/{studentId}?page=1&pageSize=20&status=PENDING_APPROVAL", fixture.student().id())
+                        .header("Authorization", bearer(fixture.otherParentToken())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(1));
+
+        // Web 旧四参端点兼容：WEB 会话主家长不带 status 仍返回全量（学生与主监护关系亦由 API 建立）。
+        // V147 后 WEB 奖励权限无内置角色授权（运行时经菜单管理授予），此处先验证未授权拒绝，
+        // 再通过 IAM 应用服务授予（授权动作本身走业务闭环，非 SQL 业务造数）。
+        User webAdministrator = createUserWithRole("reward_status_admin", "状态筛选系统管理员", "SYS_ADMIN");
+        User webParent = createUserWithRole("reward_status_web_parent", "状态筛选Web家长", "PARENT");
+        setPassword(webAdministrator, webParent);
+        String webParentToken = platformLoginToken("reward_status_web_parent");
+        makeFamilyParent("reward_status_web_parent");
+        IssuedStudent webStudent = createStudent(webParentToken, "状态筛选Web学生");
+        mockMvc.perform(post("/api/v1/rewards/students/{studentId}", webStudent.id())
+                        .header("Authorization", bearer(webParentToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(rewardBody("状态筛选-Web旧调用奖励", 10, null,
+                                LocalDateTime.now().plusDays(2).withNano(0), "ONLINE")))
+                .andExpect(status().isForbidden());
+        Long parentRoleId = roleMapper.findByCode("PARENT").id();
+        for (String permissionCode : List.of("REWARD_READ", "REWARD_CREATE", "REWARD_EXCHANGE_READ")) {
+            Permission permission = permissionMapper.findByCode(permissionCode);
+            permissionAdministrationService.grantRolePermission(
+                    new GrantRolePermissionCommand(webAdministrator.id(), parentRoleId, permission.id()));
+        }
+        sqlSessionTemplate.clearCache();
+        MvcResult webRewardResult = mockMvc.perform(post("/api/v1/rewards/students/{studentId}", webStudent.id())
+                        .header("Authorization", bearer(webParentToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(rewardBody("状态筛选-Web旧调用奖励", 10, null,
+                                LocalDateTime.now().plusDays(2).withNano(0), "ONLINE")))
+                .andExpect(status().isCreated()).andReturn();
+        Long webRewardId = responseId(webRewardResult);
+        setPointBalance(webStudent.id(), 100, 100);
+        String webStudentToken = studentLoginToken(webStudent);
+        mockMvc.perform(post("/api/v1/reward-exchanges")
+                        .header("Authorization", bearer(webStudentToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"rewardId\":\"%s\"}".formatted(webRewardId)))
+                .andExpect(status().isCreated());
+        mockMvc.perform(get("/api/v1/rewards/students/{studentId}?page=1&pageSize=20", webStudent.id())
+                        .header("Authorization", bearer(webParentToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(1))
+                .andExpect(jsonPath("$.items[0].rewardName").value("状态筛选-Web旧调用奖励"));
+        mockMvc.perform(get("/api/v1/reward-exchanges/students/{studentId}?page=1&pageSize=20", webStudent.id())
+                        .header("Authorization", bearer(webParentToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(1))
+                .andExpect(jsonPath("$.items[0].status").value("PENDING_APPROVAL"));
     }
 
     /** 仅合成本地家长会话；认证过滤器实际识别 MINIAPP，不代表验证短信登录。 */
